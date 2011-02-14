@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/env perl -w
 #
 # Copyright (C) 2010-2011 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
@@ -256,7 +256,7 @@ sub MPlayer {
     `$MPlayerLine "$streaming"`;
     print "\n";
     if ($Picks) {
-        if ($Picks eq 'TRUE') {
+        if ($Picks eq 1) {
             &ForeachPick;
         }
     }
@@ -353,7 +353,7 @@ sub Trizen {
     $FirstPage = 1;
     $SearchBackup .= ' ' . $Search;
     $Search =~ s/ [-]+([\d]+)| -p| [-]+m[^\s]*| [-]+f[^\s]*| [-]+n[^\s]*//g;
-    if ($MoreResults eq 1) {
+    if ($MoreResults and $ys) {
         $ys =~ s/20$/50/;
     }
     $Search =~ s/ /%20/g;
@@ -425,10 +425,11 @@ sub PrintResults {
         }
     }
     if ($SearchBackup) {
-        if ($SearchBackup =~ /\ -p/) {
+        if ($SearchBackup =~ / -p/) {
             for ($i = 1; $i <= $number; ++$i) {
                 push @picks2, "$i ";
             }
+            $SearchBackup =~ s/ -p//g;
             $youtube = join('', @picks2);
             @picks = split(' ', $youtube, 0);
             &PicksArea;
@@ -495,7 +496,7 @@ sub PrintResults {
         $views = '';
         &GetYouTube;
     }
-    if ($youtube =~ /([\d]+) ([\d]+)/) {
+    if ($youtube =~ /[\d]+ [\d]+/) {
         @picks = split(' ', $youtube, 0);
         &PicksArea;
     }
@@ -505,7 +506,9 @@ sub PrintResults {
     }
 }
 sub PicksArea {
-    $NrOfPicks = @picks;
+	if(@picks){
+		$NrOfPicks = @picks;
+	}
     $no = 0;
     $lastpick = '';
     $number = 0;
@@ -515,7 +518,9 @@ sub ForeachPick {
     for ($number = $no; $number <= $NrOfPicks; ++$number) {
         $no = $number;
         $pick = $picks[$number];
-        next if $lastpick eq $pick;
+        if($pick){
+			next if $lastpick eq $pick;
+		}
         &PrintResults if $number eq $NrOfPicks;
         $Picks = 1;
         $lastpick = $pick;
