@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 #
 # Copyright (C) 2010-2011 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
@@ -15,9 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-
-$appname = 'youtube-viewer';
-$version = 'v2.4.7';
 
 =start
 -------------------------------------------------------
@@ -72,14 +69,26 @@ $version = 'v2.4.7';
 
 require LWP::UserAgent;
 $os = $^O;
+$appname = 'youtube-viewer';
+$version = 'v2.4.8';
+$mplayer_settings = '-prefer-ipv4 -cache 30000 -cache-min 5';
+$MPlayer_srt_settings = '-unicode -utf8';
+foreach $_ (@ARGV) {
+    if ($_ =~ /^-sub=([\w]+)/) {
+        $default_sub = "\L$1\E";
+    }
+}
+unless ($default_sub) {
+    $default_sub = 'en';
+}
 if ($os =~ /MSWin/) {
-    $MPlayerLine = '"C:\\Program Files\\SMPlayer\\mplayer\\mplayer.exe" -prefer-ipv4 -cache 20000 -cache-min 5';
+    $MPlayerLine = qq["C:\\Program Files\\SMPlayer\\mplayer\\mplayer.exe" $mplayer_settings];
 }
 else {
-    $MPlayerLine = 'mplayer -prefer-ipv4 -cache 20000 -cache-min 5';
+    $MPlayerLine = "mplayer $mplayer_settings";
 }
 $lwp = 'LWP::UserAgent'->new;
-$lwp->agent('Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.45 Safari/534.16');
+$lwp->agent('Mozilla/5.0 (X11; U; Linux i686; en-US) Chrome/10.0.648.45');
 $lwp->env_proxy;
 $lwp->timeout(10);
 unless ($os =~ /MSWin/) {
@@ -117,10 +126,10 @@ for ($n = 0; $n <= $#ARGV; ++$n) {
 }
 if ($args[0]) {
     foreach $arg (@args) {
-        next if not $arg;
+        next unless $arg;
         $arg =~ s/--novideo/-n/;
         $arg =~ s/--categories/-c/;
-        $arg =~ s/^-([-]?)f(.*)/-f/;
+        $arg =~ s/^[-]+f(.*)/-f/;
         if ($arg eq '-n') {
             $MPlayerLine =~ s/mplayer /mplayer -novideo /;
             $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -novideo/;
@@ -145,7 +154,7 @@ if ($args[0]) {
         }
     }
 }
-if (not $a or $a =~ /^[-]+([471]+)|^[-]+f|^[-]+m|^[-]+n/ and not $b) {
+if (not $a or $a =~ /^[-]+(([471]+)|f|m|n)/ and not $b) {
     &InsertURL;
 }
 if ($a) {
@@ -161,7 +170,7 @@ if ($a) {
 sub InsertURL {
     print "\n$bred=>>$reset$bgreen Insert an YouTube URL or search something...\n$reset> ";
     chomp($youtube = <STDIN>);
-    if ($youtube =~ /v[=\/]+([\w-]{11})/) {
+    if ($youtube =~ m[v[=/]+([\w-]{11})]) {
         $code = $1;
         &GetYouTube;
     }
@@ -178,7 +187,7 @@ sub InsertURL {
         $number = 0;
         &Trizen;
     }
-    else{
+    else {
         print $bred;
         print "\n(x_x) Invalid URL...\n\n";
         print $reset;
@@ -222,8 +231,7 @@ if ($a =~ /^[-]+c/) {
     $n = 0;
     print "\n";
     foreach $cat (@cates) {
-        if ($cat =~ /category_name='([^']+)' label='([^']+)'/ 
-			and not $cat =~ /deprecated/) {
+        if ($cat =~ /category_name='([^']+)' label='([^']+)'/ and not $cat =~ /deprecated/) {
             ++$n;
             $cat_name = $1;
             $cat_label = $2;
@@ -268,9 +276,9 @@ sub MPlayer {
 sub YoutubeAPI {
     splice @Videos;
     $youtube_via_api = 1;
-    if ($today eq 1) {
+    if ($today) {
         $yt_api_url .= '?time=today';
-        $today = 0;
+        $today = '';
     }
     if (not $yt_api_url =~ /\?/) {
         $yt_api_url .= '?max-results=20';
@@ -278,7 +286,7 @@ sub YoutubeAPI {
     else {
         $yt_api_url .= '&max-results=20';
     }
-    if ($MoreResults eq 1) {
+    if ($MoreResults) {
         $yt_api_url =~ s/20$/50/;
     }
     $connect = $lwp->get($yt_api_url);
@@ -304,46 +312,47 @@ if ($a =~ /^([\w-]{11})$/) {
 }
 if ($a =~ /^-h$/ or $a =~ /^[-]+help$/) {
     $appname =~ s/(.+)/\U$1\E/g;
-    $app =~ s/(.*)\\([^\\]+)$/$2/;
     die "
 \t" . '=' x 17 . " $appname " . '=' x 17 . qq[
 \t\t\t\t  by Trizen (trizen.go.ro)
 
- Usage: $app || [url] || [words] || [code]
+ Usage: youtube-viewer [<url> | <video_id>] [-(4|7|1)] 
+                       [-u <username>] [-c] [<keywords>] [-(f|n|m|p)] 
 
-Base Options: $app [...]
-   [url]             : play an YouTube video by URL
-   [code]            : play an YouTube video by code
-   [words]           : search and play YouTube videos
+Base Options: youtube-viewer [...]
+   <url>                : play an YouTube video by URL
+   <code>               : play an YouTube video by code
+   <keywords>           : search and play YouTube videos
   
 Other options:
-   -c, --categories  : shows available YouTube categories
-   -n, --novideo     : plays only audio track of the video
-   [words] -f        : plays all videos in fullscreen mode
-   [words] -p        : plays all video results in order
-   [words] -n        : plays only the audio track of video results
-   [words] -m        : shows more video results (50 clips)
-   [words] -4, -7    : plays video results at 480p resolution (or 720p)
-   [ytURL] -4, -7    : plays an YouTube video by URL at 480p (or 720p)
-   [username] -u     : lists videos from a YouTube user profile
-   -h, --help        : outputs this message...
+   -c, --categories     : shows available YouTube categories
+   -n, --novideo        : plays only audio track of the video
+   <keywords> -f        : plays all videos in fullscreen mode
+   <keywords> -p        : plays all video results in order
+   <keywords> -n        : plays only the audio track of video results
+   <keywords> -m        : shows more video results (50 clips)
+   <keywords> -(4|7)    : plays video results at 480p resolution (or 720p)
+   <username> -u        : lists videos from a YouTube user profile
+   -sub=<LANG>          : subtitle language (default: en) (depends on gcap)
+   -v, --version        : print version and exit
+   -h, --help           : print help and exit
  
 Tips and tricks:
   1. Search and play all video results by adding "-p" after keywords.
   2. After search results, you can insert: 3 5 8 1 to play videos in your order
   3. Play all audio tracks of video results by adding "-p -n" after keywords.
-  4. To listen music from YouTube use: "-c -n 10" and insert "all"
-  5. Play videos one after one in fullscreen mode: "[words] -p -f"
-  6. Play all video results at 480p: "[words] -p -4" (or 720p => "-7")
-  7. Play all videos from a user at 480p: "[username] -u -4" and insert "all"
+  4. To listen music from YouTube use: "-c -n 3" and insert "all"
+  5. Play all video results in fullscreen mode: "<keywords> -p -f"
+  6. Play all video results at 480p: "[words] -p -4" (or 720p => '-7')
+  7. Play all videos from a user at 480p: "<username> -u -4" and insert "all"
 
 ];
 }
 elsif ($a =~ /^-p/) {
-    die "Usage: $app [words] $a\n";
+    $SearchBackup = ' -p';
+    &InsertURL;
 }
-elsif (not $a =~ /^[-]+(4|7|1)|^-p|^[-]+n|^[-]+f|^[-]+m/ 
-	and $a =~ /^-/) {
+elsif (not $a =~ /^[-]+((4|7|1)|p|n|f|m)/ and $a =~ /^-/) {
     die "Unknown option '${a}'\n";
 }
 $Search = join(' ', @args) . ' ';
@@ -373,16 +382,14 @@ sub Parse {
         &PrintResults;
     }
     foreach $_ (@content) {
-		next if not $_ =~ /TITLE=/;
-        if ($_ =~ /TITLE=/) {
-            if ($_ =~ m[</media\:description>]) {
-                $_ =~ s/TITLE\=([^\<]+)<\/title>(.+)v\=([\w\-]{11})(.+)duration([^']*)'([\d\:]+)'(.+)<media\:description type='plain'>([^<]*)(.*)viewCount='([\d]*)'(.*)/v=$3+title=$1>+video-time">$6>views=$10>description=$8/;
-            }
-            else {
-                $_ =~ s/TITLE\=([^\<]+)<\/title>(.+)v\=([\w\-]{11})(.+)duration([^']*)'([\d\:]+)'(.*)viewCount='([\d]*)'(.*)/v=$3+title=$1>+video-time">$6>views=$8>description=No description available.../;
-            }
-            push @Videos, $_;
+        next unless $_ =~ /^TITLE=/;
+        if ($_ =~ m[</media\:description>]) {
+            $_ =~ s[TITLE\=([^\<]+)</title>(.+)v\=([\w\-]{11})(.+)duration([^']*)'([\d\:]+)'(.+)<media\:description type='plain'>([^<]*)(.*)viewCount='([\d]*)'(.*)][v=$3+title=$1>+video-time">$6>views=$10>description=$8];
         }
+        else {
+            $_ =~ s[TITLE\=([^\<]+)</title>(.+)v\=([\w\-]{11})(.+)duration([^']*)'([\d\:]+)'(.*)viewCount='([\d]*)'(.*)][v=$3+title=$1>+video-time">$6>views=$8>description=No description available...];
+        }
+        push @Videos, $_;
     }
 }
 sub PrintResults {
@@ -439,7 +446,6 @@ sub PrintResults {
     chomp($youtube = <STDIN>);
     $PickBackup = $youtube;
     if ($youtube =~ /^(q|quit|exit)$/) {
-        #print "\n[*] Exiting...\n\n";
         exit;
     }
     if ($PickBackup =~ m[^http://] and not $PickBackup =~ /youtube\.com/) {
@@ -449,7 +455,7 @@ sub PrintResults {
             &GetYouTube;
         }
     }
-    if ($PickBackup =~ /([\d]+) ([-]?)-([\d]+)/) {
+    if ($PickBackup =~ /([\d]+) [-]+([\d]+)/) {
         $youtube = $1;
     }
     print $bgreen . "$Working";
@@ -506,9 +512,9 @@ sub PrintResults {
     }
 }
 sub PicksArea {
-	if(@picks){
-		$NrOfPicks = @picks;
-	}
+    if (@picks) {
+        $NrOfPicks = @picks;
+    }
     $no = 0;
     $lastpick = '';
     $number = 0;
@@ -518,9 +524,9 @@ sub ForeachPick {
     for ($number = $no; $number <= $NrOfPicks; ++$number) {
         $no = $number;
         $pick = $picks[$number];
-        if($pick){
-			next if $lastpick eq $pick;
-		}
+        if ($pick) {
+            next if $lastpick eq $pick;
+        }
         &PrintResults if $number eq $NrOfPicks;
         $Picks = 1;
         $lastpick = $pick;
@@ -544,8 +550,7 @@ sub PlayBack {
         if ($Picks eq 1 and not $line =~ /^$pick #/) {
             next;
         }
-        elsif ($line =~ /^$pick # title=(.*) # time=(.*) # code=([\w-]{11}) # views=([\d]*) # desc=(.*)/ 
-			and $Picks eq 1) {
+        elsif ($line =~ /^$pick # title=(.*) # time=(.*) # code=([\w-]{11}) # views=([\d]*) # desc=(.*)/) {
             $title = $1;
             $duration = $2;
             $views = $4;
@@ -553,15 +558,6 @@ sub PlayBack {
             $desc = $5;
             &GetYouTube;
         }
-        elsif ($line =~ /# title=(.*) # time=(.*) # code=([\w-]{11}) # views=([\d]*) # desc=(.*)/ 
-			and not $Picks) {
-            $title = $1;
-            $duration = $2;
-            $views = $4;
-            $code = $3;
-            $desc = $5;
-        }
-        &GetYouTube;
     }
 }
 sub VideoCheck {
@@ -633,10 +629,51 @@ sub Description {
         $rating = $1;
         $rating =~ s/^(.+)\.([\d]{2})(.*)/$1.$2/;
     }
-    if (not $title and $connect->content =~ /\&title=([^\&]+)/) {
-        $title = $1;
-        $title =~ s/\+/ /g;
-        $title =~ s/%26/&/g;
+    unless ($title) {
+        $url = 'http://gdata.youtube.com/feeds/api/videos/' . $code;
+        $connect = $lwp->get($url);
+        if ($connect->content =~ m[media:title type='plain'>([^<]+)</media:title>]) {
+            $title = $1;
+            $title =~ s/&quot;/"/g;
+            $title =~ s/&amp;/&/g;
+            $title =~ s/&\#39;/'/g;
+            $title =~ s/&\#([\d]+);//g;
+            $title =~ s/&lt;/</g;
+            $title =~ s/&gt;/>/g;
+        }
+        if ($connect->content =~ /viewCount=['"]+([\d]+)/) {
+            $views = $1;
+            $views = reverse($views);
+            $views =~ s/([\d]{3})/$1./g;
+            $views = reverse($views);
+            $views =~ s/^\.//;
+        }
+        if ($connect->content =~ /rating average=['"]+([\d\.]+)/) {
+            $rating = $1;
+            $rating =~ s/^(.+)\.([\d]{2})(.*)/$1.$2/;
+        }
+        else {
+            $rating = '';
+        }
+        if ($connect->content =~ m[<published>([\d-]+)(.*)</published>]) {
+            chomp($date = $1);
+            $date =~ s/-/./g;
+            $date =~ s/(.+)\.(.+)\.(.+)/$3.$2.$1/;
+        }
+        else {
+            $date = '';
+        }
+        if ($connect->content =~ m[<media:description type='plain'>([^<]+)</media]) {
+            $desc = $1;
+        }
+        if ($connect->content =~ m[<author><name>([^<]+)</name>]) {
+            $author = $1;
+        }
+        if ($connect->content =~ /category label=['"]+([^'"]+)/) {
+            $category = $1;
+            $category =~ s/&amp;/&/;
+        }
+        print $connect->content;
     }
     if ($desc) {
         print "\n$bred=>> $reset";
@@ -683,10 +720,16 @@ sub Description {
     print "$bred <<=\n";
     print $reset;
     if ($connect->content =~ /\&author=([^&]+)/) {
-        print "\n* Author: $1\n";
+        $author = $1;
+    }
+    if ($author) {
+        print "\n* Author: $author\n";
     }
     if ($duration) {
         print "* Duration: $duration\n";
+    }
+    if ($category) {
+        print "* Category: $category\n";
     }
     if ($views) {
         $views = reverse($views);
@@ -698,24 +741,44 @@ sub Description {
     if ($rating) {
         print "* Rating: $rating\n";
     }
+    if ($date) {
+        print "* Published: $date\n";
+    }
     print '-' x 80 . "\n\n";
+}
+sub Edit_srt_file {
+    `perl -pi -e 's/&quot;/"/g' $srt_file`;
+    `perl -pi -e "s/&#39;/'/g" $srt_file`;
+}
+sub MPlayerLine_with_srt {
+    $MPlayerLine =~ s/ $MPlayer_srt_settings -sub(.*)$//;
+    $MPlayerLine .= " $MPlayer_srt_settings -sub $srt_file";
 }
 sub GetYouTube {
     $youtube = "http://www.youtube.com/get_video_info?&video_id=$code" . 
-               '&el=detailpage&ps=default&eurl=&gl=US&hl=en';
+    '&el=detailpage&ps=default&eurl=&gl=US&hl=en';
     $connect = $lwp->get($youtube);
     $url = "http://www.youtube.com/watch?v=$code";
-    if (-e '/usr/bin/gcap') {
-        $MPlayerLine =~ s/ -sub(.*)$//;
+    if (-e '/usr/bin/gcap' and not $MPlayerLine =~ / -novideo/) {
         chdir '/tmp/';
         print "\n";
         system "gcap $url";
         @ls = `ls`;
         $srt_file = '';
         foreach $line (@ls) {
-            if ($line =~ /$code([\w]*)\.srt\n/) {
-                $srt_file = "$code$1.srt";
-                $MPlayerLine .= " -sub $srt_file";
+            if ($line =~ /${code}_$default_sub\.srt/) {
+                $srt_file = "${code}_$default_sub.srt";
+                &Edit_srt_file;
+                &MPlayerLine_with_srt;
+            }
+        }
+        unless ($srt_file) {
+            foreach $line (@ls) {
+                if ($line =~ /$code([\w]*)\.srt/) {
+                    $srt_file = "$code$1.srt";
+                    &Edit_srt_file;
+                    &MPlayerLine_with_srt;
+                }
             }
         }
     }
@@ -734,7 +797,7 @@ sub GetYouTube {
         print $bred;
         print "\n(x_x) Something went wrong...\n\n";
         print $reset;
-        if (not $SearchBackup =~ / -p/ or not $NrOfPicks) {
+        unless ($SearchBackup =~ / -p/ and $NrOfPicks) {
             print "$unable\n";
         }
         if ($Search) {
@@ -778,8 +841,8 @@ sub ResolutionSearch {
     }
 }
 sub pick {
-    print "$bred=>>$reset $bgreen Please choose quality of video (default: 1)$reset
-";
+    print "$bred=>>$reset $bgreen Please choose quality of video (default: 1)";
+    print "\n$reset";
     print "
   $bred 1$reset - 1280x720  (720p)
   $bred 2$reset - 1920x1080 (1080p)
