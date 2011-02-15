@@ -627,11 +627,11 @@ sub VideoCheck {
 sub Description {
     if ($connect->content =~ /rating average=['"]+([\d\.]+)/) {
         $rating = $1;
-        $rating =~ s/^(.+)\.([\d]{2})(.*)/$1.$2/;
+        $rating =~ s/^(.+)\.([\d]{2}).*/$1.$2/;
     }
     unless ($title) {
-        $url = 'http://gdata.youtube.com/feeds/api/videos/' . $code;
-        $connect = $lwp->get($url);
+        $feed_url = 'http://gdata.youtube.com/feeds/api/videos/' . $code;
+        $connect = $lwp->get($feed_url);
         if ($connect->content =~ m[media:title type='plain'>([^<]+)</media:title>]) {
             $title = $1;
             $title =~ s/&quot;/"/g;
@@ -643,10 +643,6 @@ sub Description {
         }
         if ($connect->content =~ /viewCount=['"]+([\d]+)/) {
             $views = $1;
-            $views = reverse($views);
-            $views =~ s/([\d]{3})/$1./g;
-            $views = reverse($views);
-            $views =~ s/^\.//;
         }
         if ($connect->content =~ /rating average=['"]+([\d\.]+)/) {
             $rating = $1;
@@ -673,7 +669,6 @@ sub Description {
             $category = $1;
             $category =~ s/&amp;/&/;
         }
-        print $connect->content;
     }
     if ($desc) {
         print "\n$bred=>> $reset";
