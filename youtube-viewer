@@ -746,7 +746,6 @@ sub Edit_srt_file {
     `perl -pi -e "s/&#39;/'/g" $srt_file`;
 }
 sub MPlayerLine_with_srt {
-    $MPlayerLine =~ s/ $MPlayer_srt_settings -sub(.*)$//;
     $MPlayerLine .= " $MPlayer_srt_settings -sub $srt_file";
 }
 sub GetYouTube {
@@ -754,6 +753,7 @@ sub GetYouTube {
     '&el=detailpage&ps=default&eurl=&gl=US&hl=en';
     $connect = $lwp->get($youtube);
     $url = "http://www.youtube.com/watch?v=$code";
+    $MPlayerLine =~ s/ $MPlayer_srt_settings -sub(.*)$//;
     if (-e '/usr/bin/gcap' and not $MPlayerLine =~ / -novideo/ 
     and $connect->content =~ /&has_cc=True&/) {
         chdir '/tmp/';
