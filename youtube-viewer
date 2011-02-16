@@ -754,7 +754,7 @@ sub GetYouTube {
     '&el=detailpage&ps=default&eurl=&gl=US&hl=en';
     $connect = $lwp->get($youtube);
     $url = "http://www.youtube.com/watch?v=$code";
-    if (-e '/usr/bin/gcap' and not $MPlayerLine =~ / -novideo/) {
+    if (-e '/usr/bin/gcap' and not $MPlayerLine =~ / -novideo/ and $connect =~ /&has_cc=True&/) {
         chdir '/tmp/';
         print "\n";
         system "gcap $url";
