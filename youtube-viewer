@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
 #
 # Copyright (C) 2010-2011 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
@@ -67,7 +67,9 @@
  - everybody who use this script...
 =cut
 
-require LWP::UserAgent;
+use URI::Escape;
+use HTML::Entities;
+
 $os = $^O;
 $appname = 'youtube-viewer';
 $version = 'v2.4.8';
@@ -87,10 +89,19 @@ if ($os =~ /MSWin/) {
 else {
     $MPlayerLine = "mplayer $mplayer_settings";
 }
-$lwp = 'LWP::UserAgent'->new;
-$lwp->agent('Mozilla/5.0 (X11; U; Linux i686; en-US) Chrome/10.0.648.45');
-$lwp->env_proxy;
-$lwp->timeout(10);
+if ($a) {
+    unless ($a =~ /^[-]+h/) {
+        &UserAgent;
+    }
+}
+sub UserAgent {
+    require LWP::UserAgent;
+    $lwp = 'LWP::UserAgent'->new;
+    $lwp->agent('Mozilla/5.0 (X11; U; Linux i686; en-US) Chrome/10.0.648.45');
+    $lwp->env_proxy;
+    $lwp->timeout(10);
+    $lwp_is_set = 1;
+}
 unless ($os =~ /MSWin/) {
     $bred = "\e[1;31m";
     $bgreen = "\e[1;32m";
@@ -160,9 +171,12 @@ if (not $a or $a =~ /^[-]+(([471]+)|f|m|n)/ and not $b) {
 if ($a) {
     $a =~ s[http://.*embed/][]i;
     if ($a =~ m[^http://] and not $a =~ /youtube\.com/) {
+        unless ($lwp_is_set) {
+            &UserAgent;
+        }
         $connect = $lwp->get($a);
-        if ($connect->content =~ m[youtube.com/v/([\w-]{11})]) {
-            $code = $1;
+        if ($connect->content =~ m[youtube\.com/(v|embed)/([\w-]{11})]) {
+            $code = $2;
             &GetYouTube;
         }
     }
@@ -175,6 +189,9 @@ sub InsertURL {
         &GetYouTube;
     }
     elsif ($youtube =~ m[^http://] and not $youtube =~ /youtube\.com/) {
+        unless ($lwp_is_set) {
+            &UserAgent;
+        }
         $connect = $lwp->get($youtube);
         if ($connect->content =~ m[youtube.com/v/([\w-]{11})]) {
             $code = $1;
@@ -224,6 +241,9 @@ if ($a =~ /^[-]+c/) {
         $PickBackup = $b;
     }
     $NextPage = 0;
+    unless ($lwp_is_set) {
+        &UserAgent;
+    }
     $connect = $lwp->get('http://gdata.youtube.com/schemas/2007/categories.cat');
     $content = $connect->content;
     $content =~ s/category term=/\ncategory_name=/g;
@@ -235,7 +255,7 @@ if ($a =~ /^[-]+c/) {
             ++$n;
             $cat_name = $1;
             $cat_label = $2;
-            $cat_label =~ s/&amp;/&/;
+            $cat_label = decode_entities($cat_label);
             if ($n < 10) {
                 print ' ';
             }
@@ -289,9 +309,10 @@ sub YoutubeAPI {
     if ($MoreResults) {
         $yt_api_url =~ s/20$/50/;
     }
-    $connect = $lwp->get($yt_api_url);
-    $yt_api_url = 'http://gdata.youtube.com/feeds/api/standardfeeds/recently_featured_';
-    $cc = $connect->content;
+    unless ($lwp_is_set) {
+        &UserAgent;
+    }
+    $cc = $lwp->get($yt_api_url)->content;
     if ($cc eq 'User not found') {
         die "\n(x_x) $cc...\n\n";
     }
@@ -299,7 +320,7 @@ sub YoutubeAPI {
     &PrintResults;
     $youtube_via_api = 0;
 }
-if ($a =~ m[youtube.com(.+)v[=/]+([\w-]{11})]) {
+if ($a =~ m[youtube\.com.+(v|embed)[=/]+([\w-]{11})]) {
     $code = $2;
     print $bgreen . "$Working";
     &GetYouTube;
@@ -362,11 +383,15 @@ sub Trizen {
     $FirstPage = 1;
     $SearchBackup .= ' ' . $Search;
     $Search =~ s/ [-]+([\d]+)| -p| [-]+m[^\s]*| [-]+f[^\s]*| [-]+n[^\s]*//g;
+    $Search =~ s/^\s|\s$//g;
+    $Search = uri_escape($Search);
+    $ys = "http://gdata.youtube.com/feeds/api/videos?q=$Search&max-results=20";
     if ($MoreResults and $ys) {
         $ys =~ s/20$/50/;
     }
-    $Search =~ s/ /%20/g;
-    $ys = "http://gdata.youtube.com/feeds/api/videos?q=$Search&max-results=20";
+    unless ($lwp_is_set) {
+        &UserAgent;
+    }
     $connect = $lwp->get($ys);
     @content = split(?\n?, $connect->content, 0);
     &Search;
@@ -381,6 +406,7 @@ sub Parse {
         &Parse;
         &PrintResults;
     }
+    $n = 0;
     foreach $_ (@content) {
         next unless $_ =~ /^TITLE=/;
         if ($_ =~ m[</media\:description>]) {
@@ -419,10 +445,8 @@ sub PrintResults {
                     $time = "$1:0$2";
                 }
             }
-            $title =~ s/&\#39;/'/g;
-            $title =~ s/\&amp;/&/g;
-            $title =~ s/\&quot;/"/g;
-            $title =~ s/\&amp;\#([\d]+);|amp;|quot;//g;
+            $title = uri_unescape($title);
+            $title = decode_entities($title);
             push @codes, "$number # title=$title # time=$time # code=$code # views=$views # desc=$desc";
             print "$bred";
             if ($number < 10) {
@@ -450,8 +474,8 @@ sub PrintResults {
     }
     if ($PickBackup =~ m[^http://] and not $PickBackup =~ /youtube\.com/) {
         $connect = $lwp->get($PickBackup);
-        if ($connect->content =~ m[youtube\.com/v/([\w-]{11})]) {
-            $code = $1;
+        if ($connect->content =~ m[youtube\.com/(v|embed)/([\w-]{11})]) {
+            $code = $2;
             &GetYouTube;
         }
     }
@@ -487,7 +511,7 @@ sub PrintResults {
         &PrintResults;
     }
     if ($youtube eq 'all') {
-        $SearchBackup .= '  --1080';
+        $SearchBackup .= ' --1080';
         splice @picks;
         for ($i = 1; $i <= $number; ++$i) {
             push @picks, "$i";
@@ -633,13 +657,8 @@ sub Description {
         $feed_url = 'http://gdata.youtube.com/feeds/api/videos/' . $code;
         $connect = $lwp->get($feed_url);
         if ($connect->content =~ m[media:title type='plain'>([^<]+)</media:title>]) {
-            $title = $1;
-            $title =~ s/&quot;/"/g;
-            $title =~ s/&amp;/&/g;
-            $title =~ s/&\#39;/'/g;
-            $title =~ s/&\#([\d]+);//g;
-            $title =~ s/&lt;/</g;
-            $title =~ s/&gt;/>/g;
+            $title = uri_unescape($1);
+            $title = decode_entities($title);
         }
         if ($connect->content =~ /viewCount=['"]+([\d]+)/) {
             $views = $1;
@@ -666,8 +685,7 @@ sub Description {
             $author = $1;
         }
         if ($connect->content =~ /category label=['"]+([^'"]+)/) {
-            $category = $1;
-            $category =~ s/&amp;/&/;
+            $category = decode_entities($1);
         }
     }
     if ($desc) {
@@ -676,11 +694,8 @@ sub Description {
         print "$title\n";
         print $reset;
         print '-' x 80;
-        $description = $desc;
-        $description =~ s/&amp;/&/g;
-        $description =~ s/\&quot;/"/g;
-        $description =~ s/\&\#39;/'/g;
-        $description =~ s/\&\#([\d]+);//g;
+        $description = uri_unescape($desc);
+        $description = decode_entities($description);
         print "\n$description\n";
         print '-' x 80 . "\n";
     }
@@ -751,11 +766,13 @@ sub MPlayerLine_with_srt {
 sub GetYouTube {
     $youtube = "http://www.youtube.com/get_video_info?&video_id=$code" . 
     '&el=detailpage&ps=default&eurl=&gl=US&hl=en';
+    unless ($lwp_is_set) {
+        &UserAgent;
+    }
     $connect = $lwp->get($youtube);
     $url = "http://www.youtube.com/watch?v=$code";
     $MPlayerLine =~ s/ $MPlayer_srt_settings -sub(.*)$//;
-    if (-e '/usr/bin/gcap' and not $MPlayerLine =~ / -novideo/ 
-    and $connect->content =~ /&has_cc=True&/) {
+    if (-e '/usr/bin/gcap' and not $MPlayerLine =~ / -novideo/ and $connect->content =~ /&has_cc=True&/) {
         chdir '/tmp/';
         print "\n";
         system "gcap $url";
