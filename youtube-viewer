@@ -170,12 +170,16 @@ if (not $a or $a =~ /^[-]+(([471]+)|f|m|n)/ and not $b) {
 }
 $all_args = join('', @ARGV);
 if ($all_args) {
+	$lastcode = '';
     if ($all_args =~ m[(v|embed)[=/]+([\w-]{11}).+(v|embed)[=/]+([\w-]{11})]) {
         foreach $code (@ARGV) {
+			next if $code eq $lastcode;
             if ($code =~ m[(v|embed)[=/]+([\w-]{11})]) {
                 $code = $2;
                 $dont_exit = 1;
+                $title = '';
                 &GetYouTube;
+                $lastcode = $code;
             }
             else {
                 next;
