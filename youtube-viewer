@@ -19,7 +19,7 @@
 =start
 -------------------------------------------------------
   (C) 2010-2011 by Trizen
-  WebSite: http://trizen.go.ro
+  Website: http://trizen.go.ro
   Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 -------------------------------------------------------
 
@@ -168,6 +168,22 @@ if ($args[0]) {
 if (not $a or $a =~ /^[-]+(([471]+)|f|m|n)/ and not $b) {
     &InsertURL;
 }
+$all_args = join('', @ARGV);
+if ($all_args) {
+    if ($all_args =~ m[(v|embed)[=/]+([\w-]{11}).+(v|embed)[=/]+([\w-]{11})]) {
+        foreach $code (@ARGV) {
+            if ($code =~ m[(v|embed)[=/]+([\w-]{11})]) {
+                $code = $2;
+                $dont_exit = 1;
+                &GetYouTube;
+            }
+            else {
+                next;
+            }
+        }
+        exit;
+    }
+}
 if ($a) {
     $a =~ s[http://.*embed/][]i;
     if ($a =~ m[^http://] and not $a =~ /youtube\.com/) {
@@ -291,7 +307,9 @@ sub MPlayer {
     if ($Search or $a =~ /^[-]+c/ or $username eq 1) {
         &PrintResults;
     }
-    exit;
+    unless ($dont_exit) {
+        exit;
+    }
 }
 sub YoutubeAPI {
     splice @Videos;
@@ -406,7 +424,6 @@ sub Parse {
         &Parse;
         &PrintResults;
     }
-    $n = 0;
     foreach $_ (@content) {
         next unless $_ =~ /^TITLE=/;
         if ($_ =~ m[</media\:description>]) {
