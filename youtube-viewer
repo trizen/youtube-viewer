@@ -76,8 +76,8 @@ $version = 'v2.4.8';
 $mplayer_settings = '-prefer-ipv4 -cache 30000 -cache-min 5';
 $MPlayer_srt_settings = '-unicode -utf8';
 foreach $_ (@ARGV) {
-    if ($_ =~ /^-sub=([\w]+)/) {
-        $default_sub = "\L$1\E";
+    if ($_ =~ /^[-]+(sub|lang)=([\w]+)/) {
+        $default_sub = "\L$2\E";
     }
 }
 unless ($default_sub) {
@@ -168,18 +168,15 @@ if ($args[0]) {
 if (not $a or $a =~ /^[-]+(([471]+)|f|m|n)/ and not $b) {
     &InsertURL;
 }
-$all_args = join('', @ARGV);
+$all_args = join(' ', @ARGV);
 if ($all_args) {
-	$lastcode = '';
-    if ($all_args =~ m[(v|embed)[=/]+([\w-]{11}).+(v|embed)[=/]+([\w-]{11})]) {
+    if ($all_args =~ m[(v|embed)[=/]+([\w-]{11}).*(v|embed)[=/]+([\w-]{11})]) {
         foreach $code (@ARGV) {
-			next if $code eq $lastcode;
             if ($code =~ m[(v|embed)[=/]+([\w-]{11})]) {
                 $code = $2;
                 $dont_exit = 1;
                 $title = '';
                 &GetYouTube;
-                $lastcode = $code;
             }
             else {
                 next;
@@ -399,12 +396,14 @@ elsif (not $a =~ /^[-]+((4|7|1)|p|n|f|m)/ and $a =~ /^-/) {
     die "Unknown option '${a}'\n";
 }
 $Search = join(' ', @args) . ' ';
-&Trizen;
+unless ($dont_exit) {
+    &Trizen;
+}
 sub Trizen {
     $PageNumber = 1;
     $FirstPage = 1;
     $SearchBackup .= ' ' . $Search;
-    $Search =~ s/ [-]+([\d]+)| -p| [-]+m[^\s]*| [-]+f[^\s]*| [-]+n[^\s]*//g;
+    $Search =~ s/ [-]+([\d]+)| -p| [-]+m[^\s]*| [-]+f[^\s]*| [-]+n[^\s]*| [-]+(sub|lang)[^\s]*//g;
     $Search =~ s/^\s|\s$//g;
     $Search = uri_escape($Search);
     $ys = "http://gdata.youtube.com/feeds/api/videos?q=$Search&max-results=20";
@@ -617,7 +616,7 @@ sub VideoCheck {
         &Description;
         &MPlayer;
     }
-    if ($b =~ /^[-]+4/ or $PickBackup =~ / [-]+4/ or $SearchBackup =~ / [-]+4/) {
+    elsif ($b =~ /^[-]+4/ or $PickBackup =~ / [-]+4/ or $SearchBackup =~ / [-]+4/) {
         $streaming =~ s/(.*)http(.+)itag=34([^\%]*)(.+)/http$2itag=34$3/;
         unless ($SearchBackup =~ / [-]+f/) {
             $MPlayerLine =~ s/-fs //;
@@ -625,7 +624,7 @@ sub VideoCheck {
         &Description;
         &MPlayer;
     }
-    if ($b =~ /^[-]+7/ or $PickBackup =~ / [-]+7/ or $SearchBackup =~ / [-]+7/) {
+    elsif ($b =~ /^[-]+7/ or $PickBackup =~ / [-]+7/ or $SearchBackup =~ / [-]+7/) {
         if ($streaming =~ /itag=22/) {
             $streaming =~ s/(.*)http(.+)itag=22([^\%]*)(.+)/http$2itag=22$3/;
             $MPlayerLine =~ s/mplayer -p/mplayer -fs -p/;
@@ -642,7 +641,7 @@ sub VideoCheck {
             &MPlayer;
         }
     }
-    if ($b =~ /^[-]+1/ or $PickBackup =~ / [-]+1/ or $SearchBackup =~ / [-]+1/) {
+    elsif ($b =~ /^[-]+1/ or $PickBackup =~ / [-]+1/ or $SearchBackup =~ / [-]+1/) {
         if ($streaming =~ /itag=37/) {
             $streaming =~ s/(.*)http(.+)itag=37([^\%]*)(.+)/http$2itag=37$3/;
             $MPlayerLine =~ s/mplayer -p/mplayer -fs -p/;
@@ -666,8 +665,10 @@ sub VideoCheck {
             &MPlayer;
         }
     }
-    &Description;
-    &ResolutionSearch;
+    if (not $dont_exit && $all_args =~ / [-]+(1|7|4)/) {
+        &Description;
+        &ResolutionSearch;
+    }
 }
 sub Description {
     if ($connect->content =~ /rating average=['"]+([\d\.]+)/) {
@@ -841,7 +842,7 @@ sub GetYouTube {
             }
         }
         else {
-            unless ($a =~ /^[-]+c/ or $username) {
+            unless ($a =~ /^[-]+c/ or $username or $dont_exit) {
                 exit;
             }
         }
@@ -860,7 +861,7 @@ sub ResolutionSearch {
             &MPlayer;
         }
     }
-    if ($streaming =~ /itag=22/) {
+    elsif ($streaming =~ /itag=22/) {
         $streaming =~ s/(.*)http(.+)itag=22([^\%]*)(.+)/http$2itag=22$3/;
         $MPlayerLine =~ s/mplayer -p/mplayer -fs -p/;
         $MPlayerLine =~ s/mplayer.exe" -p/mplayer.exe" -fs -p/;
