@@ -65,9 +65,6 @@
  Special thanks to:
  - Army (for bugs reports and for his great ideas)
  - dhn (for adding youtube-viewer in freshports.org)
- 
- And also many thanks to:
- - everybody who use this script...
 =cut
 
 use URI::Escape;
@@ -117,7 +114,7 @@ unless ($b) {
 unless ($a) {
     $a = '';
 }
-if ($a =~ /^(-v|--version)$/) {
+if ($a =~ /^[-]+(v|version)$/) {
     $appname =~ s/-/ /;
     $appname =~ s/(.)(.+) (.)/\U$1\E\L$2 \E\U$3\E/g;
     print "$appname $version\n";
@@ -153,7 +150,7 @@ unless ($all_set) {
 if ($args[0]) {
     foreach $arg (@args) {
         next unless $arg =~ /^-/;
-        $arg =~ s/--novideo/-n/;
+        $arg =~ s/--no[-]?video/-n/;
         $arg =~ s/--categories/-c/;
         $arg =~ s/^[-]+f(.*)/-f/;
         if ($arg eq '-n') {
@@ -175,35 +172,58 @@ if ($args[0]) {
         }
     }
 }
-if (not $a or $a =~ /^[-]+(([471]+)|f|m|n)/ and not $b) {
-    &InsertURL;
+foreach $arg (@ARGV) {
+    if ($arg eq '-c') {
+        &Categories_area;
+    }
+    if ($arg eq '-u') {
+        &Videos_from_username;
+    }
 }
-$all_args = join(' ', @ARGV);
-if ($all_args) {
-    if ($all_args =~ m[(v|embed)[=/]+([\w-]{11}).*(v|embed)[=/]+([\w-]{11})]) {
-        foreach $code (@ARGV) {
-            if ($code =~ m[(v|embed)[=/]+([\w-]{11})]) {
-                $code = $2;
-                $dont_exit = 1;
-                $title = '';
+if (not $a or $a =~ /^[-]+/ and not $b) {
+    if (length $a ne 11) {
+        &InsertURL;
+    }
+}
+foreach $code (@ARGV) {
+    if ($code =~ /^([\w-]{11})$/) {
+        $code = $1;
+        if ($code =~ /([\d]+)|([A-Z]+)|-/) {
+            $dont_exit = 1;
+            $title = '';
+            if (length $code eq 11) {
                 &GetYouTube;
             } else {
                 next;
             }
         }
-        exit;
+    } elsif ($code =~ m[(v|embed)[=/]+([\w-]{11})]) {
+        $code = $2;
+        $dont_exit = 1;
+        $title = '';
+        if (length $code eq 11) {
+            &GetYouTube;
+        } else {
+            next;
+        }
+    } elsif ($code =~ m[^http://] and not $code =~ /youtube\.com/) {
+        &code_from_content($code);
+    } else {
+        next;
     }
 }
-if ($a) {
-    $a =~ s[http://.*embed/][]i;
-    if ($a =~ m[^http://] and not $a =~ /youtube\.com/) {
-        unless ($lwp_is_set) {
-            &UserAgent;
-        }
-        $connect = $lwp->get($a);
-        if ($connect->content =~ m[youtube\.com/(v|embed)/([\w-]{11})]) {
-            $code = $2;
+sub code_from_content {
+    $url = shift @_;
+    unless ($lwp_is_set) {
+        &UserAgent;
+    }
+    $connect = $lwp->get($url);
+    if ($connect->content =~ m[youtube\.com/(v|embed)/([\w-]{11})]) {
+        $code = $2;
+        if (length $code eq 11) {
             &GetYouTube;
+        } else {
+            next;
         }
     }
 }
@@ -212,26 +232,19 @@ sub InsertURL {
 $bred=>>$reset$bgreen Insert an YouTube URL or search something...
 $reset> ";
     chomp($youtube = <STDIN>);
-    if ($youtube =~ m[v[=/]+([\w-]{11})]) {
-        $code = $1;
+    if ($youtube =~ m[(v|embed)[=/]+([\w-]{11})]) {
+        $code = $2;
         &GetYouTube;
     } elsif ($youtube =~ m[^http://] and not $youtube =~ /youtube\.com/) {
-        unless ($lwp_is_set) {
-            &UserAgent;
-        }
-        $connect = $lwp->get($youtube);
-        if ($connect->content =~ m[youtube.com/v/([\w-]{11})]) {
-            $code = $1;
-            &GetYouTube;
-        }
-    } elsif (not $youtube =~ m[youtube.com(.+)v([=/]+)([\w-]{11})] and $youtube) {
+        &code_from_content($youtube);
+    } elsif ($youtube) {
         $SearchBackup .= ' ' . $youtube;
         $Search = $youtube;
         $number = 0;
         &Trizen;
     } else {
         print $bred;
-        print "\n(x_x) Invalid URL...\n\n";
+        print "\n(x_x) Unable to continue...\n\n";
         print $reset;
         exit;
     }
@@ -246,19 +259,22 @@ if ($categories) {
         $catnr = '';
     }
 }
-if ($a =~ /^[-]+u/ and not $b) {
-    die "\nUsage:  $0 -u [username]\n\t$0 [username] -u\n\n";
-}
-if ($a =~ /^[-]+u/ and $b or $b =~ /^[-]+u/) {
-    if ($b =~ /^[-]+u/) {
-        $b = $a;
+sub Videos_from_username {
+    if ($a =~ /^[-]+u/ and not $b) {
+        die "\nUsage:  $0 -u [username]\n\t$0 [username] -u\n\n";
     }
-    $username = 1;
-    $NextPage = 0;
-    $yt_api_url = "http://gdata.youtube.com/feeds/api/users/$b/uploads";
-    &YoutubeAPI;
+    if ($a =~ /^[-]+u/ and $b or $b =~ /^[-]+u/) {
+        if ($b =~ /^[-]+u/) {
+            $user = $a;
+        } else {
+            $user = $b;
+        }
+        $username = 1;
+        $yt_api_url = "http://gdata.youtube.com/feeds/api/users/$user/uploads";
+        &YoutubeAPI;
+    }
 }
-if ($a =~ /^[-]+c/) {
+sub Categories_area {
     if ($b =~ /[-]+[\d]+/) {
         $PickBackup = $b;
     }
@@ -287,7 +303,7 @@ if ($a =~ /^[-]+c/) {
     }
     if (not $catnr) {
         print $bgreen;
-        print "\n=>> Insert the number of a category\n> ";
+        print "\n=>> Insert a category number\n> ";
         print $reset;
         chomp($pickcat = <STDIN>);
     } else {
@@ -303,7 +319,7 @@ if ($a =~ /^[-]+c/) {
 sub MPlayer {
     $youtube = '';
     if ($Download_video) {
-        $title =~ s[/][]g;
+        $title =~ s[/][|]g;
         $title = quotemeta $title;
         system qq[wget "$streaming" -O $title.mp4];
     } else {
@@ -315,11 +331,14 @@ sub MPlayer {
             &ForeachPick;
         }
     }
-    if ($Search =~ m[[=/]([\w\-]{11})] and not $dont_exit) {
+    if ($Search =~ m[[=/]+([\w\-]{11})] and not $dont_exit) {
         exit;
     }
     if ($Search or $a =~ /^[-]+c/ or $username eq 1) {
         unless ($dont_exit) {
+            $category = '';
+            $rating = '';
+            $date = '';
             &PrintResults;
         }
     }
@@ -351,16 +370,6 @@ sub YoutubeAPI {
     &Parse;
     &PrintResults;
     $youtube_via_api = 0;
-}
-if ($a =~ m[youtube\.com.+(v|embed)[=/]+([\w-]{11})]) {
-    $code = $2;
-    &GetYouTube;
-}
-if ($a =~ /^([\w-]{11})$/) {
-    $code = $1;
-    if ($a =~ /([\d]+)|([A-Z]+)|-/) {
-        &GetYouTube;
-    }
 }
 if ($a =~ /^-h$/ or $a =~ /^[-]+help$/) {
     $appname =~ s/(.+)/\U$1\E/g;
@@ -400,10 +409,6 @@ Tips and tricks:
   7. After search results, press <ENTER> for the next page
 
 ];
-} elsif (not $Search) {
-    &InsertURL;
-} elsif (not $a =~ /^[-]+((4|7|1)|p|n|f|m|u)/ and $a =~ /^-/) {
-    die "Unknown option '${a}'\n";
 }
 unless ($dont_exit) {
     &Trizen;
@@ -441,9 +446,9 @@ sub Parse {
     foreach $_ (@content) {
         next unless $_ =~ /^TITLE=/;
         if ($_ =~ m[</media\:description>]) {
-            $_ =~ s[TITLE\=([^\<]+)</title>(.+)v\=([\w\-]{11})(.+)duration([^']*)'([\d\:]+)'(.+)<media\:description type='plain'>([^<]*)(.*)viewCount='([\d]*)'(.*)][v=$3+title=$1>+video-time">$6>views=$10>description=$8];
+            $_ =~ s[TITLE=([^\<]+)</title>(.+)v=([\w\-]{11})(.+)duration([^']*)'([\d\:]+)'(.+)<media:description type='plain'>([^<]*)(.*)viewCount='([\d]*)'(.*)][v=$3+title=$1>+video-time">$6>views=$10>description=$8];
         } else {
-            $_ =~ s[TITLE\=([^\<]+)</title>(.+)v\=([\w\-]{11})(.+)duration([^']*)'([\d\:]+)'(.*)viewCount='([\d]*)'(.*)][v=$3+title=$1>+video-time">$6>views=$8>description=No description available...];
+            $_ =~ s[TITLE=([^\<]+)</title>(.+)v=([\w\-]{11})(.+)duration([^']*)'([\d\:]+)'(.*)viewCount='([\d]*)'(.*)][v=$3+title=$1>+video-time">$6>views=$8>description=No description available...];
         }
         push @Videos, $_;
     }
@@ -454,7 +459,7 @@ sub PrintResults {
     print "\n";
     foreach $_ (@Videos) {
         chomp($line = $_);
-        if ($line =~ /v\=([\w\-]{11})(.*)title=([^>]+)>\+(.*)\-time\">([\d\:]*)>views=([\d]*)>description=(.*)/) {
+        if ($line =~ /v=([\w\-]{11})(.*)title=([^>]+)>\+(.*)-time">([\d\:]*)>views=([\d]*)>description=(.*)/) {
             ++$number;
             $title = $3;
             $code = $1;
@@ -501,15 +506,12 @@ $bred=>>$reset$bgreen Insert a number or search something else
 $reset> ";
     chomp($youtube = <STDIN>);
     $PickBackup = $youtube;
+    $SearchBackup .= ' ' . $youtube;
     if ($youtube =~ /^(q|quit|exit)$/) {
         exit;
     }
     if ($PickBackup =~ m[^http://] and not $PickBackup =~ /youtube\.com/) {
-        $connect = $lwp->get($PickBackup);
-        if ($connect->content =~ m[youtube\.com/(v|embed)/([\w-]{11})]) {
-            $code = $2;
-            &GetYouTube;
-        }
+        &code_from_content($PickBackup);
     }
     if ($PickBackup =~ /([\d]+) [-]+([\d]+)/) {
         $youtube = $1;
@@ -632,14 +634,14 @@ sub VideoCheck {
         }
         &Description;
         &MPlayer;
-    } elsif ($PickBackup =~ / [-]+4/ or $SearchBackup =~ / [-]+4/) {
+    } elsif ($SearchBackup =~ / [-]+4/) {
         $streaming =~ s/(.*)http(.+)itag=34([^\%]*)(.+)/http$2itag=34$3/;
         unless ($SearchBackup =~ / [-]+f/) {
             $MPlayerLine =~ s/-fs //;
         }
         &Description;
         &MPlayer;
-    } elsif ($PickBackup =~ / [-]+7/ or $SearchBackup =~ / [-]+7/) {
+    } elsif ($SearchBackup =~ / [-]+7/) {
         if ($streaming =~ /itag=22/) {
             $streaming =~ s/(.*)http(.+)itag=22([^\%]*)(.+)/http$2itag=22$3/;
             &Fullscreen_check;
@@ -653,7 +655,7 @@ sub VideoCheck {
             &Description;
             &MPlayer;
         }
-    } elsif ($PickBackup =~ / [-]+1/ or $SearchBackup =~ / [-]+1/) {
+    } elsif ($SearchBackup =~ / [-]+1/) {
         if ($streaming =~ /itag=37/) {
             $streaming =~ s/(.*)http(.+)itag=37([^\%]*)(.+)/http$2itag=37$3/;
             &Fullscreen_check;
@@ -681,7 +683,10 @@ sub VideoCheck {
 sub Description {
     if ($connect->content =~ /rating average=['"]+([\d\.]+)/) {
         $rating = $1;
-        $rating =~ s/^(.+)\.([\d]{2}).*/$1.$2/;
+        $rating =~ s/^([\d\.]{4}).*/$1/;
+    } elsif ($connect->content =~ /avg_rating=([^&]+)/) {
+        $rating = $1;
+        $rating =~ s/^([\d\.]{4}).*/$1/;
     }
     unless ($title) {
         $feed_url = 'http://gdata.youtube.com/feeds/api/videos/' . $code;
@@ -692,12 +697,6 @@ sub Description {
         }
         if ($connect->content =~ /viewCount=['"]+([\d]+)/) {
             $views = $1;
-        }
-        if ($connect->content =~ /rating average=['"]+([\d\.]+)/) {
-            $rating = $1;
-            $rating =~ s/^(.+)\.([\d]{2})(.*)/$1.$2/;
-        } else {
-            $rating = '';
         }
         if ($connect->content =~ m[<published>([\d-]+)(.*)</published>]) {
             chomp($date = $1);
@@ -766,15 +765,15 @@ sub Description {
     if ($category) {
         print "* Category: $category\n";
     }
+    if ($rating) {
+        print "* Rating: $rating\n";
+    }
     if ($views) {
         $views = reverse($views);
         $views =~ s/([\d]{3})/$1./g;
         $views = reverse($views);
         $views =~ s/^\.//;
         print "* Views: $views\n";
-    }
-    if ($rating) {
-        print "* Rating: $rating\n";
     }
     if ($date) {
         print "* Published: $date\n";
@@ -831,14 +830,14 @@ sub GetYouTube {
         $streaming =~ s/%252C/,/gi;
         &VideoCheck;
     } else {
-        $unable = "$bred(x_x) Unable to play: $reset$url\n";
+        $unable = "$bred(x_x) Unable to stream: $reset$url\n";
         print $bred;
         print "\n(x_x) Something went wrong...\n\n";
         print $reset;
         unless ($SearchBackup =~ / -p/ and $NrOfPicks) {
             print "$unable\n";
         }
-        if ($Search) {
+        if ($Search and not $dont_exit) {
             unless ($SearchBackup =~ / -p/) {
                 sleep 1;
                 &PrintResults;
