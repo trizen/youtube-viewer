@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 #
 # Copyright (C) 2010-2011 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
@@ -88,11 +88,6 @@ if ($os =~ /MSWin/) {
 } else {
     $MPlayerLine = "mplayer $mplayer_settings";
 }
-if ($a) {
-    unless ($a =~ /^[-]+h/) {
-        &UserAgent;
-    }
-}
 sub UserAgent {
     require LWP::UserAgent;
     $lwp = 'LWP::UserAgent'->new;
@@ -114,13 +109,8 @@ unless ($b) {
 unless ($a) {
     $a = '';
 }
-if ($a =~ /^[-]+(v|version)$/) {
-    $appname =~ s/-/ /;
-    $appname =~ s/(.)(.+) (.)/\U$1\E\L$2 \E\U$3\E/g;
-    print "$appname $version\n";
-    exit;
-}
 my($Picks, $pickcat);
+$catnr = '';
 $Search = '';
 $PickBackup = '';
 $SearchBackup = '';
@@ -131,9 +121,6 @@ $username = 0;
 $pick = '';
 $app = $0;
 $app =~ s[(.*)/([^/]+)$][$2];
-for ($n = 0; $n <= $#ARGV; ++$n) {
-    push @args, $ARGV[$n];
-}
 unless ($all_set) {
     foreach $arg (@ARGV) {
         if ($arg =~ /^-/) {
@@ -147,29 +134,31 @@ unless ($all_set) {
     }
     $all_set = 1;
 }
-if ($args[0]) {
-    foreach $arg (@args) {
-        next unless $arg =~ /^-/;
-        $arg =~ s/--no[-]?video/-n/;
-        $arg =~ s/--categories/-c/;
-        $arg =~ s/^[-]+f(.*)/-f/;
-        if ($arg eq '-n') {
-            $MPlayerLine =~ s/mplayer /mplayer -novideo /;
-            $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -novideo/;
-            $SearchBackup .= ' --480';
-        }
-        if ($arg eq '-c') {
-            $categories = 'TRUE';
-        }
-        if ($arg eq '-m' or $arg eq '-p') {
-            $MoreResults = 1;
-        } else {
-            $MoreResults = 0;
-        }
-        if ($arg eq '-f') {
-            $MPlayerLine =~ s/mplayer /mplayer -fs /;
-            $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -fs/;
-        }
+$all_args = join('', @ARGV);
+foreach $arg (@ARGV) {
+    next unless $arg =~ /^-/;
+    $arg =~ s/--no[-]?video/-n/;
+    $arg =~ s/--categories/-c/;
+    $arg =~ s/^[-]+f(.*)/-f/;
+    if ($arg eq '-n') {
+        $MPlayerLine =~ s/mplayer /mplayer -novideo /;
+        $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -novideo/;
+        $SearchBackup .= ' --480';
+    }
+    if ($arg eq '-c') {
+        $categories = 'TRUE';
+    }
+    if ($arg eq '-m' or $arg eq '-p') {
+        $MoreResults = 1;
+    } else {
+        $MoreResults = 0;
+    }
+    if ($arg eq '-f') {
+        $MPlayerLine =~ s/mplayer /mplayer -fs /;
+        $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -fs/;
+    }
+    if ($categories and $arg =~ /^([\d]+)$/) {
+        $catnr = $1;
     }
 }
 foreach $arg (@ARGV) {
@@ -178,6 +167,12 @@ foreach $arg (@ARGV) {
     }
     if ($arg eq '-u') {
         &Videos_from_username;
+    }
+    if ($arg =~ /^[-]+(h|help|\?)$/) {
+        &help;
+    }
+    if ($arg =~ /^[-]+(v|version)$/) {
+        &version;
     }
 }
 if (not $a or $a =~ /^[-]+/ and not $b) {
@@ -211,6 +206,51 @@ foreach $code (@ARGV) {
     } else {
         next;
     }
+}
+sub help {
+    $appname =~ s/(.+)/\U$1\E/g;
+    die "
+\t" . '=' x 17 . " $appname " . '=' x 17 . qq[
+\t\t\t\t  by Trizen (trizen.go.ro)
+
+ Usage: youtube-viewer [<url> | <video_id>] [-(4|7|1)] 
+                       [-u <username>] [-c] [<keywords>] [-(f|n|m|p)] 
+
+Base Options: youtube-viewer [...]
+   <url>                : play an YouTube video by URL
+   <code>               : play an YouTube video by code
+   <keywords>           : search and play YouTube videos
+  
+Other options:
+   -c, --categories     : shows available YouTube categories
+   -n, --novideo        : plays only audio track of the video
+   -d, --download       : downloads youtube video(s) with wget
+   <keywords> -f        : plays all videos in fullscreen mode
+   <keywords> -p        : plays all video results in order
+   <keywords> -n        : plays only the audio track of video results
+   <keywords> -m        : shows more video results (50 clips)
+   <keywords> -(4|7)    : plays video results at 480p resolution (or 720p)
+   <username> -u        : lists videos from a YouTube user profile
+   -sub=<LANG>          : subtitle language (default: en) (depends on gcap)
+   -v, --version        : prints version and exit
+   -h, --help           : prints help and exit
+ 
+Tips and tricks:
+  1. Search and play all video results by adding "-p" after keywords.
+  2. After search results, you can insert: 3 5 8 1 to play videos in your order
+  3. Play all audio tracks of video results by adding "-p -n" after keywords.
+  4. To listen music from YouTube use: "-c -n 3" and insert "all"
+  5. Play all video results in fullscreen mode at 720p: "<keywords> -p -f -7"
+  6. Play all videos from a user at 480p: "<username> -u -4" and insert "all"
+  7. After search results, press <ENTER> for the next page
+
+];
+}
+sub version {
+    $appname =~ s/-/ /;
+    $appname =~ s/(.)(.+) (.)/\U$1\E\L$2 \E\U$3\E/g;
+    print "$appname $version\n";
+    exit;
 }
 sub code_from_content {
     $url = shift @_;
@@ -247,16 +287,6 @@ $reset> ";
         print "\n(x_x) Unable to continue...\n\n";
         print $reset;
         exit;
-    }
-}
-if ($categories) {
-    foreach $arg (@args) {
-        if ($arg =~ /^([\d]+)$/) {
-            $catnr = $1;
-        }
-    }
-    unless ($catnr) {
-        $catnr = '';
     }
 }
 sub Videos_from_username {
@@ -370,45 +400,6 @@ sub YoutubeAPI {
     &Parse;
     &PrintResults;
     $youtube_via_api = 0;
-}
-if ($a =~ /^-h$/ or $a =~ /^[-]+help$/) {
-    $appname =~ s/(.+)/\U$1\E/g;
-    die "
-\t" . '=' x 17 . " $appname " . '=' x 17 . qq[
-\t\t\t\t  by Trizen (trizen.go.ro)
-
- Usage: youtube-viewer [<url> | <video_id>] [-(4|7|1)] 
-                       [-u <username>] [-c] [<keywords>] [-(f|n|m|p)] 
-
-Base Options: youtube-viewer [...]
-   <url>                : play an YouTube video by URL
-   <code>               : play an YouTube video by code
-   <keywords>           : search and play YouTube videos
-  
-Other options:
-   -c, --categories     : shows available YouTube categories
-   -n, --novideo        : plays only audio track of the video
-   -d, --download       : downloads youtube video(s) with wget
-   <keywords> -f        : plays all videos in fullscreen mode
-   <keywords> -p        : plays all video results in order
-   <keywords> -n        : plays only the audio track of video results
-   <keywords> -m        : shows more video results (50 clips)
-   <keywords> -(4|7)    : plays video results at 480p resolution (or 720p)
-   <username> -u        : lists videos from a YouTube user profile
-   -sub=<LANG>          : subtitle language (default: en) (depends on gcap)
-   -v, --version        : prints version and exit
-   -h, --help           : prints help and exit
- 
-Tips and tricks:
-  1. Search and play all video results by adding "-p" after keywords.
-  2. After search results, you can insert: 3 5 8 1 to play videos in your order
-  3. Play all audio tracks of video results by adding "-p -n" after keywords.
-  4. To listen music from YouTube use: "-c -n 3" and insert "all"
-  5. Play all video results in fullscreen mode at 720p: "<keywords> -p -f -7"
-  6. Play all videos from a user at 480p: "<username> -u -4" and insert "all"
-  7. After search results, press <ENTER> for the next page
-
-];
 }
 unless ($dont_exit) {
     &Trizen;
