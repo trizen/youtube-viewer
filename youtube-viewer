@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 #
 # Copyright (C) 2010-2011 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
@@ -20,7 +20,7 @@
 -------------------------------------------------------
   (C) 2010-2011 by Trizen
   Created on: 02 Jun 2010
-  Last edit on: 23 March 2011
+  Latest edit on: 29 March 2011
   Website: http://trizen.go.ro
   Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 -------------------------------------------------------
@@ -84,7 +84,12 @@ unless ($default_sub) {
     $default_sub = 'en';
 }
 if ($os =~ /MSWin/) {
-    $MPlayerLine = qq["C:\\Program Files\\SMPlayer\\mplayer\\mplayer.exe" $mplayer_settings];
+    $MPlayer_exe = 'C:\\Program Files\\SMPlayer\\mplayer\\mplayer.exe';
+    unless (-e $MPlayer_exe) {
+        warn "\n\n!!! Please install SMPlayer to stream Youtube videos.\n\n";
+        sleep 2;
+    }
+    $MPlayerLine = qq["$MPlayer_exe" $mplayer_settings];
 } else {
     $MPlayerLine = "mplayer $mplayer_settings";
 }
@@ -96,10 +101,14 @@ sub UserAgent {
     $lwp->timeout(10);
     $lwp_is_set = 1;
 }
-unless ($os =~ /MSWin/) {
+if (not $os =~ /MSWin/) {
     $bred = "\e[1;31m";
     $bgreen = "\e[1;32m";
     $reset = "\e[0m";
+} else {
+    $bred = '';
+    $bgreen = '';
+    $reset = '';
 }
 $a = $ARGV[0];
 $b = $ARGV[1];
@@ -111,6 +120,7 @@ unless ($a) {
 }
 my($Picks, $pickcat);
 $catnr = '';
+$debug = '';
 $Search = '';
 $PickBackup = '';
 $SearchBackup = '';
@@ -137,8 +147,8 @@ unless ($all_set) {
 $all_args = join('', @ARGV);
 foreach $arg (@ARGV) {
     next unless $arg =~ /^-/;
-    $arg =~ s/--no[-]?video/-n/;
-    $arg =~ s/--categories/-c/;
+    $arg =~ s/^--no[-]?video/-n/;
+    $arg =~ s/^--categories/-c/;
     $arg =~ s/^[-]+f(.*)/-f/;
     if ($arg eq '-n') {
         $MPlayerLine =~ s/mplayer /mplayer -novideo /;
@@ -147,6 +157,9 @@ foreach $arg (@ARGV) {
     }
     if ($arg eq '-c') {
         $categories = 'TRUE';
+    }
+    if ($arg eq '--debug') {
+        $debug = 1;
     }
     if ($arg eq '-m' or $arg eq '-p') {
         $MoreResults = 1;
@@ -176,17 +189,17 @@ foreach $arg (@ARGV) {
     }
 }
 if (not $a or $a =~ /^[-]+/ and not $b) {
-    if (length $a ne 11) {
+    if (length $a != 11) {
         &InsertURL;
     }
 }
 foreach $code (@ARGV) {
     if ($code =~ /^([\w-]{11})$/) {
         $code = $1;
-        if ($code =~ /([\d]+)|([A-Z]+)|-/) {
+        if ($code =~ /[\d]+|[A-Z]+|-/) {
             $dont_exit = 1;
             $title = '';
-            if (length $code eq 11) {
+            if (length $code == 11) {
                 &GetYouTube;
             } else {
                 next;
@@ -196,7 +209,7 @@ foreach $code (@ARGV) {
         $code = $2;
         $dont_exit = 1;
         $title = '';
-        if (length $code eq 11) {
+        if (length $code == 11) {
             &GetYouTube;
         } else {
             next;
@@ -253,14 +266,14 @@ sub version {
     exit;
 }
 sub code_from_content {
-    $url = shift @_;
+    $url = $_[0];
     unless ($lwp_is_set) {
         &UserAgent;
     }
     $connect = $lwp->get($url);
     if ($connect->content =~ m[youtube\.com/(v|embed)/([\w-]{11})]) {
         $code = $2;
-        if (length $code eq 11) {
+        if (length $code == 11) {
             &GetYouTube;
         } else {
             next;
@@ -348,6 +361,9 @@ sub Categories_area {
 }
 sub MPlayer {
     $youtube = '';
+    if ($debug) {
+        print "STREAMING: $streaming\n\n";
+    }
     if ($Download_video) {
         $title =~ s[/][|]g;
         $title = quotemeta $title;
@@ -393,6 +409,9 @@ sub YoutubeAPI {
     unless ($lwp_is_set) {
         &UserAgent;
     }
+    if ($debug) {
+        print "YT_API_URL: $yt_api_url\n";
+    }
     $cc = $lwp->get($yt_api_url)->content;
     if ($cc eq 'User not found') {
         die "\n(x_x) $cc...\n\n";
@@ -417,6 +436,9 @@ sub Trizen {
     $ys = "http://gdata.youtube.com/feeds/api/videos?q=$Search&max-results=$results";
     $start_index = 1;
     $ys .= "&start-index=$start_index";
+    if ($debug) {
+        print "YOUTUBESEARCH: $ys\n";
+    }
     unless ($lwp_is_set) {
         &UserAgent;
     }
@@ -436,12 +458,19 @@ sub Parse {
     }
     foreach $_ (@content) {
         next unless $_ =~ /^TITLE=/;
-        if ($_ =~ m[</media\:description>]) {
-            $_ =~ s[TITLE=([^\<]+)</title>(.+)v=([\w\-]{11})(.+)duration([^']*)'([\d\:]+)'(.+)<media:description type='plain'>([^<]*)(.*)viewCount='([\d]*)'(.*)][v=$3+title=$1>+video-time">$6>views=$10>description=$8];
+        $_ =~ m[^TITLE=([^<]+)</title>.+v=([\w-]{11}).+duration[^']*'([\d:]+)'];
+        $video_line = "<v=$2><title=$1><time=$3>";
+        if ($_ =~ m[</media:description>]) {
+            $_ =~ /<media:description type='plain'>([^<]*).*viewCount='([\d]*)'/;
+            $video_line .= "<views=$3><description=$1";
         } else {
-            $_ =~ s[TITLE=([^\<]+)</title>(.+)v=([\w\-]{11})(.+)duration([^']*)'([\d\:]+)'(.*)viewCount='([\d]*)'(.*)][v=$3+title=$1>+video-time">$6>views=$8>description=No description available...];
+            $_ =~ /viewCount='([\d]*)'/;
+            $video_line .= "<views=$1><description=No description available...";
         }
-        push @Videos, $_;
+        if ($debug) {
+            print "PARSED: $video_line\n";
+        }
+        push @Videos, $video_line;
     }
 }
 sub PrintResults {
@@ -450,18 +479,18 @@ sub PrintResults {
     print "\n";
     foreach $_ (@Videos) {
         chomp($line = $_);
-        if ($line =~ /v=([\w\-]{11})(.*)title=([^>]+)>\+(.*)-time">([\d\:]*)>views=([\d]*)>description=(.*)/) {
+        if ($line =~ /^<v=([^>]+)><title=([^>]+)><time=([^>]*)><views=([^>]*)><description=(.*)/) {
             ++$number;
-            $title = $3;
             $code = $1;
-            $views = $6;
-            $desc = $7;
-            $time = $5;
-            unless ($time =~ /\:/) {
+            $title = $2;
+            $time = $3;
+            $views = $4;
+            $desc = $5;
+            unless ($time =~ /:/) {
                 $sec = $time;
                 $time = $sec / 3600 % 24 . ':' . $sec / 60 % 60 . ':' . $sec % 60;
-                $time =~ s/^0\://;
-                unless ($time =~ /\:/) {
+                $time =~ s/^0://;
+                unless ($time =~ /:/) {
                     $time = "0:$time";
                 }
                 if ($time =~ /(.):(.):(.+)/) {
@@ -523,6 +552,9 @@ $reset> ";
                 $old_index = $1;
                 $start_index = $old_index + $results;
                 $ys =~ s/index=$old_index/index=$start_index/;
+                if ($debug) {
+                    print "NEXTPAGE: $ys\n";
+                }
                 $connect = $lwp->get($ys);
                 splice @content;
                 @content = split(/\n/, $connect->content, 0);
@@ -538,6 +570,9 @@ $reset> ";
                 $old_index = $1;
                 $start_index = $old_index + $results;
                 $yt_api_url =~ s/index=$old_index/index=$start_index/;
+                if ($debug) {
+                    print "NEXTPAGE: $yt_api_url\n";
+                }
                 $cc = $lwp->get($yt_api_url)->content;
                 &Parse;
                 &PrintResults;
@@ -590,6 +625,9 @@ sub ForeachPick {
 }
 sub ForeachCode {
     foreach $line (@codes) {
+        if ($debug) {
+            print "FOREACHCODE: $line\n";
+        }
         if ($line =~ /^$PICK # title=(.*) # time=(.*) # code=([\w\-]{11}) # views=([\d]*) # desc=(.*)/) {
             $title = $1;
             $duration = $2;
@@ -602,6 +640,9 @@ sub ForeachCode {
 }
 sub PlayBack {
     foreach $line (@codes) {
+        if ($debug) {
+            print "PLAYBACK: $line\n";
+        }
         if ($Picks eq 1 and not $line =~ /^$pick #/) {
             next;
         } elsif ($line =~ /^$pick # title=(.*) # time=(.*) # code=([\w-]{11}) # views=([\d]*) # desc=(.*)/) {
@@ -665,8 +706,7 @@ sub VideoCheck {
             &Description;
             &MPlayer;
         }
-    }
-    if (not $dont_exit && $all_args =~ / [-]+(1|7|4)/) {
+    } elsif (not $dont_exit && $all_args =~ / [-]+(1|7|4)/) {
         &Description;
         &ResolutionSearch;
     }
@@ -810,6 +850,16 @@ sub GetYouTube {
                 }
             }
         }
+    }
+    if ($debug) {
+        print "
+
+VIDEOINFO:
+" . '=' x 80 . "
+" . $connect->content . "
+" . '=' x 80 . "
+
+";
     }
     if ($connect->content =~ /fmt_url_map=([^\&]+)\&/) {
         $streaming = $1;
