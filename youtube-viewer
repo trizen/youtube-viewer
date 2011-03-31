@@ -15,57 +15,54 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-
-=start
--------------------------------------------------------
-  (C) 2010-2011 by Trizen
-  Created on: 02 Jun 2010
-  Latest edit on: 29 March 2011
-  Website: http://trizen.go.ro
-  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
--------------------------------------------------------
-
-[?] What is this script for?          
- - This script is useful if do you hate the Flash Player and love YouTube.
- - Using this script you can search and play YouTube Videos with MPlayer...
- - Have fun!
-
-[!] Most important changes are written in the changelog!
-
- [CHANGELOG]
- - Re-added the support for the next page / Added support for download (-d, --download)       - NEW (v2.4.*)
- - Added support for youtube subtitles. (Depends on: 'gcap' - http://code.google.com/p/gcap/) - NEW (v2.4.*)
- - First version with Windows support. Require SMPlayer to play videos. See MPlayer Line      - NEW (v2.4.*)
- - Code has been changed in a proportion of ~60% and optimized for speed // --480 became -4   - NEW (v2.4.*)
- - Added mega-powers of omnibox to the STDIN :)                                               - NEW (v2.3.*)
- - Re-added the option to list and play youtube videos from a user profile. Usage: -u [user]  - NEW (v2.3.*)
- - Added a new option to play all video clips from a category. Usage: '-c 9' and insert 'all' - NEW (v2.3.*)
- - Category area is more friendly... New options: -c [n] where 'n' is the number of category  - NEW (v2.3.*)
- - Added a new option to play only the audio track of a videoclip. Usage: [words] -n          - NEW (v2.3.*)
- - Added option for fullscreen (-f, --fullscreen). Usage: youtube-viewer [words] -f           - NEW (v2.3.*)
- - Added one new option '-c'. It shows available categories and will let you to choose one.   - NEW (v2.3.*)
- - Added one new option '-m'. It shows 3 pages of youtube video results. Usage: [words] -m    - NEW (v2.3.*)
- - For "-p" option has been added 3 pages of youtube video results (60 clips)                 - NEW (v2.3.*)
- - Added "-prefer-ipv4" to the mplayer line (videoclips starts in no time now).               - NEW (v2.3.*)
- - Search and play videos at 480p, 720p. Ex: [words] --480, [words] -p --480                  - NEW (v2.3.*)
- - Search has been corrected due to some YouTube changes...                                   - (v2.2.*)
- - Added support to play a video at 480p even if it's resolution is higher. Ex: [url] --480   - (v2.2.*)
- - Added a nice feature which prints some informations about the video which you watching at  - (v2.2.*)
- - Added support to play videos by your order. Example: after search results, insert: 3 5 2 1 - (v2.1.*)
- - Added support for next pages of video results (press ENTER when ask you to insert number)  - (v2.1.*)
- - Bug fixed: "Numbers go crazy after more than 20 video results".                            - (v2.1.*)
- - Added support to continue playing searched videos, usage: "youtube-viewer [words] -p"      - (v2.1.*)
- - Added support to print counted videos and support to insert the number of video to play it - (v2.1.*)
- - Added support to search YouTube Videos in script (ex: youtube-viewer avatar trailer 2009)  - (v2.0.*)
- - Added support for script to choose automat quality if it is lower than 1080p               - (v2.0.*)
- - Added support to choose the quality only between 720p and 1080p (if it is available)       - (v2.0.*)
- - Added support for an YouTube video code (ex: youtube-viewer WVTWCPoUt8w)                   - (v1.0.*)
- - Added support for 720p and 1080p YouTube Videos...                                         - (v1.0.*)
+#-------------------------------------------------------
+#  (C) 2010-2011 by Trizen
+#  Created on: 02 Jun 2010
+#  Latest edit on: 31 March 2011
+#  Website: http://trizen.go.ro
+#  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
+#-------------------------------------------------------
+#
+# [?] What is this script for?          
+#  - This script is useful if do you hate the Flash Player and love YouTube.
+#  - Using this script you can search and stream YouTube Videos with MPlayer...
+#  - Have fun!
+#
+# [!] Most important changes are written in the changelog!
+#
+# [CHANGELOG]
+# - Re-added the support for the next page / Added support for download (-d, --download)       - NEW (v2.4.*)
+# - Added support for youtube subtitles. (Depends on: 'gcap' - http://code.google.com/p/gcap/) - NEW (v2.4.*)
+# - First version with Windows support. Require SMPlayer to play videos. See MPlayer Line      - NEW (v2.4.*)
+# - Code has been changed in a proportion of ~60% and optimized for speed // --480 became -4   - NEW (v2.4.*)
+# - Added mega-powers of omnibox to the STDIN :)                                               - NEW (v2.3.*)
+# - Re-added the option to list and play youtube videos from a user profile. Usage: -u [user]  - NEW (v2.3.*)
+# - Added a new option to play all video clips from a category. Usage: '-c 9' and insert 'all' - NEW (v2.3.*)
+# - Category area is more friendly... New options: -c [n] where 'n' is the number of category  - NEW (v2.3.*)
+# - Added a new option to play only the audio track of a videoclip. Usage: [words] -n          - NEW (v2.3.*)
+# - Added option for fullscreen (-f, --fullscreen). Usage: youtube-viewer [words] -f           - NEW (v2.3.*)
+# - Added one new option '-c'. It shows available categories and will let you to choose one.   - NEW (v2.3.*)
+# - Added one new option '-m'. It shows 3 pages of youtube video results. Usage: [words] -m    - NEW (v2.3.*)
+# - For "-p" option has been added 3 pages of youtube video results (60 clips)                 - NEW (v2.3.*)
+# - Added "-prefer-ipv4" to the mplayer line (videoclips starts in no time now).               - NEW (v2.3.*)
+# - Search and play videos at 480p, 720p. Ex: [words] --480, [words] -p --480                  - NEW (v2.3.*)
+# - Search has been corrected due to some YouTube changes...                                   - (v2.2.*)
+# - Added support to play a video at 480p even if it's resolution is higher. Ex: [url] --480   - (v2.2.*)
+# - Added a nice feature which prints some informations about the video which you watching at  - (v2.2.*)
+# - Added support to play videos by your order. Example: after search results, insert: 3 5 2 1 - (v2.1.*)
+# - Added support for next pages of video results (press ENTER when ask you to insert number)  - (v2.1.*)
+# - Bug fixed: "Numbers go crazy after more than 20 video results".                            - (v2.1.*)
+# - Added support to continue playing searched videos, usage: "youtube-viewer [words] -p"      - (v2.1.*)
+# - Added support to print counted videos and support to insert the number of video to play it - (v2.1.*)
+# - Added support to search YouTube Videos in script (ex: youtube-viewer avatar trailer 2009)  - (v2.0.*)
+# - Added support for script to choose automat quality if it is lower than 1080p               - (v2.0.*)
+# - Added support to choose the quality only between 720p and 1080p (if it is available)       - (v2.0.*)
+# - Added support for an YouTube video code (ex: youtube-viewer WVTWCPoUt8w)                   - (v1.0.*)
+# - Added support for 720p and 1080p YouTube Videos...                                         - (v1.0.*)
  
- Special thanks to:
- - Army (for bugs reports and for his great ideas)
- - dhn (for adding youtube-viewer in freshports.org)
-=cut
+# Special thanks to:
+# - Army (for bugs reports and for his great ideas)
+# - dhn (for adding youtube-viewer in freshports.org)
 
 use URI::Escape;
 use HTML::Entities;
@@ -449,7 +446,7 @@ sub Trizen {
 sub Parse {
     $cc =~ s/\n//g;
     $cc =~ s/<title type='text'>/\nTITLE=/g;
-    @content = split(?\n?, $cc, 0);
+    @content = split(/\n/, $cc, 0);
     sub Search {
         splice @Videos;
         $cc = join('', @content);
@@ -458,14 +455,18 @@ sub Parse {
     }
     foreach $_ (@content) {
         next unless $_ =~ /^TITLE=/;
-        $_ =~ m[^TITLE=([^<]+)</title>.+v=([\w-]{11}).+duration[^']*'([\d:]+)'];
-        $video_line = "<v=$2><title=$1><time=$3>";
+        if (
+        $_ =~ m[^TITLE=([^<]+)</title>.+v=([\w-]{11}).+duration[^']*'([\d:]+)']
+        ){
+        $video_line = "<v=$2><title=$1><time=$3>";}
         if ($_ =~ m[</media:description>]) {
             $_ =~ /<media:description type='plain'>([^<]*).*viewCount='([\d]*)'/;
-            $video_line .= "<views=$3><description=$1";
+            $video_line .= "<views=$2><description=$1";
         } else {
-            $_ =~ /viewCount='([\d]*)'/;
-            $video_line .= "<views=$1><description=No description available...";
+			if (
+            $_ =~ /viewCount='([\d]*)'/
+            ){
+            $video_line .= "<views=$1><description=No description available...";}
         }
         if ($debug) {
             print "PARSED: $video_line\n";
@@ -477,8 +478,8 @@ sub PrintResults {
     splice @codes;
     $number = 0;
     print "\n";
-    foreach $_ (@Videos) {
-        chomp($line = $_);
+    foreach $line (@Videos) {
+		next unless $line;
         if ($line =~ /^<v=([^>]+)><title=([^>]+)><time=([^>]*)><views=([^>]*)><description=(.*)/) {
             ++$number;
             $code = $1;
@@ -659,50 +660,41 @@ sub VideoCheck {
     $streaming =~ s/^[\w]*%[\w]*http:/http:/;
     if (not $streaming =~ /itag=34/ and $streaming =~ /itag=([\d]+)[\W]+/) {
         $itag = $1;
-        $streaming =~ s/(.*)http(.+)itag=$itag([^\%]*)(.+)/http$2itag=$itag$3/;
-        $streaming =~ s/%(.*)$//;
+        $streaming =~ s/.*http(.+)itag=$itag([^\%]*).+/http$1itag=$itag$2/;
+        $streaming =~ s/%.*//;
         unless ($SearchBackup =~ / [-]+f/) {
             $MPlayerLine =~ s/-fs //;
         }
         &Description;
         &MPlayer;
     } elsif ($SearchBackup =~ / [-]+4/) {
-        $streaming =~ s/(.*)http(.+)itag=34([^\%]*)(.+)/http$2itag=34$3/;
-        unless ($SearchBackup =~ / [-]+f/) {
-            $MPlayerLine =~ s/-fs //;
-        }
+        &lower_quality;
         &Description;
         &MPlayer;
     } elsif ($SearchBackup =~ / [-]+7/) {
         if ($streaming =~ /itag=22/) {
-            $streaming =~ s/(.*)http(.+)itag=22([^\%]*)(.+)/http$2itag=22$3/;
+            $streaming =~ s/.*http(.+)itag=22([^\%]*).+/http$1itag=22$2/;
             &Fullscreen_check;
             &Description;
             &MPlayer;
         } else {
-            unless ($SearchBackup =~ / [-]+f/) {
-                $MPlayerLine =~ s/-fs //;
-            }
-            $streaming =~ s/(.*)http(.+)itag=34([^\%]*)(.+)/http$2itag=34$3/;
+            &lower_quality;
             &Description;
             &MPlayer;
         }
     } elsif ($SearchBackup =~ / [-]+1/) {
         if ($streaming =~ /itag=37/) {
-            $streaming =~ s/(.*)http(.+)itag=37([^\%]*)(.+)/http$2itag=37$3/;
+            $streaming =~ s/.*http(.+)itag=37([^\%]*).+/http$1itag=37$2/;
             &Fullscreen_check;
             &Description;
             &MPlayer;
         } elsif ($streaming =~ /itag=22/) {
-            $streaming =~ s/(.*)http(.+)itag=22([^\%]*)(.+)/http$2itag=22$3/;
+            $streaming =~ s/.*http(.+)itag=22([^\%]*).+/http$1itag=22$2/;
             &Fullscreen_check;
             &Description;
             &MPlayer;
         } else {
-            unless ($SearchBackup =~ / [-]+f/) {
-                $MPlayerLine =~ s/-fs //;
-            }
-            $streaming =~ s/(.*)http(.+)itag=34([^\%]*)(.+)/http$2itag=34$3/;
+            &lower_quality;
             &Description;
             &MPlayer;
         }
@@ -905,10 +897,7 @@ sub ResolutionSearch {
         &Fullscreen_check;
         &MPlayer;
     } else {
-        $streaming =~ s/(.*)http(.+)itag=34([^\%]*)(.+)/http$2itag=34$3/;
-        unless ($SearchBackup =~ / [-]+f/) {
-            $MPlayerLine =~ s/-fs //;
-        }
+        &lower_quality;
         &MPlayer;
     }
 }
@@ -937,5 +926,16 @@ sub pick {
         $streaming =~ s/(.*)http(.+)itag=22([^\%]*)(.+)/http$2itag=22$3/;
         &Fullscreen_check;
         &MPlayer;
+    }
+}
+sub lower_quality {
+    foreach $_ (35, 34) {
+        if ($streaming =~ /itag=$_/) {
+            $streaming =~ s/(.*)http(.+)itag=$_([^\%]*)(.+)/http$2itag=$_$3/;
+            last;
+        }
+    }
+    unless ($SearchBackup =~ / [-]+f/) {
+        $MPlayerLine =~ s/-fs //;
     }
 }
