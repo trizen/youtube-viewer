@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 31 March 2011
+#  Latest edit on: 01 April 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -444,42 +444,38 @@ sub Trizen {
     &Search;
 }
 sub Parse {
+	splice @Videos;
     $cc =~ s/\n//g;
     $cc =~ s/<title type='text'>/\nTITLE=/g;
-    @content = split(/\n/, $cc, 0);
+    @content = split(?\n?, $cc, 0);
     sub Search {
-        splice @Videos;
         $cc = join('', @content);
         &Parse;
         &PrintResults;
     }
     foreach $_ (@content) {
         next unless $_ =~ /^TITLE=/;
-        if (
-        $_ =~ m[^TITLE=([^<]+)</title>.+v=([\w-]{11}).+duration[^']*'([\d:]+)']
-        ){
-        $video_line = "<v=$2><title=$1><time=$3>";}
-        if ($_ =~ m[</media:description>]) {
-            $_ =~ /<media:description type='plain'>([^<]*).*viewCount='([\d]*)'/;
+        if ($_ =~ m[^TITLE=([^<]+)</title>.+v=([\w-]{11}).+duration[^']*'([\d:]+)']) {
+            $video_line = "<v=$2><title=$1><time=$3>";
+        }
+        if ($_ =~ /<media:description type='plain'>([^<]*).*viewCount='([\d]*)'/) {
             $video_line .= "<views=$2><description=$1";
-        } else {
-			if (
-            $_ =~ /viewCount='([\d]*)'/
-            ){
-            $video_line .= "<views=$1><description=No description available...";}
+        } elsif ($_ =~ /viewCount='([\d]*)'/) {
+            $video_line .= "<views=$1><description=No description available...";
         }
         if ($debug) {
             print "PARSED: $video_line\n";
         }
         push @Videos, $video_line;
     }
+    shift @Videos;
 }
 sub PrintResults {
     splice @codes;
     $number = 0;
     print "\n";
     foreach $line (@Videos) {
-		next unless $line;
+        next unless $line;
         if ($line =~ /^<v=([^>]+)><title=([^>]+)><time=([^>]*)><views=([^>]*)><description=(.*)/) {
             ++$number;
             $code = $1;
@@ -557,7 +553,6 @@ $reset> ";
                     print "NEXTPAGE: $ys\n";
                 }
                 $connect = $lwp->get($ys);
-                splice @content;
                 @content = split(/\n/, $connect->content, 0);
                 print "\n";
                 &Search;
@@ -587,8 +582,8 @@ $reset> ";
             push @picks, "$i";
         }
         &PicksArea;
-    } elsif ($youtube =~ m[v([=/]+)([\w\-]{11})]) {
-        $code = $2;
+    } elsif ($youtube =~ m[v[=/]+([\w\-]{11})]) {
+        $code = $1;
         $desc = '';
         $title = '';
         $duration = '';
@@ -824,7 +819,7 @@ sub GetYouTube {
         chdir '/tmp/';
         print "\n";
         system "gcap $url";
-        @ls = `ls`;
+        @ls = glob('*.srt');
         $srt_file = '';
         foreach $line (@ls) {
             if ($line =~ /${code}_$default_sub\.srt/) {
