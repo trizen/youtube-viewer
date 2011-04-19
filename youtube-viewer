@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 01 April 2011
+#  Latest edit on: 19 April 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -69,7 +69,7 @@ use HTML::Entities;
 
 $os                   = $^O;
 $appname              = 'youtube-viewer';
-$version              = 'v2.4.9';
+$version              = 'v2.4.10';
 $mplayer_settings     = '-prefer-ipv4 -cache 30000 -cache-min 5';
 $MPlayer_srt_settings = '-unicode -utf8';
 foreach $_ (@ARGV) {
@@ -254,8 +254,8 @@ Other options:
    <keywords> -(4|7)    : plays video results at 480p resolution (or 720p)
    <username> -u        : lists videos from a YouTube user profile
    -sub=<LANG>          : subtitle language (default: en) (depends on gcap)
-   -v, --version        : prints version and exit
-   -h, --help           : prints help and exit
+   -v, --version        : prints version and exits
+   -h, --help           : prints help and exits
 
 Tips and tricks:
   1. Search and play all video results by adding "-p" after keywords.
@@ -480,38 +480,41 @@ sub Trizen {
     &Search;
 }
 
+sub Search {
+    $cc = join( '', @content );
+    &Parse;
+    &PrintResults;
+}
+
 sub Parse {
     splice @Videos;
     $cc =~ s/\n//g;
     $cc =~ s/<title type='text'>/\nTITLE=/g;
     @content = split( ?\n?, $cc, 0 );
-
-    sub Search {
-        $cc = join( '', @content );
-        &Parse;
-        &PrintResults;
-    }
     foreach $_ (@content) {
         next unless $_ =~ /^TITLE=/;
+        if ( $_ =~ m[<name>([^<]+)</name>] ) {
+            $video_line = "<author=$1>";
+        }
         if ( $_ =~
             m[^TITLE=([^<]+)</title>.+v=([\w-]{11}).+duration[^']*'([\d:]+)'] )
         {
-            $video_line = "<v=$2><title=$1><time=$3>";
+            $video_line .= "<v=$2><title=$1><time=$3>";
         }
-        if ( $_ =~
-            /<media:description type='plain'>([^<]*).*viewCount='([\d]*)'/ )
-        {
-            $video_line .= "<views=$2><description=$1";
+        if ( $_ =~ /viewCount='([\d]*)'/ ) {
+            $video_line .= "<views=$1>";
         }
-        elsif ( $_ =~ /viewCount='([\d]*)'/ ) {
-            $video_line .= "<views=$1><description=No description available...";
+        else {
+            $video_line .= '<views=0>';
         }
-        if ($debug) {
-            print "PARSED: $video_line\n";
+        if ( $_ =~ /<media:description type='plain'>([^<]*)/ ) {
+            $video_line .= "<description=$1";
+        }
+        else {
+            $video_line .= '<description=No description available...';
         }
         push @Videos, $video_line;
     }
-    shift @Videos;
 }
 
 sub PrintResults {
@@ -519,17 +522,17 @@ sub PrintResults {
     $number = 0;
     print "\n";
     foreach $line (@Videos) {
-        next unless $line;
         if ( $line =~
-/^<v=([^>]+)><title=([^>]+)><time=([^>]*)><views=([^>]*)><description=(.*)/
+/^<author=([^>]+)><v=([^>]+)><title=([^>]+)><time=([^>]*)><views=([^>]*)><description=(.*)/
           )
         {
             ++$number;
-            $code  = $1;
-            $title = $2;
-            $time  = $3;
-            $views = $4;
-            $desc  = $5;
+            $author = $1;
+            $code   = $2;
+            $title  = decode_entities($3);
+            $time   = $4;
+            $views  = $5;
+            $desc   = decode_entities($6);
             unless ( $time =~ /:/ ) {
                 $sec = $time;
                 $time =
@@ -545,15 +548,13 @@ sub PrintResults {
                     $time = "$1:0$2";
                 }
             }
-            $title = uri_unescape($title);
-            $title = decode_entities($title);
             push @codes,
-"$number # title=$title # time=$time # code=$code # views=$views # desc=$desc";
+"$number>title=$title>time=$time>code=$code>views=$views>desc=$desc";
             print "$bred";
             if ( $number < 10 ) {
                 print ' ';
             }
-            print "$number$reset - $title ($time)\n$bred";
+            print "$number$reset - $title (by $author) ($time)\n$bred";
         }
     }
     if ($SearchBackup) {
@@ -636,7 +637,7 @@ $reset> ";
         }
         &PicksArea;
     }
-    elsif ( $youtube =~ m[v[=/]+([\w\-]{11})] ) {
+    elsif ( $youtube =~ m[v[=/]+([\w-]{11})] ) {
         $code     = $1;
         $desc     = '';
         $title    = '';
@@ -684,7 +685,7 @@ sub ForeachCode {
             print "FOREACHCODE: $line\n";
         }
         if ( $line =~
-/^$PICK # title=(.*) # time=(.*) # code=([\w\-]{11}) # views=([\d]*) # desc=(.*)/
+/^$PICK>title=(.+)>time=(.*)>code=([\w-]{11})>views=([\d]*)>desc=(.*)/
           )
         {
             $title    = $1;
@@ -702,11 +703,11 @@ sub PlayBack {
         if ($debug) {
             print "PLAYBACK: $line\n";
         }
-        if ( $Picks eq 1 and not $line =~ /^$pick #/ ) {
+        if ( $Picks and not $line =~ /^$pick>/ ) {
             next;
         }
         elsif ( $line =~
-/^$pick # title=(.*) # time=(.*) # code=([\w-]{11}) # views=([\d]*) # desc=(.*)/
+/^$pick>title=(.*)>time=(.*)>code=([\w-]{11})>views=([\d]*)>desc=(.*)/
           )
         {
             $title    = $1;
@@ -789,8 +790,7 @@ sub Description {
         if ( $connect->content =~
             m[media:title type='plain'>([^<]+)</media:title>] )
         {
-            $title = uri_unescape($1);
-            $title = decode_entities($title);
+            $title = decode_entities($1);
         }
         if ( $connect->content =~ /viewCount=['"]+([\d]+)/ ) {
             $views = $1;
@@ -821,8 +821,7 @@ sub Description {
         print "$title\n";
         print $reset;
         print '-' x 80;
-        $description = uri_unescape($desc);
-        $description = decode_entities($description);
+        $description = decode_entities($desc);
         print "\n$description\n";
         print '-' x 80 . "\n";
     }
