@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 19 April 2011
+#  Latest edit on: 27 April 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -69,13 +69,11 @@ use HTML::Entities;
 
 $os                   = $^O;
 $appname              = 'youtube-viewer';
-$version              = 'v2.4.10';
+$version              = '2.4.10';
 $mplayer_settings     = '-prefer-ipv4 -cache 30000 -cache-min 5';
 $MPlayer_srt_settings = '-unicode -utf8';
 foreach $_ (@ARGV) {
-    if ( $_ =~ /^[-]+(sub|lang)=([\w]+)/ ) {
-        $default_sub = "\L$2\E";
-    }
+    ();
 }
 unless ($default_sub) {
     $default_sub = 'en';
@@ -110,28 +108,6 @@ else {
     $bgreen = '';
     $reset  = '';
 }
-$a = $ARGV[0];
-$b = $ARGV[1];
-unless ($b) {
-    $b = '';
-}
-unless ($a) {
-    $a = '';
-}
-my ( $Picks, $pickcat );
-$catnr        = '';
-$debug        = '';
-$Search       = '';
-$PickBackup   = '';
-$SearchBackup = '';
-$MoreResults  = '';
-$FirstPage    = 1;
-$NextPage     = 1;
-$username     = 0;
-$pick         = '';
-$app          = $0;
-$app =~ s[(.*)/([^/]+)$][$2];
-
 unless ($all_set) {
     foreach $arg (@ARGV) {
         if ( $arg =~ /^-/ ) {
@@ -149,52 +125,77 @@ unless ($all_set) {
 $all_args = join( '', @ARGV );
 foreach $arg (@ARGV) {
     next unless $arg =~ /^-/;
-    $arg =~ s/^--no[-]?video/-n/;
-    $arg =~ s/^--categories/-c/;
-    $arg =~ s/^[-]+f(.*)/-f/;
+    $arg =~ s/^[-]+no[-_]?video.*/-n/;
+    $arg =~ s/^[-]+categories.*/-c/;
+    $arg =~ s/^[-]+f.*/-f/;
     if ( $arg eq '-n' ) {
         $MPlayerLine =~ s/mplayer /mplayer -novideo /;
         $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -novideo/;
         $SearchBackup .= ' --480';
+        next;
+    }
+    if ( $arg =~ /^[-]+(?:sub|lang)=([\w]+)/ ) {
+        $default_sub = "\L$1\E";
+        next;
     }
     if ( $arg eq '-c' ) {
-        $categories = 'TRUE';
+        $categories = 1;
+        next;
     }
     if ( $arg eq '--debug' ) {
         $debug = 1;
+        next;
     }
-    if ( $arg eq '-m' or $arg eq '-p' ) {
+    if ( $arg =~ /^[-]+(?:m|more)$/i or $arg =~ /^[-]+(?:p|playback)$/i ) {
         $MoreResults = 1;
-    }
-    else {
-        $MoreResults = 0;
+        next;
     }
     if ( $arg eq '-f' ) {
         $MPlayerLine =~ s/mplayer /mplayer -fs /;
         $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -fs/;
     }
-    if ( $categories and $arg =~ /^([\d]+)$/ ) {
-        $catnr = $1;
-    }
 }
+$SearchBackup ||= '';
+$MoreResults  ||= 0;
+$default_sub  ||= 'en';
+$Search       ||= '';
 foreach $arg (@ARGV) {
+    if ( $arg =~ /^[-]+(?:h|help|\?)$/ ) {
+        &help;
+    }
+    if ( $arg =~ /^[-]+(?:v|version)$/ ) {
+        &version;
+    }
+    ++$i;
     if ( $arg eq '-c' ) {
         &Categories_area;
     }
-    if ( $arg eq '-u' ) {
-        &Videos_from_username;
-    }
-    if ( $arg =~ /^[-]+(h|help|\?)$/ ) {
-        &help;
-    }
-    if ( $arg =~ /^[-]+(v|version)$/ ) {
-        &version;
+    if ( $arg =~ /^[-]+(?:u|username)$/ ) {
+        $i += 1;
+        if ( $ARGV[$i] ) {
+            unless ( $ARGV[$i] =~ /^-/ ) {
+                $user = $ARGV[$i];
+            }
+        }
+        unless ($user) {
+            $i -= 3;
+            if ( $ARGV[$i] ) {
+                unless ( $ARGV[$i] =~ /^-/ ) {
+                    $user = $ARGV[$i];
+                }
+            }
+        }
+        &Videos_from_username($user);
     }
 }
-if ( not $a or $a =~ /^[-]+/ and not $b ) {
-    if ( length $a != 11 ) {
-        &InsertURL;
+foreach $_ (@ARGV) {
+    if ( not $_ =~ /^-/ or length $_ == 11 ) {
+        $non_argv = 1;
+        last;
     }
+}
+unless ($non_argv) {
+    &InsertURL;
 }
 foreach $code (@ARGV) {
     if ( $code =~ /^([\w-]{11})$/ ) {
@@ -230,20 +231,20 @@ foreach $code (@ARGV) {
 }
 
 sub help {
-    $appname =~ s/(.+)/\U$1\E/g;
-    die "
-\t" . '=' x 17 . " $appname " . '=' x 17 . qq[
-\t\t\t\t  by Trizen (trizen.go.ro)
-
- Usage: youtube-viewer [<url> | <video_id>] [-(4|7|1)]
+    $appname = uc $appname;
+    die "\n\t"
+      . '=' x 25
+      . " $appname "
+      . '=' x 25
+      . qq[
+\t\t\t\t\t\t  by Trizen (trizen.go.ro)
+\n Usage: youtube-viewer [<url> | <video_id>] [-(4|7|1)]
                        [-u <username>] [-c] [<keywords>] [-(f|n|m|p)]
-
-Base Options: youtube-viewer [...]
+\nBase Options: youtube-viewer [...]
    <url>                : play an YouTube video by URL
    <code>               : play an YouTube video by code
    <keywords>           : search and play YouTube videos
-
-Other options:
+\nOther options:
    -c, --categories     : shows available YouTube categories
    -n, --novideo        : plays only audio track of the video
    -d, --download       : downloads youtube video(s) with wget
@@ -256,23 +257,18 @@ Other options:
    -sub=<LANG>          : subtitle language (default: en) (depends on gcap)
    -v, --version        : prints version and exits
    -h, --help           : prints help and exits
-
-Tips and tricks:
+\nTips and tricks:
   1. Search and play all video results by adding "-p" after keywords.
   2. After search results, you can insert: 3 5 8 1 to play videos in your order
   3. Play all audio tracks of video results by adding "-p -n" after keywords.
-  4. To listen music from YouTube use: "-c -n 3" and insert "all"
-  5. Play all video results in fullscreen mode at 720p: "<keywords> -p -f -7"
-  6. Play all videos from a user at 480p: "<username> -u -4" and insert "all"
-  7. After search results, press <ENTER> for the next page
-
-];
+  4. Play all video results in fullscreen mode at 720p: "<keywords> -p -f -7"
+  5. Play all videos from a user at 480p: "<username> -u -4" and insert "all"
+  6. After search results, press <ENTER> for the next page
+\n];
 }
 
 sub version {
-    $appname =~ s/-/ /;
-    $appname =~ s/(.)(.+) (.)/\U$1\E\L$2 \E\U$3\E/g;
-    print "$appname $version\n";
+    print "Youtube Viewer $version\n";
     exit;
 }
 
@@ -282,8 +278,8 @@ sub code_from_content {
         &UserAgent;
     }
     $connect = $lwp->get($url);
-    if ( $connect->content =~ m[youtube\.com/(v|embed)/([\w-]{11})] ) {
-        $code = $2;
+    if ( $connect->content =~ m[youtube\.com/(?:v|embed)/([\w-]{11})] ) {
+        $code = $1;
         if ( length $code == 11 ) {
             &GetYouTube;
         }
@@ -294,7 +290,8 @@ sub code_from_content {
 }
 
 sub InsertURL {
-    print "
+    print
+"
 $bred=>>$reset$bgreen Insert an YouTube URL or search something...
 $reset> ";
     chomp( $youtube = <STDIN> );
@@ -320,39 +317,23 @@ $reset> ";
 }
 
 sub Videos_from_username {
-    if ( $a =~ /^[-]+u/ and not $b ) {
-        die "\nUsage:  $0 -u [username]\n\t$0 [username] -u\n\n";
-    }
-    if ( $a =~ /^[-]+u/ and $b or $b =~ /^[-]+u/ ) {
-        if ( $b =~ /^[-]+u/ ) {
-            $user = $a;
-        }
-        else {
-            $user = $b;
-        }
-        $username   = 1;
-        $yt_api_url = "http://gdata.youtube.com/feeds/api/users/$user/uploads";
-        &YoutubeAPI;
-    }
+    $username   = 1;
+    $yt_api_url = "http://gdata.youtube.com/feeds/api/users/$_[0]/uploads";
+    &YoutubeAPI;
 }
 
 sub Categories_area {
-    if ( $b =~ /[-]+[\d]+/ ) {
-        $PickBackup = $b;
-    }
-    $NextPage = 0;
     unless ($lwp_is_set) {
         &UserAgent;
     }
-    $connect =
-      $lwp->get('http://gdata.youtube.com/schemas/2007/categories.cat');
-    $content = $connect->content;
+    $content =
+      $lwp->get('http://gdata.youtube.com/schemas/2007/categories.cat')
+      ->content;
     $content =~ s/category term=/\ncategory_name=/g;
     @cates = split( ?\n?, $content, 0 );
     $n = 0;
     print "\n";
     foreach $cat (@cates) {
-
         if ( $cat =~ /category_name='([^']+)' label='([^']+)'/
             and not $cat =~ /deprecated/ )
         {
@@ -367,15 +348,10 @@ sub Categories_area {
             push @categories, "$n - $cat_name";
         }
     }
-    if ( not $catnr ) {
-        print $bgreen;
-        print "\n=>> Insert a category number\n> ";
-        print $reset;
-        chomp( $pickcat = <STDIN> );
-    }
-    else {
-        $pickcat = $catnr;
-    }
+    print $bgreen;
+    print "\n=>> Insert a category number\n> ";
+    print $reset;
+    chomp( $pickcat = <STDIN> );
     foreach $cat (@categories) {
         if ( $cat =~ /^$pickcat - (.+)/ ) {
             $yt_api_url =
@@ -404,10 +380,10 @@ sub MPlayer {
             &ForeachPick;
         }
     }
-    if ( $Search =~ m[[=/]+([\w\-]{11})] and not $dont_exit ) {
+    if ( $Search =~ m[[=/]+([\w-]{11})] and not $dont_exit ) {
         exit;
     }
-    if ( $Search or $a =~ /^[-]+c/ or $username eq 1 ) {
+    if ( $Search or $categories or $username ) {
         unless ($dont_exit) {
             $category = '';
             $rating   = '';
@@ -568,9 +544,8 @@ sub PrintResults {
             &PicksArea;
         }
     }
-    print "
-$bred=>>$reset$bgreen Insert a number or search something else
-$reset> ";
+    print
+"\n$bred=>>$reset$bgreen Insert a number or search something else\n$reset> ";
     chomp( $youtube = <STDIN> );
     $PickBackup = $youtube;
     $SearchBackup .= ' ' . $youtube;
@@ -584,13 +559,12 @@ $reset> ";
         $youtube = $1;
     }
     if ( $youtube =~ /^([\d]+)$/ ) {
-        if ( $youtube > $number or $youtube eq 0 ) {
+        if ( $youtube > $number or not $youtube ) {
             print "\n";
             &PrintResults;
         }
         else {
-            $PICK = $1;
-            &ForeachCode;
+            &ForeachCode($1);
         }
     }
     elsif ( not $youtube ) {
@@ -675,7 +649,7 @@ sub ForeachPick {
         &PrintResults if $number eq $NrOfPicks;
         $Picks    = 1;
         $lastpick = $pick;
-        &PlayBack;
+        &ForeachCode($pick);
     }
 }
 
@@ -685,29 +659,7 @@ sub ForeachCode {
             print "FOREACHCODE: $line\n";
         }
         if ( $line =~
-/^$PICK>title=(.+)>time=(.*)>code=([\w-]{11})>views=([\d]*)>desc=(.*)/
-          )
-        {
-            $title    = $1;
-            $duration = $2;
-            $views    = $4;
-            $code     = $3;
-            $desc     = $5;
-            &GetYouTube;
-        }
-    }
-}
-
-sub PlayBack {
-    foreach $line (@codes) {
-        if ($debug) {
-            print "PLAYBACK: $line\n";
-        }
-        if ( $Picks and not $line =~ /^$pick>/ ) {
-            next;
-        }
-        elsif ( $line =~
-/^$pick>title=(.*)>time=(.*)>code=([\w-]{11})>views=([\d]*)>desc=(.*)/
+/^$_[0]>title=(.+)>time=(.*)>code=([\w-]{11})>views=([\d]*)>desc=(.*)/
           )
         {
             $title    = $1;
@@ -930,14 +882,7 @@ sub GetYouTube {
         }
     }
     if ($debug) {
-        print "
-
-VIDEOINFO:
-" . '=' x 80 . "
-" . $connect->content . "
-" . '=' x 80 . "
-
-";
+        print uri_unescape( $connect->content ) . "\n";
     }
     if ( $connect->content =~ /fmt_url_map=([^\&]+)\&/ ) {
         $streaming = $1;
@@ -964,7 +909,7 @@ VIDEOINFO:
             }
         }
         else {
-            unless ( $a =~ /^[-]+c/ or $username or $dont_exit ) {
+            unless ( $categories or $username or $dont_exit ) {
                 exit;
             }
         }
@@ -1000,12 +945,11 @@ sub Fullscreen_check {
 }
 
 sub pick {
-    print "$bred=>>$reset $bgreen Please choose quality of video (default: 1)";
+    print
+      "$bred=>>$reset $bgreen Please choose the quality of video (default: 1)";
     print "\n$reset";
-    print "
-  $bred 1$reset - 1280x720  (720p)
-  $bred 2$reset - 1920x1080 (1080p)
-  ";
+    print
+"\n  $bred 1$reset - 1280x720  (720p)\n  $bred 2$reset - 1920x1080 (1080p)\n  ";
     print '=' x 23 . "\n";
     print $bgreen;
     print "\n=>> Pick format: ";
