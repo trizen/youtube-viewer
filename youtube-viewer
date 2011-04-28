@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 27 April 2011
+#  Latest edit on: 28 April 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -31,21 +31,20 @@
 # [!] Most important changes are written in the changelog!
 #
 # [CHANGELOG]
+# - Added support for today and all time Youtube tops (usage: -t, --tops, -a, --all-time)      - NEW (v2.4.*)
 # - Re-added the support for the next page / Added support for download (-d, --download)       - NEW (v2.4.*)
-# - Added support for youtube subtitles. (Depends on: 'gcap' - http://code.google.com/p/gcap/) - NEW (v2.4.*)
+# - Added support for youtube subtitles. (Depends on: 'gcap' - http://gcap.googlecode.com)     - NEW (v2.4.*)
 # - First version with Windows support. Require SMPlayer to play videos. See MPlayer Line      - NEW (v2.4.*)
 # - Code has been changed in a proportion of ~60% and optimized for speed // --480 became -4   - NEW (v2.4.*)
-# - Added mega-powers of omnibox to the STDIN :)                                               - NEW (v2.3.*)
-# - Re-added the option to list and play youtube videos from a user profile. Usage: -u [user]  - NEW (v2.3.*)
-# - Added a new option to play all video clips from a category. Usage: '-c 9' and insert 'all' - NEW (v2.3.*)
-# - Category area is more friendly... New options: -c [n] where 'n' is the number of category  - NEW (v2.3.*)
-# - Added a new option to play only the audio track of a videoclip. Usage: [words] -n          - NEW (v2.3.*)
-# - Added option for fullscreen (-f, --fullscreen). Usage: youtube-viewer [words] -f           - NEW (v2.3.*)
-# - Added one new option '-c'. It shows available categories and will let you to choose one.   - NEW (v2.3.*)
-# - Added one new option '-m'. It shows 3 pages of youtube video results. Usage: [words] -m    - NEW (v2.3.*)
-# - For "-p" option has been added 3 pages of youtube video results (60 clips)                 - NEW (v2.3.*)
-# - Added "-prefer-ipv4" to the mplayer line (videoclips starts in no time now).               - NEW (v2.3.*)
-# - Search and play videos at 480p, 720p. Ex: [words] --480, [words] -p --480                  - NEW (v2.3.*)
+# - Added mega-powers of omnibox to the STDIN :)                                               - (v2.3.*)
+# - Re-added the option to list and play youtube videos from a user profile. Usage: -u [user]  - (v2.3.*)
+# - Added a new option to play only the audio track of a videoclip. Usage: [words] -n          - (v2.3.*)
+# - Added option for fullscreen (-f, --fullscreen). Usage: youtube-viewer [words] -f           - (v2.3.*)
+# - Added one new option '-c'. It shows available categories and will let you to choose one.   - (v2.3.*)
+# - Added one new option '-m'. It shows 3 pages of youtube video results. Usage: [words] -m    - (v2.3.*)
+# - For "-p" option has been added 3 pages of youtube video results (60 clips)                 - (v2.3.*)
+# - Added "-prefer-ipv4" to the mplayer line (videoclips starts in no time now).               - (v2.3.*)
+# - Search and play videos at 480p, 720p. Ex: [words] --480, [words] -p --480                  - (v2.3.*)
 # - Search has been corrected due to some YouTube changes...                                   - (v2.2.*)
 # - Added support to play a video at 480p even if it's resolution is higher. Ex: [url] --480   - (v2.2.*)
 # - Added a nice feature which prints some informations about the video which you watching at  - (v2.2.*)
@@ -69,15 +68,9 @@ use HTML::Entities;
 
 $os                   = $^O;
 $appname              = 'youtube-viewer';
-$version              = '2.4.10';
+$version              = '2.4.11';
 $mplayer_settings     = '-prefer-ipv4 -cache 30000 -cache-min 5';
 $MPlayer_srt_settings = '-unicode -utf8';
-foreach $_ (@ARGV) {
-    ();
-}
-unless ($default_sub) {
-    $default_sub = 'en';
-}
 if ( $os =~ /MSWin/ ) {
     $MPlayer_exe = 'C:\\Program Files\\SMPlayer\\mplayer\\mplayer.exe';
     unless ( -e $MPlayer_exe ) {
@@ -95,10 +88,10 @@ sub UserAgent {
     $lwp = 'LWP::UserAgent'->new;
     $lwp->agent('Mozilla/5.0 (X11; U; Linux i686; en-US) Chrome/10.0.648.45');
     $lwp->env_proxy;
-    $lwp->timeout(10);
+    $lwp->timeout(15);
     $lwp_is_set = 1;
 }
-if ( not $os =~ /MSWin/ ) {
+if ( not $os =~ /^MSWin/ ) {
     $bred   = "\e[1;31m";
     $bgreen = "\e[1;32m";
     $reset  = "\e[0m";
@@ -108,37 +101,34 @@ else {
     $bgreen = '';
     $reset  = '';
 }
-unless ($all_set) {
-    foreach $arg (@ARGV) {
-        if ( $arg =~ /^-/ ) {
-            if ( $arg =~ /^[-]+(d|download)$/ ) {
-                $Download_video = 1;
-            }
-            $SearchBackup .= " $arg ";
-        }
-        else {
-            $Search .= "$arg ";
-        }
-    }
-    $all_set = 1;
-}
 $all_args = join( '', @ARGV );
 foreach $arg (@ARGV) {
+    if ( $arg =~ /^-/ ) {
+        $SearchBackup .= " $arg ";
+    }
+    else {
+        $Search .= "$arg ";
+    }
     next unless $arg =~ /^-/;
-    $arg =~ s/^[-]+no[-_]?video.*/-n/;
-    $arg =~ s/^[-]+categories.*/-c/;
-    $arg =~ s/^[-]+f.*/-f/;
-    if ( $arg eq '-n' ) {
+    if ( $arg =~ /^[-]+(?:n|no[-_]?video)$/i ) {
         $MPlayerLine =~ s/mplayer /mplayer -novideo /;
-        $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -novideo/;
+        $MPlayerLine =~ s/mplayer\.exe"/mplayer.exe" -novideo/;
         $SearchBackup .= ' --480';
         next;
     }
-    if ( $arg =~ /^[-]+(?:sub|lang)=([\w]+)/ ) {
-        $default_sub = "\L$1\E";
+    if ( $arg =~ /^[-]+(?:sub|lang)=([\w]+)$/i ) {
+        $default_sub = lc $1;
         next;
     }
-    if ( $arg eq '-c' ) {
+    if ( $arg =~ /^[-]+(?:d|download)$/ ) {
+        $Download_video = 1;
+        next;
+    }
+    if ( $arg =~ /^[-]+(?:a|all[-_]?time)$/i ) {
+        $all_time = 1;
+        next;
+    }
+    if ( $arg =~ /^[-]+(?:c|categories)$/i ) {
         $categories = 1;
         next;
     }
@@ -150,7 +140,7 @@ foreach $arg (@ARGV) {
         $MoreResults = 1;
         next;
     }
-    if ( $arg eq '-f' ) {
+    if ( $arg =~ /^[-]+(?:fs?|fullscreen)$/ ) {
         $MPlayerLine =~ s/mplayer /mplayer -fs /;
         $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -fs/;
     }
@@ -170,6 +160,9 @@ foreach $arg (@ARGV) {
     if ( $arg eq '-c' ) {
         &Categories_area;
     }
+    if ( $arg =~ /^[-]+(?:a|all[_-]?time|t|tops)$/ ) {
+        &youtube_tops;
+    }
     if ( $arg =~ /^[-]+(?:u|username)$/ ) {
         $i += 1;
         if ( $ARGV[$i] ) {
@@ -185,7 +178,9 @@ foreach $arg (@ARGV) {
                 }
             }
         }
-        &Videos_from_username($user);
+        if ($user) {
+            &Videos_from_username($user);
+        }
     }
 }
 foreach $_ (@ARGV) {
@@ -202,7 +197,7 @@ foreach $code (@ARGV) {
         $code = $1;
         if ( $code =~ /[\d]+|[A-Z]+|-/ ) {
             $dont_exit = 1;
-            $title     = '';
+            undef $title;
             if ( length $code == 11 ) {
                 &GetYouTube;
             }
@@ -211,10 +206,10 @@ foreach $code (@ARGV) {
             }
         }
     }
-    elsif ( $code =~ m[(v|embed)[=/]+([\w-]{11})] ) {
-        $code      = $2;
+    elsif ( $code =~ m[(?:v|embed)[=/]+([\w-]{11})] ) {
+        $code      = $1;
         $dont_exit = 1;
-        $title     = '';
+        undef $title;
         if ( length $code == 11 ) {
             &GetYouTube;
         }
@@ -239,24 +234,26 @@ sub help {
       . qq[
 \t\t\t\t\t\t  by Trizen (trizen.go.ro)
 \n Usage: youtube-viewer [<url> | <video_id>] [-(4|7|1)]
-                       [-u <username>] [-c] [<keywords>] [-(f|n|m|p)]
+                       [-u <username>] [-categories] [-(a|t)]
+                       [<keywords>] [-fs] [-novideo] [-(m|p)]
 \nBase Options: youtube-viewer [...]
    <url>                : play an YouTube video by URL
    <code>               : play an YouTube video by code
    <keywords>           : search and play YouTube videos
-\nOther options:
-   -c, --categories     : shows available YouTube categories
-   -n, --novideo        : plays only audio track of the video
-   -d, --download       : downloads youtube video(s) with wget
-   <keywords> -f        : plays all videos in fullscreen mode
-   <keywords> -p        : plays all video results in order
-   <keywords> -n        : plays only the audio track of video results
-   <keywords> -m        : shows more video results (50 clips)
-   <keywords> -(4|7)    : plays video results at 480p resolution (or 720p)
-   <username> -u        : lists videos from a YouTube user profile
-   -sub=<LANG>          : subtitle language (default: en) (depends on gcap)
    -v, --version        : prints version and exits
    -h, --help           : prints help and exits
+\nOther options:
+   -t, --tops           : shows today Youtube tops
+   -a, --all-time       : shows all time Youtube tops
+   -c, --categories     : shows available YouTube categories
+   -n, --novideo        : plays only the audio track of video(s)
+   -d, --download       : downloads youtube video(s) with wget
+   -m, --more           : shows more video results (50 clips)
+   -f, --fullscreen     : plays all videos in fullscreen mode
+   -p, --playback       : plays all video results in order
+   -4, --480, -7        : plays video results at 480p resolution (or 720p)
+   -u <username>        : lists videos from a YouTube user profile
+   -sub=<LANG>          : subtitle language (default: en) (depends on gcap)
 \nTips and tricks:
   1. Search and play all video results by adding "-p" after keywords.
   2. After search results, you can insert: 3 5 8 1 to play videos in your order
@@ -295,8 +292,8 @@ sub InsertURL {
 $bred=>>$reset$bgreen Insert an YouTube URL or search something...
 $reset> ";
     chomp( $youtube = <STDIN> );
-    if ( $youtube =~ m[(v|embed)[=/]+([\w-]{11})] ) {
-        $code = $2;
+    if ( $youtube =~ m[(?:v|embed)[=/]+([\w-]{11})] ) {
+        $code = $1;
         &GetYouTube;
     }
     elsif ( $youtube =~ m[^http://] and not $youtube =~ /youtube\.com/ ) {
@@ -320,6 +317,40 @@ sub Videos_from_username {
     $username   = 1;
     $yt_api_url = "http://gdata.youtube.com/feeds/api/users/$_[0]/uploads";
     &YoutubeAPI;
+}
+
+sub youtube_tops {
+    $username = 1;
+    print "\n";
+    $n = 0;
+    unless ($all_time) {
+        $today = 1;
+    }
+    $youtube_top_url = 'http://gdata.youtube.com/feeds/api/standardfeeds';
+    foreach $line (
+        'top_rated',      'top_favorites',
+        'most_viewed',    'most_popular',
+        'most_recent',    'most_discussed',
+        'most_responded', 'recently_featured'
+      )
+    {
+        ++$n;
+        print "$bred$n$reset - " . ucfirst( $line . "\n" );
+        push @tops, "$n - $youtube_top_url/$line";
+    }
+    print "\n$bred=>>$bgreen Pick one of$reset\n> ";
+    chomp( $pick = quotemeta <STDIN> );
+    foreach $_ (@tops) {
+        if ( $_ =~ /^$pick - (.+)/ ) {
+            $yt_api_url = $1;
+            if ($today) {
+                unless ( $yt_api_url =~ /recent/ ) {
+                    $yt_api_url .= '?time=today';
+                }
+            }
+            &YoutubeAPI;
+        }
+    }
 }
 
 sub Categories_area {
@@ -351,7 +382,7 @@ sub Categories_area {
     print $bgreen;
     print "\n=>> Insert a category number\n> ";
     print $reset;
-    chomp( $pickcat = <STDIN> );
+    chomp( $pickcat = quotemeta <STDIN> );
     foreach $cat (@categories) {
         if ( $cat =~ /^$pickcat - (.+)/ ) {
             $yt_api_url =
@@ -362,7 +393,7 @@ sub Categories_area {
 }
 
 sub MPlayer {
-    $youtube = '';
+    undef $youtube;
     if ($debug) {
         print "STREAMING: $streaming\n\n";
     }
@@ -433,7 +464,7 @@ unless ($dont_exit) {
 sub Trizen {
     $PageNumber = 1;
     $FirstPage  = 1;
-    $Search =~ s/^\s|\s$//g;
+    $Search =~ s/^\s+|\s+$//g;
     $Search = uri_escape($Search);
     if ($MoreResults) {
         $results = 50;
@@ -612,11 +643,11 @@ sub PrintResults {
         &PicksArea;
     }
     elsif ( $youtube =~ m[v[=/]+([\w-]{11})] ) {
-        $code     = $1;
-        $desc     = '';
-        $title    = '';
-        $duration = '';
-        $views    = '';
+        $code = $1;
+        undef $desc;
+        undef $title;
+        undef $duration;
+        undef $views;
         &GetYouTube;
     }
     elsif ( $youtube =~ /[\d]+ [\d]+/ ) {
