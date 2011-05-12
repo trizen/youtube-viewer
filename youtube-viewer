@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 09 May 2011
+#  Latest edit on: 12 May 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -424,7 +424,7 @@ sub search_playlists {
     }
     print "\n$bred=>>$reset ${bgreen}Pick one playlist$reset\n> ";
     chomp( $pick = <STDIN> );
-    unless ($pick) {
+    unless($pick =~ /^\d+$/){
         if ( $url =~ /start-index=(\d+)/ ) {
             $old_index = $1;
             $new_index = $1 + 20;
@@ -528,10 +528,15 @@ sub MPlayer {
     }
     if ( $download_video or $tmp_download_video ) {
         $title =~ s[/][|]g;
-        print "** Saving to: '$title.mp4'\n";
-        $lwp->show_progress(1);
-        $lwp->mirror( $streaming, "$title.mp4" );
-        $lwp->show_progress(0);
+        if ( not -e "$title.mp4" ) {
+            print "** Saving to: '$title.mp4'\n";
+            $lwp->show_progress(1);
+            $lwp->mirror( $streaming, "$title.mp4" );
+            $lwp->show_progress(0);
+        }
+        else {
+            warn "** '$title.mp4' already exists...\n";
+        }
         undef $tmp_download_video if $tmp_download_video;
     }
     else {
