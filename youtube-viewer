@@ -609,24 +609,20 @@ sub search {
 
 sub Parse {
     $content = $lwp->get( $_[0] )->content;
-    if ( $content eq 'User not found' ) {
-        die "\n(x_x) $content...\n\n";
-    }
     $#Videos = -1;
-    $content =~ s/<title type='text'>/<>SPLIT<><TITLE=/g;
-    @content = split( ?<>SPLIT<>?, $content, 0 );
+    @content = split( /<title type='text'/, $content, 0 );
     foreach $_ (@content) {
         if ($debug) {
             print "$_\n\n";
         }
-        next unless $_ =~ /<TITLE=/;
+        next unless $_ =~ /^>/;
         if ( $_ =~ m[<name>([^<]+)</name>] ) {
             $video_line = "<author=$1>";
         }
         if ( $_ =~ m[v=([\w-]+)&amp;feature=youtube_gdata'/>] ) {
             $video_line .= "<v=$1>";
         }
-        if ( $_ =~ m[^<TITLE=([^<]+)</title>] ) {
+        if ( $_ =~ m[^>([^<]+)</title>] ) {
             $video_line .= "<title=$1>";
         }
         if ( $_ =~ /duration[^']+'(\d+)'/ ) {
