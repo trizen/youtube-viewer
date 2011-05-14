@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 12 May 2011
+#  Latest edit on: 14 May 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -63,6 +63,7 @@
 
 use URI::Escape;
 use HTML::Entities;
+
 $os                   = $^O;
 $appname              = 'youtube-viewer';
 $version              = '2.5.0';
@@ -424,7 +425,7 @@ sub search_playlists {
     }
     print "\n$bred=>>$reset ${bgreen}Pick one playlist$reset\n> ";
     chomp( $pick = <STDIN> );
-    unless($pick =~ /^\d+$/){
+    if ( not $pick =~ /^\s*\d+\s*$/ and $pick =~ /^(?:\s*|)$/ ) {
         if ( $url =~ /start-index=(\d+)/ ) {
             $old_index = $1;
             $new_index = $1 + 20;
@@ -435,6 +436,14 @@ sub search_playlists {
             $#list_of_playlists = -1;
             &search_playlists($url);
         }
+    }
+    elsif ( $pick =~ /^\D+/ and not $pick =~ /^\s+\d+/ ) {
+        $Search             = $pick;
+        $#list_of_playlists = -1;
+        &search_playlists;
+    }
+    elsif( $pick =~ /^\s*(\d+)/ ) {
+        $pick = $1;
     }
     foreach $_ (@list_of_playlists) {
         if ( $_ =~ /^<#=$pick>[\w\W]+<playlist=([^>]+)/ ) {
@@ -758,7 +767,7 @@ sub PrintResults {
         }
     }
     elsif ( $youtube eq 'all' ) {
-        $SearchBackup .= ' --1080';
+        $SearchBackup .= ' --1080 --play-all';
         $#picks = -1;
         for ( $i = 1 ; $i <= $number ; ++$i ) {
             push @picks, "$i";
@@ -788,12 +797,10 @@ sub PrintResults {
 }
 
 sub PicksArea {
-    if (@picks) {
-        $NrOfPicks = @picks;
-    }
-    $no       = 0;
-    $lastpick = '';
-    $number   = 0;
+    $NrOfPicks = $#picks + 1 if $#picks;
+    $no        = 0;
+    $lastpick  = '';
+    $number    = 0;
     &ForeachPick;
 }
 
@@ -1065,11 +1072,9 @@ sub GetYouTube {
         print $bred;
         print "\n(x_x) Something went wrong...\n\n";
         print $reset;
-        unless ( $SearchBackup =~ / -+(?:all|A)/ and $NrOfPicks ) {
-            print "$unable\n";
-        }
+        print "$unable\n";
         if ( $video_results and not $dont_exit ) {
-            unless ( $SearchBackup =~ / -+(?:all|A)/ ) {
+            unless ( $SearchBackup =~ / -+(?:all|A|play-all)/ or $NrOfPicks ) {
                 sleep 1;
                 &PrintResults;
             }
