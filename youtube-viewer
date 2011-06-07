@@ -390,7 +390,7 @@ sub search_playlists {
     foreach $_ (@list_of_playlists) {
         if (
             /^<#=(\d+)><title=([^>]*)><summary=([^>]*)>
-<playlist=([^>]+)><count=([^>]+)><author=([^>]+)>$/x
+?<playlist=([^>]+)><count=(\d+)><author=([^>]+)>$/
           )
         {
             if ( $1 < 10 ) {
