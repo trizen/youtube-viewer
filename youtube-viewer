@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 17 May 2011
+#  Latest edit on: 07 June 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -64,12 +64,12 @@
 use URI::Escape;
 use HTML::Entities;
 
-$os                   = $^O;
-$appname              = 'youtube-viewer';
-$version              = '2.5.0';
-$colours              = 0;
-$mplayer_settings     = '-prefer-ipv4 -cache 30000 -cache-min 5';
-$mplayer_srt_settings = '-unicode -utf8';
+my $os                   = $^O;
+my $appname              = 'youtube-viewer';
+my $version              = '2.5.0';
+my $colours              = 0;
+my $mplayer_settings     = '-prefer-ipv4 -cache 30000 -cache-min 5';
+my $mplayer_srt_settings = '-unicode -utf8';
 if ( $os =~ /(win|dos)/i ) {
     $MPlayer_exe = 'C:\\Program Files\\SMPlayer\\mplayer\\mplayer.exe';
     unless ( -e $MPlayer_exe ) {
@@ -111,7 +111,7 @@ foreach $arg (@ARGV) {
         $Search .= "$arg ";
     }
     next unless $arg =~ /^-/;
-    if ( $arg =~ /^[-]+(?:n|no[-_]?video)$/ ) {
+    if ( $arg =~ /^[-]+(?:n|no.?video)$/ ) {
         $MPlayerLine =~ s/mplayer /mplayer -novideo /;
         $MPlayerLine =~ s/mplayer\.exe"/mplayer.exe" -novideo/;
         $SearchBackup .= ' --480';
@@ -152,7 +152,7 @@ foreach $arg (@ARGV) {
         $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -fs/;
     }
 }
-if ( $colours and not $os =~ /(win|dos)/i ) {
+if ( $colours and not $os =~ /(?:win|dos)/i ) {
     $cblack  = "\e[40m";
     $byellow = "\e[1;33m";
     $bpurle  = "\e[1;35m";
@@ -245,11 +245,7 @@ foreach $code (@ARGV) {
 
 sub help {
     my $appname = uc $appname;
-    print "\n\t"
-      . '=' x 25
-      . " $appname "
-      . '=' x 25
-      . qq[
+    print "\n\t" . '=' x 25 . " $appname " . '=' x 25 . qq[
 \t\t\t\t\t\t  by Trizen (trizen.go.ro)
 \n Usage: youtube-viewer [<url> | <video_id>] [-(4|7|1)]
                        [-u <username>] [-categories] [-(a|t)]
@@ -349,7 +345,6 @@ sub search_playlists {
     @playlists = split( ?<title>?, $content, 0 );
     my $n = -1;
     foreach $_ (@playlists) {
-        study $_;
         if ( $_ =~ m[^([^<]*)</title>] ) {
             my $title = $1;
             if ( $n == -1 ) {
@@ -393,8 +388,9 @@ sub search_playlists {
     }
     print "\n";
     foreach $_ (@list_of_playlists) {
-        if ( $_ =~
-/^<#=(\d+)><title=([^>]*)><summary=([^>]*)><playlist=([^>]+)><count=([^>]+)><author=([^>]+)>$/
+        if (
+            /^<#=(\d+)><title=([^>]*)><summary=([^>]*)>
+<playlist=([^>]+)><count=([^>]+)><author=([^>]+)>$/x
           )
         {
             if ( $1 < 10 ) {
@@ -548,15 +544,11 @@ sub YoutubeAPI {
     else {
         $results = 20;
     }
-    $start_index = 1;
     if ( not $yt_api_url =~ /\?/ ) {
-        $yt_api_url .= "?start-index=$start_index&max-results=$results";
+        $yt_api_url .= "?start-index=1&max-results=$results";
     }
     else {
-        $yt_api_url .= "&start-index=$start_index&max-results=$results";
-    }
-    unless ($lwp_is_set) {
-        &UserAgent;
+        $yt_api_url .= "&start-index=1&max-results=$results";
     }
     &Parse($yt_api_url);
     &PrintResults;
@@ -577,17 +569,15 @@ sub search {
         $results = 20;
     }
     $ys = "http://gdata.youtube.com/feeds/api/videos?q=$Search"
-      . "&max-results=$results";
-    $start_index = 1;
-    $ys .= "&start-index=$start_index";
-    unless ($lwp_is_set) {
-        &UserAgent;
-    }
+      . "&max-results=$results&start-index=1";
     &Parse($ys);
     &PrintResults;
 }
 
 sub Parse {
+    unless ($lwp_is_set) {
+        &UserAgent;
+    }
     $content = $lwp->get( $_[0] )->content;
     $#Videos = -1;
     @content = split( /<entry>/, $content, 0 );
@@ -595,7 +585,6 @@ sub Parse {
         if ($debug) {
             print "$_\n\n";
         }
-        study $_;
         next unless $_ =~ /^<id>/;
         if ( $_ =~ m[<name>([^<]+)</name>] ) {
             $video_line = "<author=$1>";
@@ -650,8 +639,8 @@ sub PrintResults {
     my $number = 0;
     print "\n";
     foreach $line (@Videos) {
-        if ( $line =~
-/^<author=([^>]+)><v=([^>]+)><title=([^>]+)>
+        if (
+            $line =~ /^<author=([^>]+)><v=([^>]+)><title=([^>]+)>
 ?<category=([^>]+)><published=([^>]+)><time=
 ?([^>]*)><views=([^>]*)><description=([^>]+)>$/
           )
@@ -794,10 +783,10 @@ sub ForeachCode {
         if ($debug) {
             print "** FOREACHCODE: $line\n\n";
         }
-        if ( $line =~
-/\A$_[0]>title=([^>]+)>published=([^>]+)>
+        if (
+            $line =~ /^$_[0]>title=([^>]+)>published=([^>]+)>
 ?category=([^>]+)>time=([^>]+)>code=([\w-]{11})>
-?views=([\d]*)>desc=([^>]+)>\z/
+?views=([\d]*)>desc=([^>]+)>$/
           )
         {
             my $description = decode_entities($7);
@@ -808,8 +797,6 @@ sub ForeachCode {
 
 sub VideoCheck {
     $streaming =~ s/^[\w]*%[\w]*http:/http:/;
-    study $streaming;
-    study $SearchBackup;
     if ( not $streaming =~ /itag=34/ and $streaming =~ /itag=([\d]+)[\W]+/ ) {
         $itag = $1;
         $streaming =~ s/.*http(.+)itag=$itag([^\%]*).+/http$1itag=$itag$2/;
@@ -817,6 +804,11 @@ sub VideoCheck {
         unless ( $SearchBackup =~ / -+f/ ) {
             $MPlayerLine =~ s/-fs //;
         }
+        &Description;
+        &MPlayer;
+    }
+    elsif ( $SearchBackup =~ / -+2/ ) {
+        &lower_quality(18);
         &Description;
         &MPlayer;
     }
@@ -885,7 +877,6 @@ sub format_time {
 }
 
 sub Description {
-    study $connect->content;
     my ( $date, $rating );
     if ( $connect->content =~ /rating average='([\d\.]+)'/ ) {
         $rating = $1;
@@ -898,7 +889,6 @@ sub Description {
     unless ($title) {
         my $feed_url = 'http://gdata.youtube.com/feeds/api/videos/' . $code;
         my $content  = $lwp->get($feed_url)->content;
-        study $content;
         if ( $content =~ m[media:title type='plain'>([^<]+)</media:title>] ) {
             $title = decode_entities($1);
         }
@@ -912,9 +902,6 @@ sub Description {
         }
         if ( $content =~ m[<media:description type='plain'>([^<]+)</media] ) {
             $description = decode_entities($1);
-        }
-        if ( $content =~ m[<author><name>([^<]+)</name>] ) {
-            $author = $1;
         }
         if ( $content =~ /duration[^\d]+(\d+)/ ) {
             $duration = format_time($1);
@@ -943,7 +930,7 @@ sub Description {
         print "\n";
     }
     print "$bred=>> ${bgreen}View & Download$reset\n" . '-' x 80;
-    $get = $1 if $streaming =~ m[((http://)[^%]+)];
+    my $get = $1 if $streaming =~ m[((http://)[^%]+)];
     print "\n* URL $url\n* GET $get\n" . '-' x 80 . "\n";
     my $count = length $title;
     if ( $count <= 40 ) {
@@ -1003,16 +990,16 @@ sub GetYouTube {
         chdir '/tmp/';
         print "\n";
         system "gcap $url" unless -e "${code}_$default_sub.srt";
-        @ls = glob('*.srt');
+        my (@srt_files) = glob('*.srt');
         undef $srt_file if $srt_file;
-        foreach $line (@ls) {
+        foreach $line (@srt_files) {
             if ( $line =~ /${code}_$default_sub\.srt/ ) {
                 $srt_file = "${code}_$default_sub.srt";
                 &MPlayerLine_with_srt;
             }
         }
         unless ($srt_file) {
-            foreach $line (@ls) {
+            foreach $line (@srt_files) {
                 if ( $line =~ /$code([\w]*)\.srt/ ) {
                     $srt_file = "$code$1.srt";
                     &MPlayerLine_with_srt;
@@ -1020,9 +1007,7 @@ sub GetYouTube {
             }
         }
     }
-    if ($debug) {
-        print "\n\n" . uri_unescape( $connect->content ) . "\n\n";
-    }
+    print "\n\n" . uri_unescape( $connect->content ) . "\n\n" if $debug;
     if ( $connect->content =~ /fmt_url_map=([^&]+)&/ ) {
         $streaming = $1;
         $streaming =~ s/%3A/:/gi;
@@ -1101,7 +1086,7 @@ sub pick {
 }
 
 sub lower_quality {
-    if ( $_[0] and $_[0] == 34 ) {
+    if ( $_[0] and $_[0] =~ /^\d+$/ ) {
         if ( $streaming =~ /itag=$_[0]/ ) {
             $streaming =~ s/.*http(.+)itag=$_[0]([^\%]*).+/http$1itag=$_[0]$2/;
         }
@@ -1114,7 +1099,7 @@ sub lower_quality {
             }
         }
     }
-    unless ( $SearchBackup =~ / [-]+f/ ) {
+    unless ( $SearchBackup =~ / -+f/ ) {
         $MPlayerLine =~ s/-fs //;
     }
 }
