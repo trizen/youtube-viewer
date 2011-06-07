@@ -267,7 +267,7 @@ sub help {
    -f, --fullscreen     : plays all videos in fullscreen mode
    -p, --playlist       : searches for playlists of videos
    -A, --all            : plays all video results in order
-   -3, -4, -7, -1       : plays videos at 360p, 480p, 720p and 1080p
+   -2, -3, -4, -7, -1   : plays videos at 240p, 360p, 480p, 720p and 1080p
    -u <username>        : lists videos uploaded by a specific user
    -sub=<LANG>          : subtitle language (default: en) (depends on gcap)
 \nTips and tricks:
@@ -641,8 +641,8 @@ sub PrintResults {
     foreach $line (@Videos) {
         if (
             $line =~ /^<author=([^>]+)><v=([^>]+)><title=([^>]+)>
-?<category=([^>]+)><published=([^>]+)><time=
-?([^>]*)><views=([^>]*)><description=([^>]+)>$/
+<category=([^>]+)><published=([^>]+)><time=
+([^>]*)><views=([^>]*)><description=([^>]+)>$/x
           )
         {
             ++$number;
@@ -785,8 +785,8 @@ sub ForeachCode {
         }
         if (
             $line =~ /^$_[0]>title=([^>]+)>published=([^>]+)>
-?category=([^>]+)>time=([^>]+)>code=([\w-]{11})>
-?views=([\d]*)>desc=([^>]+)>$/
+category=([^>]+)>time=([^>]+)>code=([\w-]{11})
+>views=([\d]*)>desc=([^>]+)>$/x
           )
         {
             my $description = decode_entities($7);
@@ -797,9 +797,9 @@ sub ForeachCode {
 
 sub VideoCheck {
     $streaming =~ s/^[\w]*%[\w]*http:/http:/;
-    if ( not $streaming =~ /itag=34/ and $streaming =~ /itag=([\d]+)[\W]+/ ) {
-        $itag = $1;
-        $streaming =~ s/.*http(.+)itag=$itag([^\%]*).+/http$1itag=$itag$2/;
+    if ( not $streaming =~ /itag=34/ and $streaming =~ /itag=([\d]+)/ ) {
+        my $itag = $1;
+        $streaming =~ s/.*http(.+)itag=$itag([^%]*).+/http$1itag=$itag$2/;
         $streaming =~ s/%.*//;
         unless ( $SearchBackup =~ / -+f/ ) {
             $MPlayerLine =~ s/-fs //;
@@ -808,7 +808,7 @@ sub VideoCheck {
         &MPlayer;
     }
     elsif ( $SearchBackup =~ / -+2/ ) {
-        &lower_quality(18);
+        &lower_quality(5);
         &Description;
         &MPlayer;
     }
@@ -824,7 +824,7 @@ sub VideoCheck {
     }
     elsif ( $SearchBackup =~ / -+7/ ) {
         if ( $streaming =~ /itag=22/ ) {
-            $streaming =~ s/.*http(.+)itag=22([^\%]*).+/http$1itag=22$2/;
+            $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
             &Fullscreen_check;
             &Description;
             &MPlayer;
@@ -837,13 +837,13 @@ sub VideoCheck {
     }
     elsif ( $SearchBackup =~ / -+1/ ) {
         if ( $streaming =~ /itag=37/ ) {
-            $streaming =~ s/.*http(.+)itag=37([^\%]*).+/http$1itag=37$2/;
+            $streaming =~ s/.*http(.+)itag=37([^%]*).+/http$1itag=37$2/;
             &Fullscreen_check;
             &Description;
             &MPlayer;
         }
         elsif ( $streaming =~ /itag=22/ ) {
-            $streaming =~ s/.*http(.+)itag=22([^\%]*).+/http$1itag=22$2/;
+            $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
             &Fullscreen_check;
             &Description;
             &MPlayer;
@@ -1074,12 +1074,12 @@ sub pick {
     chomp( $pick = <STDIN> );
     print '-' x 80 . "\n\n";
     if ( $pick == 2 ) {
-        $streaming =~ s/.*http(.+)itag=37([^\%]*).+/http$1itag=37$2/;
+        $streaming =~ s/.*http(.+)itag=37([^%]*).+/http$1itag=37$2/;
         &Fullscreen_check;
         &MPlayer;
     }
     else {
-        $streaming =~ s/.*http(.+)itag=22([^\%]*).+/http$1itag=22$2/;
+        $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
         &Fullscreen_check;
         &MPlayer;
     }
@@ -1088,13 +1088,13 @@ sub pick {
 sub lower_quality {
     if ( $_[0] and $_[0] =~ /^\d+$/ ) {
         if ( $streaming =~ /itag=$_[0]/ ) {
-            $streaming =~ s/.*http(.+)itag=$_[0]([^\%]*).+/http$1itag=$_[0]$2/;
+            $streaming =~ s/.*http(.+)itag=$_[0]([^%]*).*/http$1itag=$_[0]$2/;
         }
     }
     else {
         foreach $_ ( 35, 34 ) {
             if ( $streaming =~ /itag=$_/ ) {
-                $streaming =~ s/.*http(.+)itag=$_([^\%]*).+/http$1itag=$_$2/;
+                $streaming =~ s/.*http(.+)itag=$_([^%]*).*/http$1itag=$_$2/;
                 last;
             }
         }
