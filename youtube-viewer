@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 07 June 2011
+#  Latest edit on: 08 June 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -70,7 +70,7 @@ my $version              = '2.5.0';
 my $colours              = 0;
 my $mplayer_settings     = '-prefer-ipv4 -cache 30000 -cache-min 5';
 my $mplayer_srt_settings = '-unicode -utf8';
-if ( $os =~ /(win|dos)/i ) {
+if ( $os =~ /(?:win|dos)/i ) {
     $MPlayer_exe = 'C:\\Program Files\\SMPlayer\\mplayer\\mplayer.exe';
     unless ( -e $MPlayer_exe ) {
         warn "\n\n!!! Please install SMPlayer to stream Youtube videos.\n\n";
@@ -88,12 +88,10 @@ sub UserAgent {
     $lwp->agent('Mozilla/5.0 (X11; U; Linux i686; en-US) Chrome/10.0.648.45');
     $lwp->env_proxy;
     $lwp->timeout(15);
-    if ($debug) {
-        $lwp->show_progress(1);
-    }
+    $lwp->show_progress(1) if $debug;
     $lwp_is_set = 1;
 }
-if ( not $os =~ /(win|dos)/i ) {
+if ( not $os =~ /(?:win|dos)/i ) {
     $bred   = "\e[1;31m";
     $bgreen = "\e[1;32m";
     $reset  = "\e[0m";
@@ -111,25 +109,29 @@ foreach $arg (@ARGV) {
         $Search .= "$arg ";
     }
     next unless $arg =~ /^-/;
-    if ( $arg =~ /^[-]+(?:n|no.?video)$/ ) {
+    if ( $arg =~ /^-+(?:n|no.?video)$/ ) {
         $MPlayerLine =~ s/mplayer /mplayer -novideo /;
         $MPlayerLine =~ s/mplayer\.exe"/mplayer.exe" -novideo/;
         $SearchBackup .= ' --480';
         next;
     }
-    if ( $arg =~ /^[-]+(?:sub|lang)=([\w]+)$/ ) {
+    if ($arg =~ /^-+(?:T|tty|M|mplayer)=(.+)/){
+        $MPlayerLine .= " $1";
+        next;
+    }
+    if ( $arg =~ /^-+(?:sub|lang)=([\w]+)$/ ) {
         $default_sub = lc $1;
         next;
     }
-    if ( $arg =~ /^[-]+(?:colou?rs|co|cl)$/ ) {
+    if ( $arg =~ /^-+(?:colou?rs?|C)$/ ) {
         $colours = 1;
         next;
     }
-    if ( $arg =~ /^[-]+(?:d|download)$/ ) {
+    if ( $arg =~ /^-+(?:d|download)$/ ) {
         $download_video = 1;
         next;
     }
-    if ( $arg =~ /^[-]+(?:a|all[-_]?time)$/ ) {
+    if ( $arg =~ /^-+(?:a|all.?time)$/ ) {
         $all_time = 1;
         next;
     }
@@ -137,17 +139,17 @@ foreach $arg (@ARGV) {
         $debug = 1;
         next;
     }
-    if ( $arg =~ /^[-]+(?:A|all)$/ ) {
+    if ( $arg =~ /^-+(?:A|all)$/ ) {
         $playback    = 1;
         $MoreResults = 1;
         $SearchBackup .= ' --1080';
         next;
     }
-    if ( $arg =~ /^[-]+(?:m|more)$/ ) {
+    if ( $arg =~ /^-+(?:m|more)$/ ) {
         $MoreResults = 1;
         next;
     }
-    if ( $arg =~ /^[-]+(?:fs?|fullscreen)$/ ) {
+    if ( $arg =~ /^-+(?:fs?|fullscreen)$/ ) {
         $MPlayerLine =~ s/mplayer /mplayer -fs /;
         $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -fs/;
     }
@@ -270,6 +272,7 @@ sub help {
    -2, -3, -4, -7, -1   : plays videos at 240p, 360p, 480p, 720p and 1080p
    -u <username>        : lists videos uploaded by a specific user
    -sub=<LANG>          : subtitle language (default: en) (depends on gcap)
+   -mplayer='SETTINGS'  : add some extra options to the MPlayer line
 \nTips and tricks:
   1. After search results, press <ENTER> for the next page
   2. After search results, insert: <number> (--download, -d, -1, -4, -7)
