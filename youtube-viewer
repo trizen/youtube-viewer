@@ -71,10 +71,9 @@ my $colours              = 0;
 my $mplayer_settings     = '-prefer-ipv4 -cache 30000 -cache-min 5';
 my $mplayer_srt_settings = '-unicode -utf8';
 if ( $os =~ /(?:win|dos)/i ) {
-    $MPlayer_exe = 'C:\\Program Files\\SMPlayer\\mplayer\\mplayer.exe';
+    $MPlayer_exe = $ENV{'ProgramFiles'} . '\\SMPlayer\\mplayer\\mplayer.exe';
     unless ( -e $MPlayer_exe ) {
         warn "\n\n!!! Please install SMPlayer to stream Youtube videos.\n\n";
-        sleep 2;
     }
     $MPlayerLine = qq["$MPlayer_exe" $mplayer_settings];
 }
