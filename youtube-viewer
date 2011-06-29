@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 08 June 2011
+#  Latest edit on: 29 June 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -30,7 +30,8 @@
 # [!] Most important changes are written in the changelog!
 #
 # [CHANGELOG]
-# - Added colours for text (--colours) or $colours = 1, 360p support (-3), playlist support    - NEW (v2.5.*)
+# - Added few options to control cache of MPlayer and lower cache for lower video resolutions  - NEW (v2.5.1)
+# - Added colours for text (--colours) or $colours = 1, 360p support (-3), playlist support    - NEW (v2.5.0)
 # - Added support for today and all time Youtube tops (usage: -t, --tops, -a, --all-time)      - (v2.4.*)
 # - Re-added the support for the next page / Added support for download (-d, --download)       - (v2.4.*)
 # - Added support for Youtube CCaptions. (Depends on: 'gcap' - http://gcap.googlecode.com)     - (v2.4.*)
@@ -66,9 +67,12 @@ use HTML::Entities;
 
 my $os                   = $^O;
 my $appname              = 'youtube-viewer';
-my $version              = '2.5.0';
+my $version              = '2.5.1';
 my $colours              = 0;
-my $mplayer_settings     = '-prefer-ipv4 -cache 30000 -cache-min 5';
+my $cache                = 30000;
+my $cache_min            = 5;
+my $user_lower_cache     = 0;
+my $mplayer_settings     = "-prefer-ipv4 -cache $cache -cache-min $cache_min";
 my $mplayer_srt_settings = '-unicode -utf8';
 if ( $os =~ /(?:win|dos)/i ) {
     $MPlayer_exe = $ENV{'ProgramFiles'} . '\\SMPlayer\\mplayer\\mplayer.exe';
@@ -100,21 +104,37 @@ else {
     $bgreen = '';
     $reset  = '';
 }
-foreach $arg (@ARGV) {
+foreach my $arg (@ARGV) {
     if ( $arg =~ /^-/ ) {
-        $SearchBackup .= " $arg ";
+        $stdin_argvs .= " $arg ";
     }
     else {
         $Search .= "$arg ";
     }
     next unless $arg =~ /^-/;
+    if ( $arg =~ /^-+cache=(\d+)$/ ) {
+        my $cache = $1;
+        $MPlayerLine =~ s/-cache\s+\d+/-cache $cache/;
+        $user_cache = 1;
+        next;
+    }
+    if ( $arg =~ /^-+(?:l|lower.?cache)$/ ) {
+        $user_lower_cache = 1;
+        next;
+    }
+    if ( $arg =~ /^-+cache.?min=(\d+)$/ ) {
+        my $cache_min = $1;
+        $MPlayerLine =~ s/-cache-min\s+\d+/-cache-min $cache_min/;
+        $user_cache_min = 1;
+        next;
+    }
     if ( $arg =~ /^-+(?:n|no.?video)$/ ) {
         $MPlayerLine =~ s/mplayer /mplayer -novideo /;
         $MPlayerLine =~ s/mplayer\.exe"/mplayer.exe" -novideo/;
-        $SearchBackup .= ' --480';
+        $stdin_argvs .= ' --480';
         next;
     }
-    if ($arg =~ /^-+(?:T|tty|M|mplayer)=(.+)/){
+    if ( $arg =~ /^-+(?:T|tty|M|mplayer)=(.+)/ ) {
         $MPlayerLine .= " $1";
         next;
     }
@@ -122,7 +142,7 @@ foreach $arg (@ARGV) {
         $default_sub = lc $1;
         next;
     }
-    if ( $arg =~ /^-+(?:colou?rs?|C)$/ ) {
+    if ( $arg =~ /^-+(?:colou?rs?|C|cl)$/ ) {
         $colours = 1;
         next;
     }
@@ -141,7 +161,7 @@ foreach $arg (@ARGV) {
     if ( $arg =~ /^-+(?:A|all)$/ ) {
         $playback    = 1;
         $MoreResults = 1;
-        $SearchBackup .= ' --1080';
+        $stdin_argvs .= ' --1080';
         next;
     }
     if ( $arg =~ /^-+(?:m|more)$/ ) {
@@ -165,10 +185,10 @@ else {
     $bpurle  = '';
     $byellow = '';
 }
-$SearchBackup ||= '';
-$default_sub  ||= 'en';
-$Search       ||= '';
-foreach $arg (@ARGV) {
+$stdin_argvs ||= '';
+$default_sub ||= 'en';
+$Search      ||= '';
+foreach my $arg (@ARGV) {
     ++$i;
     next unless $arg =~ /^-/;
     if ( $arg =~ /^[-]+(?:h|help|\?|usage)$/i ) {
@@ -181,7 +201,7 @@ foreach $arg (@ARGV) {
         &search_playlists;
     }
     if ( $arg =~ /^[-]+(?:c|categories)$/ ) {
-        &Categories_area;
+        &categories_area;
     }
     if ( $arg =~ /^[-]+(?:a|all[_-]?time|t|tops)$/ ) {
         &youtube_tops;
@@ -211,15 +231,13 @@ foreach $_ (@ARGV) {
         last;
     }
 }
-unless ($non_argv) {
-    &InsertURL;
-}
-foreach $code (@ARGV) {
+&insert_url unless $non_argv;
+foreach my $code (@ARGV) {
     if ( $code =~ /^([\w-]{11})$/ ) {
         $code = $1;
         if ( $code =~ /[\d]+|[A-Z]+|-/ ) {
             $dont_exit = 1;
-            &GetYouTube($code);
+            &get_youtube($code);
         }
     }
     elsif ( $code =~ /view_play_list\?p=([A-Z0-9]+)/ ) {
@@ -230,7 +248,7 @@ foreach $code (@ARGV) {
         $code      = $1;
         $dont_exit = 1;
         if ( length $code == 11 ) {
-            &GetYouTube($code);
+            &get_youtube($code);
         }
         else {
             next;
@@ -266,12 +284,16 @@ sub help {
    -d, --download       : downloads youtube video(s) with LWP
    -m, --more           : shows more video results (50 clips)
    -f, --fullscreen     : plays all videos in fullscreen mode
-   -p, --playlist       : searches for playlists of videos
+   -p, --playlist       : searches for Youtube playlists
    -A, --all            : plays all video results in order
    -2, -3, -4, -7, -1   : plays videos at 240p, 360p, 480p, 720p and 1080p
+   -C, -cl, --colors    : use colors for text output
    -u <username>        : lists videos uploaded by a specific user
    -sub=<LANG>          : subtitle language (default: en) (depends on gcap)
    -mplayer='SETTINGS'  : add some extra options to the MPlayer line
+   -cache=<VALUE>       : set cache for MPlayer (default: $cache)
+   -cache-min=<VALUE>   : set cache-min for MPlayer (default: $cache_min)
+   -l, --lower-cache    : set a lower cache for MPlayer (for slow connections)
 \nTips and tricks:
   1. After search results, press <ENTER> for the next page
   2. After search results, insert: <number> (--download, -d, -1, -4, -7)
@@ -289,21 +311,19 @@ sub version {
 }
 
 sub code_from_content {
-    unless ($lwp_is_set) {
-        &UserAgent;
-    }
+    &UserAgent unless $lwp_is_set;
     $connect = $lwp->get( $_[0] ) if $_[0];
     if ( $connect->content =~ m[youtube\.com/(?:v|embed)/([\w-]{11})] ) {
-        &GetYouTube($1);
+        &get_youtube($1);
     }
 }
 
-sub InsertURL {
+sub insert_url {
     print "\n$bred=>>$reset$bgreen "
       . "Insert an YouTube URL or search something...\n$reset> ";
     chomp( $youtube = <STDIN> );
     if ( $youtube =~ m[(?:v|embed)[=/]+([\w-]{11})] ) {
-        &GetYouTube($1);
+        &get_youtube($1);
     }
     elsif ( $youtube =~ /view_play_list\?p=([A-Z0-9]+)/ ) {
         $playlist = 1;
@@ -313,7 +333,7 @@ sub InsertURL {
         &code_from_content($youtube);
     }
     elsif ($youtube) {
-        $SearchBackup .= ' ' . $youtube;
+        $stdin_argvs .= ' ' . $youtube;
         $Search = $youtube;
         $number = 0;
         &search;
@@ -344,7 +364,7 @@ sub search_playlists {
         $url .= '&max-results=20&v=2';
     }
     my $content = $lwp->get($url)->content;
-    @playlists = split( ?<title>?, $content, 0 );
+    @playlists = split( m?<title>?, $content, 0 );
     my $n = -1;
     foreach $_ (@playlists) {
         if ( $_ =~ m[^([^<]*)</title>] ) {
@@ -393,12 +413,13 @@ sub search_playlists {
         if (
             /^<#=(\d+)><title=([^>]*)><summary=([^>]*)>
 ?<playlist=([^>]+)><count=(\d+)><author=([^>]+)>$/
-          )
-        {
+          ) {
             if ( $1 < 10 ) {
                 print ' ';
             }
-            print "$bred$1$reset - $2 - $3 (by $6) ($5)\n";
+            print "$cblack$bred$1$reset$cblack - $byellow$2$reset"
+              . "$cblack (${bpurle}by $6$reset$cblack) "
+              . "($bblue$5$reset$cblack)$reset\n";
         }
     }
     print "\n$bred=>>$reset ${bgreen}Pick one playlist$reset\n> ";
@@ -449,8 +470,7 @@ sub youtube_tops {
         'most_viewed',    'most_popular',
         'most_recent',    'most_discussed',
         'most_responded', 'recently_featured'
-      )
-    {
+      ) {
         ++$n;
         my $top_name = ucfirst $line;
         $top_name =~ s/_/ /;
@@ -472,10 +492,8 @@ sub youtube_tops {
     }
 }
 
-sub Categories_area {
-    unless ($lwp_is_set) {
-        &UserAgent;
-    }
+sub categories_area {
+    &UserAgent unless $lwp_is_set;
     $connect =
       $lwp->get('http://gdata.youtube.com/schemas/2007/categories.cat');
     @cates = split( /category term=/, $connect->content, 0 );
@@ -507,9 +525,7 @@ sub Categories_area {
 }
 
 sub MPlayer {
-    if ($debug) {
-        print "** STREAMING: $streaming\n\n";
-    }
+    print "** STREAMING: $streaming\n\n" if $debug;
     if ( $download_video or $tmp_download_video ) {
         $title =~ s[/][|]g;
         if ( not -e "$title.mp4" ) {
@@ -524,14 +540,15 @@ sub MPlayer {
         undef $tmp_download_video if $tmp_download_video;
     }
     else {
+        print "** MPlayer Line: $MPlayerLine\n\n" if $debug;
         `$MPlayerLine "$streaming"`;
     }
     print "\n";
     if ($Picks) {
-        &ForeachPick;
+        &foreach_pick;
     }
     if ( $playlist or $video_results and not $dont_exit ) {
-        &PrintResults;
+        &print_results;
     }
     unless ($dont_exit) {
         exit;
@@ -539,7 +556,7 @@ sub MPlayer {
 }
 
 sub YoutubeAPI {
-    $#Videos = -1;
+    undef @Videos;
     if ($MoreResults) {
         $results = 50;
     }
@@ -552,8 +569,8 @@ sub YoutubeAPI {
     else {
         $yt_api_url .= "&start-index=1&max-results=$results";
     }
-    &Parse($yt_api_url);
-    &PrintResults;
+    &parse_content($yt_api_url);
+    &print_results;
 }
 unless ( $dont_exit or $playlists ) {
     &search;
@@ -572,11 +589,11 @@ sub search {
     }
     $ys = "http://gdata.youtube.com/feeds/api/videos?q=$Search"
       . "&max-results=$results&start-index=1";
-    &Parse($ys);
-    &PrintResults;
+    &parse_content($ys);
+    &print_results;
 }
 
-sub Parse {
+sub parse_content {
     unless ($lwp_is_set) {
         &UserAgent;
     }
@@ -636,7 +653,7 @@ sub Parse {
     }
 }
 
-sub PrintResults {
+sub print_results {
     $#codes = -1;
     my $number = 0;
     print "\n";
@@ -645,8 +662,7 @@ sub PrintResults {
             $line =~ /^<author=([^>]+)><v=([^>]+)><title=([^>]+)>
 <category=([^>]+)><published=([^>]+)><time=
 ([^>]*)><views=([^>]*)><description=([^>]+)>$/x
-          )
-        {
+          ) {
             ++$number;
             my $author      = $1;
             my $code        = $2;
@@ -679,7 +695,7 @@ sub PrintResults {
         }
         $youtube = join( '', @picks2 );
         @picks = split( ' ', $youtube, 0 );
-        &PicksArea;
+        &picks_area;
     }
     print "\n$bred=>>$reset$bgreen Insert a number or "
       . "search something else\n$reset> ";
@@ -692,9 +708,9 @@ sub PrintResults {
         &code_from_content($PickBackup);
     }
     elsif ( $PickBackup =~ /([\d]+) -([\w\s-]+)/ ) {
-        $youtube      = $1;
-        $SearchBackup = " -$2";
-        @options      = split( ? ?, "-$2", 0 );
+        $youtube     = $1;
+        $stdin_argvs = " -$2";
+        @options     = split( m? ?, "-$2", 0 );
         foreach $_ (@options) {
             if ( $_ =~ /^[-]+(?:d|download)$/ ) {
                 $tmp_download_video = 1;
@@ -705,10 +721,10 @@ sub PrintResults {
     if ( $youtube =~ /^\s*([\d]+)\s*$/ ) {
         if ( $youtube > $number or not $youtube ) {
             print "\n";
-            &PrintResults;
+            &print_results;
         }
         else {
-            &ForeachCode($1);
+            &foreach_code($1);
         }
     }
     elsif ( $youtube =~ /^\s*$/ ) {
@@ -719,68 +735,68 @@ sub PrintResults {
                 $old_index   = $1;
                 $start_index = $old_index + $results;
                 $ys =~ s/index=$old_index/index=$start_index/;
-                &Parse($ys);
-                &PrintResults;
+                &parse_content($ys);
+                &print_results;
             }
         }
         elsif ($yt_api_url) {
-            $#Videos = -1;
-            $ys      = '';
+            undef @Videos;
+            $ys = '';
             if ( $yt_api_url =~ /index=([\d]+)/ ) {
                 $old_index   = $1;
                 $start_index = $old_index + $results;
                 $yt_api_url =~ s/index=$old_index/index=$start_index/;
-                &Parse($yt_api_url);
-                &PrintResults;
+                &parse_content($yt_api_url);
+                &print_results;
             }
         }
     }
     elsif ( $youtube eq 'all' ) {
-        $SearchBackup .= ' --1080 --play-all';
-        $#picks = -1;
+        $stdin_argvs .= ' --1080 --play-all';
+        undef @picks if $#picks > -1;
         for ( $i = 1 ; $i <= $number ; ++$i ) {
-            push @picks, "$i";
+            push @picks, $i;
         }
-        &PicksArea;
+        &picks_area;
     }
     elsif ( $youtube =~ /view_play_list\?p=([A-Z0-9]+)/ ) {
         &list_playlist($1);
     }
     elsif ( $youtube =~ m[(?:v|embed)[=/]+([\w-]{11})] ) {
-        &GetYouTube($1);
+        &get_youtube($1);
     }
     elsif ( $youtube =~ /\d+[,\s]+\d+/ ) {
-        @picks = split( ?\D?, $youtube, 0 );
-        &PicksArea;
+        @picks = split( m?\D?, $youtube, 0 );
+        &picks_area;
     }
-    elsif ($youtube) {
+    else {
         $Search = $youtube;
         &search;
     }
 }
 
-sub PicksArea {
-    $NrOfPicks = $#picks + 1 if $#picks;
+sub picks_area {
+    $NrOfPicks = scalar @picks;
     $no        = 0;
     $lastpick  = '';
-    &ForeachPick;
+    &foreach_pick;
 }
 
-sub ForeachPick {
+sub foreach_pick {
     for ( $number = $no ; $number <= $NrOfPicks ; ++$number ) {
         $no   = $number;
         $pick = $picks[$number];
         if ($pick) {
             next if $lastpick eq $pick;
         }
-        &PrintResults if $number eq $NrOfPicks;
+        &print_results if $number eq $NrOfPicks;
         $Picks    = 1;
         $lastpick = $pick;
-        &ForeachCode($pick);
+        &foreach_code($pick);
     }
 }
 
-sub ForeachCode {
+sub foreach_code {
     foreach $line (@codes) {
         if ($debug) {
             print "** FOREACHCODE: $line\n\n";
@@ -789,76 +805,76 @@ sub ForeachCode {
             $line =~ /^$_[0]>title=([^>]+)>published=([^>]+)>
 category=([^>]+)>time=([^>]+)>code=([\w-]{11})
 >views=([\d]*)>desc=([^>]+)>$/x
-          )
-        {
+          ) {
             my $description = decode_entities($7);
-            &GetYouTube( $5, $1, $4, $6, $3, $2, $description );
+            &get_youtube( $5, $1, $4, $6, $3, $2, $description );
         }
     }
 }
 
-sub VideoCheck {
+sub select_resolution {
     $streaming =~ s/^[\w]*%[\w]*http:/http:/;
     if ( not $streaming =~ /itag=34/ and $streaming =~ /itag=([\d]+)/ ) {
         my $itag = $1;
         $streaming =~ s/.*http(.+)itag=$itag([^%]*).+/http$1itag=$itag$2/;
         $streaming =~ s/%.*//;
-        unless ( $SearchBackup =~ / -+f/ ) {
+        unless ( $stdin_argvs =~ / -+f/ ) {
             $MPlayerLine =~ s/-fs //;
         }
-        &Description;
+        &lower_cache;
+        &description;
         &MPlayer;
     }
-    elsif ( $SearchBackup =~ / -+2/ ) {
+    elsif ( $stdin_argvs =~ / -+2/ ) {
         &lower_quality(5);
-        &Description;
+        &description;
         &MPlayer;
     }
-    elsif ( $SearchBackup =~ / -+3/ ) {
+    elsif ( $stdin_argvs =~ / -+3/ ) {
         &lower_quality(34);
-        &Description;
+        &description;
         &MPlayer;
     }
-    elsif ( $SearchBackup =~ / -+4/ ) {
+    elsif ( $stdin_argvs =~ / -+4/ ) {
         &lower_quality;
-        &Description;
+        &description;
         &MPlayer;
     }
-    elsif ( $SearchBackup =~ / -+7/ ) {
+    elsif ( $stdin_argvs =~ / -+7/ ) {
         if ( $streaming =~ /itag=22/ ) {
             $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
-            &Fullscreen_check;
-            &Description;
+            &fullscreen_check;
+            &description;
             &MPlayer;
         }
         else {
             &lower_quality;
-            &Description;
+            &description;
             &MPlayer;
         }
     }
-    elsif ( $SearchBackup =~ / -+1/ ) {
+    elsif ( $stdin_argvs =~ / -+1/ ) {
         if ( $streaming =~ /itag=37/ ) {
             $streaming =~ s/.*http(.+)itag=37([^%]*).+/http$1itag=37$2/;
-            &Fullscreen_check;
-            &Description;
+            &fullscreen_check;
+            &description;
             &MPlayer;
         }
         elsif ( $streaming =~ /itag=22/ ) {
             $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
-            &Fullscreen_check;
-            &Description;
+            &fullscreen_check;
+            &description;
             &MPlayer;
         }
         else {
             &lower_quality;
-            &Description;
+            &description;
             &MPlayer;
         }
     }
     else {
-        &Description;
-        &ResolutionSearch;
+        &description;
+        &check_resolution;
     }
 }
 
@@ -878,7 +894,7 @@ sub format_time {
     return $time;
 }
 
-sub Description {
+sub description {
     my ( $date, $rating );
     if ( $connect->content =~ /rating average='([\d\.]+)'/ ) {
         $rating = $1;
@@ -955,14 +971,10 @@ sub Description {
     print '-' x 80 . "\n\n";
 }
 
-sub MPlayerLine_with_srt {
-    $MPlayerLine .= " $mplayer_srt_settings -sub $srt_file";
-}
-
-sub GetYouTube {
+sub get_youtube {
     ( $code, $title, $duration, $views, $category, $published, $description ) =
       @_;
-    $#_ = -1;
+    undef @_;
     my $youtube = "http://www.youtube.com/get_video_info?&video_id=$code"
       . '&el=detailpage&ps=default&eurl=&gl=US&hl=en';
     unless ($lwp_is_set) {
@@ -972,7 +984,7 @@ sub GetYouTube {
     $url     = "http://www.youtube.com/watch?v=$code";
     $MPlayerLine =~ s/ $mplayer_srt_settings -sub.*//;
     if ( $ENV{'PATH'} ) {
-        @paths = split( ?:?, $ENV{'PATH'}, 0 );
+        @paths = split( m?:?, $ENV{'PATH'}, 0 );
         foreach my $path (@paths) {
             if ( -e "$path/gcap" ) {
                 $gcap = "$path/gcap";
@@ -987,8 +999,7 @@ sub GetYouTube {
         and not $MPlayerLine  =~ / -novideo/
         and $connect->content =~ /&has_cc=True&/
         and not $download_video
-        and not $tmp_download_video )
-    {
+        and not $tmp_download_video ) {
         chdir '/tmp/';
         print "\n";
         system "gcap $url" unless -e "${code}_$default_sub.srt";
@@ -997,14 +1008,14 @@ sub GetYouTube {
         foreach $line (@srt_files) {
             if ( $line =~ /${code}_$default_sub\.srt/ ) {
                 $srt_file = "${code}_$default_sub.srt";
-                &MPlayerLine_with_srt;
+                $MPlayerLine .= " $mplayer_srt_settings -sub $srt_file";
             }
         }
         unless ($srt_file) {
             foreach $line (@srt_files) {
                 if ( $line =~ /$code([\w]*)\.srt/ ) {
                     $srt_file = "$code$1.srt";
-                    &MPlayerLine_with_srt;
+                    $MPlayerLine .= " $mplayer_srt_settings -sub $srt_file";
                 }
             }
         }
@@ -1018,15 +1029,15 @@ sub GetYouTube {
         $streaming =~ s/%3D/=/gi;
         $streaming =~ s/%3F/?/gi;
         $streaming =~ s/%252C/,/gi;
-        &VideoCheck;
+        &select_resolution;
     }
     else {
         warn "\n$bred(x_x) Something went wrong...$reset\n\n";
         warn "$bred(x_x) Unable to stream: $reset$url\n\n";
         if ( $video_results and not $dont_exit ) {
-            unless ( $SearchBackup =~ / -+(?:all|A|play-all)/ or $NrOfPicks ) {
+            unless ( $stdin_argvs =~ / -+(?:all|A|play-all)/ or $NrOfPicks ) {
                 sleep 1;
-                &PrintResults;
+                &print_results;
             }
         }
         else {
@@ -1037,21 +1048,23 @@ sub GetYouTube {
     }
 }
 
-sub ResolutionSearch {
-    if ( $streaming =~ /itag=37/ and not $SearchBackup =~ / -+(?:all|A)/ ) {
+sub check_resolution {
+    if ( $streaming =~ /itag=37/ and not $stdin_argvs =~ / -+(?:all|A)/ ) {
         &pick;
     }
-    elsif ( $SearchBackup =~ / -+(?:all|A)/ ) {
+    elsif ( $stdin_argvs =~ / -+(?:all|A)/ ) {
         if ( $streaming =~ /itag=37/ ) {
-            $streaming =~ s/.*http(.+)itag=37([^\%]*).+/http$1itag=37$2/;
-            &Fullscreen_check;
-            &Description;
+            $streaming =~ s/.*http(.+)itag=37([^%]*).+/http$1itag=37$2/;
+            &default_cache;
+            &fullscreen_check;
+            &description;
             &MPlayer;
         }
     }
     elsif ( $streaming =~ /itag=22/ ) {
-        $streaming =~ s/.*http(.+)itag=22([^\%]*).+/http$1itag=22$2/;
-        &Fullscreen_check;
+        $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
+        &default_cache;
+        &fullscreen_check;
         &MPlayer;
     }
     else {
@@ -1060,7 +1073,7 @@ sub ResolutionSearch {
     }
 }
 
-sub Fullscreen_check {
+sub fullscreen_check {
     $MPlayerLine =~ s/mplayer -p/mplayer -fs -p/;
     $MPlayerLine =~ s/mplayer.exe" -p/mplayer.exe" -fs -p/;
 }
@@ -1073,16 +1086,18 @@ sub pick {
       . "  $bred 2$reset - 1920x1080 (1080p)\n  ";
     print '=' x 23 . "\n";
     print "\n$bgreen=>> Pick format:$reset ";
-    chomp( $pick = <STDIN> );
+    chomp( my $pick = <STDIN> );
     print '-' x 80 . "\n\n";
-    if ( $pick == 2 ) {
+    if ( $pick eq 2 ) {
         $streaming =~ s/.*http(.+)itag=37([^%]*).+/http$1itag=37$2/;
-        &Fullscreen_check;
+        &default_cache;
+        &fullscreen_check;
         &MPlayer;
     }
     else {
         $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
-        &Fullscreen_check;
+        &default_cache;
+        &fullscreen_check;
         &MPlayer;
     }
 }
@@ -1091,17 +1106,35 @@ sub lower_quality {
     if ( $_[0] and $_[0] =~ /^\d+$/ ) {
         if ( $streaming =~ /itag=$_[0]/ ) {
             $streaming =~ s/.*http(.+)itag=$_[0]([^%]*).*/http$1itag=$_[0]$2/;
+            &lower_cache;
         }
     }
     else {
         foreach $_ ( 35, 34 ) {
             if ( $streaming =~ /itag=$_/ ) {
                 $streaming =~ s/.*http(.+)itag=$_([^%]*).*/http$1itag=$_$2/;
+                &lower_cache;
                 last;
             }
         }
     }
-    unless ( $SearchBackup =~ / -+f/ ) {
+    unless ( $stdin_argvs =~ / -+f/ ) {
         $MPlayerLine =~ s/-fs //;
+    }
+}
+
+sub lower_cache {
+    $MPlayerLine =~ s/-cache\s*\d+/-cache 1000/      unless $user_cache;
+    $MPlayerLine =~ s/-cache-min\s*\d+/-cache-min 1/ unless $user_cache_min;
+}
+
+sub default_cache {
+    if ( not $user_lower_cache ) {
+        $MPlayerLine =~ s/-cache\s*\d+/-cache $cache/ unless $user_cache;
+        $MPlayerLine =~ s/-cache-min\s*\d+/-cache-min $cache_min/
+          unless $user_cache_min;
+    }
+    else {
+        &lower_cache;
     }
 }
