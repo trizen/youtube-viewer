@@ -159,8 +159,7 @@ foreach my $arg (@ARGV) {
         next;
     }
     if ( $arg =~ /^-+(?:A|all)$/ ) {
-        $playback    = 1;
-        $MoreResults = 1;
+        $playback = 1;
         $stdin_argvs .= ' --1080';
         next;
     }
@@ -432,13 +431,13 @@ sub search_playlists {
                 $new_index += 30;
             }
             $url =~ s/start-index=\d+/start-index=$new_index/;
-            $#list_of_playlists = -1;
+            undef @list_of_playlists;
             &search_playlists($url);
         }
     }
     elsif ( $pick =~ /^\D+/ and not $pick =~ /^\s+\d+/ ) {
-        $Search             = $pick;
-        $#list_of_playlists = -1;
+        $Search = $pick;
+        undef @list_of_playlists;
         &search_playlists;
     }
     elsif ( $pick =~ /^\s*(\d+)/ ) {
@@ -594,12 +593,9 @@ sub search {
 }
 
 sub parse_content {
-    unless ($lwp_is_set) {
-        &UserAgent;
-    }
-    $content = $lwp->get( $_[0] )->content;
-    $#Videos = -1;
-    @content = split( /<entry>/, $content, 0 );
+    &UserAgent unless $lwp_is_set;
+    undef @Videos;
+    my (@content) = split( /<entry>/, $lwp->get( $_[0] )->content, 0 );
     foreach $_ (@content) {
         if ($debug) {
             print "$_\n\n";
@@ -691,10 +687,9 @@ sub print_results {
     }
     if ($playback) {
         for ( $i = 1 ; $i <= $number ; ++$i ) {
-            push @picks2, "$i ";
+            push @picks, $i;
         }
-        $youtube = join( '', @picks2 );
-        @picks = split( ' ', $youtube, 0 );
+        $playback_mode = 1;
         &picks_area;
     }
     print "\n$bred=>>$reset$bgreen Insert a number or "
@@ -728,28 +723,7 @@ sub print_results {
         }
     }
     elsif ( $youtube =~ /^\s*$/ ) {
-        $PageNumber = $FirstPage;
-        ++$PageNumber;
-        if ($ys) {
-            if ( $ys =~ /index=([\d]+)/ ) {
-                $old_index   = $1;
-                $start_index = $old_index + $results;
-                $ys =~ s/index=$old_index/index=$start_index/;
-                &parse_content($ys);
-                &print_results;
-            }
-        }
-        elsif ($yt_api_url) {
-            undef @Videos;
-            $ys = '';
-            if ( $yt_api_url =~ /index=([\d]+)/ ) {
-                $old_index   = $1;
-                $start_index = $old_index + $results;
-                $yt_api_url =~ s/index=$old_index/index=$start_index/;
-                &parse_content($yt_api_url);
-                &print_results;
-            }
-        }
+        &next_page;
     }
     elsif ( $youtube eq 'all' ) {
         $stdin_argvs .= ' --1080 --play-all';
@@ -775,6 +749,31 @@ sub print_results {
     }
 }
 
+sub next_page {
+    $PageNumber = $FirstPage;
+    ++$PageNumber;
+    if ($ys) {
+        if ( $ys =~ /index=([\d]+)/ ) {
+            $old_index   = $1;
+            $start_index = $old_index + $results;
+            $ys =~ s/index=$old_index/index=$start_index/;
+            &parse_content($ys);
+            &print_results;
+        }
+    }
+    elsif ($yt_api_url) {
+        undef @Videos;
+        $ys = '';
+        if ( $yt_api_url =~ /index=([\d]+)/ ) {
+            $old_index   = $1;
+            $start_index = $old_index + $results;
+            $yt_api_url =~ s/index=$old_index/index=$start_index/;
+            &parse_content($yt_api_url);
+            &print_results;
+        }
+    }
+}
+
 sub picks_area {
     $NrOfPicks = scalar @picks;
     $no        = 0;
@@ -789,7 +788,12 @@ sub foreach_pick {
         if ($pick) {
             next if $lastpick eq $pick;
         }
-        &print_results if $number eq $NrOfPicks;
+        if ( not $playback_mode ) {
+            &print_results if $number eq $NrOfPicks;
+        }
+        else {
+            &next_page if $number eq $NrOfPicks;
+        }
         $Picks    = 1;
         $lastpick = $pick;
         &foreach_code($pick);
@@ -1125,7 +1129,7 @@ sub lower_quality {
 
 sub lower_cache {
     $MPlayerLine =~ s/-cache\s*\d+/-cache 1000/      unless $user_cache;
-    $MPlayerLine =~ s/-cache-min\s*\d+/-cache-min 1/ unless $user_cache_min;
+    $MPlayerLine =~ s/-cache-min\s*\d+/-cache-min 3/ unless $user_cache_min;
 }
 
 sub default_cache {
