@@ -653,6 +653,7 @@ sub print_results {
     $#codes = -1;
     my $number = 0;
     print "\n";
+    exit if not scalar @Videos;
     foreach $line (@Videos) {
         if (
             $line =~ /^<author=([^>]+)><v=([^>]+)><title=([^>]+)>
