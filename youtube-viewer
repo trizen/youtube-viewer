@@ -64,6 +64,7 @@
 
 use URI::Escape;
 use HTML::Entities;
+
 my $os                   = $^O;
 my $appname              = 'youtube-viewer';
 my $version              = '2.5.1';
@@ -1039,14 +1040,14 @@ sub get_youtube {
         }
     }
     print "\n\n" . uri_unescape( $connect->content ) . "\n\n" if $debug;
-    if ( $connect->content =~ /fmt_url_map=([^&]+)&/ ) {
+    if ( $connect->content =~ /url_encoded_fmt_stream_map=([^&]+)&/ ) {
         $streaming = $1;
-        $streaming =~ s/%3A/:/gi;
-        $streaming =~ s[%2F][/]gi;
-        $streaming =~ s/%26/&/g;
-        $streaming =~ s/%3D/=/gi;
-        $streaming =~ s/%3F/?/gi;
-        $streaming =~ s/%252C/,/gi;
+        $streaming =~ s/%253A/:/gi;
+        $streaming =~ s[%252F][/]gi;
+        $streaming =~ s/%2526/&/g;
+        $streaming =~ s/%253D/=/gi;
+        $streaming =~ s/%253F/?/gi;
+        $streaming =~ s/%25252C/,/gi;
         &select_resolution;
     }
     else {
