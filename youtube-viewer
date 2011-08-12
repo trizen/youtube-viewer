@@ -67,7 +67,7 @@ use HTML::Entities;
 
 my $os                   = $^O;
 my $appname              = 'youtube-viewer';
-my $version              = '2.5.1';
+my $version              = '2.5.2';
 my $colours              = 0;
 my $cache                = 30000;
 my $cache_min            = 5;
