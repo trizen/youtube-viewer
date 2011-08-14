@@ -108,7 +108,7 @@ else {
 
 my $gcap;
 if ( $ENV{'PATH'} ) {
-    foreach my $path ( split( m?:?, $ENV{'PATH'}, 0 ) ) {
+    foreach my $path ( @INC, win32_or_unix_paths() ) {
         if ( -e "$path/gcap" ) {
             $gcap = "$path/gcap";
             last;
@@ -117,6 +117,15 @@ if ( $ENV{'PATH'} ) {
 }
 else {
     $gcap = '/usr/bin/gcap';
+}
+
+sub win32_or_unix_paths{
+    if($^O =~ /(?:win|dos)/i){
+        return split(/;/,$ENV{'PATH'});
+    }
+    else{
+        return split(/:/,$ENV{'PATH'});
+    }
 }
 
 sub UserAgent {
