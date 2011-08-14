@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 03 July 2011
+#  Latest edit on: 14 August 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -63,8 +63,9 @@
 # - Army (for bugs reports and for his great ideas)
 # - dhn (for adding youtube-viewer in freshports.org)
 
-use URI::Escape;
-use HTML::Entities;
+use Cwd qw(getcwd);
+use URI::Escape qw(uri_escape);
+use HTML::Entities qw(decode_entities);
 
 my $appname              = 'youtube-viewer';
 my $version              = '2.5.2';
@@ -87,6 +88,9 @@ my $bblue                = '';
 my $cblack               = '';
 my $bpurle               = '';
 my $byellow              = '';
+my $cwd                  = getcwd();
+
+my $tmp_dir = $ENV{'TMPDIR'} || $ENV{'TEMP'} || $ENV{'TMP'} || '/tmp';
 
 if ( $^O =~ /(?:win|dos)/i ) {
     my $MPlayer_exe = $ENV{'ProgramFiles'} . '\\SMPlayer\\mplayer\\mplayer.exe';
@@ -480,7 +484,8 @@ sub search_playlists {
     print "\n$bred=>>$reset ${bgreen}Pick one playlist$reset\n> ";
     chomp( $pick = <STDIN> );
     if ( not $pick =~ /^\s*[0-9]+\s*$/o and $pick =~ /^\s*$/o
-        or $pick eq 'next' ) {
+        or $pick eq 'next' )
+    {
         if ( $url =~ /start-index=([0-9]+)/o ) {
             $new_index = $1 + $results;
             $url =~ s/start-index=[0-9]+/start-index=$new_index/;
@@ -523,7 +528,8 @@ sub youtube_tops {
         'most_viewed',    'most_popular',
         'most_recent',    'most_discussed',
         'most_responded', 'recently_featured'
-      ) {
+      )
+    {
         $n += 1;
         my $top_name = ucfirst $line;
         $top_name =~ s/_/ /;
@@ -553,7 +559,8 @@ sub categories_area {
     $n = 0;
     foreach my $cat (@cates) {
         if ( $cat =~ /^'([^']+)' label='([^']+)'/o
-            and not $cat =~ /deprecated/o ) {
+            and not $cat =~ /deprecated/o )
+        {
             $n += 1;
             my $cat_name  = $1;
             my $cat_label = $2;
@@ -600,6 +607,7 @@ sub MPlayer {
     else {
         print "** MPlayer Line: $MPlayerLine\n\n" if $debug;
         `$MPlayerLine "$streaming"`;
+        chdir $cwd;
     }
     print "\n";
     if ($picks_mode) {
@@ -1072,13 +1080,17 @@ sub get_youtube {
         and not $MPlayerLine  =~ / -novideo/o
         and $connect->content =~ /&has_cc=True&/o
         and not $download_video
-        and not $tmp_download_video ) {
-        chdir '/tmp/';
+        and not $tmp_download_video )
+    {
+        chdir $tmp_dir;
         unless ( -e "${code}_$default_sub.srt" ) {
             system "gcap $url";
             print "\n";
         }
-        my (@srt_files) = glob('*.srt');
+        my @srt_files;
+        opendir( DIR, $tmp_dir );
+        /\.srt\z/o and push( @srt_files, $_ ) while defined( $_ = readdir DIR );
+        close DIR;
         my $srt_file;
         foreach my $line (@srt_files) {
             if ( $line =~ /${code}_$default_sub\.srt/ ) {
@@ -1095,7 +1107,6 @@ sub get_youtube {
             }
         }
     }
-    print "\n\n" . uri_unescape( $connect->content ) . "\n\n" if $debug;
     if ( $connect->content =~ /url_encoded_fmt_stream_map=([^&]+)&/o ) {
         $streaming = $1;
         $streaming =~ s/%253A/:/gio;
