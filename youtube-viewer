@@ -1150,8 +1150,8 @@ sub get_youtube {
         my @srt_files;
 
         opendir DIR, $tmp_dir;
-        /\.srt\z/o and push @srt_files, $_ while defined($_ = readdir DIR);
-        close DIR;
+        /\.srt$/ and push @srt_files, $_ while defined($_ = readdir DIR);
+        closedir DIR;
 
         my $srt_file;
 
