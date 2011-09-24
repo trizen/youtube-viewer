@@ -824,7 +824,13 @@ sub print_results {
     }
 
     if ($youtube =~ /^\s*([0-9]+)\s*$/o) {
-        &foreach_code($1);
+
+        if ($1 > scalar @Videos or $1 <= 0) {
+            &print_results;
+        }
+        else {
+            &foreach_code($1);
+        }
     }
     elsif ($youtube =~ /^\s*$/o or $youtube eq 'next') {
         &next_page;
