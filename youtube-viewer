@@ -111,6 +111,16 @@ else {
     $MPlayerLine = "mplayer $mplayer_settings";
 }
 
+sub win32_or_unix_paths {
+
+    if ($win32) {
+        return split(/;/, $ENV{'PATH'}, 0);
+    }
+    else {
+        return split(/:/, $ENV{'PATH'}, 0);
+    }
+}
+
 my $gcap;
 
 if ($ENV{'PATH'}) {
@@ -125,16 +135,6 @@ if ($ENV{'PATH'}) {
 }
 else {
     $gcap = '/usr/bin/gcap';
-}
-
-sub win32_or_unix_paths {
-
-    if ($win32) {
-        return split(/;/, $ENV{'PATH'}, 0);
-    }
-    else {
-        return split(/:/, $ENV{'PATH'}, 0);
-    }
 }
 
 sub UserAgent {
@@ -155,60 +155,62 @@ foreach my $arg (@ARGV) {
     else {
         $SEARCH .= "$arg ";
     }
-    next unless $arg =~ /^-/o;
 
-    if ($arg =~ /^-+cache=([0-9]+)$/o) {
-        my $cache = $1;
-        $MPlayerLine =~ s/-cache\s+[0-9]+/-cache $cache/;
-        $user_cache = 1;
-    }
-    elsif ($arg =~ /^-+(?:l|lower.?cache)$/o) {
-        $user_lower_cache = 1;
-    }
-    elsif ($arg =~ /^-+cache.?min=([0-9]+)$/o) {
-        my $cache_min = $1;
-        $MPlayerLine =~ s/-cache-min\s+[0-9]+/-cache-min $cache_min/;
-        $user_cache_min = 1;
-    }
-    elsif ($arg =~ /^-+(?:n|no.?video)$/o) {
-        $MPlayerLine =~ s/mplayer /mplayer -novideo /o;
-        $MPlayerLine =~ s/mplayer\.exe"/mplayer.exe" -novideo/o;
-        $stdin_argvs .= ' --480';
-    }
-    elsif ($arg =~ /^-+time=(.+)/o) {
-        $time_p = $1;
-    }
-    elsif ($arg =~ /^-+(?:T|tty|M|mplayer)=(.+)/o) {
-        $MPlayerLine .= " $1";
-    }
-    elsif ($arg =~ /^-+(?:o|order.?by)=(.+)/o) {
-        $order_by = $1;
-    }
-    elsif ($arg =~ /^-+(?:sub|lang)=([\w]+)$/o) {
-        $default_sub = lc $1;
-    }
-    elsif ($arg =~ /^-+(?:colou?rs?|C|cl)$/o) {
-        $colours = 1;
-    }
-    elsif ($arg =~ /^-+(?:d|download)$/o) {
-        $download_video = 1;
-    }
-    elsif ($arg =~ /^-+(?:a|all.?time)$/o) {
-        $all_time = 1;
-    }
-    elsif ($arg eq '--debug') {
-        $debug = 1;
-    }
-    elsif ($arg =~ /^-+(?:A|all)$/o) {
-        $playback = 1;
-        $stdin_argvs .= ' --1080';
-    }
-    elsif ($arg =~ /^-+(?:m|more)$/o) {
-        $results = 50;
-    }
-    elsif ($arg =~ /^-+(?:fs?|fullscreen)$/o) {
-        $MPlayerLine =~ s/mplayer /mplayer -fs /o;
-        $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -fs/o;
+    if (substr($arg, 0, 1) eq '-') {
+
+        if ($arg =~ /^-+cache=([0-9]+)$/o) {
+            my $cache = $1;
+            $MPlayerLine =~ s/-cache\s+[0-9]+/-cache $cache/;
+            $user_cache = 1;
+        }
+        elsif ($arg =~ /^-+(?:l|lower.?cache)$/o) {
+            $user_lower_cache = 1;
+        }
+        elsif ($arg =~ /^-+cache.?min=([0-9]+)$/o) {
+            my $cache_min = $1;
+            $MPlayerLine =~ s/-cache-min\s+[0-9]+/-cache-min $cache_min/;
+            $user_cache_min = 1;
+        }
+        elsif ($arg =~ /^-+(?:n|no.?video)$/o) {
+            $MPlayerLine =~ s/mplayer /mplayer -novideo /o;
+            $MPlayerLine =~ s/mplayer\.exe"/mplayer.exe" -novideo/o;
+            $stdin_argvs .= ' --480';
+        }
+        elsif ($arg =~ /^-+time=(.+)/o) {
+            $time_p = $1;
+        }
+        elsif ($arg =~ /^-+(?:T|tty|M|mplayer)=(.+)/o) {
+            $MPlayerLine .= " $1";
+        }
+        elsif ($arg =~ /^-+(?:o|order.?by)=(.+)/o) {
+            $order_by = $1;
+        }
+        elsif ($arg =~ /^-+(?:sub|lang)=([\w]+)$/o) {
+            $default_sub = lc $1;
+        }
+        elsif ($arg =~ /^-+(?:colou?rs?|C|cl)$/o) {
+            $colours = 1;
+        }
+        elsif ($arg =~ /^-+(?:d|download)$/o) {
+            $download_video = 1;
+        }
+        elsif ($arg =~ /^-+(?:a|all.?time)$/o) {
+            $all_time = 1;
+        }
+        elsif ($arg eq '--debug') {
+            $debug = 1;
+        }
+        elsif ($arg =~ /^-+(?:A|all)$/o) {
+            $playback = 1;
+            $stdin_argvs .= ' --1080';
+        }
+        elsif ($arg =~ /^-+(?:m|more)$/o) {
+            $results = 50;
+        }
+        elsif ($arg =~ /^-+(?:fs?|fullscreen)$/o) {
+            $MPlayerLine =~ s/mplayer /mplayer -fs /o;
+            $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -fs/o;
+        }
     }
 }
 
@@ -223,34 +225,25 @@ my $i = 0;
 
 foreach my $arg (@ARGV) {
     ++$i;
-    next unless $arg =~ /^-/o;
 
-    if ($arg =~ /^-+(?:h|help|\?|usage)$/io) {
-        &help;
-    }
-    elsif ($arg =~ /^-+(?:v|version)$/io) {
-        &version;
-    }
-    elsif ($arg =~ /^-+(?:pl?|playlists?)$/o) {
-        &search_playlists;
-    }
-    elsif ($arg =~ /^-+(?:c|categories)$/o) {
-        &categories_area;
-    }
-    elsif ($arg =~ /^-+(?:a|all[_-]?time|t|tops)$/o) {
-        &youtube_tops;
-    }
-    elsif ($arg =~ /^-+(?:u|username)$/o) {
+    if (substr($arg, 0, 1) eq '-') {
 
-        if ($ARGV[$i]) {
-
-            unless ($ARGV[$i] =~ /^-/o) {
-                $user = $ARGV[$i];
-            }
+        if ($arg =~ /^-+(?:h|help|\?|usage)$/io) {
+            &help;
         }
-
-        unless ($user) {
-            $i -= 2;
+        elsif ($arg =~ /^-+(?:v|version)$/io) {
+            &version;
+        }
+        elsif ($arg =~ /^-+(?:pl?|playlists?)$/o) {
+            &search_playlists;
+        }
+        elsif ($arg =~ /^-+(?:c|categories)$/o) {
+            &categories_area;
+        }
+        elsif ($arg =~ /^-+(?:a|all[_-]?time|t|tops)$/o) {
+            &youtube_tops;
+        }
+        elsif ($arg =~ /^-+(?:u|username)$/o) {
 
             if ($ARGV[$i]) {
 
@@ -258,24 +251,35 @@ foreach my $arg (@ARGV) {
                     $user = $ARGV[$i];
                 }
             }
-        }
 
-        if ($user) {
-            &videos_from_username($user);
-        }
-    }
-    elsif ($arg =~ /^-+(?:U|user(?:s|names))=?(.*)/o) {
+            unless ($user) {
+                $i -= 2;
 
-        if (defined $1 and -r $1) {
-            $users_file = $1;
+                if ($ARGV[$i]) {
+
+                    unless ($ARGV[$i] =~ /^-/o) {
+                        $user = $ARGV[$i];
+                    }
+                }
+            }
+
+            if ($user) {
+                &videos_from_username($user);
+            }
         }
-        &list_user_names;
+        elsif ($arg =~ /^-+(?:U|user(?:s|names))=?(.*)/o) {
+
+            if (defined $1 and -r $1) {
+                $users_file = $1;
+            }
+            &list_user_names;
+        }
     }
 }
 
 foreach $_ (@ARGV) {
 
-    if (not /^-/o or length $_ == 11) {
+    if (not /^-/ or length $_ == 11) {
         $non_argv = 1;
         last;
     }
@@ -307,7 +311,7 @@ foreach my $code (@ARGV) {
             next;
         }
     }
-    elsif ($code =~ m[^http://]o and not $code =~ /youtube\.com/o) {
+    elsif ($code =~ m[^http://] and not $code =~ /youtube\.com/) {
         &code_from_content($code);
     }
     else {
@@ -422,6 +426,7 @@ sub list_user_names {
             }, "$bred$n$reset - $bgreen$_$reset\n";
             $usernames_table{$n} = $_;
         }
+
         print "\n$bred=>>$reset ${bgreen}Pick an username number$reset\n> ";
         chomp(my $pick = <STDIN>);
         exit if $pick =~ /^(?:q|quit|exit)$/i;
@@ -509,6 +514,7 @@ sub search_playlists {
           }, $cblack, $bred, $number, $reset, $cblack, ' - ', $byellow, $title, ' ', $summary, $reset, $cblack, ' (', $bpurle,
           'by ', $author, $reset, $cblack, ') (', $bblue, $countHint, $reset, $cblack, ')', $reset, "\n";
     }
+
     print "\n$bred=>>$reset ${bgreen}Pick one playlist$reset\n> ";
     chomp($pick = <STDIN>);
 
@@ -555,7 +561,6 @@ sub youtube_tops {
     my $standardfeeds = 'http://gdata.youtube.com/feeds/api/standardfeeds';
     my %tops_table;
     print "\n";
-
     foreach $_ ('top_rated',   'top_favorites',  'most_viewed',    'most_popular',
                 'most_recent', 'most_discussed', 'most_responded', 'recently_featured'
       ) {
@@ -565,6 +570,7 @@ sub youtube_tops {
         print "$bred$n$reset - $top_name\n";
         $tops_table{$n} = $_;
     }
+
     print "\n$bred=>>$bgreen Pick one of$reset\n> ";
     chomp(my $pick = <STDIN>);
 
@@ -605,6 +611,7 @@ sub categories_area {
             $categories_table{$n} = $cat_name;
         }
     }
+
     print "\n$bgreen=>> Insert a category number\n>$reset ";
     chomp(my $pick = <STDIN>);
 
@@ -647,6 +654,7 @@ sub MPlayer {
         `$MPlayerLine "$streaming"`;
         chdir $cwd;
     }
+
     print "\n";
 
     if ($picks_mode) {
@@ -690,6 +698,7 @@ sub parse_content {
     undef @Videos;
     my (@content) = split(/<entry>/o, $lwp->get($_[0])->content, 0);
     my ($author, $code, $title, $category, $published, $duration, $views, $description);
+    my $number = 0;
 
     foreach $_ (@content) {
         print "$_\n\n" if $debug;
@@ -751,7 +760,8 @@ sub parse_content {
         else {
             $description = 'No description available...';
         }
-        push @Videos, [$author, $code, $title, $category, $published, $duration, $views, $description];
+        ++$number;
+        push @Videos, [$number, $author, $code, $title, $category, $published, $duration, $views, $description];
     }
 }
 
@@ -768,20 +778,11 @@ sub print_results {
         $video_results = 1;
     }
 
-    my $number = 0;
-    undef @codes;
-
     foreach $_ (@Videos) {
-        ++$number;
-        my $author      = $$_[0];
-        my $code        = $$_[1];
-        my $title       = decode_entities($$_[2]);
-        my $category    = $$_[3];
-        my $published   = $$_[4];
-        my $time        = format_time($$_[5]);
-        my $views       = $$_[6];
-        my $description = $$_[7];
-        push @codes, [$number, $title, $published, $category, $time, $code, $views, $description];
+        my $number = $$_[0];
+        my $author = $$_[1];
+        my $title  = decode_entities($$_[3]);
+        my $time   = format_time($$_[6]);
         print "$bred";
         print do {
             ' ' if $number < 10;
@@ -791,13 +792,14 @@ sub print_results {
 
     if ($playback) {
 
-        foreach my $i (1 .. $number) {
+        foreach my $i (1 .. scalar @Videos) {
             push @picks, $i;
         }
 
         $playback_mode = 1;
         &picks_area;
     }
+
     print "\n$bred=>>$reset$bgreen Insert a number or search something else\n$reset> ";
     chomp(my $youtube = <STDIN>);
     $PickBackup = $youtube;
@@ -822,13 +824,7 @@ sub print_results {
     }
 
     if ($youtube =~ /^\s*([0-9]+)\s*$/o) {
-
-        if ($youtube > $number or not $youtube) {
-            &print_results;
-        }
-        else {
-            &foreach_code($1);
-        }
+        &foreach_code($1);
     }
     elsif ($youtube =~ /^\s*$/o or $youtube eq 'next') {
         &next_page;
@@ -840,7 +836,7 @@ sub print_results {
         $stdin_argvs .= ' --1080 --play-all';
         undef @picks;
 
-        foreach my $i (1 .. $number) {
+        foreach my $i (1 .. scalar @Videos) {
             push @picks, $i;
         }
         &picks_area;
@@ -941,14 +937,14 @@ sub foreach_pick {
 
 sub foreach_code {
 
-    foreach $_ ($codes[$_[0] - 1]) {
-        my $title       = $$_[1];
-        my $published   = $$_[2];
-        my $category    = $$_[3];
-        my $time        = $$_[4];
-        my $code        = $$_[5];
-        my $views       = $$_[6];
-        my $description = decode_entities($$_[7]);
+    foreach $_ ($Videos[$_[0] - 1]) {
+        my $code        = $$_[2];
+        my $title       = decode_entities($$_[3]);
+        my $category    = $$_[4];
+        my $published   = $$_[5];
+        my $time        = $$_[6];
+        my $views       = $$_[7];
+        my $description = decode_entities($$_[8]);
         &get_youtube($code, $title, $time, $views, $category, $published, $description);
     }
 }
@@ -1118,6 +1114,7 @@ sub description {
     elsif ($count >= 56) {
         print "$bred  =>> ";
     }
+
     print "$bgreen$title$reset$bred <<=\n$reset";
     my $author = $1 if $connect->content =~ /&author=([^&]+)/;
     print "\n** Author    : $author\n" if $author;
