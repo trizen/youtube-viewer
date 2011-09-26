@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 09 September 2011
+#  Latest edit on: 26 September 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -300,7 +300,7 @@ foreach my $code (@ARGV) {
         $playlist = 1;
         &list_playlist($1);
     }
-    elsif ($code =~ m[(?:v|embed)[=/]([\w-]{11})]o) {
+    elsif ($code =~ m[(?:v|embed)(?:%3D|[=/])([\w-]{11})]o) {
         $code      = $1;
         $dont_exit = 1;
 
@@ -386,7 +386,7 @@ sub insert_url {
     print "\n$bred=>>$reset$bgreen Insert an YouTube URL or search something...\n$reset> ";
     chomp(my $youtube = <STDIN>);
 
-    if ($youtube =~ m[(?:embed|v)[=/]((?>[-\w]{11}))] or $youtube =~ m[http://youtu\.be/([-\w]{11})]) {
+    if ($youtube =~ m[(?:embed|v)(?:%3D|[=/])((?>[-\w]{11}))] or $youtube =~ m[http://youtu\.be/([-\w]{11})]) {
         &get_youtube($1);
     }
     elsif ($youtube =~ /view_play_list\?p=([A-Z0-9]+)/o) {
