@@ -320,7 +320,7 @@ foreach my $code (@ARGV) {
 
 sub help {
     my $appname = uc $appname;
-    print "\n\t" . '=' x 25 . " $appname " . '=' x 25 . qq[
+    print "\n\t" . '=' x 25 . " $appname " . '=' x 25 . "
 \t\t\t\t\t\t by Trizen (trizenx\@gmail.com)
 \nUsage: youtube-viewer [<url> || <video_id> || <keywords>]
                       [-u <username>] [-categories] [-(a|t)]
@@ -363,7 +363,7 @@ sub help {
   5. Play all audio tracks of video results by adding '-A -n' after keywords
   6. Play all video results in fullscreen mode at 720p: '<keywords> -A -f -7'
   7. Play all videos from a category: insert a category number, and insert 'all'
-\n];
+\n";
     exit;
 }
 
@@ -806,6 +806,19 @@ sub print_results {
     print "\n$bred=>>$reset$bgreen Insert a number or search something else\n$reset> ";
     chomp(my $stdin = <STDIN>);
 
+    if ($stdin =~ /(\d+) -([\w\s-]+)/) {
+        $stdin       = $1;
+        $stdin_argvs = " -$2";
+
+        foreach $_ (split(/\s+/, "-$2", 0)) {
+
+            if (/^-+d(?:ownload)?$/) {
+                $tmp_download_video = 1;
+                last;
+            }
+        }
+    }
+
     if ($stdin =~ /^(?:q|quit|exit)$/) {
         exit;
     }
@@ -820,18 +833,6 @@ sub print_results {
     }
     elsif (substr($stdin, 0, 7) eq 'http://' and not $stdin =~ /youtube\.com/) {
         &code_from_content($stdin);
-    }
-    elsif ($stdin =~ /(\d+) -([\w\s-]+)/) {
-        $stdin       = $1;
-        $stdin_argvs = " -$2";
-
-        foreach $_ (split(/\s+/, "-$2", 0)) {
-
-            if (/^-+d(?:ownload)?$/) {
-                $tmp_download_video = 1;
-                last;
-            }
-        }
     }
     elsif ($stdin =~ /^\s*(\d+)\s*$/) {
 
@@ -852,6 +853,7 @@ sub print_results {
         &picks_area;
     }
     elsif ($stdin =~ /\d+[,\s]+\d+/) {
+        $stdin =~ s/-\d+//g;
         @picks = split(m?\D+?, $stdin, 0);
         &picks_area;
     }
