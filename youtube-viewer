@@ -806,7 +806,7 @@ sub print_results {
     print "\n$bred=>>$reset$bgreen Insert a number or search something else\n$reset> ";
     chomp(my $stdin = <STDIN>);
 
-    if ($stdin =~ /(\d+) -([\w\s-]+)/) {
+    if ($stdin =~ /^([\s,\d]+)\s+-([\w\s-]+)/) {
         $stdin       = $1;
         $stdin_argvs = " -$2";
 
