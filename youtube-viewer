@@ -784,10 +784,9 @@ sub print_results {
     foreach my $video (@Videos) {
         my $number = $$video[0];
         my $author = $$video[1];
-        my $title  = decode_entities($$video[3]);
+        my $title  = $$video[3] =~ /&#?\w/ ? decode_entities($$video[3]) : $$video[3];
         my $time   = format_time($$video[6]);
-        print "$bred";
-        print do {
+        print $bred . do {
             ' ' if $number < 10;
           }, $cblack, $bred, $number, $reset, $cblack, ' - ', $byellow, $title, $reset, $cblack, ' (', $bpurle, 'by ', $author,
           $reset, $cblack, ') (', $bblue, $time, $reset, $cblack, ')', $reset, "\n";
@@ -946,12 +945,12 @@ sub foreach_code {
 
     foreach my $video ($Videos[shift() - 1]) {
         my $code        = $$video[2];
-        my $title       = decode_entities($$video[3]);
+        my $title       = $$video[3] =~ /&#?\w/ ? decode_entities($$video[3]) : $$video[3];
         my $category    = $$video[4];
         my $published   = $$video[5];
-        my $time        = $$video[6];
+        my $time        = format_time($$video[6]);
         my $views       = $$video[7];
-        my $description = decode_entities($$video[8]);
+        my $description = $$video[8] =~ /&#?\w/ ? decode_entities($$video[8]) : $$video[8];
         &get_youtube($code, $title, $time, $views, $category, $published, $description);
     }
 }
@@ -1038,20 +1037,8 @@ sub select_resolution {
 
 sub format_time {
     my $sec = shift @_ || return (0);
-    my $time = $sec / 3600 % 24 . ':' . $sec / 60 % 60 . ':' . $sec % 60;
-    $time =~ s/^0://;
-
-    unless ($time =~ /:/) {
-        $time = "0:$time";
-    }
-
-    if ($time =~ /(.):(.):(.+)/) {
-        $time = "$1:0$2:$3";
-    }
-
-    if ($time =~ /^(.+):(.)$/) {
-        $time = "$1:0$2";
-    }
+    my $time = join(':', map((length $_ == 1 ? "0$_" : $_), $sec / 3600 % 24, $sec / 60 % 60, $sec % 60));
+    $time =~ s/^00://;
     return $time;
 }
 
