@@ -69,7 +69,7 @@ use HTML::Entities ('decode_entities');
 use strict;
 
 my $appname              = 'youtube-viewer';
-my $version              = '2.5.3-beta';
+my $version              = '2.5.3-beta2';
 my $colours              = 0;
 my $cache                = 30000;
 my $cache_min            = 5;
@@ -850,7 +850,7 @@ sub print_results {
         @picks = 1 .. scalar @Videos;
         &picks_area;
     }
-    elsif ($stdin =~ /\d(?:\.\.|-|\s+|,)?/ and not $stdin =~ /[^-][A-Za-z]/) {
+    elsif ($stdin =~ /\d(?:\.\.|-|\s+|,)?/ and not $stdin =~ /(?:\s|^)[^-][A-Za-z]/) {
         $stdin =~ s/(?:\D|^)-\d+//g;
         $stdin =~ s/(\d+)(?:-|\.\.)(\d+)/join ' ', $1 .. $2;/eg;
         @picks = grep({$_ <= scalar @Videos if /^\d+$/;} split(m?\D+?, $stdin, 0));
@@ -1226,32 +1226,27 @@ sub check_resolution {
 
 sub fullscreen_check {
     use strict;
-    $MPlayerLine =~ s/mplayer -p/mplayer -fs -p/o;
-    $MPlayerLine =~ s/mplayer.exe" -p/mplayer.exe" -fs -p/o;
+    $MPlayerLine =~ s/mplayer -p/mplayer -fs -p/;
+    $MPlayerLine =~ s/mplayer.exe" -p/mplayer.exe" -fs -p/;
 }
 
 sub pick {
     use strict;
-    print "$bred=>>$reset $bgreen Please choose the quality of video (default: 1)";
-    print "\n$reset";
-    print "\n  $bred 1$reset - 1280x720  (720p)\n  $bred 2$reset - 1920x1080 (1080p)\n  ";
-    print '=' x 23 . "\n";
-    print "\n$bgreen=>> Pick format:$reset ";
+    print "$bred=>>$reset $bgreen Please choose the quality of video (default: 1)$reset\n"
+      . "\n  $bred 1$reset - 1280x720  (720p)\n  $bred 2$reset - 1920x1080 (1080p)\n  ",
+      '=' x 23 . "\n" . "\n$bgreen=>> Pick format:$reset ";
     chomp(my $pick = <STDIN>);
     print '-' x 80 . "\n\n";
-    print "Your pick is: -->$pick<--\n" if $debug;
 
     if ($pick eq 2) {
         $streaming =~ s/.*http(.+)itag=37([^%]*).+/http$1itag=37$2/;
         &default_cache;
         &fullscreen_check;
-        &MPlayer;
     }
     else {
         $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
         &default_cache;
         &fullscreen_check;
-        &MPlayer;
     }
 }
 
@@ -1274,10 +1269,10 @@ sub lower_quality {
                 if ($debug) {
 
                     if ($_ == 35) {
-                        print "Selecting 480p from lower_quality()\n";
+                        print "Selecting 480p from lower_quality()\n" if $debug;
                     }
                     elsif ($_ == 34) {
-                        print "Selecting 360p from lower_quality()\n";
+                        print "Selecting 360p from lower_quality()\n" if $debug;
                     }
                 }
 
