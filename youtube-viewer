@@ -69,7 +69,7 @@ use HTML::Entities ('decode_entities');
 use strict;
 
 my $appname              = 'youtube-viewer';
-my $version              = '2.5.3-beta2';
+my $version              = '2.5.3';
 my $colours              = 0;
 my $cache                = 30000;
 my $cache_min            = 5;
@@ -338,7 +338,7 @@ foreach my $code (@ARGV) {
 
 sub help {
     my $appname = uc $appname;
-    print "\n\t" . '=' x 25 . " $appname " . '=' x 25 . "
+    print "\n  " . '=' x 30 . " $appname " . '=' x 30 . "
 \t\t\t\t\t\t by Trizen (trizenx\@gmail.com)
 \nUsage: youtube-viewer [<url> || <video_id> || <keywords>]
                       [-u <username>] [-categories] [-(a|t)]
@@ -414,7 +414,7 @@ sub insert_url {
         &code_from_content($youtube);
     }
     elsif ($youtube) {
-        $stdin_argvs .= ' ' . $youtube;
+        $stdin_argvs = ' ' . join(' ', grep({substr($_, 0, 1) eq '-';} split(/\s+/, $youtube, 0))) if $youtube =~ /-/;
         $SEARCH = $youtube;
         &search;
     }
@@ -700,7 +700,7 @@ sub YoutubeAPI {
 
 sub search {
     use strict;
-    $SEARCH =~ s/^\s+|\s+$//g;
+    $SEARCH = join(' ', grep({substr($_, 0, 1) ne '-';} split(/\s+/, $SEARCH, 0)));
     $SEARCH = uri_escape($SEARCH);
     $ys     = "http://gdata.youtube.com/feeds/api/videos?q=$SEARCH"
       . "&max-results=$results&time=$time_p&orderby=$order_by&start-index=1";
@@ -853,8 +853,11 @@ sub print_results {
     elsif ($stdin =~ /\d(?:\.\.|-|\s+|,)?/ and not $stdin =~ /(?:\s|^)[^-][A-Za-z]/) {
         $stdin =~ s/(?:\D|^)-\d+//g;
         $stdin =~ s/(\d+)(?:-|\.\.)(\d+)/join ' ', $1 .. $2;/eg;
-        @picks = grep({$_ <= scalar @Videos if /^\d+$/;} split(m?\D+?, $stdin, 0));
-        &picks_area if scalar @picks or &print_results;
+        @picks = grep({$_ > 0 and $_ <= scalar @Videos if /^\d+$/;} split(m?\D+?, $stdin, 0));
+        &picks_area if scalar @picks or do {
+            $SEARCH = $stdin;
+            &search;
+        };
     }
     else {
         $SEARCH = $stdin;
@@ -1269,10 +1272,10 @@ sub lower_quality {
                 if ($debug) {
 
                     if ($_ == 35) {
-                        print "Selecting 480p from lower_quality()\n" if $debug;
+                        print "Selecting 480p from lower_quality()\n";
                     }
                     elsif ($_ == 34) {
-                        print "Selecting 360p from lower_quality()\n" if $debug;
+                        print "Selecting 360p from lower_quality()\n";
                     }
                 }
 
