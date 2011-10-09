@@ -242,19 +242,19 @@ foreach my $arg (@ARGV) {
     if (substr($arg, 0, 1) eq '-') {
 
         if ($arg =~ /^-+(?:h|help|\?|usage)$/i) {
-            &help;
+            help();
         }
         elsif ($arg =~ /^-+(?:v|version)$/i) {
-            &version;
+            version();
         }
         elsif ($arg =~ /^-+pl?(?:playlists?)?$/) {
-            &search_playlists;
+            search_playlists();
         }
         elsif ($arg =~ /^-+c(?:ategories)?$/) {
-            &categories_area;
+            categories_area();
         }
         elsif ($arg =~ /^-+(?:a|all[_-]?time|t|tops)$/) {
-            &youtube_tops;
+            youtube_tops();
         }
         elsif ($arg =~ /^-+u(?:sername)?$/) {
             my $user;
@@ -286,7 +286,7 @@ foreach my $arg (@ARGV) {
             if (defined $1 and -r $1) {
                 $users_file = $1;
             }
-            &list_user_names;
+            list_user_names();
         }
     }
 }
@@ -416,7 +416,7 @@ sub insert_url {
     elsif ($youtube) {
         $stdin_argvs = ' ' . join(' ', grep({substr($_, 0, 1) eq '-';} split(/\s+/, $youtube, 0))) if $youtube =~ /-/;
         $SEARCH = $youtube;
-        &search;
+        search();
     }
     else {
         warn "\n$bred(x_x) Unable to continue...$reset\n\n";
@@ -452,14 +452,14 @@ sub list_user_names {
             &videos_from_username($user);
         }
         else {
-            &list_user_names;
+            list_user_names();
         }
     }
 }
 
 sub videos_from_username {
     $YT_API_URL = "http://gdata.youtube.com/feeds/api/users/$_[0]/uploads";
-    &YoutubeAPI;
+    YoutubeAPI();
 }
 
 sub search_playlists {
@@ -555,7 +555,7 @@ sub search_playlists {
     elsif ($pick =~ /^\D/ and not $pick =~ /^\s*\d/) {
         $SEARCH = $pick;
         undef @list_of_playlists;
-        &search_playlists;
+        search_playlists();
     }
     elsif ($pick =~ /^\s*(\d+)/) {
         $pick = $1;
@@ -567,7 +567,7 @@ sub list_playlist {
 
     if ($_[0] and $_[0] =~ /^([A-Z\d]+)$/) {
         $YT_API_URL = "http://gdata.youtube.com/feeds/api/playlists/$1";
-        &YoutubeAPI;
+        YoutubeAPI();
     }
 }
 
@@ -599,10 +599,10 @@ sub youtube_tops {
                 $YT_API_URL .= '?time=today';
             }
         }
-        &YoutubeAPI;
+        YoutubeAPI();
     }
     else {
-        &youtube_tops;
+        youtube_tops();
     }
 }
 
@@ -633,10 +633,10 @@ sub categories_area {
 
     if (defined $categories_table{$pick}) {
         $YT_API_URL = 'http://gdata.youtube.com/feeds/api/standardfeeds/recently_featured_' . $categories_table{$pick};
-        &YoutubeAPI;
+        YoutubeAPI();
     }
     else {
-        &categories_area;
+        categories_area();
     }
 }
 
@@ -674,11 +674,11 @@ sub MPlayer {
     print "\n";
 
     if ($picks_mode) {
-        &foreach_pick;
+        foreach_pick();
     }
 
     if ($playlist or $video_results and not $dont_exit) {
-        &print_results;
+        print_results();
     }
     exit unless $dont_exit;
 }
@@ -694,7 +694,7 @@ sub YoutubeAPI {
 
     $YT_API_URL .= "&max-results=$results";
     &parse_content($YT_API_URL);
-    &print_results;
+    print_results();
 }
 &search unless $dont_exit or $playlists;
 
@@ -705,7 +705,7 @@ sub search {
     $ys     = "http://gdata.youtube.com/feeds/api/videos?q=$SEARCH"
       . "&max-results=$results&time=$time_p&orderby=$order_by&start-index=1";
     &parse_content($ys);
-    &print_results;
+    print_results();
 }
 
 sub parse_content {
@@ -794,7 +794,7 @@ sub print_results {
 
     if (not scalar @Videos) {
         print "$bred(x_x) No video results!$reset\n";
-        &insert_url;
+        insert_url();
     }
     else {
         $video_results = 1;
@@ -813,7 +813,7 @@ sub print_results {
 
     if ($playback) {
         @picks = 1 .. scalar @Videos;
-        &picks_area;
+        picks_area();
     }
 
     print "\n$bred=>>$reset$bgreen Insert a number or search something else\n$reset> ";
@@ -831,10 +831,10 @@ sub print_results {
         exit;
     }
     elsif ($stdin =~ /^\s*$/ or $stdin eq 'next') {
-        &next_page;
+        next_page();
     }
     elsif ($stdin eq 'back' and $start_index > 1) {
-        &previous_page;
+        previous_page();
     }
     elsif ($stdin =~ m[(?:embed|v)(?:%3D|[=/])((?>[-\w]{11}))] or $stdin =~ m[http://youtu\.be/([-\w]{11})]) {
         &get_youtube($1);
@@ -848,7 +848,7 @@ sub print_results {
     elsif ($stdin eq 'all') {
         $stdin_argvs .= ' --1080 --play-all';
         @picks = 1 .. scalar @Videos;
-        &picks_area;
+        picks_area();
     }
     elsif ($stdin =~ /\d(?:\.\.|-|\s+|,)?/ and not $stdin =~ /(?:\s|^)[^-][A-Za-z]/) {
         $stdin =~ s/(?:\D|^)-\d+//g;
@@ -856,12 +856,12 @@ sub print_results {
         @picks = grep({$_ > 0 and $_ <= scalar @Videos if /^\d+$/;} split(m?\D+?, $stdin, 0));
         &picks_area if scalar @picks or do {
             $SEARCH = $stdin;
-            &search;
+            search();
         };
     }
     else {
         $SEARCH = $stdin;
-        &search;
+        search();
     }
 }
 
@@ -874,7 +874,7 @@ sub next_page {
             $start_index = $1 + $results;
             $ys =~ s/index=$1/index=$start_index/;
             &parse_content($ys);
-            &print_results;
+            print_results();
         }
     }
     elsif ($YT_API_URL) {
@@ -884,7 +884,7 @@ sub next_page {
             $start_index = $1 + $results;
             $YT_API_URL =~ s/index=$1/index=$start_index/;
             &parse_content($YT_API_URL);
-            &print_results;
+            print_results();
         }
     }
 }
@@ -898,7 +898,7 @@ sub previous_page {
             $start_index = $1 - $results;
             $ys =~ s/index=$1/index=$start_index/;
             &parse_content($ys);
-            &print_results;
+            print_results();
         }
     }
     elsif ($YT_API_URL) {
@@ -908,7 +908,7 @@ sub previous_page {
             $start_index = $1 - $results;
             $YT_API_URL =~ s/index=$1/index=$start_index/;
             &parse_content($YT_API_URL);
-            &print_results;
+            print_results();
         }
     }
 }
@@ -918,7 +918,7 @@ sub picks_area {
     $NrOfPicks = scalar @picks;
     $no        = 0;
     $lastpick  = '';
-    &foreach_pick;
+    foreach_pick();
 }
 
 sub foreach_pick {
@@ -972,7 +972,7 @@ sub select_resolution {
         unless ($stdin_argvs =~ / -+f/) {
             $MPlayerLine =~ s/-fs //o;
         }
-        &lower_cache;
+        lower_cache();
     }
     elsif ($stdin_argvs =~ / -+1/o) {
         print "Looking for 1080p resolution... ($stdin_argvs)\n" if $debug;
@@ -980,16 +980,16 @@ sub select_resolution {
         if ($streaming =~ /itag=37/) {
             print "Selecting 1080p resolution ($stdin_argvs)\n" if $debug;
             $streaming =~ s/.*http(.+)itag=37([^%]*).+/http$1itag=37$2/;
-            &fullscreen_check;
+            fullscreen_check();
         }
         elsif ($streaming =~ /itag=22/) {
             print "1080p resolution is not available, so I select 720p... ($stdin_argvs)\n" if $debug;
             $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
-            &fullscreen_check;
+            fullscreen_check();
         }
         else {
             print "1080p and 720p is not available... ($stdin_argvs)\n" if $debug;
-            &lower_quality;
+            lower_quality();
         }
     }
     elsif ($stdin_argvs =~ / -+7/) {
@@ -998,16 +998,16 @@ sub select_resolution {
         if ($streaming =~ /itag=22/) {
             print "Selecting 720p resolution ($stdin_argvs)\n" if $debug;
             $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
-            &fullscreen_check;
+            fullscreen_check();
         }
         else {
             print "Resolution 720p is not available ($stdin_argvs)\n" if $debug;
-            &lower_quality;
+            lower_quality();
         }
     }
     elsif ($stdin_argvs =~ / -+4/) {
         print "Selecting 480p resolution ($stdin_argvs)\n" if $debug;
-        &lower_quality;
+        lower_quality();
     }
     elsif ($stdin_argvs =~ / -+3/) {
         print "Selecting 360p resolution ($stdin_argvs)\n" if $debug;
@@ -1018,7 +1018,7 @@ sub select_resolution {
         &lower_quality(5);
     }
     else {
-        &check_resolution;
+        check_resolution();
     }
 }
 
@@ -1178,7 +1178,7 @@ sub get_youtube {
         print "** Views     : $views\n"    if $views;
         print "** Published : $date\n"     if $date;
         print '-' x 80 . "\n\n";
-        &select_resolution;
+        select_resolution();
         &MPlayer($title);
     }
     else {
@@ -1188,7 +1188,7 @@ sub get_youtube {
 
             unless ($stdin_argvs =~ / -+(?:all|A|play-all)/ or $NrOfPicks) {
                 sleep 1;
-                &print_results;
+                print_results();
             }
         }
         else {
@@ -1205,25 +1205,25 @@ sub check_resolution {
 
     if ($streaming =~ /itag=37/ and not $stdin_argvs =~ / -+(?:all|A)/) {
         print "Detected 1080p resolution in check_resolution()\n" if $debug;
-        &pick;
+        pick();
     }
     elsif ($stdin_argvs =~ / -+(?:all|A)/) {
 
         if ($streaming =~ /itag=37/) {
             print "Selecting 1080p resolution from check_resolution()\n" if $debug;
             $streaming =~ s/.*http(.+)itag=37([^%]*).+/http$1itag=37$2/;
-            &default_cache;
-            &fullscreen_check;
+            default_cache();
+            fullscreen_check();
         }
     }
     elsif ($streaming =~ /itag=22/) {
         print "Selecting 720p resolution from check_resolution()\n" if $debug;
         $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
-        &default_cache;
-        &fullscreen_check;
+        default_cache();
+        fullscreen_check();
     }
     else {
-        &lower_quality;
+        lower_quality();
     }
 }
 
@@ -1243,13 +1243,13 @@ sub pick {
 
     if ($pick eq 2) {
         $streaming =~ s/.*http(.+)itag=37([^%]*).+/http$1itag=37$2/;
-        &default_cache;
-        &fullscreen_check;
+        default_cache();
+        fullscreen_check();
     }
     else {
         $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
-        &default_cache;
-        &fullscreen_check;
+        default_cache();
+        fullscreen_check();
     }
 }
 
@@ -1260,7 +1260,7 @@ sub lower_quality {
 
         if ($streaming =~ /itag=$_[0]/) {
             $streaming =~ s/.*http(.+)itag=$_[0]([^%]*).*/http$1itag=$_[0]$2/;
-            &lower_cache;
+            lower_cache();
         }
     }
     else {
@@ -1280,7 +1280,7 @@ sub lower_quality {
                 }
 
                 $streaming =~ s/.*http(.+)itag=$_([^%]*).*/http$1itag=$_$2/;
-                &lower_cache;
+                lower_cache();
                 last;
             }
         }
@@ -1305,6 +1305,6 @@ sub default_cache {
         $MPlayerLine =~ s/-cache-min\s+\d+/-cache-min $cache_min/ unless $user_cache_min;
     }
     else {
-        &lower_cache;
+        lower_cache();
     }
 }
