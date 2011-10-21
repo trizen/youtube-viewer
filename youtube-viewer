@@ -278,7 +278,7 @@ foreach my $arg (@ARGV) {
             }
 
             if (defined $user) {
-                &videos_from_username($user);
+                videos_from_username($user);
             }
         }
         elsif ($arg =~ /^-+(?:U|user(?:name)?s)=?(.*)/o) {
@@ -300,7 +300,7 @@ foreach $_ (@ARGV) {
         last;
     }
 }
-&insert_url unless $non_argv;
+insert_url() unless $non_argv;
 
 foreach my $code (@ARGV) {
 
@@ -309,12 +309,12 @@ foreach my $code (@ARGV) {
 
         if ($code =~ /\d+|[A-Z]+|-/) {
             $dont_exit = 1;
-            &get_youtube($code);
+            get_youtube($code);
         }
     }
     elsif ($code =~ /view_play_list\?p=([A-Z\d]+)/) {
         $playlist = 1;
-        &list_playlist($1);
+        list_playlist($1);
     }
 
     if ($code =~ m[(?:embed|v)(?:%3D|[=/])((?>[-\w]{11}))] or $code =~ m[http://youtu\.be/([-\w]{11})]) {
@@ -322,14 +322,14 @@ foreach my $code (@ARGV) {
         $dont_exit = 1;
 
         if (length $code == 11) {
-            &get_youtube($code);
+            get_youtube($code);
         }
         else {
             next;
         }
     }
     elsif (substr($code, 0, 7) eq 'http://' and not $code =~ /youtube\.com/) {
-        &code_from_content($code);
+        code_from_content($code);
     }
     else {
         next;
@@ -391,11 +391,11 @@ sub version {
 }
 
 sub code_from_content {
-    &UserAgent unless $lwp_is_set;
+    UserAgent unless $lwp_is_set;
     my $connect = $lwp->get($_[0]) if $_[0];
 
     if ($connect->content =~ m[youtube\.com/(?:v|embed)/([\w-]{11})]) {
-        &get_youtube($1);
+        get_youtube($1);
     }
 }
 
@@ -404,14 +404,14 @@ sub insert_url {
     chomp(my $youtube = <STDIN>);
 
     if ($youtube =~ m[(?:embed|v)(?:%3D|[=/])((?>[-\w]{11}))] or $youtube =~ m[http://youtu\.be/([-\w]{11})]) {
-        &get_youtube($1);
+        get_youtube($1);
     }
     elsif ($youtube =~ /view_play_list\?p=([A-Z\d]+)/) {
         $playlist = 1;
-        &list_playlist($1);
+        list_playlist($1);
     }
     elsif (substr($youtube, 0, 7) eq 'http://' and not $youtube =~ /youtube\.com/) {
-        &code_from_content($youtube);
+        code_from_content $youtube;
     }
     elsif ($youtube) {
         $stdin_argvs = ' ' . join(' ', grep({substr($_, 0, 1) eq '-';} split(/\s+/, $youtube, 0))) if $youtube =~ /-/;
@@ -449,7 +449,7 @@ sub list_user_names {
 
         if (defined $usernames_table{$pick}) {
             chomp(my $user = $usernames_table{$pick});
-            &videos_from_username($user);
+            videos_from_username($user);
         }
         else {
             list_user_names();
@@ -464,7 +464,7 @@ sub videos_from_username {
 
 sub search_playlists {
     $playlists = 1;
-    &UserAgent unless $lwp_is_set;
+    UserAgent unless $lwp_is_set;
     print "\n";
     $new_index = $new_index ? $new_index : 1;
     my $url = $_[0] || "http://gdata.youtube.com/feeds/api/playlists/snippets?q=$SEARCH&start-index=1&max-results=$results&v=2";
@@ -540,7 +540,7 @@ sub search_playlists {
             $new_index = $1 + $results;
             $url =~ s/start-index=\d+/start-index=$new_index/;
             undef @list_of_playlists;
-            &search_playlists($url);
+            search_playlists $url;
         }
     }
     elsif ($pick eq 'back' and $new_index > 1) {
@@ -549,7 +549,7 @@ sub search_playlists {
             $new_index = $1 - $results;
             $url =~ s/start-index=\d+/start-index=$new_index/;
             undef @list_of_playlists;
-            &search_playlists($url);
+            search_playlists $url;
         }
     }
     elsif ($pick =~ /^\D/ and not $pick =~ /^\s*\d/) {
@@ -560,7 +560,7 @@ sub search_playlists {
     elsif ($pick =~ /^\s*(\d+)/) {
         $pick = $1;
     }
-    &list_playlist($list_of_playlists[$pick - 1][3]);
+    list_playlist($list_of_playlists[$pick - 1][3]);
 }
 
 sub list_playlist {
@@ -607,7 +607,7 @@ sub youtube_tops {
 }
 
 sub categories_area {
-    &UserAgent unless $lwp_is_set;
+    UserAgent unless $lwp_is_set;
     my $connect = $lwp->get('http://gdata.youtube.com/schemas/2007/categories.cat');
     my $n       = 0;
     my %categories_table;
@@ -693,10 +693,10 @@ sub YoutubeAPI {
     }
 
     $YT_API_URL .= "&max-results=$results";
-    &parse_content($YT_API_URL);
+    parse_content($YT_API_URL);
     print_results();
 }
-&search unless $dont_exit or $playlists;
+search() unless $dont_exit or $playlists;
 
 sub search {
     use strict;
@@ -704,13 +704,13 @@ sub search {
     $SEARCH = uri_escape($SEARCH);
     $ys     = "http://gdata.youtube.com/feeds/api/videos?q=$SEARCH"
       . "&max-results=$results&time=$time_p&orderby=$order_by&start-index=1";
-    &parse_content($ys);
+    parse_content($ys);
     print_results();
 }
 
 sub parse_content {
     use strict;
-    &UserAgent unless $lwp_is_set;
+    UserAgent unless $lwp_is_set;
     print "\n";
     undef @Videos;
     my (@content) = split(/<entry>/, $lwp->get($_[0])->content, 0);
@@ -837,13 +837,13 @@ sub print_results {
         previous_page();
     }
     elsif ($stdin =~ m[(?:embed|v)(?:%3D|[=/])((?>[-\w]{11}))] or $stdin =~ m[http://youtu\.be/([-\w]{11})]) {
-        &get_youtube($1);
+        get_youtube($1);
     }
     elsif ($stdin =~ /view_play_list\?p=([A-Z\d]+)/) {
-        &list_playlist($1);
+        list_playlist $1;
     }
     elsif (substr($stdin, 0, 7) eq 'http://' and not $stdin =~ /youtube\.com/) {
-        &code_from_content($stdin);
+        code_from_content $stdin;
     }
     elsif ($stdin eq 'all') {
         $stdin_argvs .= ' --1080 --play-all';
@@ -854,7 +854,7 @@ sub print_results {
         $stdin =~ s/(?:\D|^)-\d+//g;
         $stdin =~ s/(\d+)(?:-|\.\.)(\d+)/join ' ', $1 .. $2;/eg;
         @picks = grep({$_ > 0 and $_ <= scalar @Videos if /^\d+$/;} split(m?\D+?, $stdin, 0));
-        &picks_area if scalar @picks or do {
+        picks_area() if scalar @picks or do {
             $SEARCH = $stdin;
             search();
         };
@@ -873,7 +873,7 @@ sub next_page {
         if ($ys =~ /start-index=(\d+)/) {
             $start_index = $1 + $results;
             $ys =~ s/index=$1/index=$start_index/;
-            &parse_content($ys);
+            parse_content $ys;
             print_results();
         }
     }
@@ -883,7 +883,7 @@ sub next_page {
         if ($YT_API_URL =~ /start-index=(\d+)/) {
             $start_index = $1 + $results;
             $YT_API_URL =~ s/index=$1/index=$start_index/;
-            &parse_content($YT_API_URL);
+            parse_content $YT_API_URL;
             print_results();
         }
     }
@@ -897,7 +897,7 @@ sub previous_page {
         if ($ys =~ /start-index=(\d+)/) {
             $start_index = $1 - $results;
             $ys =~ s/index=$1/index=$start_index/;
-            &parse_content($ys);
+            parse_content $ys;
             print_results();
         }
     }
@@ -907,7 +907,7 @@ sub previous_page {
         if ($YT_API_URL =~ /start-index=(\d+)/) {
             $start_index = $1 - $results;
             $YT_API_URL =~ s/index=$1/index=$start_index/;
-            &parse_content($YT_API_URL);
+            parse_content $YT_API_URL;
             print_results();
         }
     }
@@ -933,15 +933,15 @@ sub foreach_pick {
         }
 
         if (not $playback) {
-            &print_results if $number eq $NrOfPicks;
+            print_results if $number eq $NrOfPicks;
         }
         else {
-            &next_page if $number eq $NrOfPicks;
+            next_page if $number eq $NrOfPicks;
         }
 
         $picks_mode = 1;
         $lastpick   = $pick;
-        &foreach_code($pick) if $pick =~ /^\d+$/;
+        foreach_code($pick) if $pick =~ /^\d+$/;
     }
 }
 
@@ -956,7 +956,7 @@ sub foreach_code {
         my $time        = format_time($$video[6]);
         my $views       = $$video[7];
         my $description = $$video[8] =~ /&#?\w/ ? decode_entities($$video[8]) : $$video[8];
-        &get_youtube($code, $title, $time, $views, $category, $published, $description);
+        get_youtube($code, $title, $time, $views, $category, $published, $description);
     }
 }
 
@@ -1011,11 +1011,11 @@ sub select_resolution {
     }
     elsif ($stdin_argvs =~ / -+3/) {
         print "Selecting 360p resolution ($stdin_argvs)\n" if $debug;
-        &lower_quality(34);
+        lower_quality(34);
     }
     elsif ($stdin_argvs =~ / -+2/) {
         print "Selecting 240p resolution ($stdin_argvs)\n" if $debug;
-        &lower_quality(5);
+        lower_quality(5);
     }
     else {
         check_resolution();
@@ -1035,7 +1035,7 @@ sub get_youtube {
     my ($code, $title, $duration, $views, $category, $published, $description) = @_;
     print "\nget_youtube()\n" . join("\n", @_) . "\nEOL\n\n" if $debug;
     my $youtube = "http://www.youtube.com/get_video_info?&video_id=$code&el=detailpage&ps=default&eurl=&gl=US&hl=en";
-    &UserAgent unless $lwp_is_set;
+    UserAgent unless $lwp_is_set;
     my $connect = $lwp->get($youtube);
     my $url     = "http://www.youtube.com/watch?v=$code";
     $MPlayerLine =~ s/ $mplayer_srt_settings -sub.*//;
@@ -1067,7 +1067,7 @@ sub get_youtube {
             }
         }
 
-        unless ($srt_file) {
+        unless (defined $srt_file) {
 
             foreach my $line (@srt_files) {
 
@@ -1179,7 +1179,7 @@ sub get_youtube {
         print "** Published : $date\n"     if $date;
         print '-' x 80 . "\n\n";
         select_resolution();
-        &MPlayer($title);
+        MPlayer $title;
     }
     else {
         warn "\n$bred(x_x) Something went wrong...$reset\n\n$bred(x_x) Unable to stream: $reset$url\n\n";
