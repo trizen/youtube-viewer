@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 09 October 2011
+#  Latest edit on: 27 October 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -106,6 +106,8 @@ my $byellow              = '';
 my $stdin_argvs          = '';
 my $cwd                  = getcwd();
 my $win32                = $^O =~ /(?:win|dos)/i ? 1 : 0;
+my $have_entities        = qr/&#?\w/;
+my $get_youtube_code     = qr"(?:embed|v|youtu\.be)(?:%3D|[=/])((?>[-\w]{11}))";
 my $tmp_dir              = $ENV{'TEMP'} || $ENV{'TMP'} || $ENV{'TMPDIR'} || '/tmp';
 
 my ($MPlayerLine, $streaming, $lwp, $ys, $YT_API_URL, $pick, $new_index, @Videos, @picks, $NrOfPicks, $no, $lastpick);
@@ -317,7 +319,7 @@ foreach my $code (@ARGV) {
         list_playlist($1);
     }
 
-    if ($code =~ m[(?:embed|v)(?:%3D|[=/])((?>[-\w]{11}))] or $code =~ m[http://youtu\.be/([-\w]{11})]) {
+    if ($code =~ /$get_youtube_code/) {
         $code      = $1;
         $dont_exit = 1;
 
@@ -403,7 +405,7 @@ sub insert_url {
     print "\n$bred=>>$reset$bgreen Insert an YouTube URL or search something...\n$reset> ";
     chomp(my $youtube = <STDIN>);
 
-    if ($youtube =~ m[(?:embed|v)(?:%3D|[=/])((?>[-\w]{11}))] or $youtube =~ m[http://youtu\.be/([-\w]{11})]) {
+    if ($youtube =~ /$get_youtube_code/) {
         get_youtube($1);
     }
     elsif ($youtube =~ /view_play_list\?p=([A-Z\d]+)/) {
@@ -482,7 +484,7 @@ sub search_playlists {
                 next;
             }
 
-            $title = decode_entities($title);
+            $title = decode_entities($title) if $title =~ /$have_entities/;
         }
 
         if (m[<yt:playlistId>([^<]+)</yt:playlistId>]o) {
@@ -497,7 +499,7 @@ sub search_playlists {
             $summary = $1;
             $summary =~ s/\s+/ /go;
             $summary = $1 if $summary =~ /^(.{10})/;
-            $summary = decode_entities($summary);
+            $summary = decode_entities($summary) if $summary =~ /$have_entities/;
         }
         else {
             $summary = '';
@@ -540,7 +542,7 @@ sub search_playlists {
             $new_index = $1 + $results;
             $url =~ s/start-index=\d+/start-index=$new_index/;
             undef @list_of_playlists;
-            search_playlists $url;
+            $url->search_playlists;
         }
     }
     elsif ($pick eq 'back' and $new_index > 1) {
@@ -549,7 +551,7 @@ sub search_playlists {
             $new_index = $1 - $results;
             $url =~ s/start-index=\d+/start-index=$new_index/;
             undef @list_of_playlists;
-            search_playlists $url;
+            $url->search_playlists;
         }
     }
     elsif ($pick =~ /^\D/ and not $pick =~ /^\s*\d/) {
@@ -613,9 +615,9 @@ sub categories_area {
     my %categories_table;
     print "\n";
 
-    foreach $_ (split(/category term=/, $connect->content, 0)) {
+    foreach $_ (split(/category\s+term=/, $connect->content, 0)) {
 
-        if (/^'([^']+)' label='([^']+)'/ and not /deprecated/) {
+        if (/^'([^']+)'\s+label='([^']+)'/ and not /deprecated/) {
             ++$n;
             my $cat_name  = $1;
             my $cat_label = $2;
@@ -803,7 +805,7 @@ sub print_results {
     foreach my $video (@Videos) {
         my $number = $$video[0];
         my $author = $$video[1];
-        my $title  = $$video[3] =~ /&#?\w/ ? decode_entities($$video[3]) : $$video[3];
+        my $title  = $$video[3] =~ /$have_entities/ ? decode_entities($$video[3]) : $$video[3];
         my $time   = format_time($$video[6]);
         print do {
             ' ' if $number < 10;
@@ -836,7 +838,7 @@ sub print_results {
     elsif ($stdin eq 'back' and $start_index > 1) {
         previous_page();
     }
-    elsif ($stdin =~ m[(?:embed|v)(?:%3D|[=/])((?>[-\w]{11}))] or $stdin =~ m[http://youtu\.be/([-\w]{11})]) {
+    elsif ($stdin =~ /$get_youtube_code/) {
         get_youtube($1);
     }
     elsif ($stdin =~ /view_play_list\?p=([A-Z\d]+)/) {
@@ -950,31 +952,31 @@ sub foreach_code {
 
     foreach my $video ($Videos[shift() - 1]) {
         my $code        = $$video[2];
-        my $title       = $$video[3] =~ /&#?\w/ ? decode_entities($$video[3]) : $$video[3];
+        my $title       = $$video[3] =~ /$have_entities/ ? decode_entities($$video[3]) : $$video[3];
         my $category    = $$video[4];
         my $published   = $$video[5];
         my $time        = format_time($$video[6]);
         my $views       = $$video[7];
-        my $description = $$video[8] =~ /&#?\w/ ? decode_entities($$video[8]) : $$video[8];
+        my $description = $$video[8] =~ /$have_entities/ ? decode_entities($$video[8]) : $$video[8];
         get_youtube($code, $title, $time, $views, $category, $published, $description);
     }
 }
 
 sub select_resolution {
     use strict;
-    $streaming =~ s/^[\w]*%[\w]*http:/http:/o;
+    $streaming =~ s/^[\w]*%[\w]*http:/http:/;
 
     if (not $streaming =~ /itag=34/ and $streaming =~ /itag=(\d+)/) {
         my $itag = $1;
         $streaming =~ s/.*http(.+)itag=$itag([^%]*).+/http$1itag=$itag$2/;
-        $streaming =~ s/%.*//o;
+        $streaming =~ s/%.*//;
 
         unless ($stdin_argvs =~ / -+f/) {
-            $MPlayerLine =~ s/-fs //o;
+            $MPlayerLine =~ s/-fs //;
         }
         lower_cache();
     }
-    elsif ($stdin_argvs =~ / -+1/o) {
+    elsif ($stdin_argvs =~ / -+1/) {
         print "Looking for 1080p resolution... ($stdin_argvs)\n" if $debug;
 
         if ($streaming =~ /itag=37/) {
@@ -1052,10 +1054,11 @@ sub get_youtube {
         }
 
         my @srt_files;
+        my $dir_h;
 
-        opendir DIR, $tmp_dir;
-        /\.srt$/ and push @srt_files, $_ while defined($_ = readdir DIR);
-        closedir DIR;
+        opendir $dir_h, $tmp_dir;
+        /\.srt$/ and push @srt_files, $_ while defined($_ = readdir $dir_h);
+        closedir $dir_h;
 
         my $srt_file;
 
@@ -1109,7 +1112,8 @@ sub get_youtube {
             my $content  = $lwp->get($feed_url)->content;
 
             if ($content =~ m[media:title type='plain'>([^<]+)</media:title>]) {
-                $title = decode_entities($1);
+                $title = $1;
+                $title = decode_entities($title) if $title =~ /$have_entities/;
             }
 
             if ($content =~ /viewCount='(\d+)'/) {
@@ -1123,7 +1127,8 @@ sub get_youtube {
             }
 
             if ($content =~ m[<media:description type='plain'>([^<]+)</media]) {
-                $description = decode_entities($1);
+                $description = $1;
+                $description = decode_entities($description) if $description =~ /$have_entities/;
             }
 
             if ($content =~ /duration\D*='(\d+)/) {
