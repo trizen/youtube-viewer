@@ -1074,7 +1074,7 @@ sub get_youtube {
     my $youtube = "$get_video_info?&video_id=$code&el=detailpage&ps=default&eurl=&gl=US&hl=en";
     UserAgent unless $lwp_is_set;
     my $connect = $lwp->get($youtube);
-    my $url     = "https://www.youtube.com/watch?v=$code";
+    my $url     = "http://www.youtube.com/watch?v=$code";
     $MPlayerLine =~ s/ $mplayer_srt_settings -sub.*//;
 
     if (    -e $gcap
