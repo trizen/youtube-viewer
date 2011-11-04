@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 27 October 2011
+#  Latest edit on: 04 November 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -30,6 +30,7 @@
 # [!] The most important changes are written in the changelog!
 #
 # [CHANGELOG]
+# - Added support to get video results starting with a predefined page (ex: -page=4)           - NEW (v2.5.4)
 # - Added support for previous page and support to list youtube usernames from a file          - NEW (v2.5.2)
 # - Added few options to control cache of MPlayer and lower cache for lower video resolutions  - NEW (v2.5.1)
 # - Added colours for text (--colours) or $colours = 1, 360p support (-3), playlist support    - NEW (v2.5.0)
@@ -69,7 +70,7 @@ use HTML::Entities ('decode_entities');
 use strict;
 
 my $appname              = 'youtube-viewer';
-my $version              = '2.5.3';
+my $version              = '2.5.4-git';
 my $colours              = 0;
 my $cache                = 30000;
 my $cache_min            = 5;
@@ -169,7 +170,7 @@ foreach my $arg (@ARGV) {
     if (substr($arg, 0, 1) eq '-') {
         $stdin_argvs .= " $arg ";
 
-        if ($arg =~ /^-+cache=(\d+)$/) {
+        if ($arg =~ /^-+cache=(\d+)/) {
             my $cache = $1;
             $MPlayerLine =~ s/-cache\s+\d+/-cache $cache/;
             $user_cache = 1;
@@ -177,7 +178,7 @@ foreach my $arg (@ARGV) {
         elsif ($arg =~ /^-+(?:l|lower.?cache)$/) {
             $user_lower_cache = 1;
         }
-        elsif ($arg =~ /^-+cache.?min=(\d+)$/) {
+        elsif ($arg =~ /^-+cache.?min=(\d+)/) {
             my $cache_min = $1;
             $MPlayerLine =~ s/-cache-min\s+\d+/-cache-min $cache_min/;
             $user_cache_min = 1;
@@ -190,14 +191,18 @@ foreach my $arg (@ARGV) {
         elsif ($arg =~ /^-+time=(.+)/) {
             $time_p = $1;
         }
+        elsif ($arg =~ /^-+page=(\d+)/) {
+            $start_index = $results * $1 - $results + 1;
+        }
         elsif ($arg =~ /^-+(?:T|tty|M|mplayer)=(.+)/) {
             $MPlayerLine .= " $1";
         }
         elsif ($arg =~ /^-+(?:o|order.?by)=(.+)/) {
             $order_by = $1;
         }
-        elsif ($arg =~ /^-+(?:sub|lang)=([\w]+)$/) {
-            $default_sub = lc $1;
+        elsif ($arg =~ /^-+(?:sub|lang)=([\w]{2,5})/) {
+            $default_sub = $1;
+            $default_sub = lc $default_sub unless $default_sub =~ /_/;
         }
         elsif ($arg =~ /^-+(?:colou?rs?|C|cl)$/) {
             $colours = 1;
@@ -217,9 +222,9 @@ foreach my $arg (@ARGV) {
         elsif ($arg =~ /^-+(?:m|more)$/) {
             $results = 50;
         }
-        elsif ($arg =~ /^-+(?:fs?|fullscreen)$/o) {
-            $MPlayerLine =~ s/mplayer /mplayer -fs /o;
-            $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -fs/o;
+        elsif ($arg =~ /^-+(?:fs?|fullscreen)$/) {
+            $MPlayerLine =~ s/mplayer /mplayer -fs /;
+            $MPlayerLine =~ s/mplayer.exe"/mplayer.exe" -fs/;
         }
     }
     else {
@@ -319,7 +324,7 @@ foreach my $code (@ARGV) {
         list_playlist($1);
     }
 
-    if ($code =~ /$get_youtube_code/) {
+    if ($code =~ /$get_youtube_code/o) {
         $code      = $1;
         $dont_exit = 1;
 
@@ -359,6 +364,7 @@ sub help {
    -u <username>        : lists videos uploaded by a specific user
    -order-by=<ORDER>    : order entries by: published, viewCount or rating
    -time=<TIME>         : valid values are: today, this_week and this_month
+   -page=<PAGE_NR>      : get video results starting with page 'n'
    -2, -3, -4, -7, -1   : plays videos at 240p, 360p, 480p, 720p or 1080p
 \nMPlayer options:
    -f, --fullscreen     : plays video(s) in fullscreen mode
@@ -405,7 +411,7 @@ sub insert_url {
     print "\n$bred=>>$reset$bgreen Insert an YouTube URL or search something...\n$reset> ";
     chomp(my $youtube = <STDIN>);
 
-    if ($youtube =~ /$get_youtube_code/) {
+    if ($youtube =~ /$get_youtube_code/o) {
         get_youtube($1);
     }
     elsif ($youtube =~ /view_play_list\?p=([A-Z\d]+)/) {
@@ -484,10 +490,10 @@ sub search_playlists {
                 next;
             }
 
-            $title = decode_entities($title) if $title =~ /$have_entities/;
+            $title = decode_entities($title) if $title =~ /$have_entities/o;
         }
 
-        if (m[<yt:playlistId>([^<]+)</yt:playlistId>]o) {
+        if (m[<yt:playlistId>([^<]+)</yt:playlistId>]) {
             ++$n;
             $playlist_id = $1;
         }
@@ -499,7 +505,7 @@ sub search_playlists {
             $summary = $1;
             $summary =~ s/\s+/ /go;
             $summary = $1 if $summary =~ /^(.{10})/;
-            $summary = decode_entities($summary) if $summary =~ /$have_entities/;
+            $summary = decode_entities($summary) if $summary =~ /$have_entities/o;
         }
         else {
             $summary = '';
@@ -536,7 +542,7 @@ sub search_playlists {
     print "\n$bred=>>$reset ${bgreen}Pick one playlist$reset\n> ";
     chomp($pick = <STDIN>);
 
-    if (not $pick =~ /^\s*\d+\s*$/o and $pick =~ /^\s*$/ or $pick eq 'next') {
+    if (not $pick =~ /^\s*\d+\s*$/ and $pick =~ /^\s*$/ or $pick eq 'next') {
 
         if ($url =~ /start-index=(\d+)/) {
             $new_index = $1 + $results;
@@ -688,10 +694,10 @@ sub MPlayer {
 sub YoutubeAPI {
 
     if (not $YT_API_URL =~ /\?/) {
-        $YT_API_URL .= '?start-index=1';
+        $YT_API_URL .= "?start-index=$start_index";
     }
     else {
-        $YT_API_URL .= '&start-index=1';
+        $YT_API_URL .= "&start-index=$start_index";
     }
 
     $YT_API_URL .= "&max-results=$results";
@@ -705,7 +711,7 @@ sub search {
     $SEARCH = join(' ', grep({substr($_, 0, 1) ne '-';} split(/\s+/, $SEARCH, 0)));
     $SEARCH = uri_escape($SEARCH);
     $ys     = "http://gdata.youtube.com/feeds/api/videos?q=$SEARCH"
-      . "&max-results=$results&time=$time_p&orderby=$order_by&start-index=1";
+      . "&max-results=$results&time=$time_p&orderby=$order_by&start-index=$start_index";
     parse_content($ys);
     print_results();
 }
@@ -794,7 +800,7 @@ sub parse_content {
 sub print_results {
     use strict;
 
-    if (not scalar @Videos) {
+    if (not @Videos) {
         print "$bred(x_x) No video results!$reset\n";
         insert_url();
     }
@@ -805,7 +811,7 @@ sub print_results {
     foreach my $video (@Videos) {
         my $number = $$video[0];
         my $author = $$video[1];
-        my $title  = $$video[3] =~ /$have_entities/ ? decode_entities($$video[3]) : $$video[3];
+        my $title  = $$video[3] =~ /$have_entities/o ? decode_entities($$video[3]) : $$video[3];
         my $time   = format_time($$video[6]);
         print do {
             ' ' if $number < 10;
@@ -838,7 +844,7 @@ sub print_results {
     elsif ($stdin eq 'back' and $start_index > 1) {
         previous_page();
     }
-    elsif ($stdin =~ /$get_youtube_code/) {
+    elsif ($stdin =~ /$get_youtube_code/o) {
         get_youtube($1);
     }
     elsif ($stdin =~ /view_play_list\?p=([A-Z\d]+)/) {
@@ -952,12 +958,12 @@ sub foreach_code {
 
     foreach my $video ($Videos[shift() - 1]) {
         my $code        = $$video[2];
-        my $title       = $$video[3] =~ /$have_entities/ ? decode_entities($$video[3]) : $$video[3];
+        my $title       = $$video[3] =~ /$have_entities/o ? decode_entities($$video[3]) : $$video[3];
         my $category    = $$video[4];
         my $published   = $$video[5];
         my $time        = format_time($$video[6]);
         my $views       = $$video[7];
-        my $description = $$video[8] =~ /$have_entities/ ? decode_entities($$video[8]) : $$video[8];
+        my $description = $$video[8] =~ /$have_entities/o ? decode_entities($$video[8]) : $$video[8];
         get_youtube($code, $title, $time, $views, $category, $published, $description);
     }
 }
@@ -1064,7 +1070,7 @@ sub get_youtube {
 
         foreach my $line (@srt_files) {
 
-            if ($line =~ /${code}_$default_sub\.srt/) {
+            if ($line =~ /${code}_$default_sub\.srt/o) {
                 $srt_file = "${code}_$default_sub.srt";
                 $MPlayerLine .= " $mplayer_srt_settings -sub $srt_file";
             }
@@ -1074,7 +1080,7 @@ sub get_youtube {
 
             foreach my $line (@srt_files) {
 
-                if ($line =~ /$code(\w*)\.srt/) {
+                if ($line =~ /$code(\w*)\.srt/o) {
                     $srt_file = "$code$1.srt";
                     $MPlayerLine .= " $mplayer_srt_settings -sub $srt_file";
                 }
@@ -1113,7 +1119,7 @@ sub get_youtube {
 
             if ($content =~ m[media:title type='plain'>([^<]+)</media:title>]) {
                 $title = $1;
-                $title = decode_entities($title) if $title =~ /$have_entities/;
+                $title = decode_entities($title) if $title =~ /$have_entities/o;
             }
 
             if ($content =~ /viewCount='(\d+)'/) {
@@ -1128,7 +1134,7 @@ sub get_youtube {
 
             if ($content =~ m[<media:description type='plain'>([^<]+)</media]) {
                 $description = $1;
-                $description = decode_entities($description) if $description =~ /$have_entities/;
+                $description = decode_entities($description) if $description =~ /$have_entities/o;
             }
 
             if ($content =~ /duration\D*='(\d+)/) {
