@@ -1063,7 +1063,7 @@ sub format_date {
     use strict;
     my $date = shift();
     $date =~ tr/\-/./;
-    $date =~ s/(.+?)\.(.+?)\.(.+?)/$3.$2.$1/;
+    $date =~ s/(.+)\.(.+)\.(.+)/$3.$2.$1/;
     return $date;
 }
 
@@ -1140,8 +1140,6 @@ sub get_youtube {
             $rating = sprintf('%.2f', $1);
         }
 
-        my $date;
-
         unless (defined $title) {
             my $feed_url = "$feeds_main_url/videos/$code";
             my $content  = $lwp->get($feed_url)->content;
@@ -1210,7 +1208,7 @@ sub get_youtube {
         print "** Duration  : $duration\n" if defined $duration;
         print "** Rating    : $rating\n"   if defined $rating;
         print "** Views     : $views\n"    if defined $views;
-        print "** Published : $date\n"     if defined $date;
+        print "** Published : $published\n"     if defined $published;
         print '-' x 80 . "\n\n";
         select_resolution();
         MPlayer $title;
