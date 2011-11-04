@@ -113,10 +113,18 @@ my $get_youtube_code     = qr"(?:embed|v|youtu\.be)(?:%3D|[=/])((?>[-\w]{11}))";
 my $get_playlist_code    = qr/(?:view_play_list\?p|playlist\?list)=([A-Z\d]+)/;
 my $valid_playlist_code  = qr/^(?:PL)?[A-Z\d]{16}$/;
 my $feeds_main_url       = 'https://gdata.youtube.com/feeds/api';
+my $get_video_info       = 'https://www.youtube.com/get_video_info';
 my $tmp_dir              = $ENV{'TEMP'} || $ENV{'TMP'} || $ENV{'TMPDIR'} || '/tmp';
 
 my ($MPlayerLine, $streaming, $lwp, $from_author, $region, $YOUTUBE_GDATA_URL, $pick, @Videos, @picks, $NrOfPicks, $no,
     $lastpick);
+
+eval "require Crypt::SSLeay";
+
+if ($@) {
+    $feeds_main_url =~ s/s//;
+    $get_video_info =~ s/s//;
+}
 
 if ($win32) {
     my $MPlayer_exe = $ENV{'ProgramFiles'} . '\\SMPlayer\\mplayer\\mplayer.exe';
@@ -352,7 +360,7 @@ foreach my $code (@ARGV) {
             next;
         }
     }
-    elsif (substr($code, 0, 7) eq 'http://' and not $code =~ /youtube\.com/) {
+    elsif ($code =~ /^https?:\/\// and not $code =~ /youtube\.com/) {
         code_from_content($code);
     }
     else {
@@ -441,7 +449,7 @@ sub insert_url {
     elsif ($youtube =~ /$valid_playlist_code/o) {
         list_playlist($youtube);
     }
-    elsif (substr($youtube, 0, 7) eq 'http://' and not $youtube =~ /youtube\.com/) {
+    elsif ($youtube =~ /^https?:\/\// and not $youtube =~ /youtube\.com/) {
         code_from_content $youtube;
     }
     elsif ($youtube) {
@@ -893,7 +901,7 @@ sub print_results {
     elsif ($stdin =~ /$valid_playlist_code/o) {
         list_playlist $stdin;
     }
-    elsif (substr($stdin, 0, 7) eq 'http://' and not $stdin =~ /youtube\.com/) {
+    elsif ($stdin =~ /^https?:\/\// and not $stdin =~ /youtube\.com/) {
         code_from_content $stdin;
     }
     elsif ($stdin eq 'all') {
@@ -983,11 +991,11 @@ sub foreach_code {
 
 sub select_resolution {
     use strict;
-    $streaming =~ s/^[\w]*%[\w]*http:/http:/;
+    $streaming =~ s/^[\w]*%[\w]*https?:/http:/;
 
     if (not $streaming =~ /itag=34/ and $streaming =~ /itag=(\d+)/) {
         my $itag = $1;
-        $streaming =~ s/.*http(.+)itag=$itag([^%]*).+/http$1itag=$itag$2/;
+        $streaming =~ s/.*https?(.+)itag=$itag([^%]*).+/http$1itag=$itag$2/;
         $streaming =~ s/%.*//;
 
         unless ($stdin_argvs =~ / -+f/) {
@@ -1000,12 +1008,12 @@ sub select_resolution {
 
         if ($streaming =~ /itag=37/) {
             print "Selecting 1080p resolution ($stdin_argvs)\n" if $debug;
-            $streaming =~ s/.*http(.+)itag=37([^%]*).+/http$1itag=37$2/;
+            $streaming =~ s/.*https?(.+)itag=37([^%]*).+/http$1itag=37$2/;
             fullscreen_check();
         }
         elsif ($streaming =~ /itag=22/) {
             print "1080p resolution is not available, so I select 720p... ($stdin_argvs)\n" if $debug;
-            $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
+            $streaming =~ s/.*https?(.+)itag=22([^%]*).+/http$1itag=22$2/;
             fullscreen_check();
         }
         else {
@@ -1018,7 +1026,7 @@ sub select_resolution {
 
         if ($streaming =~ /itag=22/) {
             print "Selecting 720p resolution ($stdin_argvs)\n" if $debug;
-            $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
+            $streaming =~ s/.*https?(.+)itag=22([^%]*).+/http$1itag=22$2/;
             fullscreen_check();
         }
         else {
@@ -1063,10 +1071,10 @@ sub get_youtube {
     use strict;
     my ($code, $title, $duration, $views, $category, $published, $description) = @_;
     print "\nget_youtube()\n" . join("\n", @_) . "\nEOL\n\n" if $debug;
-    my $youtube = "http://www.youtube.com/get_video_info?&video_id=$code&el=detailpage&ps=default&eurl=&gl=US&hl=en";
+    my $youtube = "$get_video_info?&video_id=$code&el=detailpage&ps=default&eurl=&gl=US&hl=en";
     UserAgent unless $lwp_is_set;
     my $connect = $lwp->get($youtube);
-    my $url     = "http://www.youtube.com/watch?v=$code";
+    my $url     = "https://www.youtube.com/watch?v=$code";
     $MPlayerLine =~ s/ $mplayer_srt_settings -sub.*//;
 
     if (    -e $gcap
@@ -1179,7 +1187,7 @@ sub get_youtube {
         print "$bred=>> " . $bgreen . $title . $reset . "\n" . '-' x 80;
         print "\n" . $description . "\n" . '-' x 80 . "\n";
         print "$bred=>> ${bgreen}View & Download$reset\n" . '-' x 80;
-        my $get = $1 if $streaming =~ m[(http://[^%]+)];
+        my $get = $1 if $streaming =~ m[(https?://[^%]+)];
         print "\n* URL ";
         print STDOUT $url;
         print "\n* GET $get\n" . '-' x 80 . "\n";
@@ -1237,14 +1245,14 @@ sub check_resolution {
 
         if ($streaming =~ /itag=37/) {
             print "Selecting 1080p resolution from check_resolution()\n" if $debug;
-            $streaming =~ s/.*http(.+)itag=37([^%]*).+/http$1itag=37$2/;
+            $streaming =~ s/.*https?(.+)itag=37([^%]*).+/http$1itag=37$2/;
             default_cache();
             fullscreen_check();
         }
     }
     elsif ($streaming =~ /itag=22/) {
         print "Selecting 720p resolution from check_resolution()\n" if $debug;
-        $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
+        $streaming =~ s/.*https?(.+)itag=22([^%]*).+/http$1itag=22$2/;
         default_cache();
         fullscreen_check();
     }
@@ -1268,12 +1276,12 @@ sub pick {
     print '-' x 80 . "\n\n";
 
     if ($pick eq 2) {
-        $streaming =~ s/.*http(.+)itag=37([^%]*).+/http$1itag=37$2/;
+        $streaming =~ s/.*https?(.+)itag=37([^%]*).+/http$1itag=37$2/;
         default_cache();
         fullscreen_check();
     }
     else {
-        $streaming =~ s/.*http(.+)itag=22([^%]*).+/http$1itag=22$2/;
+        $streaming =~ s/.*https?(.+)itag=22([^%]*).+/http$1itag=22$2/;
         default_cache();
         fullscreen_check();
     }
@@ -1285,7 +1293,7 @@ sub lower_quality {
     if ($_[0] and $_[0] =~ /^\d+$/) {
 
         if ($streaming =~ /itag=$_[0]/) {
-            $streaming =~ s/.*http(.+)itag=$_[0]([^%]*).*/http$1itag=$_[0]$2/;
+            $streaming =~ s/.*https?(.+)itag=$_[0]([^%]*).*/http$1itag=$_[0]$2/;
             lower_cache();
         }
     }
@@ -1305,7 +1313,7 @@ sub lower_quality {
                     }
                 }
 
-                $streaming =~ s/.*http(.+)itag=$_([^%]*).*/http$1itag=$_$2/;
+                $streaming =~ s/.*https?(.+)itag=$_([^%]*).*/http$1itag=$_$2/;
                 lower_cache();
                 last;
             }
