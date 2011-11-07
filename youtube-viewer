@@ -1075,7 +1075,7 @@ sub get_youtube {
     UserAgent unless $lwp_is_set;
     my $connect = $lwp->get($youtube);
     my $url     = "http://www.youtube.com/watch?v=$code";
-    $MPlayerLine =~ s/ $mplayer_srt_settings -sub.*//;
+    $MPlayerLine =~ s/ *\Q$mplayer_srt_settings\E *-sub.*//;
 
     if (    -e $gcap
         and not $MPlayerLine  =~ / -novideo/
@@ -1099,7 +1099,7 @@ sub get_youtube {
 
         foreach my $line (@srt_files) {
 
-            if ($line =~ /${code}_$default_sub\.srt/o) {
+            if ($line =~ /${code}_$default_sub\.srt/) {
                 $srt_file = "${code}_$default_sub.srt";
                 $MPlayerLine .= " $mplayer_srt_settings -sub $srt_file";
             }
@@ -1109,7 +1109,7 @@ sub get_youtube {
 
             foreach my $line (@srt_files) {
 
-                if ($line =~ /$code(\w*)\.srt/o) {
+                if ($line =~ /$code(\w*)\.srt/) {
                     $srt_file = "$code$1.srt";
                     $MPlayerLine .= " $mplayer_srt_settings -sub $srt_file";
                 }
@@ -1203,12 +1203,12 @@ sub get_youtube {
 
         print "$bgreen$title$reset$bred <<=\n$reset";
         my $author = $1 if $connect->content =~ /&author=([^&]+)/;
-        print "\n** Author    : $author\n" if defined $author;
-        print "** Category  : $category\n" if defined $category;
-        print "** Duration  : $duration\n" if defined $duration;
-        print "** Rating    : $rating\n"   if defined $rating;
-        print "** Views     : $views\n"    if defined $views;
-        print "** Published : $published\n"     if defined $published;
+        print "\n** Author    : $author\n"  if defined $author;
+        print "** Category  : $category\n"  if defined $category;
+        print "** Duration  : $duration\n"  if defined $duration;
+        print "** Rating    : $rating\n"    if defined $rating;
+        print "** Views     : $views\n"     if defined $views;
+        print "** Published : $published\n" if defined $published;
         print '-' x 80 . "\n\n";
         select_resolution();
         MPlayer $title;
@@ -1340,3 +1340,4 @@ sub default_cache {
         lower_cache();
     }
 }
+
