@@ -495,7 +495,7 @@ sub list_user_names {
             videos_from_username($user);
         }
         else {
-            &list_user_names;
+            list_user_names();
         }
 
         close $fh;
@@ -547,7 +547,7 @@ sub search_playlists {
     }
     elsif ($pick =~ /^\D/ and not $pick =~ /^\s*\d/) {
         $SEARCH = $pick;
-        &search_playlists();
+        search_playlists();
     }
     elsif ($pick =~ /^\s*(\d+)/) {
         $pick = $1;
@@ -623,7 +623,7 @@ sub youtube_tops {
         parse_url($url);
     }
     else {
-        &youtube_tops();
+        youtube_tops();
     }
 }
 
@@ -659,7 +659,7 @@ sub categories_area {
         parse_url("$feeds_main_url/standardfeeds/recently_featured_$categories_table{$pick}");
     }
     else {
-        &categories_area();
+        categories_area();
     }
 }
 
@@ -712,7 +712,7 @@ search() unless $dont_exit or $playlists;
 sub search {
     use strict;
     $SEARCH = shift() || $SEARCH;
-    $SEARCH = join(' ', grep((substr($_, 0, 1) ne '-'),split(/\s+/, $SEARCH, 0)));
+    $SEARCH = join(' ', grep((substr($_, 0, 1) ne '-'), split(/\s+/, $SEARCH, 0)));
     $SEARCH = uri_escape($SEARCH);
     $YOUTUBE_GDATA_URL =
         $feeds_main_url
@@ -872,7 +872,7 @@ sub print_results {
 
     if (not @Videos) {
         print "$bred(x_x) No video results!$reset\n";
-        insert_url;
+        insert_url();
     }
     else {
         $video_results = 1;
@@ -936,7 +936,7 @@ sub print_results {
     elsif ($stdin =~ /\d(?:\.\.|-|\s+|,)?/ and not $stdin =~ /(?:\s|^)[^-][A-Za-z]/) {
         $stdin =~ s/(?:\D|^)-\d+//g;
         $stdin =~ s/(\d+)(?:-|\.\.)(\d+)/join ' ', $1 .. $2;/eg;
-        @picks = grep({$_ > 0 and $_ <= scalar @Videos if /^\d+$/} split(m?\D+?, $stdin, 0));
+        @picks = grep({$_ > 0 and $_ <= scalar @Videos if /^\d+$/;} split(m?\D+?, $stdin, 0));
         picks_area() if scalar @picks or do {
             search $stdin;
         };
@@ -954,7 +954,7 @@ sub next_page {
         if ($YOUTUBE_GDATA_URL =~ /\bstart-index=(\d+)/) {
             $YOUTUBE_GDATA_URL =~ s/index=($1)/'index=' . ($1 + $results);/e;
             parse_content $YOUTUBE_GDATA_URL;
-            print_results;
+            print_results();
         }
     }
 }
@@ -967,7 +967,7 @@ sub previous_page {
         if ($YOUTUBE_GDATA_URL =~ /\bstart-index=(\d+)/) {
             $YOUTUBE_GDATA_URL =~ s/index=($1)/'index=' . ($1 - $results);/e;
             parse_content $YOUTUBE_GDATA_URL;
-            print_results;
+            print_results();
         }
     }
 }
@@ -1244,7 +1244,7 @@ sub get_youtube {
         print "** Views     : $views\n"     if defined $views;
         print "** Published : $published\n" if defined $published;
         print '-' x 80 . "\n\n";
-        select_resolution;
+        select_resolution();
         MPlayer $title;
     }
     else {
@@ -1254,7 +1254,7 @@ sub get_youtube {
 
             unless ($stdin_argvs =~ / -+(?:all|A|play.all)/ or $NrOfPicks) {
                 sleep 1;
-                print_results;
+                print_results();
             }
         }
         else {
@@ -1312,12 +1312,12 @@ sub pick {
     if ($pick eq 2) {
         $streaming =~ s/.*https?(.+)itag=37([^%]*).+/http$1itag=37$2/;
         default_cache();
-        fullscreen_check;
+        fullscreen_check();
     }
     else {
         $streaming =~ s/.*https?(.+)itag=22([^%]*).+/http$1itag=22$2/;
         default_cache();
-        fullscreen_check;
+        fullscreen_check();
     }
 }
 
@@ -1373,6 +1373,6 @@ sub default_cache {
         $MPlayerLine =~ s/-cache-min\s+\d+/-cache-min $cache_min/ unless $user_cache_min;
     }
     else {
-        lower_cache;
+        lower_cache();
     }
 }
