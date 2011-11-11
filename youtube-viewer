@@ -936,7 +936,7 @@ sub print_results {
     elsif ($stdin =~ /\d(?:\.\.|-|\s+|,)?/ and not $stdin =~ /(?:\s|^)[^-][A-Za-z]/) {
         $stdin =~ s/(?:\D|^)-\d+//g;
         $stdin =~ s/(\d+)(?:-|\.\.)(\d+)/join ' ', $1 .. $2;/eg;
-        @picks = grep(($_ > 0 and $_ <= scalar @Videos if /^\d+$/), split(m?\D+?, $stdin, 0));
+        @picks = grep({$_ > 0 and $_ <= scalar @Videos if /^\d+$/} split(m?\D+?, $stdin, 0));
         picks_area() if scalar @picks or do {
             search $stdin;
         };
