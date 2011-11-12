@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 12 November 2011
+#  Latest edit on: 13 November 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -30,6 +30,7 @@
 # [!] The most important changes are written in the changelog!
 #
 # [CHANGELOG]
+# - Added support to list playlists created by a specific user (usage: -up <USERNAME>)         - NEW (v2.5.4)
 # - Improved parsing support for arguments, including arguments specified via STDIN.           - NEW (v2.5.4)
 # - Added support to search for videos uploaded by a particular YouTube user (-author=USER)    - NEW (v2.5.4)
 # - Added support to get video results starting with a predefined page (ex: -page=4)           - NEW (v2.5.4)
@@ -361,6 +362,14 @@ sub parse_sub_calling_arguments {
                       }
                 );
             }
+            elsif ($arg =~ /^-u(?:ser(?:name)?)?p(?:laylist)?(?:=(\w+))?$/) {
+                playlists_from_username(
+                    do {
+                        my $username = $1 // get_next_argument($i);
+                        $username // get_next_argument($i - 2);
+                      }
+                );
+            }
             elsif ($arg =~ /^-+(?:U|user(?:name)?s)(?:=(.+))$/) {
                 if (defined $1 and -r $1) {
                     $users_file = $1;
@@ -468,7 +477,8 @@ sub help {
    -p, --playlist       : search for YouTube playlists
    -M, --movies         : show YouTube movies categories
    --region=<ID>        : set a specific regionID (ex: US)
-   -u <username>        : lists videos uploaded by a specific user
+   -u  <username>       : list videos uploaded by a specific user
+   -up <username>       : list playlists created by a specific user
    -author='USERNAME'   : search videos uploaded by a particular user
    -order-by='ORDER'    : order entries by: published, viewCount or rating
    -time='TIME'         : valid values are: today, this_week and this_month
@@ -545,9 +555,56 @@ sub list_user_names {
     }
 }
 
-####################### LISTS VIDEOS FROM A SPECIFIC USER #######################
+####################### GET VIDEOS FROM A SPECIFIC USER #######################
 sub videos_from_username ($) {
     parse_url("$feeds_main_url/users/$_[0]/uploads");
+}
+
+####################### GET PLAYLISTS FROM A SPECIFIC USER #######################
+sub playlists_from_username {
+    UserAgent unless $lwp_is_set;
+    print "\n";
+    my @playlists;
+    my $username = shift;
+    $start_index = shift if defined $_[0];
+    my $i = -1;
+    foreach my $line (
+                      split(/<entry>/,
+                            $lwp->get(    "http://gdata.youtube.com/feeds/api/users/$username/"
+                                        . "playlists?max-results=$results&start-index=$start_index"
+                                     )->content)
+      ) {
+        my ($id) = ($line =~ /<id>([^<]+)/) or next;
+        ++$i;
+        next if $i == 0;
+        push @playlists, [$i, $id, ($line =~ /<title type='text'>([^<]+)/), ($line =~ /\bcountHint='(\d+)'/)];
+    }
+    unless (@playlists) {
+        print "$bred(x_x) No playlist has been found...$reset\n";
+        print "\n$bred=>>$bgreen Insert another username:$reset ";
+        chomp(my $username = <STDIN>);
+        playlists_from_username($username);
+    }
+    foreach my $playlist (@playlists) {
+        print do { ' ' if $$playlist[0] < 10 }, $bred, $$playlist[0], $reset, ' - ', $$playlist[2], ' (', $$playlist[3], ")\n";
+    }
+    print "\n$bred=>>$bgreen Pick one playlist to list$reset\n> ";
+    chomp(my $pick = <STDIN>);
+
+    if ($pick =~ /^\s*$/) {
+        playlists_from_username($username, $start_index + $results);
+    }
+    elsif ($pick eq 'back' and $start_index > $results) {
+        playlists_from_username($username, $start_index - $results);
+    }
+    elsif ($pick =~ /^(?:q|quit|exit)$/) {
+        exit;
+    }
+    elsif ($pick =~ /^\d+$/) {
+        my ($playlist_id) = ($playlists[$pick - 1][1]) =~ m!([^/]+)$!;
+        $start_index = 1;
+        list_playlist($playlist_id);
+    }
 }
 
 ####################### SEARCH FOR YOUTUBE PLAYLISTS #######################
@@ -555,7 +612,7 @@ sub search_playlists {
     $playlists = 1;
     UserAgent unless $lwp_is_set;
 
-    my $url = shift() || "$feeds_main_url/playlists/snippets?q=$SEARCH&start-index=1&max-results=$results&v=2";
+    my $url = shift() || "$feeds_main_url/playlists/snippets?q=$SEARCH&start-index=$start_index&max-results=$results&v=2";
     parse_content($url);
 
     my $n = -1;
@@ -581,7 +638,7 @@ sub search_playlists {
     elsif (
         $pick eq 'back' and do {
             $url =~ /\bstart-index=(\d+)/;
-            $1 > 1;
+            $1 > $results;
         }
       ) {
 
@@ -983,7 +1040,7 @@ sub print_results {
     elsif (
         $stdin eq 'back' and do {
             $YOUTUBE_GDATA_URL =~ /\bstart-index=(\d+)/;
-            $1 > 1;
+            $1 > $results;
         }
       ) {
         previous_page();
