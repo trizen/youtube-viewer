@@ -73,7 +73,7 @@ use HTML::Entities ('decode_entities');
 use strict;
 
 my $appname = 'youtube-viewer';
-my $version = '2.5.4';
+my $version = '2.5.5-git';
 
 ####################### MPLAYER OPTIONS #######################
 my $cache                = 30000;                                                 # default MPlayer cache
@@ -411,7 +411,6 @@ sub insert_url () {
         code_from_content($youtube);
     }
     elsif ($youtube) {
-        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $youtube, 0))) if $youtube =~ /$contains_arguments/o;
         search($youtube);
     }
     else {
