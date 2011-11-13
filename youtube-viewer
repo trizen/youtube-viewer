@@ -1041,7 +1041,7 @@ sub print_results {
 
     print "\n$bred=>>$reset$bgreen Insert a number or search something else\n$reset> ";
 
-    chomp(my $stdin = <STDIN>);    # asks for user input
+    chomp(my $stdin = <STDIN>);
 
     if ($stdin =~ /$contains_arguments/o) {
         parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $stdin, 0)));
@@ -1127,11 +1127,7 @@ sub foreach_pick {
 sub foreach_code {
     use strict;
 
-    foreach my $video ($Videos[shift() - 1]) {
-        my $description = $$video[8] =~ /$have_entities/o ? decode_entities($$video[8]) : $$video[8];
-        get_youtube($$video[2], $$video[3], $$video[6], $$video[7], $$video[4], $$video[5], $description);
-    }
-
+    get_youtube($Videos[shift(@_) - 1]);
     foreach_pick();
 }
 
@@ -1234,11 +1230,12 @@ sub parse_stdin_arguments {
 
 sub get_youtube {
     use strict;
-
-    my ($code, $title, $duration, $views, $category, $published, $description) = @_;
-    print "\nget_youtube()\n" . join("\n", @_) . "\nEOL\n\n" if $debug;
+    my ($code, $title, $category, $published, $duration, $views, $description) =
+      ($_[0][2], $_[0][3], $_[0][4], $_[0][5], $_[0][6], $_[0][7], $_[0][8]);
+    $description = decode_entities($description) if $description =~ /$have_entities/o;
 
     my $youtube = "$get_video_info?&video_id=$code&el=detailpage&ps=default&eurl=&gl=US&hl=en";
+
     UserAgent unless $lwp_is_set;
 
     my $connect = $lwp->get($youtube);
