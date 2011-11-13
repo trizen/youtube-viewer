@@ -370,7 +370,7 @@ sub parse_sub_calling_arguments {
                       }
                 );
             }
-            elsif ($arg =~ /^-+(?:U|user(?:name)?s)(?:=(.+))$/) {
+            elsif ($arg =~ /^-+(?:U|user(?:name)?s)(?:=(.+))?$/) {
                 if (defined $1 and -r $1) {
                     $users_file = $1;
                 }
