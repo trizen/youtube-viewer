@@ -725,7 +725,7 @@ sub youtube_tops {
         $tops_table{$n} = $_;
     }
 
-    print "\n$bred=>>$bgreen Pick one of$reset\n> ";
+    print "\n$bred=>>$bgreen Pick one category$reset\n> ";
 
     chomp(my $pick = <STDIN>);
 
@@ -1085,7 +1085,7 @@ sub print_results {
         @picks = 1 .. scalar @Videos;
         foreach_pick();
     }
-    elsif ($stdin =~ /\d(?:\.\.|-|\s+|,)?/ and not $stdin =~ /(?:\s|^)[^-][A-Za-z]/) {
+    elsif ($stdin =~ /\d/ and not $stdin =~ /(?:\s|^)[^-][[:alpha:]]/) {
         $stdin =~ s/(?:\D|^)-\d+//g;
         $stdin =~ s/(\d+)(?:-|\.\.)(\d+)/join ' ', $1 .. $2;/eg;
         @picks = grep({$_ > 0 and $_ <= scalar @Videos if /^\d+$/;} split(/\D+/, $stdin, 0));
