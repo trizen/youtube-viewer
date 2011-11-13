@@ -103,13 +103,12 @@ my $picks_mode      = 0;      #               ||
 my $user_cache      = 0;      #               ||
 my $user_cache_min  = 0;      #               ||
 my $dont_exit       = 0;      #               \/
-my $playlist        = 0;      # DON'T change this default values
+my $all_time        = 0;      # DON'T change this default values
 my $lwp_is_set      = 0;      # unless you know what you're doing
 my $video_results   = 0;      #               /\
 my $user_resolution = 0;      #               ||
 my $user_fullscreen = 0;      #               ||
 my $playlists       = 0;      #               ||
-my $all_time        = 0;      #               ||
 
 ####################### COLOURS #######################
 my $bred    = '';
@@ -401,7 +400,6 @@ sub insert_url () {
         get_youtube($1);
     }
     elsif ($youtube =~ /$get_playlist_code/o) {
-        $playlist = 1;
         list_playlist($1);
     }
     elsif ($youtube =~ /$valid_playlist_code/o) {
@@ -436,11 +434,9 @@ foreach my $code (@ARGV) {
         get_youtube($code);
     }
     elsif ($code =~ /$get_playlist_code/o) {
-        $playlist = 1;
         list_playlist($1);
     }
     elsif ($code =~ /$valid_playlist_code/o) {
-        $playlist = 1;
         list_playlist($code);
     }
     if ($code =~ /$get_youtube_code/o) {
