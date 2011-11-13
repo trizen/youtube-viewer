@@ -398,6 +398,10 @@ sub insert_url () {
 
     chomp(my $youtube = <STDIN>);
 
+    if ($youtube =~ /$contains_arguments/o) {
+        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $youtube, 0)));
+    }
+
     if ($youtube =~ /$get_youtube_code/o) {
         get_youtube($1);
     }
@@ -503,10 +507,11 @@ sub help {
   1. After search results, press <ENTER> for the next page
   2. After search results, insert 'back' for the previous page
   3. After search results, insert more numbers to play videos in your order
-  4. After search results you can insert arguments via STDIN (eg: 1 3 --720p)
+  4. After search results you can insert arguments via STDIN (eg: '-c')
   5. After search results you can insert 'reset' to set default settings
   6. Play all audio tracks of video results by using '-A -n' as arguments
-  7. Play all video results from a page: insert 'all' or insert '1-20'\n\n";
+  7. Play all video results from a page: insert 'all' or insert '1..20'
+  8. '-p' used as a STDIN argument will [search]/return to playlist menu\n\n";
     exit;
 }
 
@@ -540,6 +545,10 @@ sub list_user_names {
         print "\n$bred=>>$reset ${bgreen}Pick an username number$reset\n> ";
 
         chomp(my $pick = <STDIN>);
+
+        if ($pick =~ /$contains_arguments/o) {
+            parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
+        }
 
         exit if $pick =~ /^(?:q|quit|exit)$/i;
 
@@ -588,8 +597,12 @@ sub playlists_from_username {
     foreach my $playlist (@playlists) {
         print do { ' ' if $$playlist[0] < 10 }, $bred, $$playlist[0], $reset, ' - ', $$playlist[2], ' (', $$playlist[3], ")\n";
     }
-    print "\n$bred=>>$bgreen Pick one playlist to list$reset\n> ";
+    print "\n$bred=>>$bgreen Pick one playlist$reset\n> ";
     chomp(my $pick = <STDIN>);
+
+    if ($pick =~ /$contains_arguments/o) {
+        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
+    }
 
     if ($pick =~ /^\s*$/) {
         playlists_from_username($username, $start_index + $results);
@@ -628,6 +641,10 @@ sub search_playlists {
 
     chomp(my $pick = <STDIN>);
 
+    if ($pick =~ /$contains_arguments/o) {
+        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
+    }
+
     if (not $pick =~ /^\s*\d+\s*$/ and $pick =~ /^\s*$/ or $pick eq 'next') {
 
         if ($url =~ /start-index=(\d+)/) {
@@ -661,7 +678,7 @@ sub search_playlists {
 
 ####################### VALIDATES AND LIST A YOUTUBE PLAYLIST #######################
 sub list_playlist ($) {
-    if ($_[0] =~ /^([A-Z\d]+)$/) {
+    if ($_[0] =~ /^([A-Z\d]{16,18})$/) {
         my $pl = $1;
         $pl =~ s/PL// if length $pl > 16;
         parse_url("$feeds_main_url/playlists/$pl");
@@ -685,6 +702,10 @@ sub youtube_movies {
     print "\n$bred=>>$bgreen Pick one category$reset\n> ";
 
     chomp(my $pick = <STDIN>);
+
+    if ($pick =~ /$contains_arguments/o) {
+        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
+    }
 
     if (defined $movie_table{$pick}) {
         parse_url("$feeds_main_url/charts/movies/$movie_table{$pick}");
@@ -713,6 +734,10 @@ sub youtube_tops {
     print "\n$bred=>>$bgreen Pick one of$reset\n> ";
 
     chomp(my $pick = <STDIN>);
+
+    if ($pick =~ /$contains_arguments/o) {
+        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
+    }
 
     if (defined $tops_table{$pick}) {
         my $url = $standardfeeds . '/' . $tops_table{$pick};
@@ -758,6 +783,10 @@ sub categories_area {
     print "\n$bgreen=>> Insert a category number\n>$reset ";
 
     chomp(my $pick = <STDIN>);
+
+    if ($pick =~ /$contains_arguments/o) {
+        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
+    }
 
     if (defined $categories_table{$pick}) {
         parse_url("$feeds_main_url/standardfeeds/recently_featured_$categories_table{$pick}");
