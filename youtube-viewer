@@ -34,9 +34,9 @@
 # - Improved parsing support for arguments, including arguments specified via STDIN.           - NEW (v2.5.4)
 # - Added support to search for videos uploaded by a particular YouTube user (-author=USER)    - NEW (v2.5.4)
 # - Added support to get video results starting with a predefined page (ex: -page=4)           - NEW (v2.5.4)
-# - Added support for previous page and support to list youtube usernames from a file          - NEW (v2.5.2)
-# - Added few options to control cache of MPlayer and lower cache for lower video resolutions  - NEW (v2.5.1)
-# - Added colours for text (--colours) or $colours = 1, 360p support (-3), playlist support    - NEW (v2.5.0)
+# - Added support for previous page and support to list youtube usernames from a file          - (v2.5.2)
+# - Added few options to control cache of MPlayer and lower cache for lower video resolutions  - (v2.5.1)
+# - Added colours for text (--colours) or $colours = 1, 360p support (-3), playlist support    - (v2.5.0)
 # - Added support for today and all time Youtube tops (usage: -t, --tops, -a, --all-time)      - (v2.4.*)
 # - Re-added the support for the next page / Added support for download (-d, --download)       - (v2.4.*)
 # - Added support for Youtube CCaptions. (Depends on: 'gcap' - http://gcap.googlecode.com)     - (v2.4.*)
@@ -73,11 +73,7 @@ use HTML::Entities ('decode_entities');
 use strict;
 
 my $appname = 'youtube-viewer';
-my $version = '2.5.4-git';
-
-####################### SUBROUTINE PROTOTYPES #######################
-sub list_playlist($);
-sub videos_from_username($);
+my $version = '2.5.4';
 
 ####################### MPLAYER OPTIONS #######################
 my $cache                = 30000;                                                 # default MPlayer cache
@@ -87,38 +83,33 @@ my $mplayer_settings     = "-prefer-ipv4 -cache $cache -cache-min $cache_min";  
 my $mplayer_srt_settings = '-unicode -utf8';                                      # subtitle options
 
 ####################### YOUTUBE OPTIONS #######################
-my $start_index      = 1;                                                         # index of the first matching result
-my $results          = 20;                                                        # number video results
-my $order_by         = 'relevance';
-my $time_p           = 'all_time';
-my $resolution_240p  = 0;
-my $resolution_360p  = 0;
-my $resolution_480p  = 0;
-my $resolution_720p  = 0;
-my $resolution_1080p = 0;
+my $start_index = 1;                                                              # index of the first matching result
+my $results     = 20;                                                             # number of video results
+my $order_by    = 'relevance';
+my $time_p      = 'all_time';
 my $region;         # show YouTube movies from a particular region (default: undefined)
-my $from_author;    # search videos uploaded by a particular users (default: undefined)
+my $from_author;    # search videos uploaded by a particular user  (default: undefined)
 
 ####################### OTHER OPTIONS #######################
-my $colours        = 0;    # 1 for colored output of video results
-my $debug          = 0;    # 1 will run in debug mode
-my $download_video = 0;    # 1 will run MPlayer or LWP for downloading videos instead of streaming them
-my $playback       = 0;    # 1 will stream all available video results, including videos from next pages
-my $playlists      = 0;    # when is TRUE, will search for playlists intead of videos (works with -p argument)
-my $all_time       = 0;    # when is TRUE, will show 'All time' YouTube tops (works with -a argument)
-my $users_file = $ENV{'HOME'} . '/.config/youtube_usernames.txt';    # default username file
-my $default_sub = 'en';    # default language for subtitles (requires gcap to get YouTube CC's)
+my $colours        = 0;       # 1 for colored output of video results
+my $debug          = 0;       # 1 will run in debug mode
+my $download_video = 0;       # 1 will run wget or LWP for downloading videos instead of streaming them
+my $playback       = 0;       # 1 will stream all available video results, including videos from next pages
+my $default_sub    = 'en';    # default language for subtitles (requires gcap to get YouTube CC's)
+my $users_file = "$ENV{'HOME'}/.config/youtube_usernames.txt";
 
 ####################### TEMPORARY OPTIONS #######################
-my $picks_mode      = 0;   #               ||
-my $user_cache      = 0;   #               ||
-my $user_cache_min  = 0;   #               ||
-my $dont_exit       = 0;   #               \/
-my $playlist        = 0;   # DON'T change this default values
-my $lwp_is_set      = 0;   # unless you know what you're doing
-my $video_results   = 0;   #               /\
-my $user_resolution = 0;   #               ||
-my $user_fullscreen = 0;   #               ||
+my $picks_mode      = 0;      #               ||
+my $user_cache      = 0;      #               ||
+my $user_cache_min  = 0;      #               ||
+my $dont_exit       = 0;      #               \/
+my $playlist        = 0;      # DON'T change this default values
+my $lwp_is_set      = 0;      # unless you know what you're doing
+my $video_results   = 0;      #               /\
+my $user_resolution = 0;      #               ||
+my $user_fullscreen = 0;      #               ||
+my $playlists       = 0;      #               ||
+my $all_time        = 0;      #               ||
 
 ####################### COLOURS #######################
 my $bred    = '';
@@ -129,10 +120,14 @@ my $cblack  = '';
 my $bpurle  = '';
 my $byellow = '';
 
+####################### SUBROUTINE PROTOTYPES #######################
+sub list_playlist($);
+sub videos_from_username($);
+
 ####################### GLOBAL VARIABLES #######################
-my $SEARCH = '';           # used to store search keywords for YoutTube
-my $YOUTUBE_GDATA_URL;     # used to store the gdata URL with API query parameters
-my $streaming;             # used to store a streaming video URL, and will be passed to mplayer as an argument
+my $SEARCH = '';          # used to store search keywords for YoutTube
+my $YOUTUBE_GDATA_URL;    # used to store the gdata URL with API query parameters
+my $streaming;            # used to store a streaming video URL, and will be passed to mplayer as an argument
 my $cwd                 = getcwd();                                                   # gets current working directory
 my $win32               = $^O =~ /(?:win|dos)/i ? 1 : 0;                              # true if running under Windows
 my $have_entities       = qr/&#?\w/;                                                  # checks if a string contains HTML entities
@@ -239,7 +234,7 @@ sub parse_arguments {
             elsif ($arg =~ /^-+(?:n|no.?video)$/) {          # eg: -n, --no-video
                 $MPlayerLine =~ s/mplayer /mplayer -novideo /;
                 $MPlayerLine =~ s/mplayer\.exe"/mplayer.exe" -novideo/;
-                $resolution_480p = 1 unless $user_resolution;
+                $resolution{'resolution'} = 480 unless $user_resolution;
             }
             elsif ($arg =~ /^-+time(?:=(.+))?$/) {           # eg: --time=this_week
                 $time_p = $1 // get_next_argument($i);
@@ -315,15 +310,15 @@ sub parse_arguments {
     $resolution{'resolution'} = 0 unless exists $resolution{'resolution'};
 
     if ($playback and not $user_resolution) {
-        $resolution_1080p = 1;    # set 1080p resolution if $playback is TRUE and not any other resolution is selected
+        $resolution{'resolution'} = 1080;    # set 1080p resolution if $playback is TRUE and not any other resolution is selected
     }
 
 ####################### ASCII COLOURS #######################
-    if ($colours and not $win32) {    # if $colours and not running under Windows
-        $cblack  = "\e[40m";          # background black
-        $byellow = "\e[1;33m";        # bold yellow
-        $bpurle  = "\e[1;35m";        # bold purple
-        $bblue   = "\e[1;34m";        # bold blue
+    if ($colours and not $win32) {           # if $colours and not running under Windows
+        $cblack  = "\e[40m";                 # background black
+        $byellow = "\e[1;33m";               # bold yellow
+        $bpurle  = "\e[1;35m";               # bold purple
+        $bblue   = "\e[1;34m";               # bold blue
     }
     parse_sub_calling_arguments(@_);
 }
