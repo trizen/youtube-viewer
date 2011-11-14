@@ -67,10 +67,10 @@
 # - Army (for bugs reports and for his great ideas)
 # - dhn (for adding youtube-viewer in freshports.org)
 
-use Cwd            ('getcwd');
-use URI::Escape    ('uri_escape');
-use HTML::Entities ('decode_entities');
 use strict;
+use Cwd     ('getcwd');
+use autouse ('URI::Escape' => 'uri_escape');
+use autouse ('HTML::Entities' => 'decode_entities');
 
 my $appname = 'youtube-viewer';
 my $version = '2.5.5-git';
@@ -454,14 +454,10 @@ foreach my $code (@ARGV) {
 
 ####################### YOUTUBE-VIEWER USAGE #######################
 sub help {
-    my $appname = uc $appname;
-
-    print "\n  " . '=' x 30 . " $appname " . '=' x 30 . "
+    print "\n  " . '=' x 30 . " \U$appname\E " . '=' x 30 . "
 \t\t\t\t\t\t by Trizen (trizenx\@gmail.com)
-\nUsage: youtube-viewer [<url> || <video_id> || <keywords>]
-                      [-u <username>] [-categories] [-(a|t)]
-                      [-(2|3|4|7|1)] [-fs] [-novideo] [-A] [-m]
-\nBase Options: youtube-viewer [...]
+\nUsage: $appname [options] ([code] || [url] || [keywords])
+\nBase Options:
    <url>                : play an YouTube video by URL
    <code>               : play an YouTube video by code
    <keywords>           : search and list YouTube videos
