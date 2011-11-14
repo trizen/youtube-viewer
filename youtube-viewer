@@ -207,7 +207,7 @@ sub get_next_argument ($) {
         return splice(@ARGV, $i, 1);
     }
     else {
-        return undef;
+        die "error: option '$ARGV[$i-1]' requires an argument";
     }
 }
 
