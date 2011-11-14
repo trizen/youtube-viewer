@@ -128,11 +128,11 @@ my $SEARCH = '';          # used to store search keywords for YoutTube
 my $YOUTUBE_GDATA_URL;    # used to store the gdata URL with API query parameters
 my $streaming;            # used to store a streaming video URL, and will be passed to mplayer as an argument
 my $cwd                 = getcwd();                                                   # gets current working directory
-my $win32               = $^O =~ /(?:win|dos)/i ? 1 : 0;                              # true if running under Windows
+my $win32               = $^O eq 'Win32' ? 1 : 0;                                     # true if running under Windows
 my $have_entities       = qr/&#?\w/;                                                  # checks if a string contains HTML entities
 my $get_youtube_code    = qr"(?:embed|v|youtu\.be)(?:%3D|[=/])((?>[-\w]{11}))";       # $1 will be the video code
 my $get_playlist_code   = qr/(?:view_play_list\?p|playlist\?list)=([A-Z\d]+)/;        # $1 will be the playlist code
-my $valid_playlist_code = qr/^(?:PL)?[A-Z\d]{16}$/;                                   # validates a YouTube playlist
+my $valid_playlist_code = qr/^(?:PL)?([A-Z\d]{16})$/;                                 # $1 will be the playlist code
 my $contains_arguments  = qr/(?:\s|^)-+\w+/;                                          # cheks if a string contains arguments
 my $feeds_main_url      = 'https://gdata.youtube.com/feeds/api';
 my $get_video_info      = 'https://www.youtube.com/get_video_info';
@@ -403,7 +403,7 @@ sub insert_url () {
         list_playlist($1);
     }
     elsif ($youtube =~ /$valid_playlist_code/o) {
-        list_playlist($youtube);
+        list_playlist($1);
     }
     elsif ($youtube =~ m[^https?://]) {
         code_from_content($youtube);
@@ -429,7 +429,7 @@ sub code_from_content ($) {
 
 ####################### PARSING VIDEO CODES SPECIFIED AS ARGUMENTS #######################
 foreach my $code (@ARGV) {
-    if ($code =~ /^[\w-]{11}$/ and $code =~ /\d+|[A-Z]+|-/) {
+    if (length($code) == 11 and $code =~ /^[\w-]{11}$/ and $code =~ /\d|[A-Z]|-/o) {
         $dont_exit = 1;
         get_youtube($code);
     }
@@ -437,7 +437,7 @@ foreach my $code (@ARGV) {
         list_playlist($1);
     }
     elsif ($code =~ /$valid_playlist_code/o) {
-        list_playlist($code);
+        list_playlist($1);
     }
     if ($code =~ /$get_youtube_code/o) {
         $code      = $1;
@@ -604,9 +604,8 @@ sub playlists_from_username {
         exit;
     }
     elsif ($pick =~ /^\d+$/) {
-        my ($playlist_id) = ($playlists[$pick - 1][1]) =~ m!([^/]+)$!;
         $start_index = 1;
-        list_playlist($playlist_id);
+        &list_playlist(($playlists[$pick - 1][1]) =~ m!([^/]+)$!);
     }
 }
 
@@ -668,11 +667,7 @@ sub search_playlists {
 
 ####################### VALIDATES AND LIST A YOUTUBE PLAYLIST #######################
 sub list_playlist ($) {
-    if ($_[0] =~ /^([A-Z\d]{16,18})$/) {
-        my $pl = $1;
-        $pl =~ s/PL// if length $pl > 16;
-        parse_url("$feeds_main_url/playlists/$pl");
-    }
+    parse_url("$feeds_main_url/playlists/$_[0]");
 }
 
 ####################### LIST YOUTUBE MOVIE CATEGORIES #######################
@@ -909,19 +904,9 @@ sub parse_content {
 ################ GETTING PLAYLIST VALUES ################
         if ($playlists) {
 
-            if (m[<yt:playlistId>([^<]+)</yt:playlistId>]) {
-                $code = $1;
-            }
-            else {
-                next;
-            }
+            m[<yt:playlistId>([^<]+)</yt:playlistId>] ? ($code = $1) : next;
 
-            if (m[<yt:countHint>(\d+)</yt:countHint>]) {
-                $views = $1;
-            }
-            else {
-                $views = 0;
-            }
+            $views = m[<yt:countHint>(\d+)</yt:countHint>] ? $1 : 0;
 
             if (m[<summary>([^<]+)</summary>]) {
                 $description = $1;
@@ -934,74 +919,50 @@ sub parse_content {
             }
         }
         else {
+
 ################ GETTING VIDEO VALUES ################
-            if (/\bviewCount='(\d+)'/) {
-                $views = $1;
-            }
-            else {
-                $views = 0;
-            }
 
-            if (/([-\w]{11})&amp;feature=youtube_gdata/) {
-                $code = $1;
-            }
-            else {
-                next;
-            }
+            /([-\w]{11})&amp;feature=youtube_gdata/ ? ($code = $1) : next;
 
-            if (/<media:description type='plain'>([^<]+)/) {
-                $description = $1;
-            }
-            else {
-                $description = 'No description available...';
-            }
+            $views = /\bviewCount='(\d+)'/ ? $1 : 0;
+
+            $description = /<media:description type='plain'>([^<]+)/ ? $1 : 'No description available...';
+
         }
+
 ################ PARSING BOTH - VIDEO AND PLAYLIST VALUES ################
-        if (m[<name>([^<]+)</name>]) {
-            $author = $1;
-        }
-        else {
-            $author = 'Unknown';
-        }
 
-        if (m[^([^<]+)</title>]) {
+        $author = m[<name>([^<]+)</name>] ? $1 : 'Unknown';
+
+        m[^([^<]+)</title>]
+          ? do {
             $title = $1;
             $title = decode_entities($title) if $title =~ /$have_entities/o;
-        }
-        else {
-            $title = 'Unknown';
-        }
+          }
+          : ($title = 'Unknown');
 
-        if (/<media:category label='([^']+)'/) {
+        /<media:category label='([^']+)'/
+          ? do {
             $category = $1;
             $category =~ s/&amp;/&/;
-        }
-        else {
-            $category = 'Unknown';
-        }
+          }
+          : ($category = 'Unknown');
 
-        if (/<published>([\d-]+)/) {
-            $published = $1;
-        }
-        else {
-            $published = 'Unknown';
-        }
+        $published = /<published>([\d-]+)/ ? $1 : 'Unknown';
 
-        if (/\bduration[^']+'(\d+)'/) {
-            $duration = format_time($1);
-        }
-        else {
-            $duration = 0;
-        }
+        $duration = /\bduration[^']+'(\d+)'/ ? format_time($1) : 0;
+
         ++$number;
+
 ####### PUSH RESULTS TO @Videos #######
+
         push @Videos, [$number, $author, $code, $title, $category, $published, $duration, $views, $description];
     }
 }
 
 sub format_time {
     use strict;
-    my $sec = shift @_ || return (0);
+    my $sec = shift(@_) || return (0);
     my $time = join(':', map((length $_ == 1 ? "0$_" : $_), $sec / 3600 % 24, $sec / 60 % 60, $sec % 60));
     $time =~ s/^00://;
     $time;
@@ -1054,6 +1015,7 @@ sub print_results {
         next_page();
     }
     elsif ($stdin eq 'reset') {
+        undef @ARGV;
         do $0;
     }
     elsif (
@@ -1126,7 +1088,6 @@ sub foreach_pick {
 
 sub foreach_code {
     use strict;
-
     get_youtube($Videos[shift(@_) - 1]);
     foreach_pick();
 }
@@ -1223,16 +1184,20 @@ sub check_resolution {
 
 sub parse_stdin_arguments {
     if ($debug) {
-        print "Parsing STDIN arguments: ", "@_";
+        print "Parsing STDIN arguments: @_\n";
     }
     parse_arguments(@_);    # parse and apply STDIN arguments
 }
 
 sub get_youtube {
     use strict;
+
     my ($code, $title, $category, $published, $duration, $views, $description) =
-      ($_[0][2], $_[0][3], $_[0][4], $_[0][5], $_[0][6], $_[0][7], $_[0][8]);
-    $description = decode_entities($description) if $description =~ /$have_entities/o;
+      ref $_[0]
+      ? ($_[0][2], $_[0][3], $_[0][4], $_[0][5], $_[0][6], $_[0][7], $_[0][8])
+      : @_;
+
+    $description = decode_entities($description) if defined $description and $description =~ /$have_entities/o;
 
     my $youtube = "$get_video_info?&video_id=$code&el=detailpage&ps=default&eurl=&gl=US&hl=en";
 
@@ -1262,7 +1227,6 @@ sub get_youtube {
         my $srt_file;
 
         foreach my $line (@srt_files) {
-
             if ($line =~ /${code}_$default_sub\.srt/) {
                 $srt_file = "${code}_$default_sub.srt";
                 $MPlayerLine .= " $mplayer_srt_settings -sub $srt_file";
@@ -1270,9 +1234,7 @@ sub get_youtube {
         }
 
         unless (defined $srt_file) {
-
             foreach my $line (@srt_files) {
-
                 if ($line =~ /$code(\w*)\.srt/) {
                     $srt_file = "$code$1.srt";
                     $MPlayerLine .= " $mplayer_srt_settings -sub $srt_file";
@@ -1298,11 +1260,7 @@ sub get_youtube {
             close $fh;
         }
 
-        my $rating;
-
-        if ($connect->content =~ /avg_rating=([^&]+)/) {
-            $rating = sprintf('%.2f', $1);
-        }
+        my $rating = sprintf('%.2f', ($connect->content =~ /avg_rating=([^&]+)/));
 
         unless (defined $title) {
             my $feed_url = "$feeds_main_url/videos/$code";
@@ -1313,22 +1271,15 @@ sub get_youtube {
                 $title = decode_entities($title) if $title =~ /$have_entities/o;
             }
 
-            if ($content =~ /viewCount='(\d+)'/) {
-                $views = $1;
-            }
-
-            if ($content =~ /<published>([\d-]+)/) {
-                $published = $1;
-            }
+            ($views)     = $content =~ /viewCount='(\d+)'/;
+            ($published) = $content =~ /<published>([\d-]+)/;
 
             if ($content =~ m[<media:description type='plain'>([^<]+)</media]) {
                 $description = $1;
                 $description = decode_entities($description) if $description =~ /$have_entities/o;
             }
 
-            if ($content =~ /duration\D*='(\d+)/) {
-                $duration = format_time($1);
-            }
+            $duration = format_time($content =~ /duration\D*='(\d+)/);
 
             if ($content =~ /category label='([^']+)'/) {
                 $category = $1;
