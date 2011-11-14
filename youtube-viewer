@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 13 November 2011
+#  Latest edit on: 14 November 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -134,6 +134,7 @@ my $get_youtube_code    = qr"(?:embed|v|youtu\.be)(?:%3D|[=/])((?>[-\w]{11}))"; 
 my $get_playlist_code   = qr/(?:view_play_list\?p|playlist\?list)=([A-Z\d]+)/;        # $1 will be the playlist code
 my $valid_playlist_code = qr/^(?:PL)?([A-Z\d]{16})$/;                                 # $1 will be the playlist code
 my $contains_arguments  = qr/(?:\s|^)-+\w+/;                                          # cheks if a string contains arguments
+my $quit_required       = qr/^(?:q|quit|exit)$/i;                                     # exit if user's input is q, quit or exit
 my $feeds_main_url      = 'https://gdata.youtube.com/feeds/api';
 my $get_video_info      = 'https://www.youtube.com/get_video_info';
 my $tmp_dir             = $ENV{'TEMP'} || $ENV{'TMP'} || $ENV{'TMPDIR'} || '/tmp';    # tmpdir is used to save srt files
@@ -201,9 +202,9 @@ sub UserAgent {
 
 ####################### GET THE NEXT ARGUMENT #######################
 sub get_next_argument ($) {
-    my $wanted_argument = $ARGV[$_[0]] // return undef;
-    if (substr($wanted_argument, 0, 1) ne '-') {
-        return $wanted_argument;
+    my $i = shift();
+    if (defined $ARGV[$i] and substr($ARGV[$i], 0, 1) ne '-') {
+        return splice(@ARGV, $i, 1);
     }
     else {
         return undef;
@@ -214,7 +215,7 @@ sub get_next_argument ($) {
 sub parse_arguments {
     my $i = 0;
     foreach my $arg (@_) {
-        ++$i;
+        defined $arg ? ++$i : next;
         if (substr($arg, 0, 1) eq '-') {    # if argument starts with '-'
 
             if ($arg =~ /^-+cache(?:=(\d+))?$/) {    # eg: -cache 1500, --cache=2000
@@ -327,7 +328,7 @@ parse_arguments(@ARGV);
 sub parse_sub_calling_arguments {
     my $i = 0;
     foreach my $arg (@_) {
-        ++$i;
+        defined $arg ? ++$i : next;
         if (substr($arg, 0, 1) eq '-') {
 
             if ($arg =~ /^-+(?:h|help|\?|usage)$/i) {
@@ -390,26 +391,28 @@ foreach my $arg (@ARGV) {
 sub insert_url () {
     print "\n$bred=>>$reset$bgreen Insert an YouTube URL or search something...\n$reset> ";
 
-    chomp(my $youtube = <STDIN>);
+    chomp(my $stdin = <STDIN>);
 
-    if ($youtube =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $youtube, 0)));
+    exit if $stdin =~ /$quit_required/o;
+
+    if ($stdin =~ /$contains_arguments/o) {
+        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $stdin, 0)));
     }
 
-    if ($youtube =~ /$get_youtube_code/o) {
+    if ($stdin =~ /$get_youtube_code/o) {
         get_youtube($1);
     }
-    elsif ($youtube =~ /$get_playlist_code/o) {
+    elsif ($stdin =~ /$get_playlist_code/o) {
         list_playlist($1);
     }
-    elsif ($youtube =~ /$valid_playlist_code/o) {
+    elsif ($stdin =~ /$valid_playlist_code/o) {
         list_playlist($1);
     }
-    elsif ($youtube =~ m[^https?://]) {
-        code_from_content($youtube);
+    elsif ($stdin =~ m[^https?://]) {
+        code_from_content($stdin);
     }
-    elsif ($youtube) {
-        search($youtube);
+    elsif ($stdin) {
+        search($stdin);
     }
     else {
         warn "\n$bred(x_x) Unable to continue...$reset\n\n";
@@ -536,11 +539,11 @@ sub list_user_names {
 
         chomp(my $pick = <STDIN>);
 
+        exit if $pick =~ /$quit_required/o;
+
         if ($pick =~ /$contains_arguments/o) {
             parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
         }
-
-        exit if $pick =~ /^(?:q|quit|exit)$/i;
 
         if (defined $usernames_table{$pick}) {
             chomp(my $user = $usernames_table{$pick});
@@ -582,6 +585,7 @@ sub playlists_from_username {
         print "$bred(x_x) No playlist has been found...$reset\n";
         print "\n$bred=>>$bgreen Insert another username:$reset ";
         chomp(my $username = <STDIN>);
+        exit if $username =~ /$quit_required/o;
         playlists_from_username($username);
     }
     foreach my $playlist (@playlists) {
@@ -589,6 +593,8 @@ sub playlists_from_username {
     }
     print "\n$bred=>>$bgreen Pick one playlist$reset\n> ";
     chomp(my $pick = <STDIN>);
+
+    exit if $pick =~ /$quit_required/o;
 
     if ($pick =~ /$contains_arguments/o) {
         parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
@@ -599,9 +605,6 @@ sub playlists_from_username {
     }
     elsif ($pick eq 'back' and $start_index > $results) {
         playlists_from_username($username, $start_index - $results);
-    }
-    elsif ($pick =~ /^(?:q|quit|exit)$/) {
-        exit;
     }
     elsif ($pick =~ /^\d+$/) {
         $start_index = 1;
@@ -629,6 +632,8 @@ sub search_playlists {
     print "\n$bred=>>$reset ${bgreen}Pick one playlist$reset\n> ";
 
     chomp(my $pick = <STDIN>);
+
+    exit if $pick =~ /$quit_required/o;
 
     if ($pick =~ /$contains_arguments/o) {
         parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
@@ -688,6 +693,8 @@ sub youtube_movies {
 
     chomp(my $pick = <STDIN>);
 
+    exit if $pick =~ /$quit_required/o;
+
     if ($pick =~ /$contains_arguments/o) {
         parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
     }
@@ -719,6 +726,8 @@ sub youtube_tops {
     print "\n$bred=>>$bgreen Pick one category$reset\n> ";
 
     chomp(my $pick = <STDIN>);
+
+    exit if $pick =~ /$quit_required/o;
 
     if ($pick =~ /$contains_arguments/o) {
         parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
@@ -768,6 +777,8 @@ sub categories_area {
     print "\n$bgreen=>> Insert a category number\n>$reset ";
 
     chomp(my $pick = <STDIN>);
+
+    exit if $pick =~ /$quit_required/o;
 
     if ($pick =~ /$contains_arguments/o) {
         parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
@@ -1004,14 +1015,13 @@ sub print_results {
 
     chomp(my $stdin = <STDIN>);
 
+    exit if $stdin =~ /$quit_required/o;
+
     if ($stdin =~ /$contains_arguments/o) {
         parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $stdin, 0)));
     }
 
-    if ($stdin =~ /^(?:q|quit|exit)$/) {
-        exit;
-    }
-    elsif ($stdin =~ /^\s*$/ or $stdin eq 'next') {
+    if ($stdin =~ /^\s*$/ or $stdin eq 'next') {
         next_page();
     }
     elsif ($stdin eq 'reset') {
@@ -1357,6 +1367,8 @@ sub pick {
       . "\n  $bred 1$reset - 1280x720  (720p)\n  $bred 2$reset - 1920x1080 (1080p)\n  ",
       '=' x 23 . "\n" . "\n$bgreen=>> Pick format:$reset ";
     chomp(my $pick = <STDIN>);
+
+    exit if $pick =~ /$quit_required/o;
 
     print '-' x 80 . "\n\n";
 
