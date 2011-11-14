@@ -968,14 +968,7 @@ sub format_time {
     my $sec = shift(@_) || return (0);
     my $time = join(':', map((length $_ == 1 ? "0$_" : $_), $sec / 3600 % 24, $sec / 60 % 60, $sec % 60));
     $time =~ s/^00://;
-    $time;
-}
-
-sub format_date {
-    my $date = shift();
-    $date =~ tr/\-/./;
-    $date =~ s/(.+)\.(.+)\.(.+)/$3.$2.$1/;
-    $date;
+    return $time;
 }
 
 ####################### PRINT RESULTS FROM @Videos #######################
@@ -1280,7 +1273,8 @@ sub get_youtube {
             }
         }
 
-        $published = format_date($published);
+        $published =~ tr/\-/./;
+        $published =~ s/(.+)\.(.+)\.(.+)/$3.$2.$1/;
 
         if ($views and length $views > 2) {
             $views = reverse($views);
