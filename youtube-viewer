@@ -282,23 +282,18 @@ sub parse_arguments {
             }
             elsif ($arg =~ /^-+(?:2|240p?)$/) {                      # eg: -2, --240p
                 $resolution{'resolution'} = 240;
-                $user_resolution = 1;
             }
             elsif ($arg =~ /^-+(?:3|360p?)$/) {                      # eg: -3, --360p
                 $resolution{'resolution'} = 360;
-                $user_resolution = 1;
             }
             elsif ($arg =~ /^-+(?:4|480p?)$/) {                      # eg: -4, --480p
                 $resolution{'resolution'} = 480;
-                $user_resolution = 1;
             }
             elsif ($arg =~ /^-+(?:7|720p?)$/) {                      # eg: -7, --720p
                 $resolution{'resolution'} = 720;
-                $user_resolution = 1;
             }
             elsif ($arg =~ /^-+(?:1|1080p?)$/) {                     # eg: -1, --1080p
                 $resolution{'resolution'} = 1080;
-                $user_resolution = 1;
             }
         }
         else {
@@ -306,7 +301,12 @@ sub parse_arguments {
         }
     }
 
-    $resolution{'resolution'} = 0 unless exists $resolution{'resolution'};
+    if (exists $resolution{'resolution'}) {
+        $user_resolution = 1;
+    }
+    else {
+        $resolution{'resolution'} = 0;
+    }
 
     if ($playback and not $user_resolution) {
         $resolution{'resolution'} = 1080;    # set 1080p resolution if $playback is TRUE and not any other resolution is selected
