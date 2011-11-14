@@ -840,7 +840,6 @@ sub MPlayer {
 search() unless $dont_exit or $playlists;
 
 sub search {
-    use strict;
     $SEARCH = shift() || $SEARCH;
     $SEARCH = join(' ', grep((substr($_, 0, 1) ne '-'), split(/\s+/, $SEARCH, 0)));    # get words that doesn't start with '-'
     $SEARCH = uri_escape($SEARCH);
@@ -870,7 +869,6 @@ sub search {
 
 ####################### PREPARE GDATA FEEDS URL #######################
 sub parse_url {
-    use strict;
     $YOUTUBE_GDATA_URL = shift() || $YOUTUBE_GDATA_URL;
 
     if ($YOUTUBE_GDATA_URL =~ /^$feeds_main_url/o) {
@@ -897,7 +895,6 @@ sub parse_url {
 
 ####################### GET AND PARSE GDATA CONTENT #######################
 sub parse_content {
-    use strict;
     UserAgent unless $lwp_is_set;
     print "\n";
 
@@ -968,7 +965,6 @@ sub parse_content {
 }
 
 sub format_time {
-    use strict;
     my $sec = shift(@_) || return (0);
     my $time = join(':', map((length $_ == 1 ? "0$_" : $_), $sec / 3600 % 24, $sec / 60 % 60, $sec % 60));
     $time =~ s/^00://;
@@ -976,7 +972,6 @@ sub format_time {
 }
 
 sub format_date {
-    use strict;
     my $date = shift();
     $date =~ tr/\-/./;
     $date =~ s/(.+)\.(.+)\.(.+)/$3.$2.$1/;
@@ -985,7 +980,6 @@ sub format_date {
 
 ####################### PRINT RESULTS FROM @Videos #######################
 sub print_results {
-    use strict;
 
     if (not @Videos) {
         print "$bred(x_x) No video results!$reset\n";
@@ -1062,7 +1056,6 @@ sub print_results {
 
 ####################### GO TO THE NEXT PAGE #######################
 sub next_page {
-    use strict;
 
     if ($YOUTUBE_GDATA_URL =~ /\bstart-index=(\d+)/) {
         $YOUTUBE_GDATA_URL =~ s/index=($1)/'index=' . ($1 + $results);/e;
@@ -1073,7 +1066,6 @@ sub next_page {
 
 ####################### GO TO THE PREVIOUS PAGE #######################
 sub previous_page {
-    use strict;
 
     if ($YOUTUBE_GDATA_URL =~ /\bstart-index=(\d+)/) {
         $YOUTUBE_GDATA_URL =~ s/index=($1)/'index=' . ($1 - $results);/e;
@@ -1083,7 +1075,6 @@ sub previous_page {
 }
 
 sub foreach_pick {
-    use strict;
     if (@picks) {
         foreach_code(shift(@picks));
     }
@@ -1093,7 +1084,6 @@ sub foreach_pick {
 }
 
 sub foreach_code {
-    use strict;
     get_youtube($Videos[shift(@_) - 1]);
     foreach_pick();
 }
@@ -1111,7 +1101,6 @@ sub disable_fullscreen_mode {
 }
 
 sub select_resolution {
-    use strict;
     $streaming =~ s/^[\w]*%[\w]*https?:/http:/;
 
     if (not $streaming =~ /itag=34/ and $streaming =~ /itag=(\d+)/) {
@@ -1171,7 +1160,6 @@ sub select_resolution {
 }
 
 sub check_resolution {
-    use strict;
 
     if ($streaming =~ /itag=37/) {
         print "Detected 1080p resolution in check_resolution()\n" if $debug;
@@ -1196,7 +1184,6 @@ sub parse_stdin_arguments {
 }
 
 sub get_youtube {
-    use strict;
 
     my ($code, $title, $category, $published, $duration, $views, $description) =
       ref $_[0]
@@ -1357,7 +1344,6 @@ sub get_youtube {
 }
 
 sub pick {
-    use strict;
 
     print "$bred=>>$reset $bgreen Please choose the quality of video (default: 1)$reset\n"
       . "\n  $bred 1$reset - 1280x720  (720p)\n  $bred 2$reset - 1920x1080 (1080p)\n  ",
@@ -1383,7 +1369,6 @@ sub pick {
 }
 
 sub lower_quality {
-    use strict;
 
     if (defined($_[0]) and $_[0] =~ /^\d+$/) {
 
@@ -1419,13 +1404,11 @@ sub lower_quality {
 }
 
 sub lower_cache {    # set a lower cache if $user_lower_cache is TRUE
-    use strict;
     $MPlayerLine =~ s/-cache\s+\d+/-cache 1000/      unless $user_cache;
     $MPlayerLine =~ s/-cache-min\s+\d+/-cache-min 3/ unless $user_cache_min;
 }
 
 sub default_cache {
-    use strict;
 
     if (not $user_lower_cache) {
         $MPlayerLine =~ s/-cache\s+\d+/-cache $cache/             unless $user_cache;
