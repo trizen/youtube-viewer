@@ -350,20 +350,10 @@ sub parse_sub_calling_arguments {
                 youtube_tops();
             }
             elsif ($arg =~ /^-+u(?:sername)?(?:=(\w+))?$/) {
-                videos_from_username(
-                    do {
-                        my $username = $1 // get_next_argument($i);
-                        $username // get_next_argument($i - 2);
-                      }
-                );
+                videos_from_username($1 // get_next_argument($i));
             }
             elsif ($arg =~ /^-u(?:ser(?:name)?)?p(?:laylist)?(?:=(\w+))?$/) {
-                playlists_from_username(
-                    do {
-                        my $username = $1 // get_next_argument($i);
-                        $username // get_next_argument($i - 2);
-                      }
-                );
+                playlists_from_username($1 // get_next_argument($i));
             }
             elsif ($arg =~ /^-+(?:U|user(?:name)?s)(?:=(.+))?$/) {
                 if (defined $1 and -r $1) {
