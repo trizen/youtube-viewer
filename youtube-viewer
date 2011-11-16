@@ -139,7 +139,7 @@ my $feeds_main_url      = 'https://gdata.youtube.com/feeds/api';
 my $get_video_info      = 'https://www.youtube.com/get_video_info';
 my $tmp_dir             = $ENV{'TEMP'} || $ENV{'TMP'} || $ENV{'TMPDIR'} || '/tmp';    # tmpdir is used to save srt files
 
-my (@Videos, @picks, %resolution);                                                    # other global variables
+my ($wget_is_available, @Videos, @picks, %resolution);                                # other global variables
 
 eval 'require Crypt::SSLeay';                                                         # checks if Crypt::SSleay is available
 
@@ -171,6 +171,23 @@ else {
 
 sub win32_or_unix_paths {
     return split(/(??{$win32?';':':'})/, $ENV{'PATH'}, 0);    # if running under Win32 split $PATH by ';', else split by ':'
+}
+
+####################### LOOKING FOR WGET #######################
+sub locate_wget {
+    if (
+        -x '/usr/bin/wget' or grep((
+             $win32
+             ? do {
+                 -x "$_\\wget.exe" or -x "$_\\wget";
+               }
+             : -x "$_/wget"
+            ),
+            win32_or_unix_paths())
+      ) {
+
+        $wget_is_available = 1;
+    }
 }
 
 ####################### LOOKING FOR GCAP #######################
@@ -232,8 +249,9 @@ sub parse_arguments {
                 $user_lower_cache = 1;
             }
             elsif ($arg =~ /^-+(?:n|no.?video)$/) {          # eg: -n, --no-video
-                $MPlayerLine =~ s/mplayer /mplayer -novideo /;
-                $MPlayerLine =~ s/mplayer\.exe"/mplayer.exe" -novideo/;
+                $win32
+                  ? $MPlayerLine =~ s/mplayer\.exe"/mplayer.exe" -novideo/
+                  : $MPlayerLine =~ s/mplayer /mplayer -novideo /;
                 $resolution{'resolution'} = 480 unless $user_resolution;
             }
             elsif ($arg =~ /^-+time(?:=(.+))?$/) {           # eg: --time=this_week
@@ -264,6 +282,7 @@ sub parse_arguments {
             }
             elsif ($arg =~ /^-+(?:d|download)$/) {                   # eg: -d, --download
                 $download_video = 1;
+                locate_wget() unless $wget_is_available;
             }
             elsif ($arg =~ /^-+(?:a|all.?time)$/) {                  # eg: --all-time
                 $all_time = 1;
@@ -789,7 +808,7 @@ sub MPlayer {
         $title =~ tr[/][|];    # replaces '/' with '|'
 
         if (not -e "$title.mp4") {
-            if (-e '/usr/bin/wget') {
+            if ($wget_is_available) {
                 system "wget -nc '${streaming}' -O \Q$title\E.mp4";
             }
             else {
