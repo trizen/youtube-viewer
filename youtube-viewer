@@ -99,7 +99,6 @@ my $default_sub    = 'en';    # default language for subtitles (requires gcap to
 my $users_file = "$ENV{'HOME'}/.config/youtube_usernames.txt";
 
 ####################### TEMPORARY OPTIONS #######################
-my $picks_mode;               #               ||
 my $user_cache;               #               ||
 my $user_cache_min;           #               ||
 my $dont_exit;                #               \/
@@ -133,7 +132,7 @@ my $have_entities       = qr/&#?\w/;                                            
 my $get_youtube_code    = qr"(?:embed|v|youtu\.be)(?:%3D|[=/])((?>[-\w]{11}))";       # $1 will be the video code
 my $get_playlist_code   = qr/(?:view_play_list\?p|playlist\?list)=([A-Z\d]+)/;        # $1 will be the playlist code
 my $valid_playlist_code = qr/^(?:PL)?([A-Z\d]{16})$/;                                 # $1 will be the playlist code
-my $contains_arguments  = qr/(?:\s|^)-+\w+/;                                          # cheks if a string contains arguments
+my $contains_arguments  = qr/(?:\s|^)-+\w/;                                           # cheks if a string contains arguments
 my $quit_required       = qr/^(?:q|quit|exit)$/i;                                     # exit if user's input is q, quit or exit
 my $feeds_main_url      = 'https://gdata.youtube.com/feeds/api';
 my $get_video_info      = 'https://www.youtube.com/get_video_info';
