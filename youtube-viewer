@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 14 November 2011
+#  Latest edit on: 17 November 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -99,16 +99,16 @@ my $default_sub    = 'en';    # default language for subtitles (requires gcap to
 my $users_file = "$ENV{'HOME'}/.config/youtube_usernames.txt";
 
 ####################### TEMPORARY OPTIONS #######################
-my $picks_mode      = 0;      #               ||
-my $user_cache      = 0;      #               ||
-my $user_cache_min  = 0;      #               ||
-my $dont_exit       = 0;      #               \/
-my $all_time        = 0;      # DON'T change this default values
-my $lwp_is_set      = 0;      # unless you know what you're doing
-my $video_results   = 0;      #               /\
-my $user_resolution = 0;      #               ||
-my $user_fullscreen = 0;      #               ||
-my $playlists       = 0;      #               ||
+my $picks_mode;               #               ||
+my $user_cache;               #               ||
+my $user_cache_min;           #               ||
+my $dont_exit;                #               \/
+my $all_time;                 # DON'T change this default values
+my $lwp_is_set;               # unless you know what you're doing
+my $video_results;            #               /\
+my $user_resolution;          #               ||
+my $user_fullscreen;          #               ||
+my $playlists;                #               ||
 
 ####################### COLOURS #######################
 my $bred    = '';
@@ -139,23 +139,21 @@ my $feeds_main_url      = 'https://gdata.youtube.com/feeds/api';
 my $get_video_info      = 'https://www.youtube.com/get_video_info';
 my $tmp_dir             = $ENV{'TEMP'} || $ENV{'TMP'} || $ENV{'TMPDIR'} || '/tmp';    # tmpdir is used to save srt files
 
-my ($wget_is_available, @Videos, @picks, %resolution);                                # other global variables
+my (@Videos, @picks, %resolution);                                                    # other global variables
 
-eval 'require Crypt::SSLeay';                                                         # checks if Crypt::SSleay is available
-
-if ($@) {    # if Crypt::SSleay is not avaiable ($@ contain the error from eval), then switch to http
+unless (grep((-e "$_/Crypt/SSLeay.pm" or -e "$_/LWP/Protocol/https.pm"), @INC)) {     # checks if https support is available
     print "Crypt::SSLeay is not available. I'm going to use 'http' instead of 'https'\n" if $debug;
-    $feeds_main_url =~ s/s//;    # changes https to http
-    $get_video_info =~ s/s//;    # ==//==
+    $feeds_main_url =~ s/s//;                                                         # changes https to http
+    $get_video_info =~ s/s//;                                                         # ==//==
 }
 
 my $MPlayerLine;
 
 if ($win32) {
-    my $MPlayer_exe = $ENV{'ProgramFiles'} . '\\SMPlayer\\mplayer\\mplayer.exe';    # Windows SMPlayer path
+    my $MPlayer_exe = $ENV{'ProgramFiles'} . '\\SMPlayer\\mplayer\\mplayer.exe';      # Windows SMPlayer path
 
     if (-e $MPlayer_exe) {
-        $MPlayerLine = qq["$MPlayer_exe" $mplayer_settings];                        # Windows MPlayer line
+        $MPlayerLine = qq["$MPlayer_exe" $mplayer_settings];                          # Windows MPlayer line
     }
     else {
         warn "\n\n!!! Please install SMPlayer to stream Youtube videos.\n\n";
@@ -163,45 +161,31 @@ if ($win32) {
     }
 }
 else {
-    $bred        = "\e[1;31m";                                                      # bold red
-    $bgreen      = "\e[1;32m";                                                      # bold green
-    $reset       = "\e[0m";                                                         # reset color
-    $MPlayerLine = "mplayer $mplayer_settings";                                     # *NIX MPlayer line
+    $bred        = "\e[1;31m";                                                        # bold red
+    $bgreen      = "\e[1;32m";                                                        # bold green
+    $reset       = "\e[0m";                                                           # reset color
+    $MPlayerLine = "mplayer $mplayer_settings";                                       # *NIX MPlayer line
 }
 
-sub win32_or_unix_paths {
-    return split(/(??{$win32?';':':'})/, $ENV{'PATH'}, 0);    # if running under Win32 split $PATH by ';', else split by ':'
-}
+####################### MY PATH #######################
+my @path = split(/(??{$win32 ? ';' : ':'})/, $ENV{'PATH'}, 0);    # if running under Win32 split $PATH by ';', else split by ':'
 
 ####################### LOOKING FOR WGET #######################
-sub locate_wget {
-    if (
-        -x '/usr/bin/wget' or grep((
-             $win32
-             ? do {
-                 -x "$_\\wget.exe" or -x "$_\\wget";
-               }
-             : -x "$_/wget"
-            ),
-            win32_or_unix_paths())
-      ) {
+my $wget_is_available;
 
+sub locate_wget {
+    if (-x '/usr/bin/wget' or grep(($win32 ? do { -e "$_\\wget.exe" or -e "$_\\wget" } : -x "$_/wget"), @path)) {
         $wget_is_available = 1;
     }
 }
 
 ####################### LOOKING FOR GCAP #######################
-my $gcap;
-if ($ENV{'PATH'}) {
-    foreach my $path (@INC, win32_or_unix_paths()) {
-        if (-e "$path/gcap") {
-            $gcap = "$path/gcap";
-            last;
-        }
+my $gcap = '/usr/bin/gcap';                                       # default gcap path
+foreach my $path (@INC, @path) {
+    if (-e "$path/gcap") {
+        $gcap = "$path/gcap";
+        last;
     }
-}
-else {
-    $gcap = '/usr/bin/gcap';
 }
 
 ####################### LWP::UserAgent #######################
@@ -220,7 +204,7 @@ sub UserAgent {
 ####################### GET THE NEXT ARGUMENT #######################
 sub get_next_argument ($) {
     my $i = shift();
-    if (defined $ARGV[$i] and substr($ARGV[$i], 0, 1) ne '-') {
+    if (defined $ARGV[$i] and chr ord $ARGV[$i] ne '-') {
         return splice(@ARGV, $i, 1);
     }
     else {
@@ -233,7 +217,7 @@ sub parse_arguments {
     my $i = 0;
     foreach my $arg (@_) {
         defined $arg ? ++$i : next;
-        if (substr($arg, 0, 1) eq '-') {    # if argument starts with '-'
+        if (chr ord $arg eq '-') {    # if argument starts with '-'
 
             if ($arg =~ /^-+cache(?:=(\d+))?$/) {    # eg: -cache 1500, --cache=2000
                 my $cache = $1 // get_next_argument($i);
@@ -348,7 +332,7 @@ sub parse_sub_calling_arguments {
     my $i = 0;
     foreach my $arg (@_) {
         defined $arg ? ++$i : next;
-        if (substr($arg, 0, 1) eq '-') {
+        if (chr ord $arg eq '-') {
 
             if ($arg =~ /^-+(?:h|help|\?|usage)$/i) {
                 help();
@@ -378,9 +362,6 @@ sub parse_sub_calling_arguments {
                 if (defined $1 and -r $1) {
                     $users_file = $1;
                 }
-                else {
-                    $users_file = get_next_argument($i) // $users_file;
-                }
                 list_user_names();
             }
         }
@@ -390,7 +371,7 @@ sub parse_sub_calling_arguments {
 ####################### LOOKING FOR NON-ARGUMENTS #######################
 my $non_argv = 0;
 foreach my $arg (@ARGV) {
-    if (not substr($arg, 0, 1) eq '-' or length $arg == 11) {
+    if (not chr ord $arg eq '-' or length $arg == 11) {
         $non_argv = 1;
         last;
     }
@@ -405,7 +386,7 @@ sub insert_url () {
     exit if $stdin =~ /$quit_required/o;
 
     if ($stdin =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $stdin, 0)));
+        parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $stdin, 0)));
     }
 
     if ($stdin =~ /$get_youtube_code/o) {
@@ -547,7 +528,7 @@ sub list_user_names {
         exit if $pick =~ /$quit_required/o;
 
         if ($pick =~ /$contains_arguments/o) {
-            parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
+            parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
         }
 
         if (defined $usernames_table{$pick}) {
@@ -602,7 +583,7 @@ sub playlists_from_username {
     exit if $pick =~ /$quit_required/o;
 
     if ($pick =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
+        parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
     }
 
     if ($pick =~ /^\s*$/) {
@@ -641,7 +622,7 @@ sub search_playlists {
     exit if $pick =~ /$quit_required/o;
 
     if ($pick =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
+        parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
     }
 
     if (not $pick =~ /^\s*\d+\s*$/ and $pick =~ /^\s*$/ or $pick eq 'next') {
@@ -701,7 +682,7 @@ sub youtube_movies {
     exit if $pick =~ /$quit_required/o;
 
     if ($pick =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
+        parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
     }
 
     if (defined $movie_table{$pick}) {
@@ -735,7 +716,7 @@ sub youtube_tops {
     exit if $pick =~ /$quit_required/o;
 
     if ($pick =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
+        parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
     }
 
     if (defined $tops_table{$pick}) {
@@ -786,7 +767,7 @@ sub categories_area {
     exit if $pick =~ /$quit_required/o;
 
     if ($pick =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $pick, 0)));
+        parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
     }
 
     if (defined $categories_table{$pick}) {
@@ -837,6 +818,9 @@ sub MPlayer {
     if (@picks) {
         foreach_pick();                 # go to the next video if there are more videos selected to play
     }
+    elsif ($playback) {
+        next_page();
+    }
 
     if ($video_results and not $dont_exit) {
         print_results();                # go back to the video results
@@ -850,7 +834,7 @@ search() unless $dont_exit or $playlists;
 
 sub search {
     $SEARCH = shift() || $SEARCH;
-    $SEARCH = join(' ', grep((substr($_, 0, 1) ne '-'), split(/\s+/, $SEARCH, 0)));    # get words that doesn't start with '-'
+    $SEARCH = join(' ', grep((chr ord $_ ne '-'), split(/\s+/, $SEARCH, 0)));    # get words that doesn't start with '-'
     $SEARCH = uri_escape($SEARCH);
     $YOUTUBE_GDATA_URL =
         $feeds_main_url
@@ -918,7 +902,6 @@ sub parse_content {
         if ($playlists) {
 
             m[<yt:playlistId>([^<]+)</yt:playlistId>] ? ($code = $1) : next;
-
             $views = m[<yt:countHint>(\d+)</yt:countHint>] ? $1 : 0;
 
             if (m[<summary>([^<]+)</summary>]) {
@@ -936,9 +919,7 @@ sub parse_content {
 ################ GETTING VIDEO VALUES ################
 
             /([-\w]{11})&amp;feature=youtube_gdata/ ? ($code = $1) : next;
-
-            $views = /\bviewCount='(\d+)'/ ? $1 : 0;
-
+            $views = /viewCount='(\d+)'/ ? $1 : 0;
             $description = /<media:description type='plain'>([^<]+)/ ? $1 : 'No description available...';
 
         }
@@ -961,9 +942,8 @@ sub parse_content {
           }
           : ($category = 'Unknown');
 
-        $published = /<published>([\d-]+)/ ? $1 : 'Unknown';
-
-        $duration = /\bduration[^']+'(\d+)'/ ? format_time($1) : 0;
+        $published = /(?:published|uploaded)>([\d-]+)/ ? $1 : 'Unknown';
+        $duration = /duration(?: seconds)?='(\d+)'/ ? format_time($1) : 0;
 
         ++$number;
 
@@ -1010,7 +990,7 @@ sub print_results {
     exit if $stdin =~ /$quit_required/o;
 
     if ($stdin =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((substr($_, 0, 1) eq '-'), split(/\s+/, $stdin, 0)));
+        parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $stdin, 0)));
     }
 
     if ($stdin =~ /^\s*$/ or $stdin eq 'next') {
@@ -1079,9 +1059,6 @@ sub previous_page {
 sub foreach_pick {
     if (@picks) {
         foreach_code(shift(@picks));
-    }
-    elsif ($playback) {
-        next_page();
     }
 }
 
@@ -1206,7 +1183,8 @@ sub get_youtube {
         and not $MPlayerLine  =~ / -novideo/
         and $connect->content =~ /&has_cc=True&/
         and not $download_video) {
-        chdir $tmp_dir;
+
+        chdir $tmp_dir;    # change directory to $tmp_dir and get the .srt file
 
         unless (-e "${code}_$default_sub.srt") {
             system "gcap $url";
