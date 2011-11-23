@@ -17,7 +17,7 @@
 #
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
-#  Created on: 03 Jun 2010
+#  Created on: 02 Jun 2010
 #  Latest edit on: 23 November 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
@@ -929,7 +929,7 @@ sub parse_content {
         if ($playlists) {
 
             $entry =~ m[<yt:playlistId>(.+?)</yt:playlistId>] ? ($code = $1) : next;
-            $views = m[<yt:countHint>(.+?)</yt:countHint>] ? $1 : 0;
+            $views = $entry =~ m[<yt:countHint>(.+?)</yt:countHint>] ? $1 : 0;
 
             if ($entry =~ m[<summary>(.+?)</summary>]s) {
                 $description = $1;
@@ -949,7 +949,6 @@ sub parse_content {
             $views = $entry =~ /viewCount='(\d+)'/ ? $1 : 0;
             $description =
               $entry =~ /<media:description type='plain'>(.+?)<\/media:description>/s ? $1 : 'No description available...';
-
         }
 
 ################ PARSING BOTH - VIDEO AND PLAYLIST VALUES ################
