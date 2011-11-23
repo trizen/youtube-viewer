@@ -17,8 +17,8 @@
 #
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
-#  Created on: 02 Jun 2010
-#  Latest edit on: 17 November 2011
+#  Created on: 03 Jun 2010
+#  Latest edit on: 23 November 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -67,6 +67,9 @@
 # - Army (for bugs reports and for his great ideas)
 # - dhn (for adding youtube-viewer in freshports.org)
 
+eval 'exec perl -wS $0 ${1+"$@"}'
+  if 0;    #$running_under_some_shell;
+
 use strict;
 use Cwd     ('getcwd');
 use autouse ('URI::Escape' => 'uri_escape');
@@ -106,8 +109,8 @@ my $all_time;                 # DON'T change this default values
 my $lwp_is_set;               # unless you know what you're doing
 my $video_results;            #               /\
 my $user_resolution;          #               ||
-my $user_fullscreen;          #               ||
 my $playlists;                #               ||
+my $user_fullscreen;          #               ||
 
 ####################### COLOURS #######################
 my $bred    = '';
@@ -129,19 +132,27 @@ my $streaming;            # used to store a streaming video URL, and will be pas
 my $cwd                 = getcwd();                                                   # gets current working directory
 my $win32               = $^O eq 'Win32' ? 1 : 0;                                     # true if running under Windows
 my $have_entities       = qr/&#?\w/;                                                  # checks if a string contains HTML entities
-my $get_youtube_code    = qr"(?:embed|v|youtu\.be)(?:%3D|[=/])((?>[-\w]{11}))";       # $1 will be the video code
+my $get_youtube_code    = qr"(?:embed|v|youtu\.be)(?:%3D|[=/])([-\w]{11})";           # $1 will be the video code
 my $get_playlist_code   = qr/(?:view_play_list\?p|playlist\?list)=([A-Z\d]+)/;        # $1 will be the playlist code
 my $valid_playlist_code = qr/^(?:PL)?([A-Z\d]{16})$/;                                 # $1 will be the playlist code
 my $contains_arguments  = qr/(?:\s|^)-+\w/;                                           # cheks if a string contains arguments
 my $quit_required       = qr/^(?:q|quit|exit)$/i;                                     # exit if user's input is q, quit or exit
 my $feeds_main_url      = 'https://gdata.youtube.com/feeds/api';
 my $get_video_info      = 'https://www.youtube.com/get_video_info';
-my $tmp_dir             = $ENV{'TEMP'} || $ENV{'TMP'} || $ENV{'TMPDIR'} || '/tmp';    # tmpdir is used to save srt files
+my $tmp_dir             = $ENV{'TEMP'} // $ENV{'TMP'} // $ENV{'TMPDIR'} // '/tmp';    # tmpdir is used to save srt files
 
-my (@Videos, @picks, %resolution);                                                    # other global variables
+my (@Videos, @picks, %resolution, %streaming);                                        # other global variables
+
+# itag => resolution
+my %itags = (37 => 1080,
+             22 => 720,
+             35 => 480,
+             43 => 210,
+             34 => 360,
+             18 => 240,
+             5  => 180);
 
 unless (grep((-e "$_/Crypt/SSLeay.pm" or -e "$_/LWP/Protocol/https.pm"), @INC)) {     # checks if https support is available
-    print "Crypt::SSLeay is not available. I'm going to use 'http' instead of 'https'\n" if $debug;
     $feeds_main_url =~ s/s//;                                                         # changes https to http
     $get_video_info =~ s/s//;                                                         # ==//==
 }
@@ -167,7 +178,7 @@ else {
 }
 
 ####################### MY PATH #######################
-my @path = split(/(??{$win32 ? ';' : ':'})/, $ENV{'PATH'}, 0);    # if running under Win32 split $PATH by ';', else split by ':'
+my @path = $win32 ? split(/;/, $ENV{'PATH'}) : split(/:/, $ENV{'PATH'});    # split $PATH by ';' if running under Windows
 
 ####################### LOOKING FOR WGET #######################
 my $wget_is_available;
@@ -179,7 +190,7 @@ sub locate_wget {
 }
 
 ####################### LOOKING FOR GCAP #######################
-my $gcap = '/usr/bin/gcap';                                       # default gcap path
+my $gcap = '/usr/bin/gcap';                                                 # default gcap path
 foreach my $path (@INC, @path) {
     if (-e "$path/gcap") {
         $gcap = "$path/gcap";
@@ -267,6 +278,12 @@ sub parse_arguments {
                 $download_video = 1;
                 locate_wget() unless $wget_is_available;
             }
+            elsif ($arg =~ /^-+(?:P|proxy)(?:=(.+))?$/) {            # eg: --proxy=123.442.122.32:80
+                UserAgent unless $lwp_is_set;
+                my $proxy = $1 // get_next_argument($i);
+                $proxy = 'http://' . $proxy unless $proxy =~ /^https?:/;
+                $lwp->proxy(['http', 'https'], $proxy);
+            }
             elsif ($arg =~ /^-+(?:a|all.?time)$/) {                  # eg: --all-time
                 $all_time = 1;
             }
@@ -282,6 +299,13 @@ sub parse_arguments {
             elsif ($arg =~ /^-+(?:fs?|fullscreen)$/) {               # eg: -fs, --fullscreen
                 set_fullscreen_mode();
                 $user_fullscreen = 1;
+            }
+            elsif ($arg =~ /^-+(?:FS?|no.?fullscreen)$/) {           # eg: -F, --no-fullscreen
+                disable_fullscreen_mode();
+                $user_fullscreen = 1;
+            }
+            elsif ($arg =~ /^-+(?:1[862]0p?|3gp)$/) {                # eg: -3gp, --180p
+                $resolution{'resolution'} = 180;
             }
             elsif ($arg =~ /^-+(?:2|240p?)$/) {                      # eg: -2, --240p
                 $resolution{'resolution'} = 240;
@@ -385,7 +409,7 @@ sub insert_url () {
     exit if $stdin =~ /$quit_required/o;
 
     if ($stdin =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $stdin, 0)));
+        parse_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $stdin, 0)));
     }
 
     if ($stdin =~ /$get_youtube_code/o) {
@@ -400,12 +424,12 @@ sub insert_url () {
     elsif ($stdin =~ m[^https?://]) {
         code_from_content($stdin);
     }
-    elsif ($stdin) {
+    elsif (defined($stdin) and length($stdin)) {
         search($stdin);
     }
     else {
         warn "\n$bred(x_x) Unable to continue...$reset\n\n";
-        exit;
+        exit 0;
     }
 }
 insert_url() unless $non_argv;
@@ -421,7 +445,7 @@ sub code_from_content ($) {
 
 ####################### PARSING VIDEO CODES SPECIFIED AS ARGUMENTS #######################
 foreach my $code (@ARGV) {
-    if (length($code) == 11 and $code =~ /^[\w-]{11}$/ and $code =~ /\d|[A-Z]|-/o) {
+    if (length($code) == 11 and $code =~ /^[\w\-]{11}$/ and $code =~ /[\d_A-Z\-]/o) {
         $dont_exit = 1;
         get_youtube($code);
     }
@@ -468,6 +492,7 @@ sub help {
    -2, -3, -4, -7, -1   : plays videos at 240p, 360p, 480p, 720p or 1080p
 \nMPlayer options:
    -f, --fullscreen     : plays video(s) in fullscreen mode
+   -F, --no-fullscreen  : disable fullscreen mode
    -n, --novideo        : plays only the audio track of video(s)
    -l, --lower-cache    : set a lower cache for MPlayer (for slow connections)
    -mplayer='SETTINGS'  : add some extra options to the MPlayer line
@@ -479,6 +504,7 @@ sub help {
    -A, --all            : plays all video results in order
    -C, --colors         : use colors for text output
    -U, --users=file.txt : list YouTube usernames from a file
+   -P, --proxy=<PROXY>  : set proxy for LWP::UserAgent
    -v, --version        : prints version and exits
    -h, --help           : prints help and exits
 \nTips and tricks:
@@ -487,10 +513,8 @@ sub help {
   3. After search results, insert more numbers to play videos in your order
   4. After search results you can insert arguments via STDIN (eg: '-c')
   5. After search results you can insert 'reset' to set default settings
-  6. Play all audio tracks of video results by using '-A -n' as arguments
-  7. Play all video results from a page: insert 'all' or insert '1..20'
-  8. '-p' used as a STDIN argument will [search]/return to playlist menu\n\n";
-    exit;
+  6. Play all video results from a page: insert 'all' or insert '1..20'\n\n";
+    exit 0;
 }
 
 ####################### YOUTUBE-VIEWER VERSION #######################
@@ -527,7 +551,7 @@ sub list_user_names {
         exit if $pick =~ /$quit_required/o;
 
         if ($pick =~ /$contains_arguments/o) {
-            parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
+            parse_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
         }
 
         if (defined $usernames_table{$pick}) {
@@ -561,10 +585,10 @@ sub playlists_from_username {
                                         . "playlists?max-results=$results&start-index=$start_index"
                                      )->content)
       ) {
-        my ($id) = ($line =~ /<id>([^<]+)/) or next;
+        my ($id) = ($line =~ /<id>(.+?)</) or next;
         ++$i;
         next if $i == 0;
-        push @playlists, [$i, $id, ($line =~ /<title type='text'>([^<]+)/), ($line =~ /\bcountHint='(\d+)'/)];
+        push @playlists, [$i, $id, ($line =~ /<title type='text'>(.+?)</s), ($line =~ /\WcountHint='(\d+)'/)];
     }
     unless (@playlists) {
         print "$bred(x_x) No playlist has been found...$reset\n";
@@ -574,7 +598,10 @@ sub playlists_from_username {
         playlists_from_username($username);
     }
     foreach my $playlist (@playlists) {
-        print do { ' ' if $$playlist[0] < 10 }, $bred, $$playlist[0], $reset, ' - ', $$playlist[2], ' (', $$playlist[3], ")\n";
+        print do { ' ' if $$playlist[0] < 10 }, $bred, $$playlist[0], $reset, ' - ', do {
+            my $list_name = $$playlist[2];
+            $list_name =~ /$have_entities/o ? decode_entities($list_name) : $list_name;
+        }, ' (', $$playlist[3], ")\n";
     }
     print "\n$bred=>>$bgreen Pick one playlist$reset\n> ";
     chomp(my $pick = <STDIN>);
@@ -582,7 +609,7 @@ sub playlists_from_username {
     exit if $pick =~ /$quit_required/o;
 
     if ($pick =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
+        parse_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
     }
 
     if ($pick =~ /^\s*$/) {
@@ -621,7 +648,7 @@ sub search_playlists {
     exit if $pick =~ /$quit_required/o;
 
     if ($pick =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
+        parse_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
     }
 
     if (not $pick =~ /^\s*\d+\s*$/ and $pick =~ /^\s*$/ or $pick eq 'next') {
@@ -655,7 +682,7 @@ sub search_playlists {
     list_playlist($Videos[$pick - 1][2]);
 }
 
-####################### VALIDATES AND LIST A YOUTUBE PLAYLIST #######################
+####################### LIST A YOUTUBE PLAYLIST #######################
 sub list_playlist ($) {
     parse_url("$feeds_main_url/playlists/$_[0]");
 }
@@ -681,7 +708,7 @@ sub youtube_movies {
     exit if $pick =~ /$quit_required/o;
 
     if ($pick =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
+        parse_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
     }
 
     if (defined $movie_table{$pick}) {
@@ -715,7 +742,7 @@ sub youtube_tops {
     exit if $pick =~ /$quit_required/o;
 
     if ($pick =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
+        parse_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
     }
 
     if (defined $tops_table{$pick}) {
@@ -724,7 +751,7 @@ sub youtube_tops {
         if ($today) {
 
             unless ($url =~ /recent/) {
-                $url .= '?time=today';
+                $url .= '?time=today&v=2';
             }
         }
         parse_url($url);
@@ -745,7 +772,7 @@ sub categories_area {
 
     foreach $_ (split(/category\s+term=/, $lwp->get('http://gdata.youtube.com/schemas/2007/categories.cat')->content, 0)) {
 
-        if (/^'([^']+)'\s+label='([^']+)'/ and not /deprecated/) {
+        if (/^'(.+?)'\s+label='(.+?)'/ and not /deprecated/) {
             ++$n;
 
             my $cat_name  = $1;
@@ -766,7 +793,7 @@ sub categories_area {
     exit if $pick =~ /$quit_required/o;
 
     if ($pick =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
+        parse_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $pick, 0)));
     }
 
     if (defined $categories_table{$pick}) {
@@ -813,6 +840,8 @@ sub MPlayer {
     }
 
     print "\n";
+
+    disable_fullscreen_mode() unless $user_fullscreen;
 
     if (@picks) {
         foreach_pick();                 # go to the next video if there are more videos selected to play
@@ -888,22 +917,21 @@ sub parse_url {
 ####################### GET AND PARSE GDATA CONTENT #######################
 sub parse_content {
     UserAgent unless $lwp_is_set;
-    print "\n";
 
     undef @Videos;
 
     my ($author, $code, $title, $category, $published, $duration, $views, $description);
     my $number = 0;
 
-    foreach $_ (split(m[<title[^>/]*>], $lwp->get($_[0])->content, 0)) {
+    foreach my $entry (split(m[<title[^>/]*>], $lwp->get($_[0])->content, 0)) {
 
 ################ GETTING PLAYLIST VALUES ################
         if ($playlists) {
 
-            m[<yt:playlistId>([^<]+)</yt:playlistId>] ? ($code = $1) : next;
-            $views = m[<yt:countHint>(\d+)</yt:countHint>] ? $1 : 0;
+            $entry =~ m[<yt:playlistId>(.+?)</yt:playlistId>] ? ($code = $1) : next;
+            $views = m[<yt:countHint>(.+?)</yt:countHint>] ? $1 : 0;
 
-            if (m[<summary>([^<]+)</summary>]) {
+            if ($entry =~ m[<summary>(.+?)</summary>]s) {
                 $description = $1;
                 $description =~ s/\s\s+/ /g;
                 $description = substr($description, 0, 15) if length $description > 15;
@@ -917,32 +945,27 @@ sub parse_content {
 
 ################ GETTING VIDEO VALUES ################
 
-            /([-\w]{11})&amp;feature=youtube_gdata/ ? ($code = $1) : next;
-            $views = /viewCount='(\d+)'/ ? $1 : 0;
-            $description = /<media:description type='plain'>([^<]+)/ ? $1 : 'No description available...';
+            $code = $entry =~ /([-\w]{11})&amp;feature=youtube_gdata/ ? $1 : next;
+            $views = $entry =~ /viewCount='(\d+)'/ ? $1 : 0;
+            $description =
+              $entry =~ /<media:description type='plain'>(.+?)<\/media:description>/s ? $1 : 'No description available...';
 
         }
 
 ################ PARSING BOTH - VIDEO AND PLAYLIST VALUES ################
 
-        $author = m[<name>([^<]+)</name>] ? $1 : 'Unknown';
+        $author = $entry =~ m[<name>(.+?)</name>] ? $1 : 'Unknown';
 
-        m[^([^<]+)</title>]
+        $entry =~ m[^(.+?)</title>]s
           ? do {
             $title = $1;
             $title = decode_entities($title) if $title =~ /$have_entities/o;
           }
           : ($title = 'Unknown');
 
-        /<media:category label='([^']+)'/
-          ? do {
-            $category = $1;
-            $category =~ s/&amp;/&/;
-          }
-          : ($category = 'Unknown');
-
-        $published = /(?:published|uploaded)>([\d-]+)/ ? $1 : 'Unknown';
-        $duration = /duration(?: seconds)?='(\d+)'/ ? format_time($1) : 0;
+        $category  = $entry =~ /<media:category label='(.+?)'/               ? $1              : 'Unknown';
+        $published = $entry =~ /(?:uploaded|published)>(\d\d\d\d-\d\d-\d\d)/ ? $1              : 'Unknown';
+        $duration  = $entry =~ /duration(?: seconds)?='(.+?)'/               ? format_time($1) : 0;
 
         ++$number;
 
@@ -950,13 +973,14 @@ sub parse_content {
 
         push @Videos, [$number, $author, $code, $title, $category, $published, $duration, $views, $description];
     }
+    print "\n";
 }
 
 sub format_time {
-    my $sec = shift(@_) || return (0);
-    my $time = join(':', map((length $_ == 1 ? "0$_" : $_), $sec / 3600 % 24, $sec / 60 % 60, $sec % 60));
+    my $sec = shift @_;
+    my $time = join(':', map((length $_ == 1 ? 0 . $_ : $_), $sec / 3600 % 24, $sec / 60 % 60, $sec % 60));
     $time =~ s/^00://;
-    return $time;
+    $time;
 }
 
 ####################### PRINT RESULTS FROM @Videos #######################
@@ -989,7 +1013,7 @@ sub print_results {
     exit if $stdin =~ /$quit_required/o;
 
     if ($stdin =~ /$contains_arguments/o) {
-        parse_stdin_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $stdin, 0)));
+        parse_arguments(grep((chr ord $_ eq '-'), split(/\s+/, $stdin, 0)));
     }
 
     if ($stdin =~ /^\s*$/ or $stdin eq 'next') {
@@ -1020,11 +1044,11 @@ sub print_results {
         code_from_content $stdin;
     }
     elsif ($stdin eq 'all') {
-        parse_stdin_arguments('--1080p') unless $user_resolution;
+        parse_arguments('--1080p') unless $user_resolution;
         @picks = 1 .. scalar @Videos;
         foreach_pick();
     }
-    elsif ($stdin =~ /\d/ and not $stdin =~ /(?:\s|^)[^-][[:alpha:]]/) {
+    elsif ($stdin =~ /\d/ and not $stdin =~ /(?:\s|^)[^\d-]/) {
         $stdin =~ s/(?:\D|^)-\d+//g;
         $stdin =~ s/(\d+)(?:-|\.\.)(\d+)/join ' ', $1 .. $2;/eg;
         @picks = grep({$_ > 0 and $_ <= scalar @Videos if /^\d+$/;} split(/\D+/, $stdin, 0));
@@ -1038,7 +1062,7 @@ sub print_results {
 ####################### GO TO THE NEXT PAGE #######################
 sub next_page {
 
-    if ($YOUTUBE_GDATA_URL =~ /\bstart-index=(\d+)/) {
+    if ($YOUTUBE_GDATA_URL =~ /[&?]start-index=(\d+)/) {
         $YOUTUBE_GDATA_URL =~ s/index=($1)/'index=' . ($1 + $results);/e;
         parse_content $YOUTUBE_GDATA_URL;
         print_results();
@@ -1048,7 +1072,7 @@ sub next_page {
 ####################### GO TO THE PREVIOUS PAGE #######################
 sub previous_page {
 
-    if ($YOUTUBE_GDATA_URL =~ /\bstart-index=(\d+)/) {
+    if ($YOUTUBE_GDATA_URL =~ /[&?]start-index=(\d+)/) {
         $YOUTUBE_GDATA_URL =~ s/index=($1)/'index=' . ($1 - $results);/e;
         parse_content $YOUTUBE_GDATA_URL;
         print_results();
@@ -1067,106 +1091,93 @@ sub foreach_code {
 }
 
 sub set_fullscreen_mode {
-    $win32
-      ? $MPlayerLine =~ s/mplayer\.exe"/mplayer.exe" -fs/
-      : $MPlayerLine =~ s/mplayer /mplayer -fs /;
+    unless ($MPlayerLine =~ /-fs /) {
+        $win32
+          ? $MPlayerLine =~ s/mplayer\.exe"/mplayer.exe" -fs/
+          : $MPlayerLine =~ s/mplayer /mplayer -fs /;
+    }
 }
 
 sub disable_fullscreen_mode {
-    unless ($user_fullscreen) {
-        $MPlayerLine =~ s/-fs //;
-    }
+    $MPlayerLine =~ s/-fs //;
 }
 
 sub select_resolution {
-    $streaming =~ s/^[\w]*%[\w]*https?:/http:/;
-
-    if (not $streaming =~ /itag=34/ and $streaming =~ /itag=(\d+)/) {
-        my $itag = $1;
-        $streaming =~ s/.*https?(.+)itag=$itag([^%]*).+/http$1itag=$itag$2/;
-        $streaming =~ s/%.*//;
-
-        disable_fullscreen_mode();
-        lower_cache();
-    }
-    elsif ($resolution{'resolution'} == 1080) {
-        print "Looking for 1080p resolution...\n" if $debug;
-
-        if ($streaming =~ /itag=37/) {
-            print "Selecting 1080p resolution\n" if $debug;
-            $streaming =~ s/.*https?(.+)itag=37([^%]*).+/http$1itag=37$2/;
-            set_fullscreen_mode();
-        }
-        elsif ($streaming =~ /itag=22/) {
-            print "1080p resolution is not available, so I select 720p...\n" if $debug;
-            $streaming =~ s/.*https?(.+)itag=22([^%]*).+/http$1itag=22$2/;
-            set_fullscreen_mode();
+    if ($resolution{'resolution'} == 1080) {
+        if (exists $streaming{1080}) {
+            $streaming = $streaming{1080};
+            default_cache();
+            set_fullscreen_mode() unless $user_fullscreen;
         }
         else {
-            print "1080p and 720p is not available...\n" if $debug;
-            lower_quality();
+            $streaming = lower_quality();
+            lower_cache();
         }
     }
     elsif ($resolution{'resolution'} == 720) {
-        print "Looking for 720p resolution...\n" if $debug;
-
-        if ($streaming =~ /itag=22/) {
-            print "Selecting 720p resolution\n" if $debug;
-            $streaming =~ s/.*https?(.+)itag=22([^%]*).+/http$1itag=22$2/;
-            set_fullscreen_mode();
+        if (exists $streaming{720}) {
+            $streaming = $streaming{720};
+            default_cache();
         }
         else {
-            print "Resolution 720p is not available\n" if $debug;
-            lower_quality();
+            $streaming = lower_quality();
+            lower_cache();
         }
     }
     elsif ($resolution{'resolution'} == 480) {
-        print "Selecting 480p resolution\n" if $debug;
-        lower_quality();
+        $streaming = $streaming{480} // lower_quality();
+        lower_cache();
     }
     elsif ($resolution{'resolution'} == 360) {
-        print "Selecting 360p resolution\n" if $debug;
-        lower_quality(34);
+        $streaming = $streaming{360} // lower_quality();
+        lower_cache();
     }
     elsif ($resolution{'resolution'} == 240) {
-        print "Selecting 240p resolution\n" if $debug;
-        lower_quality(5);
+        $streaming = $streaming{240} // lower_quality();
+        lower_cache();
+    }
+    elsif ($resolution{'resolution'} == 180) {
+        $streaming = $streaming{180} // lower_quality();
+        lower_cache();
     }
     else {
-        check_resolution();
+        if (exists $streaming{1080}) {
+            print "Detected 1080p resolution in check_resolution()\n" if $debug;
+            pick();
+        }
+        elsif (exists $streaming{720}) {
+            print "Selecting 720p resolution from check_resolution()\n" if $debug;
+            $streaming = $streaming{720};
+            default_cache();
+        }
+        else {
+            $streaming = lower_quality();
+        }
     }
 }
 
-sub check_resolution {
-
-    if ($streaming =~ /itag=37/) {
-        print "Detected 1080p resolution in check_resolution()\n" if $debug;
-        pick();
-    }
-    elsif ($streaming =~ /itag=22/) {
-        print "Selecting 720p resolution from check_resolution()\n" if $debug;
-        $streaming =~ s/.*https?(.+)itag=22([^%]*).+/http$1itag=22$2/;
-        default_cache();
-        set_fullscreen_mode();
-    }
-    else {
-        lower_quality();
+sub lower_quality {
+    foreach my $itag (sort { $b <=> $a } values %itags) {
+        if (exists($streaming{$itag})) {
+            return $streaming{$itag};
+        }
     }
 }
 
-sub parse_stdin_arguments {
-    if ($debug) {
-        print "Parsing STDIN arguments: @_\n";
+sub format_itags {
+    my @itags;
+
+    foreach my $itag (@_) {
+        if (exists($itags{$itag})) {
+            push @itags, $itags{$itag};
+        }
     }
-    parse_arguments(@_);    # parse and apply STDIN arguments
+    @itags;
 }
 
 sub get_youtube {
 
-    my ($code, $title, $category, $published, $duration, $views, $description) =
-      ref $_[0]
-      ? ($_[0][2], $_[0][3], $_[0][4], $_[0][5], $_[0][6], $_[0][7], $_[0][8])
-      : @_;
+    my ($code, $title, $category, $published, $duration, $views, $description) = ref $_[0] ? @{$_[0]}[2 .. 8] : @_;
 
     $description = decode_entities($description) if defined $description and $description =~ /$have_entities/o;
 
@@ -1174,19 +1185,19 @@ sub get_youtube {
 
     UserAgent unless $lwp_is_set;
 
-    my $connect = $lwp->get($youtube);
+    my $content = $lwp->get($youtube)->content;
     my $url     = "http://www.youtube.com/watch?v=$code";
     $MPlayerLine =~ s/ *\Q$mplayer_srt_settings\E *-sub.*//;
 
     if (    -e $gcap
-        and not $MPlayerLine  =~ / -novideo/
-        and $connect->content =~ /&has_cc=True&/
+        and not $MPlayerLine =~ / -novideo/
+        and $content =~ /&has_cc=True&/
         and not $download_video) {
 
         chdir $tmp_dir;    # change directory to $tmp_dir and get the .srt file
 
         unless (-e "${code}_$default_sub.srt") {
-            system "gcap $url";
+            system "gcap '${url}'";
         }
 
         my @srt_files;
@@ -1215,7 +1226,7 @@ sub get_youtube {
         }
     }
 
-    if ($connect->content =~ /url_encoded_fmt_stream_map=([^&]+)&/) {
+    if ($content =~ /url_encoded_fmt_stream_map=(.+?)&/) {
         $streaming = $1;
         $streaming =~ s/%253A/:/gi;
         $streaming =~ s[%252F][/]gi;
@@ -1223,44 +1234,32 @@ sub get_youtube {
         $streaming =~ s/%253D/=/gi;
         $streaming =~ s/%253F/?/gi;
         $streaming =~ s/%25252C/,/gi;
-        print "\n";
+
+        undef %streaming;
+
+        my @streaming_urls = grep((/^https?:/), split(/url%3D(.+?)%26/, $streaming));
+        @streaming{format_itags(map((my ($_) = /&itag=(\d+)&/), @streaming_urls))} =
+          grep { my ($itag) = /&itag=(\d+)&/; exists $itags{$itag} } @streaming_urls;
 
         if ($debug) {
-            open my $fh, '>', 'streaming_debug.txt';
-
-            print {$fh} $streaming;
-            close $fh;
-        }
-
-        my $rating = sprintf('%.2f', ($connect->content =~ /avg_rating=([^&]+)/));
-
-        unless (defined $title) {
-            my $feed_url = "$feeds_main_url/videos/$code";
-            my $content  = $lwp->get($feed_url)->content;
-
-            if ($content =~ m[media:title type='plain'>([^<]+)</media:title>]) {
-                $title = $1;
-                $title = decode_entities($title) if $title =~ /$have_entities/o;
-            }
-
-            ($views)     = $content =~ /viewCount='(\d+)'/;
-            ($published) = $content =~ /<published>([\d-]+)/;
-
-            if ($content =~ m[<media:description type='plain'>([^<]+)</media]) {
-                $description = $1;
-                $description = decode_entities($description) if $description =~ /$have_entities/o;
-            }
-
-            $duration = format_time($content =~ /duration\D*='(\d+)/);
-
-            if ($content =~ /category label='([^']+)'/) {
-                $category = $1;
-                $category =~ s/&amp;/&/;
+            while (my ($key, $value) = each %streaming) {
+                print "KEY = $key\nVALUE = $value\n\n";
             }
         }
 
-        $published =~ tr/\-/./;
-        $published =~ s/(.+)\.(.+)\.(.+)/$3.$2.$1/;
+        print "\n";
+
+        my $rating = sprintf('%.2f', ($content =~ /avg_rating=([^&]+)/));
+        my ($author) = $content =~ /&author=([^&]+)/;
+
+        if (not defined $title and not defined $category) {
+            parse_content("$feeds_main_url/videos/$code?v=2");
+            ($code, $title, $category, $published, $duration, $views, $description) = @{$Videos[0]}[2 .. 8];
+        }
+
+        $category =~ s/&amp;/&/;
+
+        $published =~ s/(\d\d\d\d)-(\d\d)-(\d\d)/$3.$2.$1/;
 
         if ($views and length $views > 2) {
             $views = reverse($views);
@@ -1274,7 +1273,7 @@ sub get_youtube {
         print "\n" . $description . "\n" . '-' x 80 . "\n";
         print "$bred=>> ${bgreen}View & Download$reset\n" . '-' x 80;
 
-        my ($get) = $streaming =~ m[(https?://[^%]+)];
+        my ($get) = $streaming_urls[0];
         print "\n* URL ";
         print STDOUT $url;
         print "\n* GET $get\n" . '-' x 80 . "\n";
@@ -1293,16 +1292,16 @@ sub get_youtube {
 
         print "$bgreen$title$reset$bred <<=\n$reset";
 
-        my ($author) = $connect->content =~ /&author=([^&]+)/;
-        print "\n** Author    : $author\n"  if defined $author;
-        print "** Category  : $category\n"  if defined $category;
-        print "** Duration  : $duration\n"  if defined $duration;
-        print "** Rating    : $rating\n"    if defined $rating;
-        print "** Views     : $views\n"     if defined $views;
-        print "** Published : $published\n" if defined $published;
-        print '-' x 80 . "\n\n";
+        print "\n** Author    : $author\n",
+          "** Category  : $category\n",
+          "** Duration  : $duration\n",
+          "** Rating    : $rating\n",
+          "** Views     : $views\n",
+          "** Published : $published\n",
+          '-' x 80 . "\n\n";
+
         select_resolution();
-        MPlayer $title;
+        MPlayer($title);    # the title is used just for download
     }
     else {
         warn "\n$bred(x_x) Something went wrong...$reset\n\n$bred(x_x) Unable to stream: $reset$url\n\n";
@@ -1324,62 +1323,27 @@ sub get_youtube {
 }
 
 sub pick {
+    print "$bred=>>$reset $bgreen Please choose a video resolution (default: 1)$reset\n
+$bred 1$reset - 1280x720  (720p)
+$bred 2$reset - 1920x1080 (1080p)\n", '=' x 23 . "\n" . "
+$bgreen=>> Pick format:$reset ";
 
-    print "$bred=>>$reset $bgreen Please choose the quality of video (default: 1)$reset\n"
-      . "\n  $bred 1$reset - 1280x720  (720p)\n  $bred 2$reset - 1920x1080 (1080p)\n  ",
-      '=' x 23 . "\n" . "\n$bgreen=>> Pick format:$reset ";
     chomp(my $pick = <STDIN>);
 
     exit if $pick =~ /$quit_required/o;
 
     print '-' x 80 . "\n\n";
 
-    if ($pick eq 2) {
-        $streaming =~ s/.*https?(.+)itag=37([^%]*).+/http$1itag=37$2/;
+    if ($pick eq '2') {
+        $streaming = $streaming{1080};
         $resolution{'resolution'} = 1080;
         default_cache();
-        set_fullscreen_mode();
+        set_fullscreen_mode() unless $user_fullscreen;
     }
     else {
-        $streaming =~ s/.*https?(.+)itag=22([^%]*).+/http$1itag=22$2/;
+        $streaming = $streaming{720};
         $resolution{'resolution'} = 720;
         default_cache();
-        set_fullscreen_mode();
-    }
-}
-
-sub lower_quality {
-
-    if (defined($_[0]) and $_[0] =~ /^\d+$/) {
-
-        if ($streaming =~ /itag=$_[0]/) {
-            $streaming =~ s/.*https?(.+)itag=$_[0]([^%]*).*/http$1itag=$_[0]$2/;
-            disable_fullscreen_mode();
-            lower_cache();
-        }
-    }
-    else {
-
-        foreach $_ (35, 34) {
-
-            if ($streaming =~ /itag=$_/) {
-
-                if ($debug) {
-
-                    if ($_ == 35) {
-                        print "Selecting 480p from lower_quality()\n";
-                    }
-                    elsif ($_ == 34) {
-                        print "Selecting 360p from lower_quality()\n";
-                    }
-                }
-
-                $streaming =~ s/.*https?(.+)itag=$_([^%]*).*/http$1itag=$_$2/;
-                disable_fullscreen_mode();
-                lower_cache();
-                last;
-            }
-        }
     }
 }
 
