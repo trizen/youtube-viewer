@@ -149,8 +149,7 @@ my %itags = (37 => 1080,
              35 => 480,
              43 => 210,
              34 => 360,
-             18 => 240,
-             5  => 180);
+             5  => 240);
 
 unless (grep((-e "$_/Crypt/SSLeay.pm" or -e "$_/LWP/Protocol/https.pm"), @INC)) {     # checks if https support is available
     $feeds_main_url =~ s/s//;                                                         # changes https to http
@@ -1135,10 +1134,6 @@ sub select_resolution {
         $streaming = $streaming{240} // lower_quality();
         lower_cache();
     }
-    elsif ($resolution{'resolution'} == 180) {
-        $streaming = $streaming{180} // lower_quality();
-        lower_cache();
-    }
     else {
         if (exists $streaming{1080}) {
             pick();
@@ -1179,12 +1174,12 @@ sub get_youtube {
 
     $description = decode_entities($description) if defined $description and $description =~ /$have_entities/o;
 
-    my $youtube = "$get_video_info?&video_id=$code&el=detailpage&ps=default&eurl=&gl=US&hl=en";
+    UserAgent() unless $lwp_is_set;
 
-    UserAgent unless $lwp_is_set;
+    my $content = $lwp->get("$get_video_info?&video_id=$code&el=detailpage&ps=default&eurl=&gl=US&hl=en")->content;
 
-    my $content = $lwp->get($youtube)->content;
-    my $url     = "http://www.youtube.com/watch?v=$code";
+    my $url = "http://www.youtube.com/watch?v=$code";
+
     $MPlayerLine =~ s/ *\Q$mplayer_srt_settings\E *-sub.*//;
 
     if (    -e $gcap
@@ -1236,8 +1231,13 @@ sub get_youtube {
         undef %streaming;
 
         my @streaming_urls = grep((/^https?:/), split(/url%3D(.+?)%26/, $streaming));
-        @streaming{format_itags(map((my ($_) = /&itag=(\d+)&/), @streaming_urls))} =
-          grep { my ($itag) = /&itag=(\d+)&/; exists $itags{$itag} } @streaming_urls;
+        @streaming{format_itags(map((/&itag=(\d+)&/), @streaming_urls))} =
+          grep((
+             exists $itags{
+                 do { /&itag=(\d+)&/; $1 }
+               }
+            ),
+            @streaming_urls);
 
         if ($debug) {
             while (my ($key, $value) = each %streaming) {
@@ -1288,9 +1288,8 @@ sub get_youtube {
             print "$bred  =>> ";
         }
 
-        print "$bgreen$title$reset$bred <<=\n$reset";
-
-        print "\n** Author    : $author\n",
+        print "$bgreen$title$reset$bred <<=\n$reset\n",
+          "** Author    : $author\n",
           "** Category  : $category\n",
           "** Duration  : $duration\n",
           "** Rating    : $rating\n",
