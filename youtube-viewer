@@ -1141,16 +1141,15 @@ sub select_resolution {
     }
     else {
         if (exists $streaming{1080}) {
-            print "Detected 1080p resolution in check_resolution()\n" if $debug;
             pick();
         }
         elsif (exists $streaming{720}) {
-            print "Selecting 720p resolution from check_resolution()\n" if $debug;
             $streaming = $streaming{720};
             default_cache();
         }
         else {
             $streaming = lower_quality();
+            lower_cache();
         }
     }
 }
@@ -1196,7 +1195,7 @@ sub get_youtube {
         chdir $tmp_dir;    # change directory to $tmp_dir and get the .srt file
 
         unless (-e "${code}_$default_sub.srt") {
-            system "gcap '${url}'";
+            system "perl $gcap '${url}'";
         }
 
         my @srt_files;
