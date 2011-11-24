@@ -71,8 +71,7 @@ eval 'exec perl -wS $0 ${1+"$@"}'
   if 0;    #$running_under_some_shell;
 
 use strict;
-use Cwd     ('getcwd');
-use autouse ('URI::Escape' => 'uri_escape');
+use autouse ('URI::Escape'    => 'uri_escape');
 use autouse ('HTML::Entities' => 'decode_entities');
 
 my $appname = 'youtube-viewer';
@@ -129,19 +128,22 @@ sub videos_from_username($);
 my $SEARCH = '';          # used to store search keywords for YoutTube
 my $YOUTUBE_GDATA_URL;    # used to store the gdata URL with API query parameters
 my $streaming;            # used to store a streaming video URL, and will be passed to mplayer as an argument
-my $cwd                 = getcwd();                                                   # gets current working directory
-my $win32               = $^O eq 'Win32' ? 1 : 0;                                     # true if running under Windows
-my $have_entities       = qr/&#?\w/;                                                  # checks if a string contains HTML entities
-my $get_youtube_code    = qr"(?:embed|v|youtu\.be)(?:%3D|[=/])([-\w]{11})";           # $1 will be the video code
-my $get_playlist_code   = qr/(?:view_play_list\?p|playlist\?list)=([A-Z\d]+)/;        # $1 will be the playlist code
-my $valid_playlist_code = qr/^(?:PL)?([A-Z\d]{16})$/;                                 # $1 will be the playlist code
-my $contains_arguments  = qr/(?:\s|^)-+\w/;                                           # cheks if a string contains arguments
-my $quit_required       = qr/^(?:q|quit|exit)$/i;                                     # exit if user's input is q, quit or exit
+my $have_entities       = qr/&#?\w/;                                              # checks if a string contains HTML entities
+my $get_youtube_code    = qr"(?:embed|v|youtu\.be)(?:%3D|[=/])([-\w]{11})";       # $1 will be the video code
+my $get_playlist_code   = qr/(?:view_play_list\?p|playlist\?list)=([A-Z\d]+)/;    # $1 will be the playlist code
+my $valid_playlist_code = qr/^(?:PL)?([A-Z\d]{16})$/;                             # $1 will be the playlist code
+my $contains_arguments  = qr/(?:\s|^)-+\w/;                                       # cheks if a string contains arguments
+my $quit_required       = qr/^(?:q|quit|exit)$/i;                                 # exit if user's input is q, quit or exit
 my $feeds_main_url      = 'https://gdata.youtube.com/feeds/api';
 my $get_video_info      = 'https://www.youtube.com/get_video_info';
-my $tmp_dir             = $ENV{'TEMP'} // $ENV{'TMP'} // $ENV{'TMPDIR'} // '/tmp';    # tmpdir is used to save srt files
 
-my (@Videos, @picks, %resolution, %streaming);                                        # other global variables
+my (@Videos, @picks, %resolution, %streaming);                                    # other global variables
+
+# Unchangeable variables
+my %constant = ('dash_line' => '-' x 80,                                                      # used as a line separator
+                'tmp_dir'   => $ENV{'TEMP'} // $ENV{'TMP'} // $ENV{'TMPDIR'} // '/tmp',       # tmpdir is used to save srt files
+                'win32'     => $^O eq 'Win32' ? 1 : 0                                         # true if running under Windows
+               );
 
 # itag => resolution
 my %itags = (37 => 1080,
@@ -151,18 +153,18 @@ my %itags = (37 => 1080,
              34 => 360,
              5  => 240);
 
-unless (grep((-e "$_/Crypt/SSLeay.pm" or -e "$_/LWP/Protocol/https.pm"), @INC)) {     # checks if https support is available
-    $feeds_main_url =~ s/s//;                                                         # changes https to http
-    $get_video_info =~ s/s//;                                                         # ==//==
+unless (grep((-e "$_/Crypt/SSLeay.pm" or -e "$_/LWP/Protocol/https.pm"), @INC)) {    # checks if https support is available
+    $feeds_main_url =~ s/s//;                                                        # changes https to http
+    $get_video_info =~ s/s//;                                                        # ==//==
 }
 
 my $MPlayerLine;
 
-if ($win32) {
-    my $MPlayer_exe = $ENV{'ProgramFiles'} . '\\SMPlayer\\mplayer\\mplayer.exe';      # Windows SMPlayer path
+if ($constant{'win32'}) {
+    my $MPlayer_exe = $ENV{'ProgramFiles'} . '\\SMPlayer\\mplayer\\mplayer.exe';     # Windows SMPlayer path
 
     if (-e $MPlayer_exe) {
-        $MPlayerLine = qq["$MPlayer_exe" $mplayer_settings];                          # Windows MPlayer line
+        $MPlayerLine = qq["$MPlayer_exe" $mplayer_settings];                         # Windows MPlayer line
     }
     else {
         warn "\n\n!!! Please install SMPlayer to stream Youtube videos.\n\n";
@@ -170,26 +172,26 @@ if ($win32) {
     }
 }
 else {
-    $bred        = "\e[1;31m";                                                        # bold red
-    $bgreen      = "\e[1;32m";                                                        # bold green
-    $reset       = "\e[0m";                                                           # reset color
-    $MPlayerLine = "mplayer $mplayer_settings";                                       # *NIX MPlayer line
+    $bred        = "\e[1;31m";                                                       # bold red
+    $bgreen      = "\e[1;32m";                                                       # bold green
+    $reset       = "\e[0m";                                                          # reset color
+    $MPlayerLine = "mplayer $mplayer_settings";                                      # *NIX MPlayer line
 }
 
 ####################### MY PATH #######################
-my @path = $win32 ? split(/;/, $ENV{'PATH'}) : split(/:/, $ENV{'PATH'});    # split $PATH by ';' if running under Windows
+my @path = $constant{'win32'} ? split(/;/, $ENV{'PATH'}) : split(/:/, $ENV{'PATH'}); # split $PATH by ';' if running under Windows
 
 ####################### LOOKING FOR WGET #######################
 my $wget_is_available;
 
 sub locate_wget {
-    if (-x '/usr/bin/wget' or grep(($win32 ? do { -e "$_\\wget.exe" or -e "$_\\wget" } : -x "$_/wget"), @path)) {
+    if (-x '/usr/bin/wget' or grep(($constant{'win32'} ? do { -e "$_\\wget.exe" or -e "$_\\wget" } : -x "$_/wget"), @path)) {
         $wget_is_available = 1;
     }
 }
 
 ####################### LOOKING FOR GCAP #######################
-my $gcap = '/usr/bin/gcap';                                                 # default gcap path
+my $gcap = '/usr/bin/gcap';                                                          # default gcap path
 foreach my $path (@INC, @path) {
     if (-e "$path/gcap") {
         $gcap = "$path/gcap";
@@ -242,7 +244,7 @@ sub parse_arguments {
                 $user_lower_cache = 1;
             }
             elsif ($arg =~ /^-+(?:n|no.?video)$/) {          # eg: -n, --no-video
-                $win32
+                $constant{'win32'}
                   ? $MPlayerLine =~ s/mplayer\.exe"/mplayer.exe" -novideo/
                   : $MPlayerLine =~ s/mplayer /mplayer -novideo /;
                 $resolution{'resolution'} = 480 unless $user_resolution;
@@ -339,11 +341,11 @@ sub parse_arguments {
     }
 
 ####################### ASCII COLOURS #######################
-    if ($colours and not $win32) {           # if $colours and not running under Windows
-        $cblack  = "\e[40m";                 # background black
-        $byellow = "\e[1;33m";               # bold yellow
-        $bpurle  = "\e[1;35m";               # bold purple
-        $bblue   = "\e[1;34m";               # bold blue
+    if ($colours and not $constant{'win32'}) {    # if $colours and not running under Windows
+        $cblack  = "\e[40m";                      # background black
+        $byellow = "\e[1;33m";                    # bold yellow
+        $bpurle  = "\e[1;35m";                    # bold purple
+        $bblue   = "\e[1;34m";                    # bold blue
     }
     parse_sub_calling_arguments(@_);
 }
@@ -835,7 +837,7 @@ sub MPlayer {
 
         `$MPlayerLine '$streaming'`;    # executing $MPlayerLine with '$streaming' as an argument
 
-        chdir $cwd;                     # change directory back to the main working directory
+        chdir $constant{'cwd'} if exists $constant{'cwd'};    # change directory back to the main working directory
     }
 
     print "\n";
@@ -843,14 +845,14 @@ sub MPlayer {
     disable_fullscreen_mode() unless $user_fullscreen;
 
     if (@picks) {
-        foreach_pick();                 # go to the next video if there are more videos selected to play
+        foreach_pick();                                       # go to the next video if there are more videos selected to play
     }
     elsif ($playback) {
         next_page();
     }
 
     if ($video_results and not $dont_exit) {
-        print_results();                # go back to the video results
+        print_results();                                      # go back to the video results
     }
 
     exit unless $dont_exit;
@@ -1018,7 +1020,7 @@ sub print_results {
         next_page();
     }
     elsif ($stdin eq 'reset') {
-        undef @ARGV;
+        @ARGV = $SEARCH;
         do $0;
     }
     elsif (
@@ -1090,7 +1092,7 @@ sub foreach_code {
 
 sub set_fullscreen_mode {
     unless ($MPlayerLine =~ /-fs /) {
-        $win32
+        $constant{'win32'}
           ? $MPlayerLine =~ s/mplayer\.exe"/mplayer.exe" -fs/
           : $MPlayerLine =~ s/mplayer /mplayer -fs /;
     }
@@ -1187,7 +1189,12 @@ sub get_youtube {
         and $content =~ /&has_cc=True&/
         and not $download_video) {
 
-        chdir $tmp_dir;    # change directory to $tmp_dir and get the .srt file
+        unless (exists $constant{'cwd'}) {
+            require Cwd;
+            $constant{'cwd'} = Cwd::getcwd();
+        }
+
+        chdir $constant{'tmp_dir'};    # change directory to 'tmp_dir' and get the .srt file
 
         unless (-e "${code}_$default_sub.srt") {
             system "perl $gcap '${url}'";
@@ -1196,7 +1203,7 @@ sub get_youtube {
         my @srt_files;
         my $dir_h;
 
-        opendir $dir_h, $tmp_dir;
+        opendir $dir_h, $constant{'tmp_dir'};
         /\.srt$/ and push @srt_files, $_ while defined($_ = readdir $dir_h);
         closedir $dir_h;
 
@@ -1250,55 +1257,47 @@ sub get_youtube {
         my $rating = sprintf('%.2f', ($content =~ /avg_rating=([^&]+)/));
         my ($author) = $content =~ /&author=([^&]+)/;
 
-        if (not defined $title and not defined $category) {
+        if (not defined $title) {
             parse_content("$feeds_main_url/videos/$code?v=2");
             ($code, $title, $category, $published, $duration, $views, $description) = @{$Videos[0]}[2 .. 8];
         }
 
         $category =~ s/&amp;/&/;
 
-        $published =~ s/(\d\d\d\d)-(\d\d)-(\d\d)/$3.$2.$1/;
+        $published = join '.', ((split(/-/, $published, 3))[2, 1, 0]);
 
-        if ($views and length $views > 2) {
-            $views = reverse($views);
-            $views =~ s/(\d{3})/$1./g;
-            $views = reverse($views);
-            $views =~ s/^\.//;
+        if (length $views > 3) {
+            my $l = length($views) - 3;
+            my $i = ($l - 1) % 3 + 1;
+            my $x = substr($views, 0, $i) . '.';
+            while ($i < $l) {
+                $x .= substr($views, $i, 3) . '.';
+                $i += 3;
+            }
+            $views = $x . substr($views, $i);
         }
 
-        $description = 'No description available...' unless defined $description;
-        print "$bred=>> " . $bgreen . $title . $reset . "\n" . '-' x 80;
-        print "\n" . $description . "\n" . '-' x 80 . "\n";
-        print "$bred=>> ${bgreen}View & Download$reset\n" . '-' x 80;
+        print "$bred=>> $bgreen$title$reset\n",
+          "$constant{'dash_line'}\n",
+          "$description\n$constant{'dash_line'}\n",
+          "$bred=>> ${bgreen}View & Download$reset\n",
+          "$constant{'dash_line'}";
 
         my ($get) = $streaming_urls[0];
         print "\n* URL ";
         print STDOUT $url;
-        print "\n* GET $get\n" . '-' x 80 . "\n";
-
-        my $count = length $title;
-
-        if ($count <= 40) {
-            print "$bred\t\t=>> ";
-        }
-        elsif ($count >= 40 and $count <= 55) {
-            print "$bred\t=>> ";
-        }
-        elsif ($count >= 56) {
-            print "$bred  =>> ";
-        }
-
-        print "$bgreen$title$reset$bred <<=\n$reset\n",
+        print "\n* GET $get\n$constant{'dash_line'}\n", ' ' x ((length($constant{'dash_line'}) - length($title)) / 2 - 4),
+          "$bred=>> $bgreen$title$reset$bred <<=\n$reset\n",
           "** Author    : $author\n",
           "** Category  : $category\n",
           "** Duration  : $duration\n",
           "** Rating    : $rating\n",
           "** Views     : $views\n",
           "** Published : $published\n",
-          '-' x 80 . "\n\n";
+          "$constant{'dash_line'}\n\n";
 
         select_resolution();
-        MPlayer($title);    # the title is used just for download
+        MPlayer($title);
     }
     else {
         warn "\n$bred(x_x) Something went wrong...$reset\n\n$bred(x_x) Unable to stream: $reset$url\n\n";
@@ -1322,14 +1321,13 @@ sub get_youtube {
 sub pick {
     print "$bred=>>$reset $bgreen Please choose a video resolution (default: 1)$reset\n
 $bred 1$reset - 1280x720  (720p)
-$bred 2$reset - 1920x1080 (1080p)\n", '=' x 23 . "\n" . "
-$bgreen=>> Pick format:$reset ";
+$bred 2$reset - 1920x1080 (1080p)\n", '=' x 23, "\n\n$bgreen=>> Pick format:$reset ";
 
     chomp(my $pick = <STDIN>);
 
     exit if $pick =~ /$quit_required/o;
 
-    print '-' x 80 . "\n\n";
+    print "$constant{'dash_line'}\n\n";
 
     if ($pick eq '2') {
         $streaming = $streaming{1080};
