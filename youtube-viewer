@@ -129,7 +129,7 @@ my $SEARCH = '';          # used to store search keywords for YoutTube
 my $YOUTUBE_GDATA_URL;    # used to store the gdata URL with API query parameters
 my $streaming;            # used to store a streaming video URL, and will be passed to mplayer as an argument
 my $have_entities       = qr/&#?\w/;                                              # checks if a string contains HTML entities
-my $get_youtube_code    = qr"(?:embed|v|youtu\.be)(?:%3D|[=/])([-\w]{11})";       # $1 will be the video code
+my $get_youtube_code    = qr"(?:v|embed|youtu\.be)(?:%3D|[=/])([-\w]{11})";       # $1 will be the video code
 my $get_playlist_code   = qr/(?:view_play_list\?p|playlist\?list)=([A-Z\d]+)/;    # $1 will be the playlist code
 my $valid_playlist_code = qr/^(?:PL)?([A-Z\d]{16})$/;                             # $1 will be the playlist code
 my $contains_arguments  = qr/(?:\s|^)-+\w/;                                       # cheks if a string contains arguments
@@ -153,7 +153,7 @@ my %itags = (37 => 1080,
              34 => 360,
              5  => 240);
 
-unless (grep((-e "$_/Crypt/SSLeay.pm" or -e "$_/LWP/Protocol/https.pm"), @INC)) {    # checks if https support is available
+unless (grep((-e "$_/Crypt/SSLeay.pm" || -e "$_/LWP/Protocol/https.pm"), @INC)) {    # checks if https support is available
     $feeds_main_url =~ s/s//;                                                        # changes https to http
     $get_video_info =~ s/s//;                                                        # ==//==
 }
@@ -185,13 +185,19 @@ my @path = $constant{'win32'} ? split(/;/, $ENV{'PATH'}) : split(/:/, $ENV{'PATH
 my $wget_is_available;
 
 sub locate_wget {
-    if (-x '/usr/bin/wget' or grep(($constant{'win32'} ? do { -e "$_\\wget.exe" or -e "$_\\wget" } : -x "$_/wget"), @path)) {
+    if (-x '/usr/bin/wget'
+        or grep(($constant{'win32'}
+                 ? do { 1 if -e "$_\\wget.exe" or -e "$_\\wget" }
+                 : -x "$_/wget"
+                ),
+                @path)
+    ) {
         $wget_is_available = 1;
     }
 }
 
 ####################### LOOKING FOR GCAP #######################
-my $gcap = '/usr/bin/gcap';                                                          # default gcap path
+my $gcap = '/usr/bin/gcap';    # default gcap path
 foreach my $path (@INC, @path) {
     if (-e "$path/gcap") {
         $gcap = "$path/gcap";
@@ -1232,8 +1238,8 @@ sub get_youtube {
 
         undef %streaming;
 
-        my @streaming_urls = grep((/^https?:/), split(/url%3D(.+?)%26/, $streaming));
-        @streaming{format_itags(map((/&itag=(\d+)&/), @streaming_urls))} =
+        my @streaming_urls = grep(/^https?:/, split(/url%3D(.+?)%26/, $streaming));
+        @streaming{format_itags(map(/&itag=(\d+)&/, @streaming_urls))} =
           grep((
              exists $itags{
                  do { /&itag=(\d+)&/; $1 }
