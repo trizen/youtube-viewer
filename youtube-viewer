@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 23 November 2011
+#  Latest edit on: 25 November 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -141,8 +141,8 @@ my (@Videos, @picks, %resolution, %streaming);                                  
 
 # Unchangeable variables
 my %constant = ('dash_line' => '-' x 80,                                                      # used as a line separator
+                'win32'     => $^O eq 'Win32' ? 1 : 0,                                        # true if running under Windows
                 'tmp_dir'   => $ENV{'TEMP'} // $ENV{'TMP'} // $ENV{'TMPDIR'} // '/tmp',       # tmpdir is used to save srt files
-                'win32'     => $^O eq 'Win32' ? 1 : 0                                         # true if running under Windows
                );
 
 # itag => resolution
@@ -835,7 +835,7 @@ sub MPlayer {
     else {
         print "** MPlayer Line: $MPlayerLine\n\n" if $debug;
 
-        `$MPlayerLine '$streaming'`;    # executing $MPlayerLine with '$streaming' as an argument
+        `$MPlayerLine '$streaming'` unless $debug;    # executing $MPlayerLine with '$streaming' as an argument
 
         chdir $constant{'cwd'} if exists $constant{'cwd'};    # change directory back to the main working directory
     }
@@ -1080,14 +1080,9 @@ sub previous_page {
 }
 
 sub foreach_pick {
-    if (@picks) {
-        foreach_code(shift(@picks));
+    while (@picks) {
+        get_youtube($Videos[shift(@picks) - 1]);
     }
-}
-
-sub foreach_code {
-    get_youtube($Videos[shift(@_) - 1]);
-    foreach_pick();
 }
 
 sub set_fullscreen_mode {
