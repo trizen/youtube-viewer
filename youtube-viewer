@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 25 November 2011
+#  Latest edit on: 27 November 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -153,18 +153,18 @@ my %itags = (37 => 1080,
              34 => 360,
              5  => 240);
 
-unless (grep((-e "$_/Crypt/SSLeay.pm" || -e "$_/LWP/Protocol/https.pm"), @INC)) {    # checks if https support is available
-    $feeds_main_url =~ s/s//;                                                        # changes https to http
-    $get_video_info =~ s/s//;                                                        # ==//==
+unless (grep((-e "$_/LWP/Protocol/https.pm"), @INC)) {                            # checks if https support is available
+    $feeds_main_url =~ s/s//;                                                     # changes https to http
+    $get_video_info =~ s/s//;                                                     # ==//==
 }
 
 my $MPlayerLine;
 
 if ($constant{'win32'}) {
-    my $MPlayer_exe = $ENV{'ProgramFiles'} . '\\SMPlayer\\mplayer\\mplayer.exe';     # Windows SMPlayer path
+    my $MPlayer_exe = $ENV{'ProgramFiles'} . '\\SMPlayer\\mplayer\\mplayer.exe';    # Windows SMPlayer path
 
     if (-e $MPlayer_exe) {
-        $MPlayerLine = qq["$MPlayer_exe" $mplayer_settings];                         # Windows MPlayer line
+        $MPlayerLine = qq["$MPlayer_exe" $mplayer_settings];                        # Windows MPlayer line
     }
     else {
         warn "\n\n!!! Please install SMPlayer to stream Youtube videos.\n\n";
@@ -172,10 +172,10 @@ if ($constant{'win32'}) {
     }
 }
 else {
-    $bred        = "\e[1;31m";                                                       # bold red
-    $bgreen      = "\e[1;32m";                                                       # bold green
-    $reset       = "\e[0m";                                                          # reset color
-    $MPlayerLine = "mplayer $mplayer_settings";                                      # *NIX MPlayer line
+    $bred        = "\e[1;31m";                                                      # bold red
+    $bgreen      = "\e[1;32m";                                                      # bold green
+    $reset       = "\e[0m";                                                         # reset color
+    $MPlayerLine = "mplayer $mplayer_settings";                                     # *NIX MPlayer line
 }
 
 ####################### MY PATH #######################
