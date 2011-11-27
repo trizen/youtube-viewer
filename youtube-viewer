@@ -162,7 +162,7 @@ my $get_playlist_code = qr"(?:(?:(?:playlist\?list|view_play_list\?p)=)|\w#p/c/)
 # $1, $2 and sometimes $3 and $4 will be defined.
 #
 
-my $xml_parser = qr[<(?![?/])(?:([^ >/]+)[^>/]*>([^<]+)<|(?: *([^=><]+)='([^']+)')+/>)];
+my $xml_parser = qr"<(?![?/])(?:([^ >/]+)[^>/]*>([^<]+)<|(?: *([^=><]+)='([^']+)')+/>)";
 
 #
 # Usage: while(/$xml_parser/og){
@@ -180,21 +180,21 @@ my $valid_url = qr<^
         ################# This regex will validate an HTTP URL #################
                                                                # Coded by Trizen
 
-        # Valid urls #######################################
-        #      http://9.Yz                                 #
-        #      http://m.example.com/test.html              #
-        #      https://mail.example.com/mail/?ver=1#inbox  #
-        #      http://test-test.test-test.museum?id=2      #
-        ####################################################
+                # Valid urls #######################################
+                #      http://9.Yz                                 #
+                #      http://m.example.com/test.html              #
+                #      https://mail.example.com/mail/?ver=1#inbox  #
+                #      http://test-test.test-test.museum?id=2      #
+                ####################################################
 
-        # Invalid urls #####################################
-        #     http://-test.com                             #
-        #     http://test-.com                             #
-        #     http://test-.com                             #
-        #     http://test..com                             #
-        #     http://test.-.com                            #
-        #     http://test.-test.com                        #
-        ####################################################
+                # Invalid urls #####################################
+                #     http://-test.com                             #
+                #     http://test-.com                             #
+                #     http://test-.com                             #
+                #     http://test..com                             #
+                #     http://test.-.com                            #
+                #     http://test.-test.com                        #
+                ####################################################
 
                 https?://                # http, https followed by ://
                 [a-zA-Z0-9]              # first character must be a-zA-Z0-9
@@ -217,9 +217,9 @@ my %itags = (37 => 1080,
              34 => 360,
              5  => 240);
 
-unless (grep((-e "$_/LWP/Protocol/https.pm"), @INC)) {    # checks if https support is available
-    $feeds_main_url =~ s/s//;                             # changes https to http
-    $get_video_info =~ s/s//;                             # ==//==
+unless (grep -e ("$_/LWP/Protocol/https.pm"), @INC) {    # checks if https support is available
+    $feeds_main_url =~ s/s//;                            # changes https to http
+    $get_video_info =~ s/s//;                            # ==//==
 }
 
 my $MPlayerLine;
@@ -669,11 +669,12 @@ sub playlists_from_username {
     # PlaylistID, Number, Title, Description, Author, VideosCount
     foreach my $playlist (@Videos) {
         $colours
-          ? print $cblack, $bred, $$playlist[1], $reset, $cblack, ' - ', $byellow, $$playlist[2], ' ', $$playlist[3], $reset,
-          $cblack,
-          ' (', $bpurle, 'by ', $$playlist[4], $reset, $cblack, ') (', $bblue, $$playlist[5], $reset, $cblack, ')', $reset, "\n"
-          : print $bred, $$playlist[1], $reset, ' - ', $$playlist[2], ' ', $$playlist[3], ' (by ', $$playlist[4], ') (',
-          $$playlist[5], ")\n";
+          ? print($cblack, $bred, $$playlist[1], $reset, $cblack, ' - ', $byellow,
+                  $$playlist[2], ' ',           $$playlist[3], $reset,  $cblack, ' (',   $bpurle,
+                  'by ',         $$playlist[4], $reset,        $cblack, ') (',   $bblue, $$playlist[5],
+                  $reset,        $cblack,       ')',           $reset,  "\n")
+          : print($bred, $$playlist[1], $reset, ' - ', $$playlist[2], ' ',
+                  $$playlist[3], ' (by ', $$playlist[4], ') (', $$playlist[5], ")\n");
     }
     print "\n$bred=>>$bgreen Pick one playlist$reset\n> ";
     chomp(my $pick = <STDIN>);
@@ -714,11 +715,12 @@ sub search_playlists {
     # PlaylistID, Number, Title, Description, Author, VideosCount
     foreach my $playlist (@Videos) {
         $colours
-          ? print $cblack, $bred, $$playlist[1], $reset, $cblack, ' - ', $byellow, $$playlist[2], ' ', $$playlist[3], $reset,
-          $cblack,
-          ' (', $bpurle, 'by ', $$playlist[4], $reset, $cblack, ') (', $bblue, $$playlist[5], $reset, $cblack, ')', $reset, "\n"
-          : print $bred, $$playlist[1], $reset, ' - ', $$playlist[2], ' ', $$playlist[3], ' (by ', $$playlist[4], ') (',
-          $$playlist[5], ")\n";
+          ? print($cblack, $bred, $$playlist[1], $reset, $cblack, ' - ', $byellow,
+                  $$playlist[2], ' ',           $$playlist[3], $reset,  $cblack, ' (',   $bpurle,
+                  'by ',         $$playlist[4], $reset,        $cblack, ') (',   $bblue, $$playlist[5],
+                  $reset,        $cblack,       ')',           $reset,  "\n")
+          : print($bred, $$playlist[1], $reset, ' - ', $$playlist[2], ' ',
+                  $$playlist[3], ' (by ', $$playlist[4], ') (', $$playlist[5], ")\n");
     }
 
     print "\n$bred=>>$reset ${bgreen}Pick one playlist$reset\n> ";
@@ -1027,23 +1029,26 @@ sub parse_content {
           push(
             @Videos,
             [$gdata{'yt:playlistId'},
-             do { $number < 10 ? ' ' . $number : $number },
+             do {
+                 $number < 10 ? ' ' . $number : $number;
+             },
              do {
                  my $title = $gdata{'title'} // 'Unknown';
-                 $title =~ /$has_entities/o ? ($title = decode_entities($title)) : $title;
+                 $title =~ /$has_entities/o ? $title = decode_entities($title) : $title;
              },
              do {
-                 my $summary = $gdata{'summary'} // "\b";
-                 $summary = join(' ', split(/\s+/, $summary));
+                 my $summary = $gdata{'summary'} // "\cH";
+                 $summary = join(' ', split(/\s+/, $summary, 0));
                  $summary =~ /$has_entities/o
-                   ? (length($summary) > 32)
-                       ? (substr(decode_entities($summary), 0, 32))
+                   ? length $summary > 32
+                       ? substr(decode_entities($summary), 0, 32)
                        : decode_entities($summary)
-                   : (length($summary) > 32) ? (substr($summary, 0, 32))
-                   :                           $summary;
+                   : (length $summary > 32 ? substr($summary, 0, 32) : $summary);
              },
              $gdata{'name'},
-             do { $gdata{'yt:countHint'} // $gdata{'countHint'} }
+             do {
+                 $gdata{'yt:countHint'} // $gdata{'countHint'};
+               }
             ])
           :
 
@@ -1052,18 +1057,23 @@ sub parse_content {
             @Videos,
             [$gdata{'yt:videoid'},
              do {
-                 my $title = $gdata{'media:title'} // $gdata{'title'} // 'Unknown';
+                 my $title = ($gdata{'media:title'} // $gdata{'title'}) // 'Unknown';
                  $title =~ /$has_entities/o ? decode_entities($title) : $title;
              },
-             do { $gdata{'name'} // $gdata{'media:credit'} },
+             do {
+                 $gdata{'name'} // $gdata{'media:credit'};
+             },
              format_time($gdata{'yt:duration seconds'}),
              $gdata{'viewCount'},
-             do { $gdata{'yt:uploaded'} // $gdata{'published'} },
+             do {
+                 $gdata{'yt:uploaded'} // $gdata{'published'};
+             },
              $gdata{'label'},
              $gdata{'media:description'},
-             do { $number < 10 ? ' ' . $number : $number }
+             do {
+                 $number < 10 ? ' ' . $number : $number;
+               }
             ]);
-
     }
     print "\n";
 }
@@ -1088,9 +1098,10 @@ sub print_results {
 
     foreach my $video (@Videos) {
         $colours
-          ? print $cblack, $bred, $$video[8], $reset, $cblack, ' - ', $byellow, $$video[1], $reset, $cblack, ' (', $bpurle, 'by ',
-          $$video[2], $reset, $cblack, ') (', $bblue, $$video[3], $reset, $cblack, ')', $reset, "\n"
-          : print $bred, $$video[8], $reset, ' - ', $$video[1], ' (by ', $$video[2], ') (', $$video[3], ")\n";
+          ? print($cblack, $bred, $$video[8], $reset, $cblack, ' - ', $byellow, $$video[1],
+                  $reset, $cblack, ' (',       $bpurle, 'by ',   $$video[2], $reset, $cblack,
+                  ') (',  $bblue,  $$video[3], $reset,  $cblack, ')',        $reset, "\n")
+          : print($bred, $$video[8], $reset, ' - ', $$video[1], ' (by ', $$video[2], ') (', $$video[3], ")\n");
     }
 
     if ($playback) {
@@ -1330,7 +1341,7 @@ sub get_youtube {
 
         undef %streaming;
 
-        my @streaming_urls = grep(/^https?:/, split(/url%3D(.+?)%26/, $streaming));
+        my (@streaming_urls) = grep(/^https?:/, split(/url%3D(.+?)%26/, $streaming));
         @streaming{format_itags(map(/&itag=(\d+)&/, @streaming_urls))} =
           grep((
              exists $itags{
