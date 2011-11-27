@@ -891,7 +891,7 @@ sub MPlayer {
 
     print "** STREAMING: $streaming\n\n" if $debug;
 
-######### DOWNLOADING #########
+    ## DOWNLOADING
     if ($download_video) {
         my $title = shift @_;
         $title =~ tr[/][|];    # replaces '/' with '|'
@@ -912,7 +912,7 @@ sub MPlayer {
         }
     }
 
-######### STREAMING #########
+    ## STREAMING
     else {
         print "** MPlayer Line: $MPlayerLine\n\n" if $debug;
 
