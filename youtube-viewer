@@ -1055,8 +1055,8 @@ sub print_results {
         foreach_pick();
     }
     elsif ($stdin =~ /\d/ and not $stdin =~ /(?:\s|^)[^\d-]/) {
-        $stdin =~ s/(?:\D|^)-\d+//g;
-        $stdin =~ s/(\d+)(?:-|\.\.)(\d+)/join ' ', $1 .. $2;/eg;
+        $stdin =~ s/(?:\D|^)-+\d+(?:\w+)?//g;                       # remove resolution arguments (eg: --360p);
+        $stdin =~ s/(\d+)(?:-|\.\.)(\d+)/join ' ', $1 .. $2;/eg;    # '2..5' results in '2 3 4 5'
         @picks = grep({$_ > 0 and $_ <= scalar @Videos if /^\d+$/;} split(/\D+/, $stdin, 0));
         foreach_pick() if scalar @picks or search($stdin);
     }
