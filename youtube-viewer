@@ -93,23 +93,24 @@ my $region;         # show YouTube movies from a particular region (default: und
 my $from_author;    # search videos uploaded by a particular user  (default: undefined)
 
 ####################### OTHER OPTIONS #######################
-my $colours        = 0;       # 1 for colored output of video results
-my $debug          = 0;       # 1 will run in debug mode
-my $download_video = 0;       # 1 will run wget or LWP for downloading videos instead of streaming them
-my $playback       = 0;       # 1 will stream all available video results, including videos from next pages
-my $default_sub    = 'en';    # default language for subtitles (requires gcap to get YouTube CC's)
+my $colours         = 0;       # 1 for colored output of video results
+my $debug           = 0;       # 1 will run in debug mode
+my $download_video  = 0;       # 1 will run wget or LWP for downloading videos instead of streaming them
+my $lwp_downloading = 0;       # 1 will always download videos with LWP (default: wget (if is available))
+my $playback        = 0;       # 1 will stream all available video results, including videos from next pages
+my $default_sub     = 'en';    # default language for subtitles (requires gcap to get YouTube CC's)
 my $users_file = "$ENV{'HOME'}/.config/youtube_usernames.txt";
 
 ####################### TEMPORARY OPTIONS #######################
-my $user_cache;               #               ||
-my $user_cache_min;           #               ||
-my $dont_exit;                #               \/
-my $all_time;                 # DON'T change this default values
-my $lwp_is_set;               # unless you know what you're doing
-my $video_results;            #               /\
-my $user_resolution;          #               ||
-my $playlists;                #               ||
-my $user_fullscreen;          #               ||
+my $user_cache;                #               ||
+my $user_cache_min;            #               ||
+my $dont_exit;                 #               \/
+my $all_time;                  # DON'T change this default values
+my $lwp_is_set;                # unless you know what you're doing
+my $video_results;             #               /\
+my $user_resolution;           #               ||
+my $playlists;                 #               ||
+my $user_fullscreen;           #               ||
 
 ####################### COLOURS #######################
 my $bred    = '';
@@ -128,21 +129,64 @@ sub videos_from_username($);
 my $SEARCH = '';          # used to store search keywords for YoutTube
 my $YOUTUBE_GDATA_URL;    # used to store the gdata URL with API query parameters
 my $streaming;            # used to store a streaming video URL, and will be passed to mplayer as an argument
-my $have_entities       = qr/&#?\w/;                                              # checks if a string contains HTML entities
-my $get_youtube_code    = qr"(?:v|embed|youtu\.be)(?:%3D|[=/])([-\w]{11})";       # $1 will be the video code
-my $get_playlist_code   = qr/(?:view_play_list\?p|playlist\?list)=([A-Z\d]+)/;    # $1 will be the playlist code
-my $valid_playlist_code = qr/^(?:PL)?([A-Z\d]{16})$/;                             # $1 will be the playlist code
-my $contains_arguments  = qr/(?:\s|^)-+\w/;                                       # cheks if a string contains arguments
-my $quit_required       = qr/^(?:q|quit|exit)$/i;                                 # exit if user's input is q, quit or exit
-my $feeds_main_url      = 'https://gdata.youtube.com/feeds/api';
-my $get_video_info      = 'https://www.youtube.com/get_video_info';
+my $feeds_main_url = 'https://gdata.youtube.com/feeds/api';
+my $get_video_info = 'https://www.youtube.com/get_video_info';
 
-my (@Videos, @picks, %resolution, %streaming);                                    # other global variables
+my (@Videos, @picks, %resolution, %streaming);    # other global variables
+
+####################### REGEXP AREA #######################
+my $quit_required       = qr/^(?:q|quit|exit)$/i;                              # exit if user's input is q, quit or exit
+my $have_entities       = qr/&#?\w/;                                           # checks if a string contains HTML entities
+my $get_youtube_code    = qr"(?:v|embed|youtu\.be)(?:%3D|[=/])([-\w]{11})";    # $1 will be the video code
+my $valid_playlist_code = qr/^(?:PL)?([A-Z\d]{16})$/;                          # $1 will be the playlist code
+my $contains_arguments  = qr/(?:\s|^)-+\w/;                                    # cheks if a string contains arguments
+
+## $1 will be the playlist code
+my $get_playlist_code = qr"(?:(?:(?:playlist\?list|view_play_list\?p)=)|\w#p/c/)(?:PL)?([A-Z\d]{16})";
+
+# The bellow regex will validate and url.
+# If is valid, youtube-viewer will try to get
+# an youtube video code from that website using /$get_youtube_code/
+my $valid_url = qr<^
+
+        ############# This regex will validate http and https URLs #############
+                                                               # Coded by Trizen
+
+        # Valid urls #######################################
+        #      http://9.Yz                                 #
+        #      http://m.example.com/test.html              #
+        #      https://mail.example.com/mail/?ver=1#inbox  #
+        #      http://test-test.test-test.museum?id=2      #
+        ####################################################
+
+        # Invalid urls #####################################
+        #     http://-test.com                             #
+        #     http://test-.com                             #
+        #     http://test-.com                             #
+        #     http://test..com                             #
+        #     http://test.-.com                            #
+        #     http://test.-test.com                        #
+        ####################################################
+
+                https?://                # http, https followed by ://
+                (?:[a-zA-Z0-9]           # first character must be a-zA-Z0-9
+                |                        # OR
+                \342\236\241)            # a tinyarrow :)
+                (?:(?:(?:\w*-+\w+|\w+)*  # words, dash, words OR only words
+                \.(?=\w))+?              # point if followed by word char
+                |                        # OR (validates http://x.yz)
+                \.)                      # a single point
+                \w{2,6}                  # domain (words between 2 and 6 chars)
+                (?:[#/?!]                # characters after domain
+                [\(\)/&\w#?=.,;:'+~\$\%\-\\]*)*  # rest characters of the string
+$>x;
+
+###########################################################
 
 # Unchangeable variables
-my %constant = ('dash_line' => '-' x 80,                                                      # used as a line separator
-                'win32'     => $^O eq 'Win32' ? 1 : 0,                                        # true if running under Windows
-                'tmp_dir'   => $ENV{'TEMP'} // $ENV{'TMP'} // $ENV{'TMPDIR'} // '/tmp',       # tmpdir is used to save srt files
+my %constant = ('dash_line' => '-' x 80,                                                   # used as a line separator
+                'win32'     => $^O eq 'Win32' ? 1 : 0,                                     # true if running under Windows
+                'tmp_dir'   => $ENV{'TEMP'} // $ENV{'TMP'} // $ENV{'TMPDIR'} // '/tmp',    # tmpdir is used to save srt files
                );
 
 # itag => resolution
@@ -153,9 +197,9 @@ my %itags = (37 => 1080,
              34 => 360,
              5  => 240);
 
-unless (grep((-e "$_/LWP/Protocol/https.pm"), @INC)) {                            # checks if https support is available
-    $feeds_main_url =~ s/s//;                                                     # changes https to http
-    $get_video_info =~ s/s//;                                                     # ==//==
+unless (grep((-e "$_/LWP/Protocol/https.pm"), @INC)) {                         # checks if https support is available
+    $feeds_main_url =~ s/s//;                                                  # changes https to http
+    $get_video_info =~ s/s//;                                                  # ==//==
 }
 
 my $MPlayerLine;
@@ -281,9 +325,14 @@ sub parse_arguments {
             elsif ($arg =~ /^-+(?:colou?rs?|C|cl)$/) {               # eg: -C, --colors
                 $colours = 1;
             }
+            elsif ($arg =~ /^-+(?:(?^i:lwp).download(?:ing)?|L(?:WP)?|download.with.(?^i:lwp))$/) {
+                $lwp_downloading = 1;
+            }
             elsif ($arg =~ /^-+(?:d|download)$/) {                   # eg: -d, --download
                 $download_video = 1;
-                locate_wget() unless $wget_is_available;
+                if (not $lwp_downloading and not $wget_is_available) {
+                    locate_wget();
+                }
             }
             elsif ($arg =~ /^-+(?:P|proxy)(?:=(.+))?$/) {            # eg: --proxy=123.442.122.32:80
                 UserAgent unless $lwp_is_set;
@@ -428,7 +477,7 @@ sub insert_url () {
     elsif ($stdin =~ /$valid_playlist_code/o) {
         list_playlist($1);
     }
-    elsif ($stdin =~ m[^https?://]) {
+    elsif ($stdin =~ m[^https?://] and $stdin =~ /$valid_url/o) {
         code_from_content($stdin);
     }
     elsif (defined($stdin) and length($stdin)) {
@@ -467,7 +516,7 @@ foreach my $code (@ARGV) {
         $dont_exit = 1;
         get_youtube($code) if (length($code) == 11);
     }
-    elsif ($code =~ m[^https?://]) {
+    elsif ($code =~ m[^https?://] and $code =~ /$valid_url/o) {
         code_from_content($code);
     }
 }
@@ -512,6 +561,7 @@ sub help {
    -C, --colors         : use colors for text output
    -U, --users=file.txt : list YouTube usernames from a file
    -P, --proxy=<PROXY>  : set proxy for LWP::UserAgent
+   -L, --lwp-download   : download videos with LWP (default: wget)
    -v, --version        : prints version and exits
    -h, --help           : prints help and exits
 \nTips and tricks:
@@ -1046,7 +1096,7 @@ sub print_results {
     elsif ($stdin =~ /$valid_playlist_code/o) {
         list_playlist $stdin;
     }
-    elsif ($stdin =~ m[^https?://] and not $stdin =~ /youtube\.com/) {
+    elsif ($stdin =~ m[^https?://] and $stdin =~ /$valid_url/o) {
         code_from_content $stdin;
     }
     elsif ($stdin eq 'all') {
