@@ -655,7 +655,7 @@ sub playlists_from_username {
     my @playlists;
     $playlists = 1;
     my $username = shift;
-    $playlist_index = shift // $start_index;
+    $playlist_index = shift || $start_index;
     my $i = -1;
 
     parse_content(
@@ -1037,6 +1037,7 @@ sub parse_content {
              },
              do {
                  my $summary = $gdata{'summary'} // "\b";
+                 $summary = join(' ', split(/\s+/, $summary));
                  $summary =~ /$has_entities/o
                    ? (length($summary) > 32)
                        ? (substr(decode_entities($summary), 0, 32))
