@@ -497,6 +497,9 @@ sub code_from_content ($) {
     if ($lwp->get($_[0])->content =~ /$get_youtube_code/o) {
         get_youtube($1);
     }
+    else {
+        search($_[0]);
+    }
 }
 
 ####################### PARSING VIDEO CODES SPECIFIED AS ARGUMENTS #######################
