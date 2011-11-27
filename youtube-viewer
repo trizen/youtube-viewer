@@ -118,7 +118,7 @@ my $user_resolution;                                                           #
 my $playlists;                                                                 #               ||
 my $user_fullscreen;                                                           #               ||
 
-####################### COLOURS #######################
+####################### ASCII COLOURS #######################
 my $bred    = '';
 my $bgreen  = '';
 my $reset   = '';
@@ -126,14 +126,11 @@ my $cblack  = "\e[40m";                                                        #
 my $byellow = "\e[1;33m";                                                      # bold yellow
 my $bpurle  = "\e[1;35m";                                                      # bold purple
 my $bblue   = "\e[1;34m";                                                      # bold blue
-####################### ASCII COLOURS #######################
-if (not $constant{'win32'}) {                                                  # if $colours and not running under Windows
+
+unless ($constant{'win32'}) {                                                  # if not running under Windows
     $bred   = "\e[1;31m";                                                      # bold red
     $bgreen = "\e[1;32m";                                                      # bold green
     $reset  = "\e[0m";                                                         # reset color
-}
-else {
-
 }
 
 ####################### SUBROUTINE PROTOTYPES #######################
