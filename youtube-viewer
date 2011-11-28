@@ -162,7 +162,8 @@ my $get_playlist_code = qr"(?:(?:(?:playlist\?list|view_play_list\?p)=)|\w#p/c/)
 # $1, $2 and sometimes $3 and $4 will be defined.
 #
 
-my $xml_parser = qr"<(?![?/])(?:([^ >/]+)[^>/]*>([^<]+)<|(?: *([^=><]+)='([^']+)')+/>)";
+my $xml_parser = qr"<(?:([^ >/?]+)[^>/]*>(?!<)(.+?)<|(?<=<)(?: *([^=><]+)='(?!')(.+?)')+/>)"s;   # Faster!
+#my $xml_parser = qr"<(?![?/])(?:([^ >/]+)[^>/]*>([^<]+)<|(?: *([^=><]+)='([^']+)')+/>)";        # Slower!
 
 #
 # Usage: while(/$xml_parser/og){
