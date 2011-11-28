@@ -164,7 +164,7 @@ my $get_playlist_code = qr"(?:(?:(?:playlist\?list|view_play_list\?p)=)|\w#p/c/)
 
 my $xml_parser = qr"<(?:([^ >/?]+)[^>/]*>(?!<)(.+?)<|(?<=<)(?: *([^=><]+)='(?!')(.+?)')+/>)"s;    # Faster!
 
-#my $xml_parser = qr"<(?![?/])(?:([^ >/]+)[^>/]*>([^<]+)<|(?: *([^=><]+)='([^']+)')+/>)";        # Slower!
+#my $xml_parser = qr"<(?![?/])(?:([^ >/]+)[^>/]*>([^<]+)<|(?: *([^=><]+)='([^']+)')+/>)";         # Slower!
 
 #
 # Usage: while(/$xml_parser/og){
@@ -173,7 +173,7 @@ my $xml_parser = qr"<(?:([^ >/?]+)[^>/]*>(?!<)(.+?)<|(?<=<)(?: *([^=><]+)='(?!')
 #        }
 ######################################################################################################
 
-######################################################################################################
+######################################### REGEXP: URL VALIDATION #####################################
 # The bellow regex will validate and url.
 # If is valid, youtube-viewer will try to get
 # an youtube video code from that website using /$get_youtube_code/
@@ -312,94 +312,98 @@ sub parse_arguments {
             elsif ($arg =~ /^-+(?:l|lower.?cache)$/) {       # eg: -l, --lower-cache
                 $user_lower_cache = 1;
             }
-            elsif ($arg =~ /^-+(?:n|no.?video)$/) {          # eg: -n, --no-video
+            elsif (not $constant{'win32'} and $arg =~ /^-+(?:gnome(?:-mplayer)?|G)$/) {    # eg: -G, --gnome-mplayer
+                substr($MPlayerLine, 0, 0, 'gnome-');
+                $MPlayerLine =~ s/\B-.+//;
+            }
+            elsif ($arg =~ /^-+(?:n|no.?video)$/) {                                        # eg: -n, --no-video
                 $constant{'win32'}
                   ? $MPlayerLine =~ s/mplayer\.exe"/mplayer.exe" -novideo/
                   : $MPlayerLine =~ s/mplayer /mplayer -novideo /;
                 $resolution{'resolution'} = 480 unless $user_resolution;
             }
-            elsif ($arg =~ /^-+time(?:=(.+))?$/) {           # eg: --time=this_week
+            elsif ($arg =~ /^-+time(?:=(.+))?$/) {                                         # eg: --time=this_week
                 $time_p = $1 // get_next_argument($i);
             }
-            elsif ($arg =~ /^-+page(?:=(\d+))?$/) {          # eg: --page=3
+            elsif ($arg =~ /^-+page(?:=(\d+))?$/) {                                        # eg: --page=3
                 $start_index = $results * do { $1 // get_next_argument($i) }
                   - $results + 1;
             }
-            elsif ($arg =~ /^-+author(?:=(.+))?$/) {         # eg: --author=google
+            elsif ($arg =~ /^-+author(?:=(.+))?$/) {                                       # eg: --author=google
                 $from_author = $1 // get_next_argument($i);
             }
-            elsif ($arg =~ /^-+(?:T|tty|M|mplayer)=(.+)/) {    # eg: --mplayer='-vo xv'
+            elsif ($arg =~ /^-+(?:T|tty|M|mplayer)=(.+)/) {                                # eg: --mplayer='-vo xv'
                 $MPlayerLine .= " $1";
             }
-            elsif ($arg =~ /^-+(?:o|order.?by)(?:=(.+))?$/) {    # eg: -o rating, --order-by=published
+            elsif ($arg =~ /^-+(?:o|order.?by)(?:=(.+))?$/) {                              # eg: -o rating, --order-by=published
                 $order_by = $1 // get_next_argument($i);
             }
-            elsif ($arg =~ /^-+(?:r|region)(?:=(.+))?$/) {       # eg: -r US, --region=US
+            elsif ($arg =~ /^-+(?:r|region)(?:=(.+))?$/) {                                 # eg: -r US, --region=US
                 $region = $1 // get_next_argument($i);
             }
-            elsif ($arg =~ /^-+(?:sub|lang)(?:=([\w]{2,5}))?$/) {    # eg: -sub ar, --lang=ar
+            elsif ($arg =~ /^-+(?:sub|lang)(?:=([\w]{2,5}))?$/) {                          # eg: -sub ar, --lang=ar
                 $default_sub = $1 // get_next_argument($i);
                 $default_sub = lc $default_sub unless $default_sub =~ /_/;
             }
-            elsif ($arg =~ /^-+(?:colou?rs?|C|cl)$/) {               # eg: -C, --colors
-                $colours = 1 unless $constant{'win32'};
+            elsif (not $constant{'win32'} and $arg =~ /^-+(?:colou?rs?|C|cl)$/) {          # eg: -C, --colors
+                $colours = 1;
             }
             elsif ($arg =~ /^-+(?:(?^i:lwp).download(?:ing)?|L(?:WP)?|download.with.(?^i:lwp))$/) {
                 $lwp_downloading = 1;
             }
-            elsif ($arg =~ /^-+(?:d|download)$/) {                   # eg: -d, --download
+            elsif ($arg =~ /^-+(?:d|download)$/) {                                         # eg: -d, --download
                 $download_video = 1;
                 if (not $lwp_downloading and not $wget_is_available) {
                     locate_wget();
                 }
             }
-            elsif ($arg =~ /^-+(?:P|proxy)(?:=(.+))?$/) {            # eg: --proxy=123.442.122.32:80
+            elsif ($arg =~ /^-+(?:P|proxy)(?:=(.+))?$/) {                                  # eg: --proxy=123.442.122.32:80
                 UserAgent unless $lwp_is_set;
                 my $proxy = $1 // get_next_argument($i);
                 $proxy = 'http://' . $proxy unless $proxy =~ /^https?:/;
                 $lwp->proxy(['http', 'https'], $proxy);
             }
-            elsif ($arg =~ /^-+(?:a|all.?time)$/) {                  # eg: --all-time
+            elsif ($arg =~ /^-+(?:a|all.?time)$/) {                                        # eg: --all-time
                 $all_time = 1;
             }
-            elsif ($arg eq '--debug') {                              # eg: --debug
+            elsif ($arg eq '--debug') {                                                    # eg: --debug
                 $debug = 1;
             }
-            elsif ($arg =~ /^-+(?:A|(?:play.)?all)$/) {              # eg: -A, --play-all
+            elsif ($arg =~ /^-+(?:A|(?:play.)?all)$/) {                                    # eg: -A, --play-all
                 $playback = 1;
             }
-            elsif ($arg =~ /^-+(?:m|more)$/) {                       # eg: -m, --more
+            elsif ($arg =~ /^-+(?:m|more)$/) {                                             # eg: -m, --more
                 $results = 50;
             }
-            elsif ($arg =~ /^-+(?:fs?|fullscreen)$/) {               # eg: -fs, --fullscreen
+            elsif ($arg =~ /^-+(?:fs?|fullscreen)$/) {                                     # eg: -fs, --fullscreen
                 set_fullscreen_mode();
                 $user_fullscreen = 1;
             }
-            elsif ($arg =~ /^-+(?:FS?|no.?fullscreen)$/) {           # eg: -F, --no-fullscreen
+            elsif ($arg =~ /^-+(?:FS?|no.?fullscreen)$/) {                                 # eg: -F, --no-fullscreen
                 disable_fullscreen_mode();
                 $user_fullscreen = 1;
             }
-            elsif ($arg =~ /^-+(?:1[862]0p?|3gp)$/) {                # eg: -3gp, --180p
+            elsif ($arg =~ /^-+(?:1[862]0p?|3gp)$/) {                                      # eg: -3gp, --180p
                 $resolution{'resolution'} = 180;
             }
-            elsif ($arg =~ /^-+(?:2|240p?)$/) {                      # eg: -2, --240p
+            elsif ($arg =~ /^-+(?:2|240p?)$/) {                                            # eg: -2, --240p
                 $resolution{'resolution'} = 240;
             }
-            elsif ($arg =~ /^-+(?:3|360p?)$/) {                      # eg: -3, --360p
+            elsif ($arg =~ /^-+(?:3|360p?)$/) {                                            # eg: -3, --360p
                 $resolution{'resolution'} = 360;
             }
-            elsif ($arg =~ /^-+(?:4|480p?)$/) {                      # eg: -4, --480p
+            elsif ($arg =~ /^-+(?:4|480p?)$/) {                                            # eg: -4, --480p
                 $resolution{'resolution'} = 480;
             }
-            elsif ($arg =~ /^-+(?:7|720p?)$/) {                      # eg: -7, --720p
+            elsif ($arg =~ /^-+(?:7|720p?)$/) {                                            # eg: -7, --720p
                 $resolution{'resolution'} = 720;
             }
-            elsif ($arg =~ /^-+(?:1|1080p?)$/) {                     # eg: -1, --1080p
+            elsif ($arg =~ /^-+(?:1|1080p?)$/) {                                           # eg: -1, --1080p
                 $resolution{'resolution'} = 1080;
             }
         }
         else {
-            $SEARCH .= "$arg ";                                      # appending a keyword to $SEARCH
+            $SEARCH .= "$arg ";                                                            # appending a keyword to $SEARCH
         }
     }
 
@@ -577,6 +581,7 @@ sub help {
    -U, --users=file.txt : list YouTube usernames from a file
    -P, --proxy=<PROXY>  : set proxy for LWP::UserAgent
    -L, --lwp-download   : download videos with LWP (default: wget)
+   -G, --gnome-mplayer  : use gnome-mplayer instead of mplayer
    -v, --version        : prints version and exits
    -h, --help           : prints help and exits
 \nTips and tricks:
@@ -919,8 +924,9 @@ sub MPlayer {
     ## STREAMING
     else {
         print "** MPlayer Line: $MPlayerLine\n\n" if $debug;
+        system "$MPlayerLine '$streaming'";
 
-        `$MPlayerLine '$streaming'` unless $debug;    # executing $MPlayerLine with '$streaming' as an argument
+        #`$MPlayerLine '$streaming'` unless $debug;    # executing $MPlayerLine with '$streaming' as an argument
 
         chdir $constant{'cwd'} if exists $constant{'cwd'};    # change directory back to the main working directory
     }
