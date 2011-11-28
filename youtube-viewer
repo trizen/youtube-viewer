@@ -162,7 +162,8 @@ my $get_playlist_code = qr"(?:(?:(?:playlist\?list|view_play_list\?p)=)|\w#p/c/)
 # $1, $2 and sometimes $3 and $4 will be defined.
 #
 
-my $xml_parser = qr"<(?:([^ >/?]+)[^>/]*>(?!<)(.+?)<|(?<=<)(?: *([^=><]+)='(?!')(.+?)')+/>)"s;   # Faster!
+my $xml_parser = qr"<(?:([^ >/?]+)[^>/]*>(?!<)(.+?)<|(?<=<)(?: *([^=><]+)='(?!')(.+?)')+/>)"s;    # Faster!
+
 #my $xml_parser = qr"<(?![?/])(?:([^ >/]+)[^>/]*>([^<]+)<|(?: *([^=><]+)='([^']+)')+/>)";        # Slower!
 
 #
@@ -1013,8 +1014,12 @@ sub parse_content {
 
         my %gdata;
         while ($entry =~ /$xml_parser/og) {
-            $gdata{$1} = $2 if defined $1;
-            $gdata{$3} = $4 if defined $3;
+            if (defined($1)) {
+                $gdata{$1} = $2;
+            }
+            elsif (defined($3)) {
+                $gdata{$3} = $4;
+            }
         }
 
         $playlists
