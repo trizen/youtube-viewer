@@ -924,9 +924,8 @@ sub MPlayer {
     ## STREAMING
     else {
         print "** MPlayer Line: $MPlayerLine\n\n" if $debug;
-        system "$MPlayerLine '$streaming'";
 
-        #`$MPlayerLine '$streaming'` unless $debug;    # executing $MPlayerLine with '$streaming' as an argument
+        `$MPlayerLine '$streaming'` unless $debug;    # executing $MPlayerLine with '$streaming' as an argument
 
         chdir $constant{'cwd'} if exists $constant{'cwd'};    # change directory back to the main working directory
     }
