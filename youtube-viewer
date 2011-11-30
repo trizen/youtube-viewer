@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 28 November 2011
+#  Latest edit on: 30 November 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -140,7 +140,6 @@ sub videos_from_username($);
 ####################### GLOBAL VARIABLES #######################
 my $SEARCH = '';          # used to store search keywords for YoutTube
 my $YOUTUBE_GDATA_URL;    # used to store the gdata URL with API query parameters
-my $streaming;            # used to store a streaming video URL, and will be passed to mplayer as an argument
 my $feeds_main_url = 'https://gdata.youtube.com/feeds/api';
 my $get_video_info = 'https://www.youtube.com/get_video_info';
 
@@ -174,10 +173,10 @@ my $xml_parser = qr"<(?:([^ >/?]+)[^>/]*>(?!<)(.+?)<|(?<=<)(?: *([^=><]+)='(?!')
 ######################################################################################################
 
 ######################################### REGEXP: URL VALIDATION #####################################
-# The bellow regex will validate and url.
-# If is valid, youtube-viewer will try to get
+# The bellow regex will validate an HTTP url.
+# If it is valid, youtube-viewer will try to get
 # an youtube video code from that website using /$get_youtube_code/
-my $valid_url = qr<^
+my $valid_url = qr"^
 
         ################# This regex will validate an HTTP URL #################
                                                                # Coded by Trizen
@@ -207,7 +206,7 @@ my $valid_url = qr<^
                 \w{2,6}                  # domain (words between 2 and 6 chars)
                 (?:[#/?!]                # characters after domain
                 [\(\)/&\w#?=.,;:'+~\$\%\-\\]*)*  # rest characters of the string
-$>x;
+$"x;
 
 ###########################################################
 
@@ -242,7 +241,7 @@ else {
 }
 
 ####################### MY PATH #######################
-my @path = $constant{'win32'} ? split(/;/, $ENV{'PATH'}) : split(/:/, $ENV{'PATH'}); # split $PATH by ';' if running under Windows
+my @path = $constant{'win32'} ? split(/;/, $ENV{'PATH'}) : split(/:/, $ENV{'PATH'});
 
 ####################### LOOKING FOR WGET #######################
 my $wget_is_available;
@@ -382,9 +381,6 @@ sub parse_arguments {
             elsif ($arg =~ /^-+(?:FS?|no.?fullscreen)$/) {                                 # eg: -F, --no-fullscreen
                 disable_fullscreen_mode();
                 $user_fullscreen = 1;
-            }
-            elsif ($arg =~ /^-+(?:1[862]0p?|3gp)$/) {                                      # eg: -3gp, --180p
-                $resolution{'resolution'} = 180;
             }
             elsif ($arg =~ /^-+(?:2|240p?)$/) {                                            # eg: -2, --240p
                 $resolution{'resolution'} = 240;
@@ -898,6 +894,8 @@ sub categories_area {
 ####################### PLAY OR DOWNLOAD AN YOUTUBE VIDEO #######################
 sub MPlayer {
 
+    my $streaming = shift;
+
     print "** STREAMING: $streaming\n\n" if $debug;
 
     ## DOWNLOADING
@@ -907,9 +905,13 @@ sub MPlayer {
 
         if (not -e "$title.mp4") {
             if ($wget_is_available) {
+
+                # Downloading video with wget
                 system "wget -nc '${streaming}' -O \Q$title\E.mp4";
             }
             else {
+
+                # Downloading video with LWP
                 print "** Saving to: '$title.mp4'\n";
                 $lwp->show_progress(1);
                 $lwp->mirror($streaming, "$title.mp4");
@@ -925,9 +927,11 @@ sub MPlayer {
     else {
         print "** MPlayer Line: $MPlayerLine\n\n" if $debug;
 
-        `$MPlayerLine '$streaming'` unless $debug;    # executing $MPlayerLine with '$streaming' as an argument
+        # Executing $MPlayerLine with '$streaming' as an argument
+        `$MPlayerLine '$streaming'` unless $debug;
 
-        chdir $constant{'cwd'} if exists $constant{'cwd'};    # change directory back to the main working directory
+        # Change directory back to the main working directory
+        chdir $constant{'cwd'} if exists $constant{'cwd'};
     }
 
     print "\n";
@@ -935,14 +939,19 @@ sub MPlayer {
     disable_fullscreen_mode() unless $user_fullscreen;
 
     if (@picks) {
-        foreach_pick();                                       # go to the next video if there are more videos selected to play
+
+        # Go to the next video if there
+        # are more videos selected to play
+        foreach_pick();
     }
     elsif ($playback) {
         next_page();
     }
 
     if ($video_results and not $dont_exit) {
-        print_results();                                      # go back to the video results
+
+        # Go back to the video results
+        print_results();
     }
 
     exit unless $dont_exit;
@@ -953,7 +962,10 @@ search() unless $dont_exit or $playlists;
 
 sub search {
     $SEARCH = shift() // $SEARCH;
-    $SEARCH = join(' ', grep((chr ord $_ ne '-'), split(/\s+/, $SEARCH, 0)));    # get words that doesn't start with '-'
+
+    # Get words which doesn't begins with a dash (-);
+    $SEARCH = join(' ', grep((chr ord $_ ne '-'), split(/\s+/, $SEARCH, 0)));
+
     $SEARCH = uri_escape($SEARCH);
     $YOUTUBE_GDATA_URL =
         $feeds_main_url
@@ -1011,8 +1023,6 @@ sub parse_content {
     UserAgent unless $lwp_is_set;
 
     undef @Videos;
-
-    my ($author, $code, $title, $category, $published, $duration, $views, $description);
     my $number = 0;
 
     foreach my $entry (split(/<entry/, $lwp->get($_[0])->content, 0)) {
@@ -1050,11 +1060,12 @@ sub parse_content {
              do {
                  my $summary = $gdata{'summary'} // "\cH";
                  $summary = join(' ', split(/\s+/, $summary, 0));
+                 my $summary_limit = 32;    # characters
                  $summary =~ /$has_entities/o
-                   ? length $summary > 32
-                       ? substr(decode_entities($summary), 0, 32)
+                   ? length $summary > $summary_limit
+                       ? substr(decode_entities($summary), 0, $summary_limit)
                        : decode_entities($summary)
-                   : (length $summary > 32 ? substr($summary, 0, 32) : $summary);
+                   : (length $summary > 32 ? substr($summary, 0, $summary_limit) : $summary);
              },
              $gdata{'name'},
              do {
@@ -1089,6 +1100,7 @@ sub parse_content {
     print "\n";
 }
 
+# Format seconds to HH:MM:SS
 sub format_time {
     my $sec = shift @_;
     my $time = join(':', map((length $_ == 1 ? 0 . $_ : $_), $sec / 3600 % 24, $sec / 60 % 60, $sec % 60));
@@ -1134,7 +1146,7 @@ sub print_results {
         next_page();
     }
     elsif ($stdin eq 'reset') {
-        @ARGV = $SEARCH;
+        undef @ARGV;
         do $0;
     }
     elsif (
@@ -1164,18 +1176,28 @@ sub print_results {
     }
     elsif ($stdin =~ /\d/ and not $stdin =~ /(?:\s|^)[^\d-]/) {
         $stdin =~ s/(?:\D|^)-+\d+(?:\w+)?//g;                       # remove resolution arguments (e.g.: --360p);
-        $stdin =~ s/(\d+)(?:-|\.\.)(\d+)/join ' ', $1 .. $2;/eg;    # '2..5' results in '2 3 4 5'
+        $stdin =~ s/(\d+)(?:-|\.\.)(\d+)/join ' ', $1 .. $2;/eg;    # '2..5' will be '2 3 4 5'
         @picks = grep({$_ > 0 and $_ <= scalar @Videos if /^\d+$/} split(/\D+/, $stdin, 0));
-        foreach_pick() if scalar @picks or search($stdin);
+        if (scalar @picks) {
+            foreach_pick();
+        }
+        else {
+            search($stdin);
+        }
     }
     else {
         search $stdin;
     }
 }
 
-####################### GO TO THE NEXT PAGE #######################
-sub next_page {
+sub foreach_pick {
+    while (@picks) {
+        get_youtube($Videos[shift(@picks) - 1]);
+    }
+}
 
+####################### NEXT PAGE #######################
+sub next_page {
     if ($YOUTUBE_GDATA_URL =~ /[&?]start-index=(\d+)/) {
         $YOUTUBE_GDATA_URL =~ s/index=($1)/'index=' . ($1 + $results);/e;
         parse_content $YOUTUBE_GDATA_URL;
@@ -1183,19 +1205,12 @@ sub next_page {
     }
 }
 
-####################### GO TO THE PREVIOUS PAGE #######################
+####################### PREVIOUS PAGE #######################
 sub previous_page {
-
     if ($YOUTUBE_GDATA_URL =~ /[&?]start-index=(\d+)/) {
         $YOUTUBE_GDATA_URL =~ s/index=($1)/'index=' . ($1 - $results);/e;
         parse_content $YOUTUBE_GDATA_URL;
         print_results();
-    }
-}
-
-sub foreach_pick {
-    while (@picks) {
-        get_youtube($Videos[shift(@picks) - 1]);
     }
 }
 
@@ -1214,48 +1229,48 @@ sub disable_fullscreen_mode {
 sub select_resolution {
     if ($resolution{'resolution'} == 1080) {
         if (exists $streaming{1080}) {
-            $streaming = $streaming{1080};
             default_cache();
             set_fullscreen_mode() unless $user_fullscreen;
+            return $streaming{1080};
         }
         else {
-            $streaming = lower_quality();
-            lower_cache();
+            exists $streaming{720} ? default_cache() : lower_cache();
+            return lower_quality();
         }
     }
     elsif ($resolution{'resolution'} == 720) {
         if (exists $streaming{720}) {
-            $streaming = $streaming{720};
             default_cache();
+            return $streaming{720};
         }
         else {
-            $streaming = lower_quality();
             lower_cache();
+            return lower_quality();
         }
     }
     elsif ($resolution{'resolution'} == 480) {
-        $streaming = $streaming{480} // lower_quality();
         lower_cache();
+        return $streaming{480} // lower_quality();
     }
     elsif ($resolution{'resolution'} == 360) {
-        $streaming = $streaming{360} // lower_quality();
         lower_cache();
+        return $streaming{360} // lower_quality();
     }
     elsif ($resolution{'resolution'} == 240) {
-        $streaming = $streaming{240} // lower_quality();
         lower_cache();
+        return $streaming{240} // lower_quality();
     }
     else {
         if (exists $streaming{1080}) {
             pick();
         }
         elsif (exists $streaming{720}) {
-            $streaming = $streaming{720};
             default_cache();
+            return $streaming{720};
         }
         else {
-            $streaming = lower_quality();
             lower_cache();
+            return lower_quality();
         }
     }
 }
@@ -1270,7 +1285,6 @@ sub lower_quality {
 
 sub format_itags {
     my @itags;
-
     foreach my $itag (@_) {
         if (exists($itags{$itag})) {
             push @itags, $itags{$itag};
@@ -1299,6 +1313,7 @@ sub get_youtube {
 
     $MPlayerLine =~ s/ *\Q$mplayer_srt_settings\E *-sub.*//;
 
+    # Getting YouTube closed captions with gcap
     if (    -e $gcap
         and not $MPlayerLine =~ / -novideo/
         and $content =~ /&has_cc=True&/
@@ -1315,34 +1330,27 @@ sub get_youtube {
             system "perl $gcap '${url}'";
         }
 
-        my @srt_files;
-        my $dir_h;
-
-        opendir $dir_h, $constant{'tmp_dir'};
-        /\.srt$/ and push @srt_files, $_ while defined($_ = readdir $dir_h);
-        closedir $dir_h;
-
         my $srt_file;
-
-        foreach my $line (@srt_files) {
-            if ($line =~ /${code}_$default_sub\.srt/) {
-                $srt_file = "${code}_$default_sub.srt";
-                $MPlayerLine .= " $mplayer_srt_settings -sub $srt_file";
-            }
+        if (-e "${code}_$default_sub.srt") {
+            $srt_file = "${code}_$default_sub\.srt";
+            $MPlayerLine .= " $mplayer_srt_settings -sub $srt_file";
         }
-
-        unless (defined $srt_file) {
-            foreach my $line (@srt_files) {
-                if ($line =~ /$code(\w*)\.srt/) {
-                    $srt_file = "$code$1.srt";
+        else {
+            opendir(my $dir_h, $constant{'tmp_dir'});
+            while (defined(my $line = readdir $dir_h)) {
+                next unless $line =~ /\.srt$/;
+                if ($line =~ /^$code\w*\.srt/p) {
+                    $srt_file = ${^MATCH};
                     $MPlayerLine .= " $mplayer_srt_settings -sub $srt_file";
+                    last;
                 }
             }
+            close $dir_h;
         }
     }
 
     if ($content =~ /url_encoded_fmt_stream_map=(.+?)&/) {
-        $streaming = $1;
+        my $streaming = $1;
         $streaming =~ s/%253A/:/gi;
         $streaming =~ s[%252F][/]gi;
         $streaming =~ s/%2526/&/g;
@@ -1410,8 +1418,7 @@ sub get_youtube {
           "** Published : $published\n",
           "$constant{'dash_line'}\n\n";
 
-        select_resolution();
-        MPlayer($title);
+        MPlayer(select_resolution(), $title);
     }
     else {
         warn "\n$bred(x_x) Something went wrong...$reset\n\n$bred(x_x) Unable to stream: $reset$url\n\n";
@@ -1444,25 +1451,26 @@ $bred 2$reset - 1920x1080 (1080p)\n", '=' x 23, "\n\n$bgreen=>> Pick format:$res
     print "$constant{'dash_line'}\n\n";
 
     if ($pick eq '2') {
-        $streaming = $streaming{1080};
         $resolution{'resolution'} = 1080;
         default_cache();
         set_fullscreen_mode() unless $user_fullscreen;
+        return $streaming{1080};
     }
     else {
-        $streaming = $streaming{720};
         $resolution{'resolution'} = 720;
         default_cache();
+        return $streaming{720};
     }
 }
 
-sub lower_cache {    # set a lower cache if $user_lower_cache is TRUE
+# Set a lower cache if $user_lower_cache is TRUE
+sub lower_cache {
     $MPlayerLine =~ s/-cache\s+\d+/-cache 1000/      unless $user_cache;
     $MPlayerLine =~ s/-cache-min\s+\d+/-cache-min 3/ unless $user_cache_min;
 }
 
+# Set default cache for 720p and 1080p resolutions
 sub default_cache {
-
     if (not $user_lower_cache) {
         $MPlayerLine =~ s/-cache\s+\d+/-cache $cache/             unless $user_cache;
         $MPlayerLine =~ s/-cache-min\s+\d+/-cache-min $cache_min/ unless $user_cache_min;
