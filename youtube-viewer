@@ -347,7 +347,7 @@ sub parse_arguments {
             elsif (not $constant{'win32'} and $arg =~ /^-+(?:colou?rs?|C|cl)$/) {          # eg: -C, --colors
                 $colours = 1;
             }
-            elsif ($arg =~ /^-+(?:(?^i:lwp).download(?:ing)?|L(?:WP)?|download.with.(?^i:lwp))$/) {
+            elsif ($arg =~ /^-+(?:L|(?:lwp|LWP)-download)$/) {                             # eg: -L, --lwp-download
                 $lwp_downloading = 1;
             }
             elsif ($arg =~ /^-+(?:d|download)$/) {                                         # eg: -d, --download
@@ -410,8 +410,10 @@ sub parse_arguments {
         $resolution{'resolution'} = 0;
     }
 
+    # Set 1080p resolution if $playback is 1
+    # and not any other resolution is selected
     if ($playback and not $user_resolution) {
-        $resolution{'resolution'} = 1080;    # set 1080p resolution if $playback is TRUE and not any other resolution is selected
+        $resolution{'resolution'} = 1080;
     }
 
     parse_sub_calling_arguments(@_);
