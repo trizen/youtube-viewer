@@ -350,7 +350,7 @@ sub parse_arguments {
                     disable_fullscreen_mode();
                     $user_fullscreen = 1;
                 }
-                when (/^-+(?:T|tty|M|mplayer)=(.+)/) {
+                when (/^-+(?:[TM]|tty|mplayer)=(.+)/) {
                     $MPlayerLine .= " $1";
                 }
                 when (/^-+(?:l|lower.?cache)$/) {
@@ -438,31 +438,31 @@ sub parse_sub_calling_arguments {
         # If argument starts with a dash (-)
         if (chr ord $arg eq '-') {
             given ($arg) {
-                when (/^-+(?:h|help|[?]|usage)$/i) {
+                when (/^-+(?:h|help|[?]|usage)$/) {
                     help();
                 }
-                when (/^-+(?:v|version)$/i) {
+                when (/^-+v(?:ersion)?$/) {
                     version();
                 }
                 when (/^-+(?:T|tips|tricks|tips-tricks)$/) {
                     tips_and_tricks();
                 }
-                when (/^-+pl?(?:playlists?)?$/) {
+                when (/^-+(?:pl?|playlists?)$/) {
                     search_playlists();
                 }
                 when (/^-+c(?:ategories)?$/) {
                     categories_area();
                 }
-                when (/^-+(M|movies)$/) {
+                when (/^-+(?:M|movies)$/) {
                     youtube_movies();
                 }
-                when (/^-+(?:a|all[_-]?time|t|tops)$/) {
+                when (/^-+(?:[at]|all.?time|today.?(?:tops)?|tops)$/) {
                     youtube_tops();
                 }
                 when (/^-+u(?:sername)?(?:=(\w+))?$/) {
                     videos_from_username($1 // get_next_argument($i));
                 }
-                when (/^-u(?:ser(?:name)?)?p(?:laylist)?(?:=(\w+))?$/) {
+                when (/^-+u(?:ser(?:name)?)?.?p(?:laylists?)?(?:=(\w+))?$/) {
                     playlists_from_username($1 // get_next_argument($i));
                 }
                 when (/^-+(?:U|user(?:name)?s)(?:=(.+))?$/) {
@@ -487,7 +487,7 @@ foreach my $arg (@ARGV) {
 
 ####################### GO TO insert_url() IF $non_argv is FALSE #######################
 sub insert_url {
-    print "\n$bred=>>$reset$bgreen Insert an YouTube URL or search something...\n$reset> ";
+    print "\n$bred=>>$bgreen Insert an YouTube URL or search something...\n$reset> ";
 
     given (<STDIN>) {
         chomp;
@@ -569,7 +569,7 @@ sub help {
    <keywords>           : search and list YouTube videos
    <playlist_url>       : list a playlist of YouTube videos
 \nYouTube options:
-   -t, --tops           : shows today YouTube tops
+   -t, --today          : shows today YouTube tops
    -a, --all-time       : shows all time YouTube tops
    -c, --categories     : shows available YouTube categories
    -m, --more           : shows more video results (50 clips)
@@ -673,7 +673,7 @@ sub list_user_names {
 
         close $fh;
 
-        print "\n$bred=>>$reset ${bgreen}Pick an username number$reset\n> ";
+        print "\n$bred=>$bgreen Pick an username number$reset\n> ";
 
         given (<STDIN>) {
             chomp;
@@ -829,7 +829,7 @@ sub search_playlists {
         print_playlists($playlist);
     }
 
-    print "\n$bred=>>$reset ${bgreen}Pick one playlist or search others$reset\n> ";
+    print "\n$bred=>>$bgreen Pick one playlist or search others$reset\n> ";
 
     given (<STDIN>) {
         chomp;
@@ -1221,7 +1221,7 @@ sub print_results {
         foreach_pick();
     }
 
-    print "\n$bred=>>$reset$bgreen Insert a number or search something else\n$reset> ";
+    print "\n$bred=>>$bgreen Insert a number or search something else\n$reset> ";
 
     given (<STDIN>) {
         chomp;
@@ -1509,7 +1509,7 @@ sub get_youtube {
         print STDOUT $url;
         print "\n* GET $get\n$constant{'dash_line'}\n",
           ' ' x ((length($constant{'dash_line'}) - length($title)) / 2 - 4),    # centring video title on terminal
-          "$bred=>> $bgreen$title$reset$bred <<=\n$reset\n",
+          "$bred=>> $bgreen$title$bred <<=\n$reset\n",
           "** Author    : $author\n",
           "** Category  : $category\n",
           "** Duration  : $duration\n",
@@ -1540,7 +1540,7 @@ sub get_youtube {
 }
 
 sub pick {
-    print "$bred=>>$reset $bgreen Please choose a video resolution (default: 1)$reset\n
+    print "$bred=>> $bgreen Please choose a video resolution (default: 1)$reset\n
 $bred 1$reset - 1280x720  (720p)
 $bred 2$reset - 1920x1080 (1080p)\n", '=' x 23, "\n\n$bgreen=>> Pick format:$reset ";
 
