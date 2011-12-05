@@ -167,6 +167,7 @@ my $xml_parser = qr{<([^/ >?]+)(?:(?: *\w+='(?!')(.+?)')+)?/?>?(?:(?!<)(.+?)<)?}
 # The bellow regex will validate an HTTP url.
 # If it is valid, youtube-viewer will try to get
 # an youtube video code from that website using /$get_youtube_code/
+
 my $valid_url = qr{^
 
         ################# This regex will validate an HTTP URL #################
@@ -196,7 +197,7 @@ my $valid_url = qr{^
                 \.)                      # a single point
                 \w{2,6}                  # domain (words between 2 and 6 chars)
                 (?:[#/?!]                # characters after domain
-                [()/%&#?=.,;:'+~\-\w\$\\]*)*  # rest characters of the string
+                [#-)+-;=?\\~\w]*)*       # rest characters of the string
 $}x;
 
 ####################### TEMPORARY OPTIONS #######################
@@ -320,16 +321,16 @@ sub parse_arguments {
                 when (/^-+author(?:=(.+))?$/) {
                     $from_author = $1 // get_next_argument($i);
                 }
-                when (/^-+(?:m|more)$/) {
+                when (/^-+m(?:ore)?$/) {
                     $results = 50;
                 }
-                when (/^-+(?:o|order.?by)(?:=(.+))?$/) {
+                when (/^-+o(?:rder.?by)?(?:=(.+))?$/) {
                     $order_by = $1 // get_next_argument($i);
                 }
-                when (/^-+(?:r|region)(?:=(.+))?$/) {
+                when (/^-+r(?:egion)?(?:=(.+))?$/) {
                     $region = $1 // get_next_argument($i);
                 }
-                when (/^-+(?:a|all.?time)$/) {
+                when (/^-+a(?:ll.?time)?$/) {
                     $all_time = 1;
                 }
                 when (/^-+page(?:=(\d+))?$/) {
@@ -346,10 +347,10 @@ sub parse_arguments {
                     disable_fullscreen_mode();
                     $user_fullscreen = 1;
                 }
-                when (/^-+(?:[TM]|tty|mplayer)=(.+)/) {
+                when (/^-+mplayer=(.+)/) {
                     $mplayer_line .= " $1";
                 }
-                when (/^-+(?:l|lower.?cache)$/) {
+                when (/^-+l(?:ower.?cache)?$/) {
                     $user_lower_cache = 1;
                 }
                 when (/^-+cache(?:=(\d+))?$/) {
@@ -362,7 +363,7 @@ sub parse_arguments {
                     $mplayer_line =~ s/-cache-min\s+\d+/-cache-min $cache_min/;
                     $user_cache_min = 1;
                 }
-                when (/^-+(?:n|no.?video)$/) {
+                when (/^-+n(?:o.?video)?$/) {
                     $constant{'win32'}
                       ? $mplayer_line =~ s/mplayer\.exe"/mplayer.exe" -novideo/
                       : $mplayer_line =~ s/mplayer /mplayer -novideo /;
@@ -380,7 +381,7 @@ sub parse_arguments {
                 when (/^-+(?:A|(?:play.)?all)$/) {
                     $playback = 1;
                 }
-                when (/^-+(?:d|download)$/) {
+                when (/^-+d(?:ownload)?$/) {
                     $download_video = 1;
                     if (not $lwp_downloading and not $wget_is_available) {
                         locate_wget();
@@ -399,7 +400,7 @@ sub parse_arguments {
                     $proxy = 'http://' . $proxy unless $proxy =~ /^https?:/;
                     $lwp->proxy(['http', 'https'], $proxy);
                 }
-                when (not $constant{'win32'} and /^-+(?:colou?rs?|C|cl)$/) {
+                when (not $constant{'win32'} and /^-+(?:C|cl|colou?rs?)$/) {
                     $colours = 1;
                 }
             }
@@ -440,7 +441,7 @@ sub parse_sub_calling_arguments {
                 when (/^-+v(?:ersion)?$/) {
                     version();
                 }
-                when (/^-+(?:T|tips|tricks|tips-tricks)$/) {
+                when (/^-+(?:T|tricks|tips)$/) {
                     tips_and_tricks();
                 }
                 when (/^-+(?:pl?|playlists?)$/) {
@@ -529,7 +530,7 @@ sub code_from_content {
     }
 }
 
-####################### CHECK IF ARGUMENT LOOKS LIKE AN YOUTUBE CODE #######################
+####################### TRUE IF ARGUMENT LOOKS LIKE AN YOUTUBE CODE #######################
 sub is_code {
     return 1 if length $_[0] == 11 and $_[0] =~ /^[\w\-]{11}$/ and $_[0] =~ /[\d[:upper:]_\-]/;
     return 0;
