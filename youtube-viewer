@@ -150,7 +150,7 @@ my $match_regexp        = qr{/([^/]*(?<!\\)(?:(?<!\\)\\/)*[^/]*)/};             
 
 ######################################### REGEXP: PLAYLIST ID FINDER #################################
 ## $1 will be the playlist code
-my $get_playlist_code = qr"(?:(?:(?:playlist[?]list|view_play_list[?]p)=)|\w#p/c/)(?:PL)?([[:upper:]\d]{16})";
+my $get_playlist_code = qr{(?:(?:(?:playlist[?]list|view_play_list[?]p)=)|\w#p/c/)(?:PL)?([[:upper:]\d]{16})};
 ######################################################################################################
 
 ######################################### REGEXP: XML PARSER #########################################
@@ -298,19 +298,19 @@ sub parse_arguments {
             given ($arg) {
 
                 ## Resolutions
-                when (/^-+(?:2|240p?)$/) {
+                when (/^-+2(?:40p?)?$/) {
                     $resolution{'resolution'} = 240;
                 }
-                when (/^-+(?:3|360p?)$/) {
+                when (/^-+3(?:60p?)?$/) {
                     $resolution{'resolution'} = 360;
                 }
-                when (/^-+(?:4|480p?)$/) {
+                when (/^-+4(?:80p?)?$/) {
                     $resolution{'resolution'} = 480;
                 }
-                when (/^-+(?:7|720p?)$/) {
+                when (/^-+7(?:20p?)?$/) {
                     $resolution{'resolution'} = 720;
                 }
-                when (/^-+(?:1|1080p?)$/) {
+                when (/^-+1(?:080p?)?$/) {
                     $resolution{'resolution'} = 1080;
                 }
 
@@ -369,7 +369,7 @@ sub parse_arguments {
                       : $mplayer_line =~ s/mplayer /mplayer -novideo /;
                     $resolution{'resolution'} = 480 unless $user_resolution;
                 }
-                when (not $constant{'win32'} and /^-+(?:gnome-mplayer|G)$/) {
+                when (not $constant{'win32'} and /^-+[Gg](?:nome-mplayer)?$/) {
                     substr($mplayer_line, 0, 0, 'gnome-');
                     $mplayer_line =~ s/\B-.+//;
                 }
@@ -387,7 +387,7 @@ sub parse_arguments {
                         locate_wget();
                     }
                 }
-                when (/^-+(?:L|(?:lwp|LWP)-download)$/) {
+                when (/^-+(?:L|lwp-download)$/) {
                     $lwp_downloading = 1;
                 }
                 when (/^-+(?:sub|lang)(?:=([\w]{2,5}))?$/) {
@@ -397,7 +397,7 @@ sub parse_arguments {
                 when (/^-+(?:P|proxy)(?:=(.+))?$/) {
                     set_lwp_useragent() unless $lwp_is_set;
                     my $proxy = $1 // get_next_argument($i);
-                    $proxy = 'http://' . $proxy unless $proxy =~ /^https?:/;
+                    $proxy = 'http://' . $proxy unless $proxy =~ m{^https?://};
                     $lwp->proxy(['http', 'https'], $proxy);
                 }
                 when (not $constant{'win32'} and /^-+(?:C|cl|colou?rs?)$/) {
