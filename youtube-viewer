@@ -855,6 +855,9 @@ sub search_playlists {
                 $url =~ s/(?<=[&?]start-index=)(\d+)/($1 - $results);/e;
                 search_playlists($url);
             }
+            else {
+                continue;
+            }
         }
         when (/^\d+$/) {
             $playlists = 0;
@@ -1157,9 +1160,7 @@ sub parse_content {
                    : (length $summary > 32 ? substr($summary, 0, $summary_limit) : $summary);
              },
              $gdata{'name'},
-             do {
-                 $gdata{'gd:feedLink'} // $gdata{'yt:countHint'} // $gdata{'countHint'};
-               }
+             $gdata{'gd:feedLink'} // $gdata{'yt:countHint'} // $gdata{'countHint'}
             ])
           :
 
@@ -1173,10 +1174,8 @@ sub parse_content {
              },
              $gdata{'name'},
              format_time($gdata{'yt:duration'}),
-             $gdata{'yt:statistics'},
-             do {
-                 $gdata{'yt:uploaded'} // $gdata{'published'};
-             },
+             $gdata{'yt:statistics'} // 0,
+             $gdata{'yt:uploaded'}   // $gdata{'published'},
              $gdata{'media:category'},
              $gdata{'media:description'},
              do {
@@ -1245,7 +1244,7 @@ sub print_results {
                 previous_page();
             }
             else {
-                search($_);
+                continue;
             }
         }
         when ($_ eq 'all') {
@@ -1400,13 +1399,6 @@ sub get_youtube {
     # VideoID, Title, UploaderName, Duration, Views, Date, CategoryLabel, Description, Number
     my ($code, $title, $author, $duration, $views, $published, $category, $description) = ref $_[0] ? @{$_[0]} : @_;
 
-    if (defined $description) {
-        $description = decode_entities($description) if $description =~ /$has_entities/o;
-    }
-    else {
-        $description = 'No description available...';
-    }
-
     set_lwp_useragent() unless $lwp_is_set;
 
     my $content = $lwp->get("$get_video_info?&video_id=$code&el=detailpage&ps=default&eurl=&gl=US&hl=en")->content;
@@ -1486,6 +1478,13 @@ sub get_youtube {
             ($code, $title, $author, $duration, $views, $published, $category, $description) = @{$results[0]};
         }
 
+        if (defined $description and $description ne 'plain') {
+            $description = decode_entities($description) if $description =~ /$has_entities/o;
+        }
+        else {
+            $description = 'No description available...';
+        }
+
         $category =~ s/&amp;/&/;
         $published = "$3.$2.$1" if $published =~ /^(\d\d\d\d)-(\d\d)-(\d\d)/;
 
@@ -1526,7 +1525,6 @@ sub get_youtube {
         warn "\n$bred(x_x) Something went wrong...$reset\n\n$bred(x_x) Unable to stream: $reset$url\n\n";
 
         if ($video_results and not $dont_exit) {
-
             unless (@picks) {
                 sleep 1;
                 print_results();
