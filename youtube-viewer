@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 05 December 2011
+#  Latest edit on: 06 December 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -268,10 +268,10 @@ my $lwp;
 
 sub set_lwp_useragent {
     require LWP::UserAgent;
-    $lwp = 'LWP::UserAgent'->new;
+    $lwp = 'LWP::UserAgent'->new('keep_alive' => 1,
+                                 'env_proxy'  => 1,
+                                 'timeout'    => 30);
     $lwp->agent('Mozilla/5.0 (X11; U; Linux i686; en-US) Chrome/10.0.648.45');
-    $lwp->env_proxy;
-    $lwp->timeout(15);
     $lwp->show_progress(1) if $debug;
     $lwp_is_set = 1;
 }
