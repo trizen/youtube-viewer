@@ -146,7 +146,7 @@ my $has_entities        = qr/&#?\w/;                                            
 my $get_youtube_code    = qr{(?:v|embed|youtu[.]be)(?:%3D|[=/])([\w\-]{11})};    # $1 will be the video code
 my $valid_playlist_code = qr/^(?:PL)?([[:upper:]\d]{16})$/;                      # $1 will be the playlist code
 my $contains_arguments  = qr/(?:\s|^)-+\w/;                                      # checks if a string contains arguments
-my $match_regexp        = qr{/(.*?(?<!\\)(?:(?:\\\\)+)?)/};                      # checks if the input looks like a regexp (//)
+my $match_regexp        = qr{/(.*?(?<!\\)(?:\\\\)*)/};                           # checks if the input looks like a regexp (//)
 
 ######################################### REGEXP: PLAYLIST ID FINDER #################################
 ## $1 will be the playlist code
