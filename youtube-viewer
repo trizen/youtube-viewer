@@ -996,7 +996,7 @@ sub categories_area {
 ####################### PLAY OR DOWNLOAD AN YOUTUBE VIDEO #######################
 sub play_or_download {
 
-    my $streaming = shift;
+    my $streaming = shift();
 
     print "** STREAMING: $streaming\n\n" if $debug;
 
@@ -1009,7 +1009,7 @@ sub play_or_download {
             if ($wget_is_available) {
 
                 # Downloading video with wget
-                system "wget -nc '${streaming}' -O \Q$title\E.mp4";
+                system qq[wget "$streaming" -O \Q$title\E.mp4];
             }
             else {
 
@@ -1030,7 +1030,7 @@ sub play_or_download {
         print "** MPlayer Line: $mplayer_line\n\n" if $debug;
 
         # Executing $mplayer_line with '$streaming' as an argument
-        `$mplayer_line '$streaming'` unless $debug;
+        `$mplayer_line "$streaming"` unless $debug;
 
         # Change directory back to the main working directory
         chdir $constant{'cwd'} if exists $constant{'cwd'};
@@ -1421,7 +1421,7 @@ sub get_youtube {
         chdir $constant{'tmp_dir'};    # change directory to 'tmp_dir' and get the .srt file
 
         unless (-e "${code}_$default_sub.srt") {
-            system "perl $gcap '${url}'";
+            system qq[perl $gcap "$url"];
         }
 
         my $srt_file;
