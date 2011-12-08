@@ -72,7 +72,7 @@ eval 'exec perl -wS $0 ${1+"$@"}'
 
 use strict;
 use feature ('switch');
-use autouse ('URI::Escape'    => 'uri_escape');
+use autouse ('URI::Escape' => 'uri_escape');
 use autouse ('HTML::Entities' => 'decode_entities');
 
 my $appname = 'youtube-viewer';
@@ -476,7 +476,7 @@ sub parse_sub_calling_arguments {
 ####################### LOOKING FOR NON-ARGUMENTS #######################
 my $non_argv = 0;
 foreach my $arg (@ARGV) {
-    if (not chr ord $arg eq q{-} or length $arg == 11) {
+    if (not chr ord $arg eq q{-} or is_code($arg)) {
         $non_argv = 1;
         last;
     }
