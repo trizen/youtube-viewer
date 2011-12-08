@@ -71,7 +71,7 @@ eval 'exec perl -wS $0 ${1+"$@"}'
   if 0;    #$running_under_some_shell;
 
 use strict;
-use feature 'switch';
+use feature ('switch');
 use autouse ('URI::Escape'    => 'uri_escape');
 use autouse ('HTML::Entities' => 'decode_entities');
 
@@ -113,7 +113,7 @@ my %itags = (37 => 1080,
 
 # Unchangeable variables
 my %constant = ('dash_line' => q{-} x 80,                                                  # used as a line separator
-                'win32'     => $^O eq 'Win32' ? 1 : 0,                                     # true if running under Windows
+                'win32'     => $^O eq 'MSWin32' ? 1 : 0,                                   # true if running under Windows
                 'tmp_dir'   => $ENV{'TEMP'} // $ENV{'TMP'} // $ENV{'TMPDIR'} // '/tmp',    # tmpdir is used to save srt files
                );
 
@@ -690,7 +690,7 @@ sub list_user_names {
             when (/^\w+$/) {
                 videos_from_username($_);
             }
-            when (m{/(.+?)/}) {
+            when (/$match_regexp/o) {
                 my $match = qr/$1/i;
                 my @found = ();
                 my $found = 0;
