@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 06 December 2011
+#  Latest edit on: 15 December 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -78,7 +78,7 @@ use autouse ('HTML::Entities' => 'decode_entities');
 my $appname = 'youtube-viewer';
 my $version = '2.5.5-git';
 
-####################### MPLAYER OPTIONS #######################
+#---------------------- MPLAYER OPTIONS ----------------------#
 my $cache                = 30000;               # default MPlayer cache
 my $cache_min            = 5;                   # default MPlayer cache-min
 my $user_lower_cache     = 0;                   # 1 will set a lower cache for MPlayer
@@ -86,7 +86,7 @@ my $mplayer_srt_settings = '-unicode -utf8';    # subtitle options
 ## MPlayer options
 my $mplayer_settings = "-prefer-ipv4 -cache $cache -cache-min $cache_min";
 
-####################### YOUTUBE OPTIONS #######################
+#---------------------- YOUTUBE OPTIONS ----------------------#
 my $start_index = 1;                            # index of the first matching result
 my $results     = 20;                           # number of video results
 my $order_by    = 'relevance';
@@ -94,7 +94,7 @@ my $time_p      = 'all_time';
 my $region;                                     # show YouTube movies from a particular region (default: undefined)
 my $from_author;                                # search videos uploaded by a particular user  (default: undefined)
 
-####################### OTHER OPTIONS #######################
+#----------------------- OTHER OPTIONS -----------------------#
 my $colours         = 0;                        # 1 for colored output of video results
 my $debug           = 0;                        # 1 will run in debug mode
 my $download_video  = 0;                        # 1 will run wget or LWP for downloading videos instead of streaming them
@@ -117,7 +117,7 @@ my %constant = ('dash_line' => q{-} x 80,                                       
                 'tmp_dir'   => $ENV{'TEMP'} // $ENV{'TMP'} // $ENV{'TMPDIR'} // '/tmp',    # tmpdir is used to save srt files
                );
 
-####################### ASCII COLOURS #######################
+#----------------------- ASCII COLOURS -----------------------#
 my $bred    = q{};
 my $bgreen  = q{};
 my $reset   = q{};
@@ -132,7 +132,7 @@ unless ($constant{'win32'}) {                                                  #
     $reset  = "\e[0m";                                                         # reset color
 }
 
-####################### GLOBAL VARIABLES #######################
+#---------------------- GLOBAL VARIABLES ----------------------#
 my $keywords = q{};       # used to store keywords for search
 my $youtube_gdata_url;    # used to store the gdata URL with API query parameters
 my $feeds_main_url = 'https://gdata.youtube.com/feeds/api';
@@ -140,7 +140,7 @@ my $get_video_info = 'https://www.youtube.com/get_video_info';
 
 my (@results, @picks, %resolution, %streaming);    # other global variables
 
-####################### REGEXP AREA #######################
+#------------------------ REGEXP AREA ------------------------#
 my $quit_required       = qr/^(?:q|quit|exit)$/;                                 # exit if user's input is q, quit or exit
 my $has_entities        = qr/&#?\w/;                                             # checks if a string contains HTML entities
 my $get_youtube_code    = qr{(?:v|embed|youtu[.]be)(?:[=/]|%3D)([\w\-]{11})};    # $1 will be the video code
@@ -148,12 +148,13 @@ my $valid_playlist_code = qr/^(?:PL)?([0-9A-Z]{16})$/;                          
 my $contains_arguments  = qr/(?:\s|^)-+\w/;                                      # checks if a string contains arguments
 my $match_regexp        = qr{/((?:\\.|[^\\/])*)/};                               # checks if the input looks like a regexp (//)
 
-######################################### REGEXP: PLAYLIST ID FINDER #################################
+#------------------------------------ REGEXP: PLAYLIST ID FINDER ------------------------------------#
 ## $1 will be the playlist code
 my $get_playlist_code = qr{(?:(?:(?:playlist[?]list|view_play_list[?]p)=)|\w#p/c/)(?:PL)?([A-Z0-9]{16})};
-######################################################################################################
 
-######################################### REGEXP: XML PARSER #########################################
+#----------------------------------------------------------------------------------------------------#
+
+#---------------------------------------- REGEXP: XML PARSER ----------------------------------------#
 # $1, $2 and sometimes $3 and $4 will be defined.
 #
 
@@ -161,9 +162,9 @@ my $xml_parser = qr{<([^/ >?]+)(?:(?: *\w+='(?!')(.+?)')+)?/?>?(?:(?!<)(.+?)<)?}
 
 # my $xml_parser = qr{<(?:([^ >/?]+)[^>/]*>(?!<)(.+?)<|(?<=<)(?: *([^=><]+)='(?!')(.+?)')+/>)}s;    # Slower!
 #
-######################################################################################################
+#----------------------------------------------------------------------------------------------------#
 
-######################################### REGEXP: URL VALIDATION #####################################
+#-------------------------------------- REGEXP: URL VALIDATION --------------------------------------#
 # The bellow regex will validate an HTTP url.
 # If it is valid, youtube-viewer will try to get
 # an youtube video code from that website using /$get_youtube_code/
@@ -200,7 +201,7 @@ my $valid_url = qr{^
                 [#-)+-;=?\\~\w]*)*       # rest characters of the string
 $}x;
 
-####################### TEMPORARY OPTIONS #######################
+#---------------------- TEMPORARY OPTIONS ----------------------#
 my $user_cache;         #               ||
 my $user_cache_min;     #               ||
 my $dont_exit;          #               \/
@@ -211,7 +212,7 @@ my $user_resolution;    #               ||
 my $playlists;          #               ||
 my $user_fullscreen;    #               ||
 
-####################### PRE-CHECKS #######################
+#---------------------- PRE-CHECKS ----------------------#
 # Check if https support is available
 # If is not available, switch to http mode
 unless (grep -e ("$_/LWP/Protocol/https.pm"), @INC) {
@@ -236,10 +237,10 @@ else {
     $mplayer_line = "mplayer $mplayer_settings";                                 # *NIX MPlayer line
 }
 
-####################### MY PATH #######################
+#---------------------- MY PATH ----------------------#
 my @path = $constant{'win32'} ? split(/;/, $ENV{'PATH'}) : split(/:/, $ENV{'PATH'});
 
-####################### LOOKING FOR WGET #######################
+#---------------------- LOOKING FOR WGET ----------------------#
 my $wget_is_available;
 
 sub locate_wget {
@@ -254,7 +255,7 @@ sub locate_wget {
     }
 }
 
-####################### LOOKING FOR GCAP #######################
+#---------------------- LOOKING FOR GCAP ----------------------#
 my $gcap = '/usr/bin/gcap';    # default gcap path
 foreach my $path (@INC, @path) {
     if (-e "$path/gcap") {
@@ -263,7 +264,7 @@ foreach my $path (@INC, @path) {
     }
 }
 
-####################### LWP::UserAgent #######################
+#---------------------- LWP::UserAgent ----------------------#
 my $lwp;
 
 sub set_lwp_useragent {
@@ -276,7 +277,7 @@ sub set_lwp_useragent {
     $lwp_is_set = 1;
 }
 
-####################### GET THE NEXT ARGUMENT #######################
+#---------------------- GET THE NEXT ARGUMENT ----------------------#
 sub get_next_argument {
     my $i = shift();
     if (defined $ARGV[$i] and chr ord $ARGV[$i] ne q{-}) {
@@ -287,7 +288,7 @@ sub get_next_argument {
     }
 }
 
-####################### PARSING ARGUMENTS #######################
+#---------------------- PARSING ARGUMENTS ----------------------#
 sub parse_arguments {
     my $i = 0;
     foreach my $arg (@_) {
@@ -426,7 +427,7 @@ sub parse_arguments {
 }
 parse_arguments(@ARGV);
 
-####################### PARSING ARGUMENTS WHICH CALLS A SUBROUTINE #######################
+#---------------------- PARSING ARGUMENTS WHICH CALLS A SUBROUTINE ----------------------#
 sub parse_sub_calling_arguments {
     my $i = 0;
     foreach my $arg (@_) {
@@ -473,7 +474,7 @@ sub parse_sub_calling_arguments {
     }
 }
 
-####################### LOOKING FOR NON-ARGUMENTS #######################
+#---------------------- LOOKING FOR NON-ARGUMENTS ----------------------#
 my $non_argv = 0;
 foreach my $arg (@ARGV) {
     if (not chr ord $arg eq q{-} or is_code($arg)) {
@@ -482,7 +483,7 @@ foreach my $arg (@ARGV) {
     }
 }
 
-####################### GO TO insert_url() IF $non_argv is FALSE #######################
+#---------------------- GO TO insert_url() IF $non_argv is FALSE ----------------------#
 sub insert_url {
     print "\n$bred=>>$bgreen Insert an YouTube URL or search something...\n$reset> ";
 
@@ -518,7 +519,7 @@ sub insert_url {
 }
 insert_url() unless $non_argv;
 
-####################### GET A VIDEO CODE FROM AN WEBSITE CONTENT #######################
+#---------------------- GET A VIDEO CODE FROM AN WEBSITE CONTENT ----------------------#
 sub code_from_content {
     set_lwp_useragent() unless $lwp_is_set;
 
@@ -530,13 +531,13 @@ sub code_from_content {
     }
 }
 
-####################### TRUE IF ARGUMENT LOOKS LIKE AN YOUTUBE CODE #######################
+#---------------------- TRUE IF ARGUMENT LOOKS LIKE AN YOUTUBE CODE ----------------------#
 sub is_code {
     return 1 if length $_[0] == 11 and $_[0] =~ /^[\w\-]{11}$/ and $_[0] =~ /[\d[:upper:]_\-]/;
     return 0;
 }
 
-####################### PARSING VIDEO CODES SPECIFIED AS ARGUMENTS #######################
+#---------------------- PARSING VIDEO CODES SPECIFIED AS ARGUMENTS ----------------------#
 foreach my $code (@ARGV) {
     given ($code) {
         when (\&is_code) {
@@ -559,7 +560,7 @@ foreach my $code (@ARGV) {
     }
 }
 
-####################### YOUTUBE-VIEWER USAGE #######################
+#---------------------- YOUTUBE-VIEWER USAGE ----------------------#
 sub help {
     print "\n  " . q{=} x 30 . " \U$appname\E " . q{=} x 30 . "
 \t\t\t\t\t\t by Trizen (trizenx\@gmail.com)
@@ -611,7 +612,7 @@ sub help {
     exit 0;
 }
 
-####################### YOUTUBE-VIEWER TIPS AND TRICKS #######################
+#---------------------- YOUTUBE-VIEWER TIPS AND TRICKS ----------------------#
 sub tips_and_tricks {
     print "
                         $bred>>$bgreen Tips and tricks $bred<<$reset
@@ -646,13 +647,13 @@ sub tips_and_tricks {
     exit 0;
 }
 
-####################### YOUTUBE-VIEWER VERSION #######################
+#---------------------- YOUTUBE-VIEWER VERSION ----------------------#
 sub version {
     print "Youtube Viewer $version\n";
     exit 0;
 }
 
-####################### LIST YOUTUBE USERNAMES FROM A FILE #######################
+#---------------------- LIST YOUTUBE USERNAMES FROM A FILE ----------------------#
 sub list_user_names {
     if (-r $users_file) {
 
@@ -730,12 +731,12 @@ sub list_user_names {
     }
 }
 
-####################### GET VIDEOS FROM A SPECIFIC USER #######################
+#---------------------- GET VIDEOS FROM A SPECIFIC USER ----------------------#
 sub videos_from_username {
     parse_url("$feeds_main_url/users/$_[0]/uploads");
 }
 
-####################### PRINT PLAYLISTS #######################
+#---------------------- PRINT PLAYLISTS ----------------------#
 sub print_playlists {
 
     # PlaylistID (0), Number (1), Title (2), Description (3), Author (4), VideosCount (5)
@@ -746,7 +747,7 @@ sub print_playlists {
       : print($bred, $_[0][1], $reset, ' - ', $_[0][2], q{ }, $_[0][3], ' (by ', $_[0][4], ') (', $_[0][5], ")\n");
 }
 
-####################### GET PLAYLISTS FROM A SPECIFIC USER #######################
+#---------------------- GET PLAYLISTS FROM A SPECIFIC USER ----------------------#
 my $playlist_index;
 
 sub playlists_from_username {
@@ -813,7 +814,7 @@ sub playlists_from_username {
     }
 }
 
-####################### SEARCH FOR YOUTUBE PLAYLISTS #######################
+#---------------------- SEARCH FOR YOUTUBE PLAYLISTS ----------------------#
 sub search_playlists {
     my $url = shift();
 
@@ -871,12 +872,12 @@ sub search_playlists {
 
 }
 
-####################### LIST A YOUTUBE PLAYLIST #######################
+#---------------------- LIST A YOUTUBE PLAYLIST ----------------------#
 sub list_playlist {
     parse_url("$feeds_main_url/playlists/$_[0]");
 }
 
-####################### LIST YOUTUBE MOVIE CATEGORIES #######################
+#---------------------- LIST YOUTUBE MOVIE CATEGORIES ----------------------#
 sub youtube_movies {
     print "\n";
 
@@ -907,7 +908,7 @@ sub youtube_movies {
     }
 }
 
-####################### LIST YOUTUBE TOP VIDEO CATEGORIES #######################
+#---------------------- LIST YOUTUBE TOP VIDEO CATEGORIES ----------------------#
 sub youtube_tops {
     my $i             = 0;
     my $today         = $all_time ? 0 : 1;
@@ -949,7 +950,7 @@ sub youtube_tops {
     }
 }
 
-####################### LIST YOUTUBE VIDEO CATEGORIES #######################
+#---------------------- LIST YOUTUBE VIDEO CATEGORIES ----------------------#
 sub categories_area {
     set_lwp_useragent() unless $lwp_is_set;
 
@@ -993,23 +994,25 @@ sub categories_area {
     }
 }
 
-####################### PLAY OR DOWNLOAD AN YOUTUBE VIDEO #######################
+#---------------------- PLAY OR DOWNLOAD AN YOUTUBE VIDEO ----------------------#
 sub play_or_download {
 
-    my $streaming = shift();
+    my $streaming = shift;
 
     print "** STREAMING: $streaming\n\n" if $debug;
 
     ## DOWNLOADING
     if ($download_video) {
         my $title = shift @_;
-        $title =~ tr{/}{|};    # replaces '/' with '|'
+
+        # Replacing reserved characters with a space
+        $title =~ tr{\\/:*?"<>|}{ }s;
 
         if (not -e "$title.mp4") {
             if ($wget_is_available) {
 
                 # Downloading video with wget
-                system qq[wget "$streaming" -O \Q$title\E.mp4];
+                system 'wget', '-nc', $streaming, '-O', "$title.mp4";
             }
             else {
 
@@ -1030,7 +1033,7 @@ sub play_or_download {
         print "** MPlayer Line: $mplayer_line\n\n" if $debug;
 
         # Executing $mplayer_line with '$streaming' as an argument
-        `$mplayer_line "$streaming"` unless $debug;
+        `$mplayer_line '$streaming'` unless $debug;
 
         # Change directory back to the main working directory
         chdir $constant{'cwd'} if exists $constant{'cwd'};
@@ -1054,7 +1057,7 @@ sub play_or_download {
     exit unless $dont_exit;
 }
 
-####################### SEARCH YOUTUBE VIDEOS #######################
+#---------------------- SEARCH YOUTUBE VIDEOS ----------------------#
 search() unless $dont_exit or $playlists;
 
 sub search {
@@ -1088,7 +1091,7 @@ sub search {
     print_results();
 }
 
-####################### PREPARE GDATA FEEDS URL #######################
+#---------------------- PREPARE GDATA FEEDS URL ----------------------#
 sub parse_url {
     $youtube_gdata_url = shift() // $youtube_gdata_url;
 
@@ -1114,7 +1117,7 @@ sub parse_url {
     }
 }
 
-####################### GET AND PARSE GDATA CONTENT #######################
+#---------------------- GET AND PARSE GDATA CONTENT ----------------------#
 sub parse_content {
 
     set_lwp_useragent() unless $lwp_is_set;
@@ -1188,14 +1191,14 @@ sub parse_content {
 
 # Format seconds to HH:MM:SS
 sub format_time {
-    my $sec = shift();
+    my ($sec) = @_;
     my $tmp_time;
     do { $tmp_time = $sec / 3600 % 24; $tmp_time > 0 ? $tmp_time > 9 ? "$tmp_time:" : "0$tmp_time:" : q{} }
       . do        { $tmp_time = $sec / 60 % 60; $tmp_time > 9 ? $tmp_time : "0$tmp_time" }
       . q{:} . do { $tmp_time = $sec % 60;      $tmp_time > 9 ? $tmp_time : "0$tmp_time" };
 }
 
-####################### PRINT RESULTS FROM @results #######################
+#---------------------- PRINT RESULTS FROM @results ----------------------#
 sub print_results {
 
     if (@results) {
@@ -1281,7 +1284,7 @@ sub print_results {
         }
         when (/\d/ and not /(?:\s|^)[^\d-]/) {
             s/(?:\D|^)-+\d+(?:\w+)?//g;                          # remove resolution arguments (e.g.: --360p);
-            s/(\d+)(?:-|[.][.])(\d+)/join q{ }, $1 .. $2;/eg;    # '2..5' will be '2 3 4 5'
+            s/(\d+)(?:-|[.][.])(\d+)/join q{ }, $1 .. $2;/eg;    # '2..5' or '2-5' to '2 3 4 5'
             @picks = grep { $_ > 0 and $_ <= scalar @results if /^\d+$/ } split /[[:punct:] ]+/, $_;
             @picks ? foreach_pick() : continue;
         }
@@ -1297,7 +1300,7 @@ sub foreach_pick {
     }
 }
 
-####################### NEXT PAGE #######################
+#---------------------- NEXT PAGE ----------------------#
 sub next_page {
     if ($youtube_gdata_url =~ s/(?<=[&?]start-index=)(\d+)/($1 + $results);/e) {
         parse_content $youtube_gdata_url;
@@ -1305,7 +1308,7 @@ sub next_page {
     }
 }
 
-####################### PREVIOUS PAGE #######################
+#---------------------- PREVIOUS PAGE ----------------------#
 sub previous_page {
     if ($youtube_gdata_url =~ s/(?<=[&?]start-index=)(\d+)/($1 - $results);/e) {
         parse_content $youtube_gdata_url;
@@ -1421,7 +1424,7 @@ sub get_youtube {
         chdir $constant{'tmp_dir'};    # change directory to 'tmp_dir' and get the .srt file
 
         unless (-e "${code}_$default_sub.srt") {
-            system qq[perl $gcap "$url"];
+            system 'perl', $gcap, $url;
         }
 
         my $srt_file;
