@@ -81,15 +81,15 @@ my $appname = 'youtube-viewer';
 my $version = '2.5.5-git';
 
 #---------------------- MPLAYER OPTIONS ----------------------#
-my $cache                = 30000;                                                # default MPlayer cache
-my $cache_min            = 5;                                                    # default MPlayer cache-min
-my $user_lower_cache     = 0;                                                    # 1 will set a lower cache for MPlayer
-my $mplayer_srt_settings = '-unicode -utf8';                                     # subtitle options
-my $mplayer_settings     = "-prefer-ipv4 -cache $cache -cache-min $cache_min";
+my $cache                = 30000;                                                           # default MPlayer cache
+my $cache_min            = 5;                                                               # default MPlayer cache-min
+my $user_lower_cache     = 0;                                                               # 1 will set a lower cache for MPlayer
+my $mplayer_srt_settings = '-unicode -utf8';                                                # subtitle options
+my $mplayer_settings     = "-prefer-ipv4 -cache $cache -cache-min $cache_min -really-quiet";
 
 #---------------------- YOUTUBE OPTIONS ----------------------#
-my $start_index = 1;                                                             # index of the first matching result
-my $results     = 20;                                                            # number of video results
+my $start_index = 1;                                                                        # index of the first matching result
+my $results     = 20;                                                                       # number of video results
 my $order_by    = 'relevance';
 my $time_p      = 'all_time';
 my $region;         # show YouTube movies from a particular region (default: undefined)
@@ -972,7 +972,7 @@ sub play_or_download {
         print "** MPlayer Line: $mplayer_line\n\n" if $debug;
 
         # Executing $mplayer_line with '$streaming' as an argument
-        system split(/\s+/, $mplayer_line), '-really-quiet', $streaming
+        system split(/\s+/, $mplayer_line), $streaming
           unless $debug;
 
         # Change directory back to the main working directory
