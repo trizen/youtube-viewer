@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 19 December 2011
+#  Latest edit on: 23 December 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -113,24 +113,27 @@ my %itags = (37 => 1080,
              5  => 240);
 
 # Unchangeable variables
-my %constant = ('dash_line' => q{-} x 80,                                                  # used as a line separator
-                'win32'     => $^O eq 'MSWin32' ? 1 : 0,                                   # true if running under Windows
-                'tmp_dir'   => $ENV{'TMP'} // $ENV{'TEMP'} // $ENV{'TMPDIR'} // '/tmp',    # tmpdir is used to save srt files
+my %constant = (
+    'dash_line' => q{-} x 80,     # used as a line separator
+    'win32' => $^O eq 'MSWin32'
+    ? 1
+    : 0,                          # true if running under Windows
+    'tmp_dir' => $ENV{'TMP'} // $ENV{'TEMP'} // $ENV{'TMPDIR'} // '/tmp',    # tmpdir is used to save srt files
                );
 
 #----------------------- ASCII COLOURS -----------------------#
 my $bred    = q{};
 my $bgreen  = q{};
 my $reset   = q{};
-my $cblack  = "\e[40m";                                                        # background black
-my $byellow = "\e[1;33m";                                                      # bold yellow
-my $bpurle  = "\e[1;35m";                                                      # bold purple
-my $bblue   = "\e[1;34m";                                                      # bold blue
+my $cblack  = "\e[40m";                                                      # background black
+my $byellow = "\e[1;33m";                                                    # bold yellow
+my $bpurle  = "\e[1;35m";                                                    # bold purple
+my $bblue   = "\e[1;34m";                                                    # bold blue
 
-unless ($constant{'win32'}) {                                                  # if not running under Windows
-    $bred   = "\e[1;31m";                                                      # set bold red
-    $bgreen = "\e[1;32m";                                                      # set bold green
-    $reset  = "\e[0m";                                                         # set reset color
+unless ($constant{'win32'}) {                                                # if not running under Windows
+    $bred   = "\e[1;31m";                                                    # set bold red
+    $bgreen = "\e[1;32m";                                                    # set bold green
+    $reset  = "\e[0m";                                                       # set reset color
 }
 
 #---------------------- GLOBAL VARIABLES ----------------------#
@@ -157,19 +160,17 @@ my $get_username = qr{^https?://(?:www[.])?youtube[.]com/(?:user/)?(\w{2,})(?:[?
 
 #---------------------------------------- REGEXP: XML PARSER ----------------------------------------#
 # Usage:
-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
+#-------
 # while($xml =~ /$xml_parser/o){
 #       # do something...
 # }
 #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
-
+#
 # Faster, but not the safest...
 # Getting values: $hash{$1} = $3 // $2 // next;
-
 my $xml_parser = qr{<([^/ >?]+)(?:(?: *\w+='(?!')(.+?)')+)?/?>?(?:(?!<)(.+?)<)?}s;
 
 #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
-
 # Slower, but much safer...
 # Getting values: if    (defined $1) { $hash{$1} = $2 }
 #                 elsif (defined $3) { $hash{$3} = $4 }
@@ -182,7 +183,6 @@ my $xml_parser = qr{<([^/ >?]+)(?:(?: *\w+='(?!')(.+?)')+)?/?>?(?:(?!<)(.+?)<)?}
 # The bellow regex will validate an HTTP url.
 # If it is valid, youtube-viewer will try to get
 # an youtube video code from that website using /$get_youtube_code/
-
 my $valid_url = qr{^
         ################# This regex will validate an HTTP URL #################
 
@@ -236,7 +236,6 @@ unless (grep -e ("$_/LWP/Protocol/https.pm"), @INC) {
 my $mplayer_line;
 if ($constant{'win32'}) {
     my $smplayer = $ENV{'ProgramFiles'} . '\\SMPlayer\\mplayer\\mplayer.exe';    # Windows SMPlayer path
-
     if (-e $smplayer) {
         $mplayer_line = qq["$smplayer" $mplayer_settings];                       # Windows MPlayer line
     }
@@ -250,13 +249,17 @@ else {
 }
 
 #---------------------- MY PATH ----------------------#
-my @path = $constant{'win32'} ? split(/;/, $ENV{'PATH'}) : split(/:/, $ENV{'PATH'});
+my @path =
+  $constant{'win32'}
+  ? split(/;/, $ENV{'PATH'})
+  : split(/:/, $ENV{'PATH'});
 
 #---------------------- LOOKING FOR WGET ----------------------#
 my $wget_is_available;
 
 sub locate_wget {
-    if (-x '/usr/bin/wget' or grep { $constant{'win32'} ? -e "$_\\wget" : -x "$_/wget" } @path) {
+    if (-x '/usr/bin/wget'
+        or grep { $constant{'win32'} ? -e "$_\\wget" : -x "$_/wget" } @path) {
         $wget_is_available = 1;
     }
 }
@@ -285,7 +288,10 @@ sub set_lwp_useragent {
 
 #---------------------- TRUE IF ARGUMENT LOOKS LIKE AN YOUTUBE CODE ----------------------#
 sub is_code {
-    return 1 if length $_[0] == 11 and $_[0] =~ /^[\w\-]{11}$/ and $_[0] =~ /[\d[:upper:]_\-]/;
+    return 1
+      if length $_[0] == 11
+          and $_[0] =~ /^[\w\-]{11}$/
+          and $_[0] =~ /[\d[:upper:]_\-]/;
     return 0;
 }
 
@@ -303,14 +309,21 @@ foreach my $arg (@ARGV) {
 
 # Exit unless there are more videos selected to play
 $SIG{'INT'} = sub {
-    @picks > 1 ? do { @picks = (); $playback = 0 } : do { print "\n"; exit }
+    @picks > 1
+      ? do {
+        @picks    = ();
+        $playback = 0;
+      }
+      : do {
+        print "\n";
+        exit;
+      }
 };
 
 # Parsing arguments
 parse_arguments(@ARGV) if @ARGV;
 
 sub parse_arguments {
-
     GetOptionsFromArray(
         \@_,
 
@@ -320,35 +333,58 @@ sub parse_arguments {
         'version|v' => \&version,
 
         # Categories
-        'playlist|p!'         => \$playlists,
-        'categories|c'        => \&categories_area,
-        'movies|M'            => \&youtube_movies,
-        'today|t'             => \&youtube_tops,
-        'username|u=s'        => sub { videos_from_username(pop()) },
-        'user-playlists|up=s' => sub { playlists_from_username(pop()) },
-        'users|U:s'           => sub {
+        'playlist|p!'  => \$playlists,
+        'categories|c' => \&categories_area,
+        'movies|M'     => \&youtube_movies,
+        'today|t'      => \&youtube_tops,
+        'username|u=s' => sub {
+            videos_from_username(pop());
+        },
+        'user-playlists|up=s' => sub {
+            playlists_from_username(pop());
+        },
+        'users|U:s' => sub {
             list_user_names(
                 do {
-                    length $_[1] ? pop() : $users_file;
+                    length $_[1]
+                      ? pop()
+                      : $users_file;
                   }
             );
         },
 
         # Resolutions
-        '240p|2'  => sub { $resolution{'resolution'} = 240 },
-        '360p|3'  => sub { $resolution{'resolution'} = 360 },
-        '480p|4'  => sub { $resolution{'resolution'} = 480 },
-        '720p|7'  => sub { $resolution{'resolution'} = 720 },
-        '1080p|1' => sub { $resolution{'resolution'} = 1080 },
+        '240p|2' => sub {
+            $resolution{'resolution'} = 240;
+        },
+        '360p|3' => sub {
+            $resolution{'resolution'} = 360;
+        },
+        '480p|4' => sub {
+            $resolution{'resolution'} = 480;
+        },
+        '720p|7' => sub {
+            $resolution{'resolution'} = 720;
+        },
+        '1080p|1' => sub {
+            $resolution{'resolution'} = 1080;
+        },
 
         # YouTube options
-        'time=s'       => \$time_p,
-        'author=s'     => \$from_author,
-        'more|m'       => sub { $results = 50 },
+        'time=s'   => \$time_p,
+        'author=s' => \$from_author,
+        'more|m'   => sub {
+            $results = 50;
+        },
         'order-by|o=s' => \$order_by,
         'region|r=s'   => \$region,
-        'all-time|a'   => sub { $all_time = 1; youtube_tops() },
-        'page=i' => sub { $start_index = $results * pop() - $results + 1 },
+        'all-time|a'   => sub {
+            $all_time = 1;
+            youtube_tops();
+        },
+        'page=i' => sub {
+            $start_index = $results * pop() - $results + 1;
+        },
 
         # MPlayer options
         'fullscreen|fs|f' => sub {
@@ -359,7 +395,9 @@ sub parse_arguments {
             disable_fullscreen_mode();
             $user_fullscreen = 1;
         },
-        'mplayer=s' => sub { $mplayer_line .= ' ' . pop() },
+        'mplayer=s' => sub {
+            $mplayer_line .= ' ' . pop();
+        },
         'lower-cache|l' => \$user_lower_cache,
         'cache=i'       => sub {
             my $local_cache = pop();
@@ -387,22 +425,27 @@ sub parse_arguments {
         'play-all|all|A!' => \$playback,
         'download|d'      => sub {
             $download_video = 1;
-            if (not $lwp_downloading and not $wget_is_available) {
+            if (    not $lwp_downloading
+                and not $wget_is_available) {
                 locate_wget();
             }
         },
         'lwp-download|L!' => \$lwp_downloading,
         'lang|sub=s'      => sub {
             $default_sub = pop();
-            $default_sub = lc $default_sub unless $default_sub =~ /_/;
+            $default_sub = lc $default_sub
+              unless $default_sub =~ /_/;
         },
         'proxy|P' => sub {
             my $proxy = pop();
             set_lwp_useragent() unless $lwp_is_set;
-            $proxy = 'http://' . $proxy unless $proxy =~ m{^(?:ht|f)tps?://};
+            $proxy = 'http://' . $proxy
+              unless $proxy =~ m{^(?:ht|f)tps?://};
             $lwp->proxy(['http', 'https', 'ftp', 'ftps'], $proxy);
         },
-        'colors|colours|C' => sub { $colours = 1 unless $constant{'win32'} },);
+        'colors|colours|C' => sub {
+            $colours = 1 unless $constant{'win32'};
+        },);
 
     #-------- END of GetOptionsFromArray --------#
 
@@ -418,8 +461,10 @@ sub parse_arguments {
     if ($playback and not $user_resolution) {
         $resolution{'resolution'} = 1080;
     }
-    $keywords = join(q{ }, get_keywords_from_array(\@_)) if @_;
-    search_playlists() if $playlists;
+    $keywords = join(q{ }, get_keywords_from_array(\@_))
+      if @_;
+    search_playlists()
+      if $playlists;
 }
 
 #---------------------- PARSING VIDEO CODES SPECIFIED AS ARGUMENTS ----------------------#
@@ -450,7 +495,6 @@ sub insert_url {
 
     given (<STDIN>) {
         chomp;
-
         when (/$quit_required/o) {
             exit;
         }
@@ -614,12 +658,9 @@ sub list_user_names {
         $usernames_table{$i} = $username;
     }
     close $fh;
-
     print "\n$bred=>$bgreen Pick an username number$reset\n> ";
-
     given (<STDIN>) {
         chomp;
-
         when (/$quit_required/o or $_ eq q{}) {
             exit;
         }
@@ -640,7 +681,10 @@ sub list_user_names {
             print "\n";
             while (my ($number, $username) = each %usernames_table) {
                 if ($username =~ /$match/o) {
-                    print $bred, do { q{ } if ++$found < 10 }, "$found$reset - $bgreen$username$reset\n";
+                    print $bred, do {
+                        q{ }
+                          if ++$found < 10;
+                    }, "$found$reset - $bgreen$username$reset\n";
                     push(@found, $found);
                     $usernames_table{$found} = $username;
                 }
@@ -649,7 +693,6 @@ sub list_user_names {
                 print "\n$bred=>>$bgreen Pick an username number$reset\n> ";
                 given (<STDIN>) {
                     chomp;
-
                     when (/$quit_required/o or $_ eq q{}) {
                         exit;
                     }
@@ -692,22 +735,18 @@ sub print_playlists {
 my $playlist_index;
 
 sub playlists_from_username {
-
     my @playlists;
     $playlists = 1;
     my $username = shift();
     $playlist_index = shift() || $start_index;
     my $i = -1;
-
     parse_content(
                  "http://gdata.youtube.com/feeds/api/users/$username/playlists?max-results=$results&start-index=$playlist_index");
-
     unless (@results) {
         print "$bred(x_x) No playlist has been found...$reset\n";
         print "\n$bred=>>$bgreen Insert another username:$reset ";
         given (<STDIN>) {
             chomp;
-
             when (/$quit_required/o or $_ eq q{}) {
                 exit;
             }
@@ -721,12 +760,10 @@ sub playlists_from_username {
     foreach my $playlist (@results) {
         print_playlists($playlist);
     }
-
     print "\n$bred=>>$bgreen Pick one playlist or insert another username$reset\n> ";
 
     given (<STDIN>) {
         chomp;
-
         when (/$quit_required/o) {
             exit;
         }
@@ -757,8 +794,7 @@ sub playlists_from_username {
 
 #---------------------- SEARCH FOR YOUTUBE PLAYLISTS ----------------------#
 sub search_playlists {
-    my $url = shift();
-
+    my $url    = shift();
     my $length = length $keywords;
     if ($length > 0) {
         $keywords = scalar reverse(unpack("A$length", reverse(unpack("A$length", $keywords))));
@@ -766,9 +802,7 @@ sub search_playlists {
         $playlists = 1;
         parse_content($url);
     }
-
     my $n = -1;
-
     foreach my $playlist (@results) {
         print_playlists($playlist);
     }
@@ -777,7 +811,6 @@ sub search_playlists {
 
     given (<STDIN>) {
         chomp;
-
         when (/$quit_required/o) {
             exit;
         }
@@ -792,7 +825,11 @@ sub search_playlists {
             search_playlists($url);
         }
         when ($_ eq 'back') {
-            if (do { $url =~ /[&?]start-index=(\d+)/; $1 > $results }
+            if (
+                do {
+                    $url =~ /[&?]start-index=(\d+)/;
+                    $1 > $results;
+                }
               ) {
                 $url =~ s/(?<=[&?]start-index=)(\d+)/($1 - $results);/e;
                 search_playlists($url);
@@ -810,7 +847,6 @@ sub search_playlists {
             search_playlists();
         }
     }
-
 }
 
 #---------------------- LIST A YOUTUBE PLAYLIST ----------------------#
@@ -821,22 +857,17 @@ sub list_playlist {
 #---------------------- LIST YOUTUBE MOVIE CATEGORIES ----------------------#
 sub youtube_movies {
     print "\n";
-
     my $i = 0;
     my %movie_table;
-
     foreach my $movie_cat_name ('most_popular', 'most_recent', 'trending') {
         my $cat_name = ucfirst $movie_cat_name;
         $cat_name =~ tr/_/ /;
         print q{ }, $bred, ++$i, "$reset - $cat_name\n";
         $movie_table{$i} = $movie_cat_name;
     }
-
     print "\n$bred=>>$bgreen Pick one category$reset\n> ";
-
     given (<STDIN>) {
         chomp;
-
         when (/$quit_required/o or $_ eq q{}) {
             exit;
         }
@@ -851,13 +882,14 @@ sub youtube_movies {
 
 #---------------------- LIST YOUTUBE TOP VIDEO CATEGORIES ----------------------#
 sub youtube_tops {
-    my $i             = 0;
-    my $today         = $all_time ? 0 : 1;
+    my $i = 0;
+    my $today =
+      $all_time
+      ? 0
+      : 1;
     my $standardfeeds = "$feeds_main_url/standardfeeds";
     my %tops_table;
-
     print "\n";
-
     foreach my $cat_top_name ('top_rated',   'top_favorites',  'most_viewed',    'most_popular',
                               'most_recent', 'most_discussed', 'most_responded', 'recently_featured'
       ) {
@@ -871,7 +903,6 @@ sub youtube_tops {
 
     given (<STDIN>) {
         chomp;
-
         when (/$quit_required/o or $_ eq q{}) {
             exit;
         }
@@ -880,7 +911,8 @@ sub youtube_tops {
         }
         when (exists $tops_table{$_}) {
             my $url = $standardfeeds . q{/} . $tops_table{$_};
-            if ($today and not $url =~ /recent/) {
+            if ($today
+                and not $url =~ /recent/) {
                 $url .= '?time=today';
             }
             parse_url($url);
@@ -894,30 +926,26 @@ sub youtube_tops {
 #---------------------- LIST YOUTUBE VIDEO CATEGORIES ----------------------#
 sub categories_area {
     set_lwp_useragent() unless $lwp_is_set;
-
     my $n = 0;
     my %categories_table;
-
     print "\n";
-
     foreach my $line (split /<atom:category term=/, $lwp->get('http://gdata.youtube.com/schemas/2007/categories.cat')->content) {
-        if (not $line =~ /deprecated/ and $line =~ /^'(.+?)'\s+label='(.+?)'/) {
+        if (not $line =~ /deprecated/
+            and $line =~ /^'(.+?)'\s+label='(.+?)'/) {
             ++$n;
             my $cat_name  = $1;
             my $cat_label = $2;
             $cat_label =~ s/&amp;/&/;
             print do {
-                q{ } if $n < 10;
+                q{ }
+                  if $n < 10;
             }, $bred, $n, $reset, ' - ', $cat_label, "\n";
             $categories_table{$n} = $cat_name;
         }
     }
-
     print "\n$bred=>>$bgreen Insert a category number$reset\n> ";
-
     given (<STDIN>) {
         chomp;
-
         when (/$quit_required/o or $_ eq q{}) {
             exit;
         }
@@ -935,7 +963,6 @@ sub categories_area {
 
 #---------------------- PLAY OR DOWNLOAD AN YOUTUBE VIDEO ----------------------#
 sub play_or_download {
-
     my $streaming = shift;
 
     print "** STREAMING: $streaming\n\n" if $debug;
@@ -946,7 +973,6 @@ sub play_or_download {
 
         # Replacing reserved characters with a space
         $title =~ tr{\\/:*?"< >|}{ }s;
-
         if (not -e "$title.mp4") {
             if ($wget_is_available) {
 
@@ -969,37 +995,39 @@ sub play_or_download {
 
     ## STREAMING
     else {
-        print "** MPlayer Line: $mplayer_line\n\n" if $debug;
+        print "** MPlayer Line: $mplayer_line\n\n"
+          if $debug;
 
         # Executing $mplayer_line with '$streaming' as an argument
         system split(/\s+/, $mplayer_line), $streaming
           unless $debug;
 
         # Change directory back to the main working directory
-        chdir $constant{'cwd'} if exists $constant{'cwd'};
+        chdir $constant{'cwd'}
+          if exists $constant{'cwd'};
     }
-
     print "\n";
-
-    disable_fullscreen_mode() unless $user_fullscreen;
-
+    disable_fullscreen_mode()
+      unless $user_fullscreen;
     if (@picks) {
         foreach_pick();    # play the next video
     }
     elsif ($playback) {
         next_page();
     }
-
-    if ($video_results and not $dont_exit) {
+    if ($video_results
+        and not $dont_exit) {
         print_results();    # back to video results
     }
-
-    exit unless $dont_exit;
+    exit
+      unless $dont_exit;
 }
 
 #---------------------- SEARCH YOUTUBE VIDEOS ----------------------#
 if (length($keywords)) {
-    search() unless $dont_exit or $playlists;
+    search()
+      unless $dont_exit
+          or $playlists;
 }
 
 sub search {
@@ -1007,7 +1035,6 @@ sub search {
 
     # Get words which doesn't begins with a dash (-);
     $keywords = join(q{ }, get_keywords_from_string(\$keywords));
-
     $keywords = uri_escape($keywords);
     $youtube_gdata_url =
         $feeds_main_url
@@ -1021,11 +1048,9 @@ sub search {
       . $order_by
       . '&start-index='
       . $start_index . '&v=2';
-
     if (defined $from_author) {
         $youtube_gdata_url .= '&author=' . $from_author;
     }
-
     if (defined $region) {
         $youtube_gdata_url .= '&region=' . $region;
     }
@@ -1035,12 +1060,13 @@ sub search {
 
 #---------------------- PREPARE GDATA FEEDS URL ----------------------#
 sub parse_url {
-    ($youtube_gdata_url) = @_ or return;
-
+    ($youtube_gdata_url) = @_;
     if ($youtube_gdata_url =~ /^$feeds_main_url/o) {
-        $youtube_gdata_url .= $youtube_gdata_url =~ /[?]/ ? '&' : '?';
+        $youtube_gdata_url .=
+          $youtube_gdata_url =~ /[?]/
+          ? '&'
+          : '?';
         $youtube_gdata_url .= "start-index=$start_index&max-results=$results&v=2";
-
         if (defined $region) {
             $youtube_gdata_url .= "&region=$region";
         }
@@ -1054,25 +1080,24 @@ sub parse_url {
 
 #---------------------- GET AND PARSE GDATA CONTENT ----------------------#
 sub parse_content {
-
     set_lwp_useragent() unless $lwp_is_set;
-
     undef @results;
     my $number = 0;
-
     foreach my $entry (split(/<entry/, $lwp->get($_[0])->content, 0)) {
-
         my %gdata;
         while ($entry =~ /$xml_parser/og) {
             $gdata{$1} = $3 // $2 // next;
         }
-
         $playlists
-          ? do { next unless exists $gdata{'yt:playlistId'} }
-          : do { next unless exists $gdata{'yt:videoid'} };
-
+          ? do {
+            next
+              unless exists $gdata{'yt:playlistId'};
+          }
+          : do {
+            next
+              unless exists $gdata{'yt:videoid'};
+          };
         ++$number;
-
         $playlists
           ?
 
@@ -1081,11 +1106,15 @@ sub parse_content {
             @results,
             [$gdata{'yt:playlistId'},
              do {
-                 $number < 10 ? " $number" : $number;
+                 $number < 10
+                   ? " $number"
+                   : $number;
              },
              do {
                  my $title = $gdata{'title'} // 'Unknown';
-                 $title =~ /$has_entities/o ? $title = decode_entities($title) : $title;
+                 $title =~ /$has_entities/o
+                   ? $title = decode_entities($title)
+                   : $title;
              },
              do {
                  my $summary = $gdata{'summary'} // "\cH";
@@ -1095,7 +1124,9 @@ sub parse_content {
                    ? length $summary > $summary_limit
                        ? substr(decode_entities($summary), 0, $summary_limit)
                        : decode_entities($summary)
-                   : (length $summary > 32 ? substr($summary, 0, $summary_limit) : $summary);
+                   : (length $summary > 32
+                      ? substr($summary, 0, $summary_limit)
+                      : $summary);
              },
              $gdata{'name'},
              $gdata{'gd:feedLink'} // $gdata{'yt:countHint'} // $gdata{'countHint'}
@@ -1108,7 +1139,9 @@ sub parse_content {
             [$gdata{'yt:videoid'},
              do {
                  my $title = $gdata{'title'} // 'Unknown';
-                 $title =~ /$has_entities/o ? decode_entities($title) : $title;
+                 $title =~ /$has_entities/o
+                   ? decode_entities($title)
+                   : $title;
              },
              $gdata{'name'},
              format_time(\$gdata{'yt:duration'}),
@@ -1117,7 +1150,9 @@ sub parse_content {
              $gdata{'media:category'},
              $gdata{'media:description'},
              do {
-                 $number < 10 ? " $number" : $number;
+                 $number < 10
+                   ? " $number"
+                   : $number;
                }
             ]);
     }
@@ -1129,27 +1164,37 @@ sub format_time {
     my $tmp_time;
     do {
         $tmp_time = ${$_[0]} / 3600 % 24;
-        $tmp_time > 0 ? $tmp_time > 9 ? "$tmp_time:" : "0$tmp_time:" : q{};
+        $tmp_time > 0
+          ? $tmp_time > 9
+              ? "$tmp_time:"
+              : "0$tmp_time:"
+          : q{};
       }
       . do {
         $tmp_time = ${$_[0]} / 60 % 60;
-        $tmp_time > 9 ? $tmp_time : "0$tmp_time";
+        $tmp_time > 9
+          ? $tmp_time
+          : "0$tmp_time";
       }
-      . q{:} 
+      . q{:}
       . do {
         $tmp_time = ${$_[0]} % 60;
-        $tmp_time > 9 ? $tmp_time : "0$tmp_time";
+        $tmp_time > 9
+          ? $tmp_time
+          : "0$tmp_time";
       };
 }
 
 # Returns a list of arguments (from string ref)
 sub get_arguments_from_string {
-    return grep { chr ord $_ eq q{-} } split(/\s+/, ${$_[0]});
+    return grep { chr ord $_ eq q{-} }
+      split(/\s+/, ${$_[0]});
 }
 
 # Returns a list of keywords (from string ref)
 sub get_keywords_from_string {
-    return grep { chr ord $_ ne q{-} } split(/\s+/, ${$_[0]});
+    return grep { chr ord $_ ne q{-} }
+      split(/\s+/, ${$_[0]});
 }
 
 # Returns a list of keywords (from array ref)
@@ -1159,7 +1204,6 @@ sub get_keywords_from_array {
 
 #---------------------- PRINT VIDEO RESULTS ----------------------#
 sub print_results {
-
     if (@results) {
         $video_results = 1;
     }
@@ -1175,7 +1219,6 @@ sub print_results {
                   ') (',  $bblue,  $$video[3], $reset,  $cblack, ')',        $reset, "\n")
           : print "$bred$$video[8]$reset - $$video[1] (by $$video[2]) ($$video[3])\n";
     }
-
     if ($playback) {
         @picks = 1 .. @results;
         foreach_pick();
@@ -1185,7 +1228,6 @@ sub print_results {
 
         given (<STDIN>) {
             chomp;
-
             when (/$quit_required/o) {
                 exit;
             }
@@ -1201,7 +1243,11 @@ sub print_results {
                 next_page();
             }
             when ($_ eq 'back') {
-                if (do { $youtube_gdata_url =~ /[&?]start-index=(\d+)/; $1 > $results }
+                if (
+                    do {
+                        $youtube_gdata_url =~ /[&?]start-index=(\d+)/;
+                        $1 > $results;
+                    }
                   ) {
                     previous_page();
                 }
@@ -1210,7 +1256,8 @@ sub print_results {
                 }
             }
             when ($_ eq 'all') {
-                parse_arguments('--1080p') unless $user_resolution;
+                parse_arguments('--1080p')
+                  unless $user_resolution;
                 @picks = 1 .. scalar @results;
                 foreach_pick();
             }
@@ -1245,7 +1292,9 @@ sub print_results {
                 s/(?:\D|^)-+\d+(?:\w+)?//g;                          # remove resolution arguments (e.g.: --360p);
                 s/(\d+)(?:-|[.][.])(\d+)/join q{ }, $1 .. $2;/eg;    # '2..5' or '2-5' to '2 3 4 5'
                 @picks = grep { $_ > 0 and $_ <= scalar @results if /^\d+$/ } split /[\s[:punct:]]+/, $_;
-                @picks ? foreach_pick() : continue;
+                @picks
+                  ? foreach_pick()
+                  : continue;
             }
             default {
                 search(join(q{ }, get_keywords_from_string(\$_)) or redo);
@@ -1293,11 +1342,14 @@ sub select_resolution {
         when (1080) {
             if (exists $streaming{1080}) {
                 default_cache();
-                set_fullscreen_mode() unless $user_fullscreen;
+                set_fullscreen_mode()
+                  unless $user_fullscreen;
                 return $streaming{1080};
             }
             else {
-                exists $streaming{720} ? default_cache() : lower_cache();
+                exists $streaming{720}
+                  ? default_cache()
+                  : lower_cache();
                 return lower_quality();
             }
         }
@@ -1360,14 +1412,15 @@ sub format_itags {
 sub get_youtube {
 
     # VideoID, Title, UploaderName, Duration, Views, Date, CategoryLabel, Description, Number
-    my ($code, $title, $author, $duration, $views, $published, $category, $description) = ref $_[0] ? @{$_[0]} : @_;
+    my ($code, $title, $author, $duration, $views, $published, $category, $description) =
+      ref $_[0]
+      ? @{$_[0]}
+      : @_;
 
     set_lwp_useragent() unless $lwp_is_set;
 
     my $content = $lwp->get("$get_video_info?&video_id=$code&el=detailpage&ps=default&eurl=&gl=US&hl=en")->content;
-
-    my $url = "http://www.youtube.com/watch?v=$code";
-
+    my $url     = "http://www.youtube.com/watch?v=$code";
     $mplayer_line =~ s/ *\Q$mplayer_srt_settings\E *-sub.*//;
 
     # Getting YouTube closed captions with gcap
@@ -1375,18 +1428,14 @@ sub get_youtube {
         and -e $gcap
         and not $mplayer_line =~ / -novideo/
         and $content =~ /&has_cc=True&/) {
-
         unless (exists $constant{'cwd'}) {
             require Cwd;
             $constant{'cwd'} = Cwd::getcwd();
         }
-
         chdir $constant{'tmp_dir'};
-
         unless (-e "${code}_$default_sub.srt") {
             system 'perl', $gcap, $url;
         }
-
         my $srt_file;
         if (-e "${code}_$default_sub.srt") {
             $srt_file = "${code}_$default_sub\.srt";
@@ -1405,7 +1454,6 @@ sub get_youtube {
             closedir $dir_h;
         }
     }
-
     if ($content =~ /url_encoded_fmt_stream_map=(.+?)&/) {
         my $streaming = $1;
         $streaming =~ s/%253A/:/gi;
@@ -1416,12 +1464,15 @@ sub get_youtube {
         $streaming =~ s/%25252C/,/gi;
 
         undef %streaming;
-
-        my (@streaming_urls) = grep(/^https?:/, split(/url%3D(.+?)%26/, $streaming));
-        @streaming{format_itags(map(/&itag=(\d+)&/, @streaming_urls))} =
-          grep((
+        my (@streaming_urls) =
+          grep (/^https?:/, split(/url%3D(.+?)%26/, $streaming));
+        @streaming{format_itags(map (/&itag=(\d+)&/, @streaming_urls))} =
+          grep ((
              exists $itags{
-                 do { /&itag=(\d+)&/; $1 }
+                 do {
+                     /&itag=(\d+)&/;
+                     $1;
+                   }
                }
             ),
             @streaming_urls);
@@ -1431,26 +1482,23 @@ sub get_youtube {
                 print "KEY = $key\nVALUE = $value\n\n";
             }
         }
-
         print "\n";
-
         my $rating = sprintf('%.2f', ($content =~ /avg_rating=([^&]+)/));
-
         if (not defined $title) {
             parse_content("$feeds_main_url/videos/$code?v=2");
             ($code, $title, $author, $duration, $views, $published, $category, $description) = @{$results[0]};
         }
-
-        if (defined $description and $description ne 'plain') {
-            $description = decode_entities($description) if $description =~ /$has_entities/o;
+        if (defined $description
+            and $description ne 'plain') {
+            $description = decode_entities($description)
+              if $description =~ /$has_entities/o;
         }
         else {
             $description = 'No description available...';
         }
-
         $category =~ s/&amp;/&/;
-        $published = "$3.$2.$1" if $published =~ /^(\d\d\d\d)-(\d\d)-(\d\d)/;
-
+        $published = "$3.$2.$1"
+          if $published =~ /^(\d\d\d\d)-(\d\d)-(\d\d)/;
         if (length $views > 3) {
             my $l = length($views) - 3;
             my $i = ($l - 1) % 3 + 1;
@@ -1481,12 +1529,10 @@ sub get_youtube {
           "** Views     : $views\n",
           "** Published : $published\n",
           "$constant{'dash_line'}\n";
-
         play_or_download(select_resolution(), $title);
     }
     else {
         warn "\n$bred(x_x) Something went wrong...$reset\n\n$bred(x_x) Unable to stream: $reset$url\n\n";
-
         if ($video_results and not $dont_exit) {
             unless (@picks) {
                 sleep 1;
@@ -1494,8 +1540,8 @@ sub get_youtube {
             }
         }
         else {
-
-            unless ($video_results or $dont_exit) {
+            unless (   $video_results
+                    or $dont_exit) {
                 exit;
             }
         }
@@ -1505,11 +1551,11 @@ sub get_youtube {
 sub pick {
     print "\n$bred=>> $bgreen Please choose a video resolution (default: 1)$reset\n
 $bred 1$reset - 1280x720  (720p)
-$bred 2$reset - 1920x1080 (1080p)\n", q{=} x 23, "\n\n$bgreen=>> Pick format:$reset ";
+$bred 2$reset - 1920x1080 (1080p)\n"
+      , q{=} x 23, "\n\n$bgreen=>> Pick format:$reset ";
 
     given (<STDIN>) {
         chomp;
-
         when (/$quit_required/o) {
             exit;
         }
