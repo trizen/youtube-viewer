@@ -476,10 +476,8 @@ sub parse_arguments {
     if ($playback and not $user_resolution) {
         $resolution{'resolution'} = 1080;
     }
-    $keywords = join(q{ }, get_keywords_from_array(\@_))
-      if @_;
-    search_playlists()
-      if $playlists;
+    $keywords = join(q{ }, get_keywords_from_array(\@_)) if @_;
+    search_playlists() if $playlists;
 }
 
 #---------------------- PARSING VIDEO CODES SPECIFIED AS ARGUMENTS ----------------------#
@@ -505,10 +503,9 @@ foreach my $code (@ARGV) {
 }
 
 sub quit_required {
-    return 1 if (   $_[0] eq 'q'
-                 or $_[0] eq 'quit'
-                 or $_[0] eq 'exit');
-    return 0;
+    $_[0]      eq 'q'
+      or $_[0] eq 'quit'
+      or $_[0] eq 'exit';
 }
 
 #---------------------- GO TO insert_url() IF $non_argv is FALSE ----------------------#
@@ -708,8 +705,7 @@ sub list_user_names {
         }
         when (/$match_regexp/o) {
             my $match = qr/$1/i;
-            my @found = ();
-            my $found = 0;
+            my ($found, @found) = 0;
             print "\n";
             while (my ($number, $username) = each %usernames_table) {
                 if ($username =~ /$match/o) {
@@ -756,7 +752,7 @@ sub videos_from_username {
 sub print_playlists {
     my ($playlist, $num) = @_;
 
-    # PlaylistID (0), Number (1), Title (2), Description (3), Author (4), VideosCount (5)
+    # Number, Title, Author, VideosCount
     $colours
       ? print($cblack, $bred, do { ' ' if $num < 10 }, $num,
               $reset,                $cblack, q{ - },                 $byellow,
@@ -797,7 +793,6 @@ sub playlists_from_username {
         }
     }
 
-    # PlaylistID, Number, Title, Description, Author, VideosCount
     my $num = 0;
     foreach my $playlist (@results) {
         print_playlists($playlist, ++$num);
@@ -845,6 +840,7 @@ sub search_playlists {
         parse_content($url);
     }
     else {
+        $playlists = 0;
         return;
     }
 
@@ -1139,7 +1135,7 @@ sub parse_content {
           ) {
             last unless defined $$gdata;
 
-            # PlaylistID, Number, Title, Description, Author, VideosCount
+            # PlaylistID, Title, Author, VideosCount
             push @results,
               {
                 'playlistID' => \$$gdata->{'yt:playlistId'},
@@ -1160,7 +1156,7 @@ sub parse_content {
           ) {
             last unless defined $$gdata;
 
-            # VideoID, Title, Author, Duration, Views, Date, CategoryLabel, Description, Number
+            # VideoID, Title, Author, Duration, Views, Date, CategoryLabel, Description
             push @results,
               {
                 'code'        => \$$gdata->{'media:group'}{'yt:videoid'},
@@ -1198,7 +1194,7 @@ sub format_time {
           ? $tmp_time
           : "0$tmp_time";
       }
-      . q{:}
+      . q{:} 
       . do {
         $tmp_time = ${$_[0]} % 60;
         $tmp_time > 9
@@ -1241,7 +1237,7 @@ sub print_results {
 
         $colours
 
-          # Colored output (when using --colors, -C)
+          # Colored output (when using --colors or -C)
           ? print $cblack, $bred, do { ' ' if $num < 10 }, $num, $reset,
           $cblack, q{ - }, $byellow, ${$video->{title}}, $reset, $cblack,
           ' (', $bpurle, 'by ', ${$video->{author}}, $reset, $cblack, ') (',
