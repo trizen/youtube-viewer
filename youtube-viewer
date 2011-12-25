@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  (C) 2010-2011 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 23 December 2011
+#  Latest edit on: 25 December 2011
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -30,6 +30,8 @@
 # [!] The most important changes are written in the changelog!
 #
 # [CHANGELOG]
+# - Added support for config file. Lines should be valid arguments (ex: 'arg=value'; '-arg')   - NEW (v2.5.5)
+# - Switched to XML::Fast for parsing gdata XML, in consequence, youtube-viewer is faster!     - NEW (v2.5.5)
 # - Switched to Getopt::Long, added SIGINT handler and a better way to execute mplayer         - NEW (v2.5.5)
 # - Added support to list playlists created by a specific user (usage: -up <USERNAME>)         - NEW (v2.5.4)
 # - Improved parsing support for arguments, including arguments specified via STDIN.           - NEW (v2.5.4)
@@ -68,17 +70,23 @@
 # - Army (for bugs reports and for his great ideas)
 # - dhn (for adding youtube-viewer in freshports.org)
 
-eval 'exec perl -wS $0 ${1+"$@"}'
+eval 'exec perl -S $0 ${1+"$@"}'
   if 0;    # not running under some shell
 
 use strict;
 use feature ('switch');
+use autouse ('XML::Fast' => 'xml2hash');
 use autouse ('URI::Escape' => 'uri_escape');
 use autouse ('HTML::Entities' => 'decode_entities');
-use Getopt::Long qw(GetOptionsFromArray :config no_auto_abbrev no_ignore_case);
+
+binmode STDOUT, ":utf8";
 
 my $appname = 'youtube-viewer';
 my $version = '2.5.5-git';
+
+# Configuration file
+#   ( in /home/user/.config/youtube-viewer/youtube-viewer.conf )
+my $config_file = "$ENV{'XDG_CONFIG_HOME'}/$appname/$appname.conf";
 
 #---------------------- MPLAYER OPTIONS ----------------------#
 my $cache                = 30000;                                                           # default MPlayer cache
@@ -105,35 +113,36 @@ my $default_sub     = 'en';    # default language for subtitles (requires gcap t
 my $users_file = "$ENV{'HOME'}/.config/youtube_usernames.txt";
 
 # itag => resolution
-my %itags = (37 => 1080,
+my %itags = (
+             37 => 1080,
              22 => 720,
              35 => 480,
              43 => 210,
              34 => 360,
-             5  => 240);
+             5  => 240
+            );
 
 # Unchangeable variables
 my %constant = (
-    'dash_line' => q{-} x 80,     # used as a line separator
-    'win32' => $^O eq 'MSWin32'
-    ? 1
-    : 0,                          # true if running under Windows
-    'tmp_dir' => $ENV{'TMP'} // $ENV{'TEMP'} // $ENV{'TMPDIR'} // '/tmp',    # tmpdir is used to save srt files
+         'dash_line'          => q{-} x 80,                                                  # used as a line separator
+         'win32'              => $^O eq 'MSWin32' ? 1 : 0,                                   # true if running under Windows
+         'thousand_separator' => q{,},                                                       # thousand separator for views number
+         'tmp_dir'            => $ENV{'TMP'} // $ENV{'TEMP'} // $ENV{'TMPDIR'} // '/tmp',    # tmpdir is used to save srt files
                );
 
 #----------------------- ASCII COLOURS -----------------------#
 my $bred    = q{};
 my $bgreen  = q{};
 my $reset   = q{};
-my $cblack  = "\e[40m";                                                      # background black
-my $byellow = "\e[1;33m";                                                    # bold yellow
-my $bpurle  = "\e[1;35m";                                                    # bold purple
-my $bblue   = "\e[1;34m";                                                    # bold blue
+my $cblack  = "\e[40m";                                                                 # background black
+my $byellow = "\e[1;33m";                                                               # bold yellow
+my $bpurle  = "\e[1;35m";                                                               # bold purple
+my $bblue   = "\e[1;34m";                                                               # bold blue
 
-unless ($constant{'win32'}) {                                                # if not running under Windows
-    $bred   = "\e[1;31m";                                                    # set bold red
-    $bgreen = "\e[1;32m";                                                    # set bold green
-    $reset  = "\e[0m";                                                       # set reset color
+unless ($constant{'win32'}) {                                                           # if not running under Windows
+    $bred   = "\e[1;31m";                                                               # set bold red
+    $bgreen = "\e[1;32m";                                                               # set bold green
+    $reset  = "\e[0m";                                                                  # set reset color
 }
 
 #---------------------- GLOBAL VARIABLES ----------------------#
@@ -157,27 +166,6 @@ my $get_playlist_code = qr{(?:(?:(?:playlist[?]list|view_play_list[?]p)=)|\w#p/c
 
 # $1 will be the Youtube username
 my $get_username = qr{^https?://(?:www[.])?youtube[.]com/(?:user/)?(\w{2,})(?:[?].*)?$};
-
-#---------------------------------------- REGEXP: XML PARSER ----------------------------------------#
-# Usage:
-#-------
-# while($xml =~ /$xml_parser/o){
-#       # do something...
-# }
-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
-#
-# Faster, but not the safest...
-# Getting values: $hash{$1} = $3 // $2 // next;
-my $xml_parser = qr{<([^/ >?]+)(?:(?: *\w+='(?!')(.+?)')+)?/?>?(?:(?!<)(.+?)<)?}s;
-
-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
-# Slower, but much safer...
-# Getting values: if    (defined $1) { $hash{$1} = $2 }
-#                 elsif (defined $3) { $hash{$3} = $4 }
-#
-# my $xml_parser = qr{<(?:([^ >/?]+)[^>/]*>(?!<)(.+?)<|(?<=<)(?: *([^=><]+)='(?!')(.+?)')+/>)}s;
-#
-#----------------------------------------------------------------------------------------------------#
 
 #-------------------------------------- REGEXP: URL VALIDATION --------------------------------------#
 # The bellow regex will validate an HTTP url.
@@ -232,6 +220,20 @@ unless (grep -e ("$_/LWP/Protocol/https.pm"), @INC) {
     $get_video_info =~ s/s//;
 }
 
+# Checking if config file exists
+if (-e $config_file) {
+    open my $fh, '<', $config_file;
+    while (defined(my $line = <$fh>)) {
+        next if chr ord $line eq '#';
+        chomp $line;
+        $line =~ s/\s*=\s*/=/;
+        $line =~ s/^\s*-+//;
+        next unless $line =~ /^\w/;
+        unshift @ARGV, "-$line";
+    }
+    close $fh;
+}
+
 # Defining $mplayer_line
 my $mplayer_line;
 if ($constant{'win32'}) {
@@ -278,9 +280,11 @@ my $lwp;
 
 sub set_lwp_useragent {
     require LWP::UserAgent;
-    $lwp = 'LWP::UserAgent'->new('keep_alive' => 1,
+    $lwp = 'LWP::UserAgent'->new(
+                                 'keep_alive' => 1,
                                  'env_proxy'  => 1,
-                                 'timeout'    => 30);
+                                 'timeout'    => 30
+                                );
     $lwp->agent('Mozilla/5.0 (X11; U; Linux i686; en-US) Chrome/10.0.648.45');
     $lwp->show_progress(1) if $debug;
     $lwp_is_set = 1;
@@ -320,11 +324,19 @@ $SIG{'INT'} = sub {
       }
 };
 
+sub require_getopt_long {
+    require Getopt::Long;
+    Getopt::Long::Configure('no_auto_abbrev', 'no_ignore_case');
+}
+
 # Parsing arguments
-parse_arguments(@ARGV) if @ARGV;
+if (@ARGV) {
+    parse_arguments(@ARGV);
+}
 
 sub parse_arguments {
-    GetOptionsFromArray(
+    require_getopt_long();
+    Getopt::Long::GetOptionsFromArray(
         \@_,
 
         # Help and version
@@ -430,6 +442,9 @@ sub parse_arguments {
                 locate_wget();
             }
         },
+        'quiet|q' => sub {
+            close *STDOUT;
+        },
         'lwp-download|L!' => \$lwp_downloading,
         'lang|sub=s'      => sub {
             $default_sub = pop();
@@ -445,7 +460,8 @@ sub parse_arguments {
         },
         'colors|colours|C' => sub {
             $colours = 1 unless $constant{'win32'};
-        },);
+        },
+    );
 
     #-------- END of GetOptionsFromArray --------#
 
@@ -585,6 +601,7 @@ sub help {
    -L, --lwp-download   : download videos with LWP (default: wget)
    -G, --gnome-mplayer  : use gnome-mplayer instead of mplayer
    -T, --tricks         : show more 'hidden' features of $appname
+   -q, --quiet          : display no output
    -v, --version        : prints version and exits
    -h, --help           : prints help and exits
 \nTips and tricks:
@@ -620,6 +637,15 @@ sub tricks {
     /REGEXP/ will match case-insensitive (e.g.: 'test' matches 'TeSt');\n
     When multiple videos are selected to play, pressing CTRL+C
         will just empty the playlist and return to video results.
+\n$bred*$bgreen Configuration file$reset
+    Since 2.5.5 version, $appname supports a configuration file.
+    Config file is: '$config_file'
+    Valid lines are the same as available arguments (see --help)\n
+    Example of configuration file:
+        # $appname config
+            --720p
+            -colors
+            cache = 1400
 \n$bred*$bgreen Usage examples:$reset\n
  ** Show videos uploaded by 'MIT' that matches 'computer science',
     starting with page number 2, in fullscreen mode and 720p resolution.
@@ -722,13 +748,21 @@ sub videos_from_username {
 
 #---------------------- PRINT PLAYLISTS ----------------------#
 sub print_playlists {
+    my ($playlist, $num) = @_;
 
     # PlaylistID (0), Number (1), Title (2), Description (3), Author (4), VideosCount (5)
     $colours
-      ? print($cblack, $bred, $_[0][1], $reset, $cblack, q{ - }, $byellow, $_[0][2], q{ },
-              $_[0][3], $reset, $cblack,  ' (',   $bpurle, 'by ', $_[0][4], $reset, $cblack,
-              ') (',    $bblue, $_[0][5], $reset, $cblack, ')',   $reset,   "\n")
-      : print($bred, $_[0][1], $reset, ' - ', $_[0][2], q{ }, $_[0][3], ' (by ', $_[0][4], ') (', $_[0][5], ")\n");
+      ? print($cblack, $bred, do { ' ' if $num < 10 }, $num,
+              $reset,                $cblack, q{ - },                 $byellow,
+              ${$playlist->{title}}, $reset,  $cblack,                ' (',
+              $bpurle,               'by ',   ${$playlist->{author}}, $reset,
+              $cblack,               ') (',   $bblue,                 ${$playlist->{count}},
+              $reset,                $cblack, ')',                    $reset,
+              "\n"
+             )
+      : print($bred, do { ' ' if $num < 10 }, $num, $reset, ' - ', ${$playlist->{title}},
+              ' (by ', ${$playlist->{author}}, ') (', ${$playlist->{count}}, ")\n"
+             );
 }
 
 #---------------------- GET PLAYLISTS FROM A SPECIFIC USER ----------------------#
@@ -739,9 +773,10 @@ sub playlists_from_username {
     $playlists = 1;
     my $username = shift();
     $playlist_index = shift() || $start_index;
-    my $i = -1;
+
     parse_content(
-                 "http://gdata.youtube.com/feeds/api/users/$username/playlists?max-results=$results&start-index=$playlist_index");
+             "http://gdata.youtube.com/feeds/api/users/$username/playlists?max-results=$results&start-index=$playlist_index&v=2");
+
     unless (@results) {
         print "$bred(x_x) No playlist has been found...$reset\n";
         print "\n$bred=>>$bgreen Insert another username:$reset ";
@@ -757,9 +792,11 @@ sub playlists_from_username {
     }
 
     # PlaylistID, Number, Title, Description, Author, VideosCount
+    my $num = 0;
     foreach my $playlist (@results) {
-        print_playlists($playlist);
+        print_playlists($playlist, ++$num);
     }
+
     print "\n$bred=>>$bgreen Pick one playlist or insert another username$reset\n> ";
 
     given (<STDIN>) {
@@ -781,7 +818,7 @@ sub playlists_from_username {
         }
         when (/^\d+$/) {
             $playlists = 0;
-            list_playlist($results[$_ - 1][0]);
+            list_playlist(${$results[$_ - 1]->{playlistID}});
         }
         when (/^\w+$/) {
             playlists_from_username($_, $start_index);
@@ -794,17 +831,20 @@ sub playlists_from_username {
 
 #---------------------- SEARCH FOR YOUTUBE PLAYLISTS ----------------------#
 sub search_playlists {
-    my $url    = shift();
-    my $length = length $keywords;
-    if ($length > 0) {
-        $keywords = scalar reverse(unpack("A$length", reverse(unpack("A$length", $keywords))));
+    my $url = shift();
+
+    if ($keywords ne '') {
         $url //= "$feeds_main_url/playlists/snippets?q=$keywords&start-index=$start_index&max-results=$results&v=2";
         $playlists = 1;
         parse_content($url);
     }
-    my $n = -1;
+    else {
+        return;
+    }
+
+    my $num = 0;
     foreach my $playlist (@results) {
-        print_playlists($playlist);
+        print_playlists($playlist, ++$num);
     }
 
     print "\n$bred=>>$bgreen Pick one playlist or search others$reset\n> ";
@@ -840,7 +880,7 @@ sub search_playlists {
         }
         when (/^\d+$/) {
             $playlists = 0;
-            list_playlist($results[$_ - 1][0]);
+            list_playlist(${$results[$_ - 1]->{playlistID}});
         }
         default {
             $keywords = $_;
@@ -882,15 +922,13 @@ sub youtube_movies {
 
 #---------------------- LIST YOUTUBE TOP VIDEO CATEGORIES ----------------------#
 sub youtube_tops {
-    my $i = 0;
-    my $today =
-      $all_time
-      ? 0
-      : 1;
+    my $i             = 0;
+    my $today         = $all_time ? 0 : 1;
     my $standardfeeds = "$feeds_main_url/standardfeeds";
     my %tops_table;
     print "\n";
-    foreach my $cat_top_name ('top_rated',   'top_favorites',  'most_viewed',    'most_popular',
+    foreach my $cat_top_name (
+                              'top_rated',   'top_favorites',  'most_viewed',    'most_popular',
                               'most_recent', 'most_discussed', 'most_responded', 'recently_featured'
       ) {
         my $top_name = ucfirst $cat_top_name;
@@ -1081,80 +1119,57 @@ sub parse_url {
 #---------------------- GET AND PARSE GDATA CONTENT ----------------------#
 sub parse_content {
     set_lwp_useragent() unless $lwp_is_set;
+
     undef @results;
     my $number = 0;
-    foreach my $entry (split(/<entry/, $lwp->get($_[0])->content, 0)) {
-        my %gdata;
-        while ($entry =~ /$xml_parser/og) {
-            $gdata{$1} = $3 // $2 // next;
+    my $hash   = xml2hash($lwp->get($_[0])->content);
+
+    if ($playlists) {
+        while (
+               my $gdata =
+                 ref $hash->{'feed'}{'entry'} eq 'ARRAY' ? \$hash->{'feed'}{'entry'}[$number]
+               : ref $hash->{'feed'}{'entry'} eq 'HASH'  ? \$hash->{'feed'}{'entry'}
+               : \$hash->{'entry'}
+          ) {
+            last unless defined $$gdata;
+
+            # PlaylistID, Number, Title, Description, Author, VideosCount
+            push @results,
+              {
+                'playlistID' => \$$gdata->{'yt:playlistId'},
+                'title'      => \$$gdata->{title},
+                'author'     => \$$gdata->{author}{name},
+                'count'      => \$$gdata->{'yt:countHint'}
+              };
+            ++$number;
+            last unless ref $hash->{'feed'}{'entry'} eq 'ARRAY';
         }
-        $playlists
-          ? do {
-            next
-              unless exists $gdata{'yt:playlistId'};
-          }
-          : do {
-            next
-              unless exists $gdata{'yt:videoid'};
-          };
-        ++$number;
-        $playlists
-          ?
+    }
+    else {
+        while (
+               my $gdata =
+                 ref $hash->{'feed'}{'entry'} eq 'ARRAY' ? \$hash->{'feed'}{'entry'}[$number]
+               : ref $hash->{'feed'}{'entry'} eq 'HASH'  ? \$hash->{'feed'}{'entry'}
+               : \$hash->{'entry'}
+          ) {
+            last unless defined $$gdata;
 
-          # PlaylistID, Number, Title, Description, Author, VideosCount
-          push(
-            @results,
-            [$gdata{'yt:playlistId'},
-             do {
-                 $number < 10
-                   ? " $number"
-                   : $number;
-             },
-             do {
-                 my $title = $gdata{'title'} // 'Unknown';
-                 $title =~ /$has_entities/o
-                   ? $title = decode_entities($title)
-                   : $title;
-             },
-             do {
-                 my $summary = $gdata{'summary'} // "\cH";
-                 $summary = join(q{ }, split(/\s+/, $summary, 0));
-                 my $summary_limit = 32;    # characters limit
-                 $summary =~ /$has_entities/o
-                   ? length $summary > $summary_limit
-                       ? substr(decode_entities($summary), 0, $summary_limit)
-                       : decode_entities($summary)
-                   : (length $summary > 32
-                      ? substr($summary, 0, $summary_limit)
-                      : $summary);
-             },
-             $gdata{'name'},
-             $gdata{'gd:feedLink'} // $gdata{'yt:countHint'} // $gdata{'countHint'}
-            ])
-          :
+            # VideoID, Title, Author, Duration, Views, Date, CategoryLabel, Description, Number
+            push @results,
+              {
+                'code'        => \$$gdata->{'media:group'}{'yt:videoid'},
+                'title'       => \$$gdata->{'media:group'}{'media:title'}{'#text'},
+                'author'      => \$$gdata->{'author'}{'name'},
+                'duration'    => \format_time(\$$gdata->{'media:group'}{'yt:duration'}{'-seconds'}),
+                'views'       => \$$gdata->{'yt:statistics'}{'-viewCount'},
+                'published'   => \$$gdata->{'published'},
+                'category'    => \$$gdata->{'category'}[1]{'-label'},
+                'description' => \$$gdata->{'media:group'}{'media:description'}{'#text'}
+              };
+            ++$number;
 
-          # VideoID, Title, Author, Duration, Views, Date, CategoryLabel, Description, Number
-          push(
-            @results,
-            [$gdata{'yt:videoid'},
-             do {
-                 my $title = $gdata{'title'} // 'Unknown';
-                 $title =~ /$has_entities/o
-                   ? decode_entities($title)
-                   : $title;
-             },
-             $gdata{'name'},
-             format_time(\$gdata{'yt:duration'}),
-             $gdata{'yt:statistics'} // 0,
-             $gdata{'yt:uploaded'}   // $gdata{'published'},
-             $gdata{'media:category'},
-             $gdata{'media:description'},
-             do {
-                 $number < 10
-                   ? " $number"
-                   : $number;
-               }
-            ]);
+            last unless ref $hash->{'feed'}{'entry'} eq 'ARRAY';
+        }
     }
     print "\n";
 }
@@ -1176,7 +1191,7 @@ sub format_time {
           ? $tmp_time
           : "0$tmp_time";
       }
-      . q{:}
+      . q{:} 
       . do {
         $tmp_time = ${$_[0]} % 60;
         $tmp_time > 9
@@ -1204,6 +1219,7 @@ sub get_keywords_from_array {
 
 #---------------------- PRINT VIDEO RESULTS ----------------------#
 sub print_results {
+
     if (@results) {
         $video_results = 1;
     }
@@ -1212,17 +1228,29 @@ sub print_results {
         insert_url();
     }
 
+    my $num = 0;
     foreach my $video (@results) {
+        ++$num;
+
         $colours
-          ? print($cblack, $bred, $$video[8], $reset, $cblack, q{ - }, $byellow, $$video[1],
-                  $reset, $cblack, ' (',       $bpurle, 'by ',   $$video[2], $reset, $cblack,
-                  ') (',  $bblue,  $$video[3], $reset,  $cblack, ')',        $reset, "\n")
-          : print "$bred$$video[8]$reset - $$video[1] (by $$video[2]) ($$video[3])\n";
+
+          # Colored output (when using --colors, -C)
+          ? print $cblack, $bred, do { ' ' if $num < 10 }, $num, $reset,
+          $cblack, q{ - }, $byellow, ${$video->{title}}, $reset, $cblack,
+          ' (', $bpurle, 'by ', ${$video->{author}}, $reset, $cblack, ') (',
+          $bblue, ${$video->{duration}}, $reset, $cblack, ')', $reset, "\n"
+
+          # Normal output
+          : print $bred, do { ' ' if $num < 10 }, $num, $reset,
+          q{ - }, ${$video->{title}}, ' (by ', ${$video->{author}},
+          ') (', ${$video->{duration}}, ")\n";
     }
+
     if ($playback) {
         @picks = 1 .. @results;
         foreach_pick();
     }
+
     {
         print "\n$bred=>>$bgreen Insert a number or search something else$reset\n> ";
 
@@ -1409,51 +1437,70 @@ sub format_itags {
     @itags;
 }
 
-sub get_youtube {
+sub get_closed_caption {
 
-    # VideoID, Title, UploaderName, Duration, Views, Date, CategoryLabel, Description, Number
-    my ($code, $title, $author, $duration, $views, $published, $category, $description) =
-      ref $_[0]
-      ? @{$_[0]}
-      : @_;
+    my $code = ${$_[0]};
+
+    # Removing the previous subtitle (if any)
+    $mplayer_line =~ s/ *\Q$mplayer_srt_settings\E *-sub.*//;
+
+    # Getting YouTube closed captions with gcap
+
+    unless (exists $constant{'cwd'}) {
+        require Cwd;
+        $constant{'cwd'} = Cwd::getcwd();
+    }
+
+    # Change dir to $TMP and get the SRT file
+    chdir $constant{'tmp_dir'};
+    unless (-e "${code}_$default_sub.srt") {
+        system 'perl', $gcap, $code;
+    }
+
+    my $srt_file;
+    if (-e "${code}_$default_sub.srt") {
+        $srt_file = "${code}_$default_sub\.srt";
+        $mplayer_line .= " $mplayer_srt_settings -sub $srt_file";
+    }
+    else {
+        opendir(my $dir_h, $constant{'tmp_dir'});
+        while (defined(my $line = readdir $dir_h)) {
+            next unless $line =~ /[.]srt$/;
+            if ($line =~ /^$code\w*[.]srt/p) {
+                $srt_file = ${^MATCH};
+                $mplayer_line .= " $mplayer_srt_settings -sub $srt_file";
+                last;
+            }
+        }
+        closedir $dir_h;
+    }
+
+}
+
+sub get_youtube {
+    my $info = shift();
+
+    if (ref $info ne 'HASH') {
+        parse_content("$feeds_main_url/videos/$info?v=2");
+        $info = $results[0];
+    }
+
+    my $code = ${$info->{code}};
 
     set_lwp_useragent() unless $lwp_is_set;
 
     my $content = $lwp->get("$get_video_info?&video_id=$code&el=detailpage&ps=default&eurl=&gl=US&hl=en")->content;
     my $url     = "http://www.youtube.com/watch?v=$code";
-    $mplayer_line =~ s/ *\Q$mplayer_srt_settings\E *-sub.*//;
 
-    # Getting YouTube closed captions with gcap
     if (    not $download_video
         and -e $gcap
         and not $mplayer_line =~ / -novideo/
         and $content =~ /&has_cc=True&/) {
-        unless (exists $constant{'cwd'}) {
-            require Cwd;
-            $constant{'cwd'} = Cwd::getcwd();
-        }
-        chdir $constant{'tmp_dir'};
-        unless (-e "${code}_$default_sub.srt") {
-            system 'perl', $gcap, $url;
-        }
-        my $srt_file;
-        if (-e "${code}_$default_sub.srt") {
-            $srt_file = "${code}_$default_sub\.srt";
-            $mplayer_line .= " $mplayer_srt_settings -sub $srt_file";
-        }
-        else {
-            opendir(my $dir_h, $constant{'tmp_dir'});
-            while (defined(my $line = readdir $dir_h)) {
-                next unless $line =~ /[.]srt$/;
-                if ($line =~ /^$code\w*[.]srt/p) {
-                    $srt_file = ${^MATCH};
-                    $mplayer_line .= " $mplayer_srt_settings -sub $srt_file";
-                    last;
-                }
-            }
-            closedir $dir_h;
-        }
+
+        # Get Youtube closed caption
+        get_closed_caption(\$code);
     }
+
     if ($content =~ /url_encoded_fmt_stream_map=(.+?)&/) {
         my $streaming = $1;
         $streaming =~ s/%253A/:/gi;
@@ -1469,10 +1516,7 @@ sub get_youtube {
         @streaming{format_itags(map (/&itag=(\d+)&/, @streaming_urls))} =
           grep ((
              exists $itags{
-                 do {
-                     /&itag=(\d+)&/;
-                     $1;
-                   }
+                 do { /&itag=(\d+)&/; $1 }
                }
             ),
             @streaming_urls);
@@ -1482,57 +1526,58 @@ sub get_youtube {
                 print "KEY = $key\nVALUE = $value\n\n";
             }
         }
-        print "\n";
         my $rating = sprintf('%.2f', ($content =~ /avg_rating=([^&]+)/));
-        if (not defined $title) {
-            parse_content("$feeds_main_url/videos/$code?v=2");
-            ($code, $title, $author, $duration, $views, $published, $category, $description) = @{$results[0]};
-        }
-        if (defined $description
-            and $description ne 'plain') {
-            $description = decode_entities($description)
-              if $description =~ /$has_entities/o;
+        if (defined ${$info->{description}}) {
+            ${$info->{description}} = decode_entities(${$info->{description}})
+              if ${$info->{description}} =~ /$has_entities/o;
         }
         else {
-            $description = 'No description available...';
+            ${$info->{description}} = 'No description available...';
         }
-        $category =~ s/&amp;/&/;
-        $published = "$3.$2.$1"
-          if $published =~ /^(\d\d\d\d)-(\d\d)-(\d\d)/;
-        if (length $views > 3) {
-            my $l = length($views) - 3;
+        ${$info->{category}} =~ s/&amp;/&/;
+        ${$info->{published}} //= 0;
+        ${$info->{published}} = "$3.$2.$1"
+          if ${$info->{published}} =~ /^(\d\d\d\d)-(\d\d)-(\d\d)/;
+
+        # Thousand separator
+        if (length ${$info->{views}} > 3 and index(${$info->{views}}, $constant{thousand_separator}) < 0) {
+            my $l = length(${$info->{views}}) - 3;
             my $i = ($l - 1) % 3 + 1;
-            my $x = substr($views, 0, $i) . q{,};
+            my $x = substr(${$info->{views}}, 0, $i) . $constant{thousand_separator};
             while ($i < $l) {
-                $x .= substr($views, $i, 3) . q{,};
+                $x .= substr(${$info->{views}}, $i, 3) . $constant{thousand_separator};
                 $i += 3;
             }
-            $views = $x . substr($views, $i);
+            ${$info->{views}} = $x . substr(${$info->{views}}, $i);
         }
 
-        print "$bred=>> $bgreen$title$reset\n",
+        print "\n$bred=>> $bgreen${$info->{title}}$reset\n",
           "$constant{'dash_line'}\n",
-          "$description\n$constant{'dash_line'}\n",
+          "${$info->{description}}\n$constant{'dash_line'}\n",
           "$bred=>> ${bgreen}View & Download$reset\n",
-          "$constant{'dash_line'}";
+          "$constant{'dash_line'}\n* URL ";
 
-        my ($get) = $streaming_urls[0];
-        print "\n* URL ";
         print STDOUT $url;
-        print "\n* GET $get\n$constant{'dash_line'}\n",
-          q{ } x ((length($constant{'dash_line'}) - length($title)) / 2 - 4),    # centring video title on terminal
-          "$bred=>> $bgreen$title$bred <<=$reset\n\n",
-          "** Author    : $author\n",
-          "** Category  : $category\n",
-          "** Duration  : $duration\n",
+
+        print "\n* GET $streaming_urls[0]\n$constant{'dash_line'}\n",
+          q{ } x ((length($constant{'dash_line'}) - length(${$info->{title}})) / 2 - 4),    # centring video title on terminal
+          "$bred=>> $bgreen${$info->{title}}$bred <<=$reset\n\n",
+          "** Author    : ${$info->{author}}\n",
+          "** Category  : ${$info->{category}}\n",
+          "** Duration  : ${$info->{duration}}\n",
           "** Rating    : $rating\n",
-          "** Views     : $views\n",
-          "** Published : $published\n",
+          "** Views     : ${$info->{views}}\n",
+          do { ${$info->{published}} ? "** Published : ${$info->{published}}\n" : '' },
           "$constant{'dash_line'}\n";
-        play_or_download(select_resolution(), $title);
+
+        # Select one resolution and play video
+        play_or_download(select_resolution(), ${$info->{title}});
+
     }
     else {
-        warn "\n$bred(x_x) Something went wrong...$reset\n\n$bred(x_x) Unable to stream: $reset$url\n\n";
+
+        # This happens when video has been deleted or forbidden
+        warn "\n$bred(x_x) Something went wrong...$reset\n\n", "$bred(x_x) Unable to stream: $reset$url\n\n";
         if ($video_results and not $dont_exit) {
             unless (@picks) {
                 sleep 1;
@@ -1540,8 +1585,7 @@ sub get_youtube {
             }
         }
         else {
-            unless (   $video_results
-                    or $dont_exit) {
+            unless ($video_results or $dont_exit) {
                 exit;
             }
         }
@@ -1549,10 +1593,9 @@ sub get_youtube {
 }
 
 sub pick {
-    print "\n$bred=>> $bgreen Please choose a video resolution (default: 1)$reset\n
-$bred 1$reset - 1280x720  (720p)
-$bred 2$reset - 1920x1080 (1080p)\n"
-      , q{=} x 23, "\n\n$bgreen=>> Pick format:$reset ";
+    print "\n$bred=>> $bgreen Please choose a video resolution (default: 1)$reset\n\n",
+      "$bred 1$reset - 1280x720  (720p)\n",
+      "$bred 2$reset - 1920x1080 (1080p)\n", q{=} x 23, "\n\n$bgreen=>> Pick format:$reset ";
 
     given (<STDIN>) {
         chomp;
