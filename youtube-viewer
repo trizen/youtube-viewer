@@ -151,7 +151,7 @@ my $youtube_gdata_url;    # used to store the gdata URL with API query parameter
 my $feeds_main_url = 'https://gdata.youtube.com/feeds/api';
 my $get_video_info = 'https://www.youtube.com/get_video_info';
 
-my (@results, @picks, %resolution, %streaming);    # other global variables
+my ($sleep, @results, @picks, %resolution, %streaming);    # other global variables
 
 #------------------------ REGEXP AREA ------------------------#
 my $has_entities        = qr/&#?\w/;                                               # checks if a string contains HTML entities
@@ -291,11 +291,9 @@ sub set_lwp_useragent {
 
 #---------------------- TRUE IF ARGUMENT LOOKS LIKE AN YOUTUBE CODE ----------------------#
 sub is_code {
-    return 1
-      if length $_[0] == 11
-          and $_[0] =~ /^[\w\-]{11}$/
-          and $_[0] =~ /[\d[:upper:]_\-]/;
-    return 0;
+    length $_[0] == 11
+      and $_[0] =~ /^[\w\-]{11}$/
+      and $_[0] =~ /[\d[:upper:]_\-]/;
 }
 
 #---------------------- Convert args (of length of 11) to Youtube URLs ----------------------#
@@ -433,6 +431,7 @@ sub parse_arguments {
 
         # Other options
         'debug!'          => \$debug,
+        'sleep|S!'        => \$sleep,
         'play-all|all|A!' => \$playback,
         'download|d'      => sub {
             $download_video = 1;
@@ -543,7 +542,7 @@ sub insert_url {
             exit;
         }
         default {
-            search($_);
+            $playlists ? do { $keywords = $_; search_playlists() } : search($_);
         }
     }
 }
@@ -599,6 +598,7 @@ sub help {
    -d, --download       : downloads YouTube video(s) with LWP
    -A, --all            : plays all video results in order
    -C, --colors         : use colors for text output
+   -S, --sleep          : sleep 1sec when playling more videos
    -U, --users=file.txt : list YouTube usernames from a file
    -P, --proxy=<PROXY>  : set proxy for LWP::UserAgent
    -L, --lwp-download   : download videos with LWP (default: wget)
@@ -840,7 +840,6 @@ sub search_playlists {
         parse_content($url);
     }
     else {
-        $playlists = 0;
         return;
     }
 
@@ -1050,6 +1049,10 @@ sub play_or_download {
     disable_fullscreen_mode()
       unless $user_fullscreen;
     if (@picks) {
+        if ($playback or $sleep) {
+            print "${bred}[*]$bgreen Press CTRL+C to return to video results!$reset\n\n";
+            sleep 1;    # enough time to press CTRL+C
+        }
         foreach_pick();    # play the next video
     }
     elsif ($playback) {
