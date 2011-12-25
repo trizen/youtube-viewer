@@ -156,7 +156,6 @@ my (@results, @picks, %resolution, %streaming);    # other global variables
 #------------------------ REGEXP AREA ------------------------#
 my $has_entities        = qr/&#?\w/;                                               # checks if a string contains HTML entities
 my $contains_arguments  = qr/(?:\s|^)-+\w/;                                        # checks if a string contains arguments
-my $quit_required       = qr/^(?:q|quit|exit)$/;                                   # exit if user's input is q, quit or exit
 my $match_regexp        = qr{/((?:\\.|[^\\/])*)/};                                 # checks if the input looks like a regexp (//)
 my $valid_playlist_code = qr/^(?:PL)?([0-9A-Z]{16})$/;                             # $1 will be the playlist code
 my $get_youtube_code    = qr{\b(?:v|embed|youtu[.]be)(?:[=/]|%3D)([\w\-]{11})};    # $1 will be the video code
@@ -505,13 +504,20 @@ foreach my $code (@ARGV) {
     }
 }
 
+sub quit_required {
+    return 1 if (   $_[0] eq 'q'
+                 or $_[0] eq 'quit'
+                 or $_[0] eq 'exit');
+    return 0;
+}
+
 #---------------------- GO TO insert_url() IF $non_argv is FALSE ----------------------#
 sub insert_url {
     print "\n$bred=>>$bgreen Insert an YouTube URL or search something...$reset\n> ";
 
     given (<STDIN>) {
         chomp;
-        when (/$quit_required/o) {
+        when (\&quit_required) {
             exit;
         }
         when (/$contains_arguments/o) {
@@ -687,7 +693,7 @@ sub list_user_names {
     print "\n$bred=>$bgreen Pick an username number$reset\n> ";
     given (<STDIN>) {
         chomp;
-        when (/$quit_required/o or $_ eq q{}) {
+        when (\&quit_required or $_ eq q{}) {
             exit;
         }
         when (/$contains_arguments/o) {
@@ -719,7 +725,7 @@ sub list_user_names {
                 print "\n$bred=>>$bgreen Pick an username number$reset\n> ";
                 given (<STDIN>) {
                     chomp;
-                    when (/$quit_required/o or $_ eq q{}) {
+                    when (\&quit_required or $_ eq q{}) {
                         exit;
                     }
                     when (exists $usernames_table{$_}) {
@@ -782,7 +788,7 @@ sub playlists_from_username {
         print "\n$bred=>>$bgreen Insert another username:$reset ";
         given (<STDIN>) {
             chomp;
-            when (/$quit_required/o or $_ eq q{}) {
+            when (\&quit_required or $_ eq q{}) {
                 exit;
             }
             default {
@@ -801,7 +807,7 @@ sub playlists_from_username {
 
     given (<STDIN>) {
         chomp;
-        when (/$quit_required/o) {
+        when (\&quit_required) {
             exit;
         }
         when (/$contains_arguments/o) {
@@ -851,7 +857,7 @@ sub search_playlists {
 
     given (<STDIN>) {
         chomp;
-        when (/$quit_required/o) {
+        when (\&quit_required) {
             exit;
         }
         when (/$contains_arguments/o) {
@@ -908,7 +914,7 @@ sub youtube_movies {
     print "\n$bred=>>$bgreen Pick one category$reset\n> ";
     given (<STDIN>) {
         chomp;
-        when (/$quit_required/o or $_ eq q{}) {
+        when (\&quit_required or $_ eq q{}) {
             exit;
         }
         when (/$contains_arguments/o) {
@@ -941,7 +947,7 @@ sub youtube_tops {
 
     given (<STDIN>) {
         chomp;
-        when (/$quit_required/o or $_ eq q{}) {
+        when (\&quit_required or $_ eq q{}) {
             exit;
         }
         when (/$contains_arguments/o) {
@@ -984,7 +990,7 @@ sub categories_area {
     print "\n$bred=>>$bgreen Insert a category number$reset\n> ";
     given (<STDIN>) {
         chomp;
-        when (/$quit_required/o or $_ eq q{}) {
+        when (\&quit_required or $_ eq q{}) {
             exit;
         }
         when (/$contains_arguments/o) {
@@ -1257,7 +1263,7 @@ sub print_results {
 
         given (<STDIN>) {
             chomp;
-            when (/$quit_required/o) {
+            when (\&quit_required) {
                 exit;
             }
             when (/$contains_arguments/o) {
@@ -1600,7 +1606,7 @@ sub pick {
 
     given (<STDIN>) {
         chomp;
-        when (/$quit_required/o) {
+        when (\&quit_required) {
             exit;
         }
         when ($_ eq q{2}) {
