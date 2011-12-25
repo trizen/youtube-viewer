@@ -78,8 +78,6 @@ use feature ('switch');
 use autouse ('XML::Fast' => 'xml2hash');
 use autouse ('URI::Escape' => 'uri_escape');
 
-binmode *STDOUT, ":encoding(utf8)";
-
 my $appname = 'youtube-viewer';
 my $version = '2.5.5-git';
 
@@ -223,8 +221,9 @@ if (-e $config_file) {
     while (defined(my $line = <$fh>)) {
         next if chr ord $line eq '#';
         chomp $line;
+        next unless $line;
         $line =~ s/\s*=\s*/=/;
-        $line =~ s/^\s*-+//;
+        $line =~ s/^\s*(?:-+)?//;
         next unless $line =~ /^\w/;
         unshift @ARGV, "-$line";
     }
@@ -284,6 +283,7 @@ sub set_lwp_useragent {
                                 );
     $lwp->agent('Mozilla/5.0 (X11; U; Linux i686; en-US) Chrome/10.0.648.45');
     $lwp->show_progress(1) if $debug;
+    binmode *STDOUT, ":encoding(utf8)";
     $lwp_is_set = 1;
 }
 
@@ -817,7 +817,7 @@ sub playlists_from_username {
         }
         when (/^\d+$/) {
             $playlists = 0;
-            list_playlist(${$results[$_ - 1]->{playlistID}});
+            list_playlist(${$results[$_ - 1]->{'playlistID'}});
         }
         when (/^\w+$/) {
             playlists_from_username($_, $start_index);
@@ -879,7 +879,7 @@ sub search_playlists {
         }
         when (/^\d+$/) {
             $playlists = 0;
-            list_playlist(${$results[$_ - 1]->{playlistID}});
+            list_playlist(${$results[$_ - 1]->{'playlistID'}});
         }
         default {
             $keywords = $_;
@@ -1140,8 +1140,8 @@ sub parse_content {
             push @results,
               {
                 'playlistID' => \$$gdata->{'yt:playlistId'},
-                'title'      => \$$gdata->{title},
-                'author'     => \$$gdata->{author}{name},
+                'title'      => \$$gdata->{'title'},
+                'author'     => \$$gdata->{'author'}{'name'},
                 'count'      => \$$gdata->{'yt:countHint'}
               };
             ++$number;
@@ -1175,7 +1175,6 @@ sub parse_content {
         }
     }
     print "\n";
-    return 1;
 }
 
 # Format seconds to HH:MM:SS
@@ -1307,7 +1306,7 @@ sub print_results {
             }
             when (chr ord $_ eq q{/} and /$match_regexp/o) {
                 my $match = qr/$1/i;
-                @picks = grep { $results[$_ - 1][1] =~ /$match/ } 1 .. @results;
+                @picks = grep { ${$results[$_ - 1]->{'title'}} =~ /$match/ } 1 .. @results;
                 if (@picks) {
                     foreach_pick();
                 }
