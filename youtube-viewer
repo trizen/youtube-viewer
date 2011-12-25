@@ -79,7 +79,7 @@ use autouse ('XML::Fast' => 'xml2hash');
 use autouse ('URI::Escape' => 'uri_escape');
 use autouse ('HTML::Entities' => 'decode_entities');
 
-binmode STDOUT, ":utf8";
+binmode *STDOUT, ":encoding(utf8)";
 
 my $appname = 'youtube-viewer';
 my $version = '2.5.5-git';
@@ -1172,6 +1172,7 @@ sub parse_content {
         }
     }
     print "\n";
+    return 1;
 }
 
 # Format seconds to HH:MM:SS
@@ -1191,7 +1192,7 @@ sub format_time {
           ? $tmp_time
           : "0$tmp_time";
       }
-      . q{:} 
+      . q{:}
       . do {
         $tmp_time = ${$_[0]} % 60;
         $tmp_time > 9
@@ -1474,7 +1475,7 @@ sub get_closed_caption {
         }
         closedir $dir_h;
     }
-
+    return 1;
 }
 
 sub get_youtube {
