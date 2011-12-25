@@ -77,7 +77,6 @@ use strict;
 use feature ('switch');
 use autouse ('XML::Fast' => 'xml2hash');
 use autouse ('URI::Escape' => 'uri_escape');
-use autouse ('HTML::Entities' => 'decode_entities');
 
 binmode *STDOUT, ":encoding(utf8)";
 
@@ -154,7 +153,6 @@ my $get_video_info = 'https://www.youtube.com/get_video_info';
 my ($sleep, @results, @picks, %resolution, %streaming);    # other global variables
 
 #------------------------ REGEXP AREA ------------------------#
-my $has_entities        = qr/&#?\w/;                                               # checks if a string contains HTML entities
 my $contains_arguments  = qr/(?:\s|^)-+\w/;                                        # checks if a string contains arguments
 my $match_regexp        = qr{/((?:\\.|[^\\/])*)/};                                 # checks if the input looks like a regexp (//)
 my $valid_playlist_code = qr/^(?:PL)?([0-9A-Z]{16})$/;                             # $1 will be the playlist code
@@ -1533,11 +1531,7 @@ sub get_youtube {
             }
         }
         my $rating = sprintf('%.2f', ($content =~ /avg_rating=([^&]+)/));
-        if (defined ${$info->{description}}) {
-            ${$info->{description}} = decode_entities(${$info->{description}})
-              if ${$info->{description}} =~ /$has_entities/o;
-        }
-        else {
+        if (!defined ${$info->{description}}) {
             ${$info->{description}} = 'No description available...';
         }
         ${$info->{category}} =~ s/&amp;/&/;
