@@ -438,6 +438,9 @@ sub parse_arguments {
                 locate_wget();
             }
         },
+        'download-dir=s'  => sub {
+            chdir pop();
+        },
         'quiet|q' => sub {
             close *STDOUT;
         },
@@ -596,7 +599,7 @@ sub help {
    -d, --download       : downloads YouTube video(s) with LWP
    -A, --all            : plays all video results in order
    -C, --colors         : use colors for text output
-   -S, --sleep          : sleep 1sec when playling more videos
+   -S, --sleep          : sleep 1 sec when playling more videos
    -U, --users=file.txt : list YouTube usernames from a file
    -P, --proxy=<PROXY>  : set proxy for LWP::UserAgent
    -L, --lwp-download   : download videos with LWP (default: wget)
@@ -1115,7 +1118,7 @@ sub parse_url {
         print_results();
     }
     else {
-        search $youtube_gdata_url;
+        return 0;
     }
 }
 
@@ -1194,7 +1197,7 @@ sub format_time {
           ? $tmp_time
           : "0$tmp_time";
       }
-      . q{:} 
+      . q{:}
       . do {
         $tmp_time = ${$_[0]} % 60;
         $tmp_time > 9
@@ -1469,8 +1472,8 @@ sub get_closed_caption {
         opendir(my $dir_h, $constant{'tmp_dir'});
         while (defined(my $line = readdir $dir_h)) {
             next unless $line =~ /[.]srt$/;
-            if ($line =~ /^$code\w*[.]srt/p) {
-                $srt_file = ${^MATCH};
+            if ($line =~ /^($code\w*[.]srt)/) {
+                $srt_file = $1;
                 $mplayer_line .= " $mplayer_srt_settings -sub $srt_file";
                 last;
             }
