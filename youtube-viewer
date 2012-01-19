@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2010-2011 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
+# Copyright (C) 2010-2012 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,9 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 #-------------------------------------------------------
-#  (C) 2010-2011 by Trizen
+#  (C) 2010-2012 by Trizen
 #  Created on: 02 Jun 2010
-#  Latest edit on: 18 January 2012
+#  Latest edit on: 19 January 2012
 #  Website: http://trizen.go.ro
 #  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
 #-------------------------------------------------------
@@ -564,7 +564,7 @@ insert_url() unless length $keywords;
 sub code_from_content {
     set_lwp_useragent() unless $lwp_is_set;
 
-    if (lwp_get($_[0]) =~ /$get_youtube_code/o) {
+    if ($lwp->get($_[0])->content =~ /$get_youtube_code/o) {
         get_youtube($1);
     }
     else {
@@ -1019,7 +1019,6 @@ sub youtube_tops {
 
 #---------------------- LIST YOUTUBE VIDEO CATEGORIES ----------------------#
 sub categories_area {
-    set_lwp_useragent() unless $lwp_is_set;
     my $n = 0;
     my %categories_table;
     print "\n";
@@ -1198,7 +1197,6 @@ sub parse_url {
 
 #---------------------- GET AND PARSE GDATA CONTENT ----------------------#
 sub parse_content {
-    set_lwp_useragent() unless $lwp_is_set;
 
     undef @results;
     my $number = 0;
@@ -1573,12 +1571,9 @@ Tips:
         }
     }
 
-    my $code = $info->{code};
-
-    set_lwp_useragent() unless $lwp_is_set;
-
+    my $code    = $info->{code};
     my $content = lwp_get("$CONFIG{get_video_info}?&video_id=$code&el=detailpage&ps=default&eurl=&gl=US&hl=en");
-    my $url = sprintf($CONFIG{youtube_video_url}, $code);
+    my $url     = sprintf($CONFIG{youtube_video_url}, $code);
 
     $MPLAYER{arguments} = '';
     if (    not $download_video
