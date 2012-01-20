@@ -462,11 +462,12 @@ sub parse_arguments {
         'noconfig|W!'     => \$noconfig,
         'playlists|p!'    => \$playlists,
         'download|d!'     => \$download_video,
+        'cache-min=i'     => \$CONFIG{cache_min},
         'colors|C!'       => \$CONFIG{use_colors},
         'sub|lang=s'      => \$CONFIG{srt_language},
         'fs!'             => \$CONFIG{fullscreen},
         'download-dir=s'  => \$CONFIG{downloads_folder},
-        'l!'              => \$CONFIG{use_lower_cache},
+        'l|lower-cache!'  => \$CONFIG{use_lower_cache},
         'Q=s'             => \$CONFIG{query_parameters},
         'lwp-download|L!' => \$CONFIG{lwp_downloading},
         'order-by=s'      => \$CONFIG{order_by},
@@ -586,7 +587,7 @@ sub help {
    -t, --today          : shows today YouTube tops
    -a, --all-time       : shows all time YouTube tops
    -c, --categories     : shows available YouTube categories
-   -p, --playlist       : search for YouTube playlists
+   -p, --playlists      : search for YouTube playlists
    -M, --movies         : show YouTube movies categories
    --results=[1-50]     : how many videos to display per page
    --region=<ID>        : set a specific regionID (ex: US)
