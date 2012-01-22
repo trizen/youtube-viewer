@@ -16,11 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 #-------------------------------------------------------
-#  (C) 2010-2012 by Trizen
+#  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 19 January 2012
-#  Website: http://trizen.go.ro
-#  Email: echo dHJpemVueEBnbWFpbC5jb20K | base64 -d
+#  Latest edit on: 22 January 2012
+#  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
 # [?] What is this script for?
@@ -300,6 +299,9 @@ sub locate_wget {
         or grep { $constant{'win32'} ? -e "$_\\wget" : -x "$_/wget" } @path) {
         $wget_is_available = 1;
     }
+    else {
+        $wget_is_available = 0;
+    }
 }
 
 #---------------------- LWP::UserAgent ----------------------#
@@ -461,11 +463,12 @@ sub parse_arguments {
         'all|A!'          => \$playback,
         'noconfig|W!'     => \$noconfig,
         'playlists|p!'    => \$playlists,
+        'debug!'          => \$debug_mode,
         'download|d!'     => \$download_video,
         'cache-min=i'     => \$CONFIG{cache_min},
         'colors|C!'       => \$CONFIG{use_colors},
         'sub|lang=s'      => \$CONFIG{srt_language},
-        'fs!'             => \$CONFIG{fullscreen},
+        'fs|f!'           => \$CONFIG{fullscreen},
         'download-dir=s'  => \$CONFIG{downloads_folder},
         'l|lower-cache!'  => \$CONFIG{use_lower_cache},
         'Q=s'             => \$CONFIG{query_parameters},
@@ -1077,6 +1080,10 @@ sub play_or_download {
             chdir $CONFIG{downloads_folder};
         }
 
+        unless (defined $wget_is_available) {
+            locate_wget();
+        }
+
         # Replacing reserved characters with a space
         $title =~ tr{\\/:*?"< >|}{ }s;
         if (not -e "$title.mp4") {
@@ -1287,7 +1294,7 @@ sub format_time {
         $tmp_time = ${$_[0]} / 60 % 60;
         $tmp_time > 9 ? $tmp_time : "0$tmp_time";
       }
-      . q{:} 
+      . q{:}
       . do {
         $tmp_time = ${$_[0]} % 60;
         $tmp_time > 9 ? $tmp_time : "0$tmp_time";
