@@ -458,23 +458,23 @@ sub parse_arguments {
         'user-playlists|up=s' => sub { push @goto, {playlists_from_username => pop()} },
         'users|U:s'           => sub { push @goto, {list_user_names         => length $_[1] ? pop() : $CONFIG{users_list}} },
 
-        'author=s'        => \$from_author,
-        'sleep|S!'        => \$sleep,
-        'all|A!'          => \$playback,
-        'noconfig|W!'     => \$noconfig,
-        'playlists|p!'    => \$playlists,
-        'debug!'          => \$debug_mode,
-        'download|d!'     => \$download_video,
-        'cache-min=i'     => \$CONFIG{cache_min},
-        'colors|C!'       => \$CONFIG{use_colors},
-        'sub|lang=s'      => \$CONFIG{srt_language},
-        'fs|f!'           => \$CONFIG{fullscreen},
-        'download-dir=s'  => \$CONFIG{downloads_folder},
-        'l|lower-cache!'  => \$CONFIG{use_lower_cache},
-        'Q=s'             => \$CONFIG{query_parameters},
-        'lwp-download|L!' => \$CONFIG{lwp_downloading},
-        'order-by=s'      => \$CONFIG{order_by},
-        'time=s'          => \$CONFIG{time_sort},
+        'author=s'         => \$from_author,
+        'sleep|S!'         => \$sleep,
+        'all|A!'           => \$playback,
+        'noconfig|W!'      => \$noconfig,
+        'playlists|p!'     => \$playlists,
+        'debug!'           => \$debug_mode,
+        'download|d!'      => \$download_video,
+        'cache-min=i'      => \$CONFIG{cache_min},
+        'colors|C!'        => \$CONFIG{use_colors},
+        'sub|lang=s'       => \$CONFIG{srt_language},
+        'fs|f!'            => \$CONFIG{fullscreen},
+        'download-dir=s'   => \$CONFIG{downloads_folder},
+        'l|lower-cache!'   => \$CONFIG{use_lower_cache},
+        'query-params|Q=s' => \$CONFIG{query_parameters},
+        'lwp-download|L!'  => \$CONFIG{lwp_downloading},
+        'order-by=s'       => \$CONFIG{order_by},
+        'time=s'           => \$CONFIG{time_sort},
 
         'page=i'     => sub { $start_with_page  = pop() },
         'novideo|n!' => sub { $MPLAYER{novideo} = '-novideo' },
@@ -619,7 +619,7 @@ sub help {
    -L, --lwp-download   : download videos with LWP (default: wget)
    -T, --tricks         : show more 'hidden' features of $appname
    -W, --noconfig       : don't apply config values, start with default values
-   -Q, --query_params   : set query parameters (ex: '&duration=long&caption')
+   -Q, --query-params   : set query parameters (ex: '&duration=long&caption')
    -login               : prompt for login
    -download-dir        : downloads directory (default: '$CONFIG{downloads_folder}')
 \nMain options:
@@ -1080,7 +1080,7 @@ sub play_or_download {
             chdir $CONFIG{downloads_folder};
         }
 
-        unless (defined $wget_is_available) {
+        if (not defined $wget_is_available and not $CONFIG{lwp_downloading}) {
             locate_wget();
         }
 
@@ -1294,7 +1294,7 @@ sub format_time {
         $tmp_time = ${$_[0]} / 60 % 60;
         $tmp_time > 9 ? $tmp_time : "0$tmp_time";
       }
-      . q{:}
+      . q{:} 
       . do {
         $tmp_time = ${$_[0]} % 60;
         $tmp_time > 9 ? $tmp_time : "0$tmp_time";
