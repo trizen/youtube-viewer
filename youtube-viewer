@@ -91,7 +91,7 @@ my $execname = 'youtube-viewer';
 my $config_dir = (
                   exists $ENV{XDG_CONFIG_HOME}
                   ? $ENV{XDG_CONFIG_HOME}
-                  : $ENV{HOME} . '/.config'
+                  : ($ENV{HOME} // $ENV{LOGDIR} // (getpwuid($<))[7] // `echo -n ~`) . '/.config'
                  ) . "/$execname";
 
 my $config_file = "$config_dir/$execname.conf";
@@ -1603,13 +1603,11 @@ Tips:
         undef %streaming;
         my (@streaming_urls) =
           grep (/^https?:/, split(/url%3D(.+?)%26/, $streaming));
-        @streaming{format_itags(map (/&itag=(\d+)&/, @streaming_urls))} =
-          grep ((
-             exists $itags{
-                 do { /&itag=(\d+)&/; $1 }
-               }
-            ),
-            @streaming_urls);
+        @streaming{format_itags(map { /&itag=(\d+)&/ } @streaming_urls)} = grep {
+            exists $itags{
+                do { /&itag=(\d+)&/; $1 }
+              }
+        } @streaming_urls;
 
         if ($debug_mode) {
             while (my ($key, $value) = each %streaming) {
