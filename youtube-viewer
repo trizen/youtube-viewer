@@ -1558,12 +1558,13 @@ sub get_youtube {
     if (ref $info ne 'HASH') {
         parse_content("$CONFIG{gdata_feeds_main_url}/videos/$info?v=2");
         $info = $results[0] if @results;
-        if (@results and ref $info ne 'HASH') {
-            die "** Something is REALLY wrong... Unable to continue!\n
+        if (@results and ref $info eq 'HASH' and not defined $info->{code}) {
+            die <<"ERROR";
+** Something is REALLY wrong... Unable to continue!\n
 Tips:
-    1. Install LWP::Protocol::https and/or HTTP::Request
-    2. (Edit/delete) the configuration file
-    3. Run in -debug mode and send '${execname}.debug' to developer\n";
+    1. (Edit/delete) the configuration file
+    2. Run in -debug mode and send '${execname}.debug' to developer
+ERROR
         }
         elsif (ref $info ne 'HASH') {
             warn "$bred** Unable to stream:$reset ", sprintf($CONFIG{youtube_video_url}, $info), "\n\n";
