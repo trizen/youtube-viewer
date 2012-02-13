@@ -848,15 +848,11 @@ sub print_playlists {
 
     # Number, Title, Author, VideosCount
     $CONFIG{use_colors}
-      ? print($cblack, $bred, do { ' ' if $num < 10 }, $num, $reset,
-              $cblack, q{ - },  $byellow, $playlist->{title}, $reset,
-              $cblack, ' (',    $bpurle,  'by ',              $playlist->{author},
-              $reset,  $cblack, ') (',    $bblue,             $playlist->{count},
-              $reset,  $cblack, ')',      $reset,             "\n"
-             )
-      : print($bred, do { ' ' if $num < 10 }, $num, $reset, ' - ', $playlist->{title},
-              ' (by ', $playlist->{author}, ') (', $playlist->{count}, ")\n"
-             );
+      ? printf
+      "$cblack$bred%s$num$reset$cblack - $byellow%s$reset$cblack (${bpurle}by %s$reset$cblack) ($bblue%s$reset$cblack)$reset\n",
+      $num < 10 ? ' ' : '', $playlist->{title}, $playlist->{author}, $playlist->{count}
+      : printf "$bred%s$num$reset - %s (by %s) (%s)\n", $num < 10 ? ' ' : '', $playlist->{title}, $playlist->{author},
+      $playlist->{count};
 }
 
 #---------------------- GET PLAYLISTS FROM A SPECIFIC USER ----------------------#
@@ -1280,7 +1276,7 @@ sub format_time {
         $tmp_time = ${$_[0]} / 60 % 60;
         $tmp_time > 9 ? $tmp_time : "0$tmp_time";
       }
-      . q{:}
+      . q{:} 
       . do {
         $tmp_time = ${$_[0]} % 60;
         $tmp_time > 9 ? $tmp_time : "0$tmp_time";
@@ -1354,15 +1350,13 @@ sub print_results {
         $CONFIG{use_colors}
 
           # Colored output (when using --colors or -C)
-          ? print $cblack, $bred, do { ' ' if $num < 10 }, $num, $reset,
-          $cblack, q{ - }, $byellow, $video->{title}, $reset, $cblack,
-          ' (', $bpurle, 'by ', $video->{author}, $reset, $cblack, ') (',
-          $bblue, $video->{duration}, $reset, $cblack, ')', $reset, "\n"
+          ? printf
+"$cblack$bred%s$num$reset$cblack - $byellow%s$reset$cblack (${bpurle}by %s$reset$cblack) ($bblue%s$reset$cblack)$reset\n",
+          $num < 10 ? ' ' : '', $video->{title}, $video->{author}, $video->{duration}
 
-          # Normal output
-          : print $bred, do { ' ' if $num < 10 }, $num, $reset,
-          q{ - }, $video->{title}, ' (by ', $video->{author},
-          ') (', $video->{duration}, ")\n";
+              # Normal output
+          : printf "$bred%s$num$reset - %s (by %s) (%s)\n", $num < 10 ? ' ' : '', $video->{title}, $video->{author},
+          $video->{duration};
     }
 
     if ($playback) {
