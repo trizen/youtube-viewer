@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 04 February 2012
+#  Latest edit on: 13 February 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -256,8 +256,8 @@ my $start_with_page = 1;
 my ($start_index, $download_video, $from_author, $playback, $sleep, @picks, @results, %streaming);
 
 #------------------------ REGEXP AREA ------------------------#
-my $contains_arguments   = qr/(?:\s|^)-+\w/;
-my $match_regexp         = qr{/((?:[^\\/]+|\\.)*)/};
+my $contains_arguments   = qr/(?>\s|^)-+\w/;
+my $match_regexp         = qr{/([^\\/]*(?:\\.[^\\/]*)*)/};
 my $valid_playlist_code  = qr/^(?:PL)?([0-9A-Z]{16})$/;
 my $get_youtube_code     = qr{\b(?:v|embed|youtu[.]be)(?:[=/]|%3D)([\w\-]{11})};
 my $looks_like_gdata_url = qr{^https?://gdata[.]youtube[.]com/feeds/};
@@ -282,7 +282,7 @@ my $valid_url = qr{^
                 \.)                      # a single dot
                 \w{2,6}                  # domain (words between 2 and 6 chars)
                 (?:[#/?!]                # characters after domain
-                [#-)+-;=?\\~\w]*)*       # the rest of characters of the string
+                [#-)+-;=?\\~\w]*)*       # the rest characters of the string
 $}x;
 
 #---------------------- TEMPORARY OPTIONS ----------------------#
@@ -380,7 +380,7 @@ $SIG{'INT'} = sub {
 
 # __DIE__ handle
 $SIG{__DIE__} = sub {
-    if (join('', @_) =~ m{^Can't locate (.+?)\.pm\b}) {
+    if (join('', @_) =~ m{^Can't locate (.+?)\.pm\b}) {    #'
         my $module = $1;
         $module =~ s{[/\\]+}{::}g;
         die "\nModule $module is required!\n\nTo install the module, just type in terminal:\n\tsudo cpan $module\n";
@@ -484,8 +484,8 @@ sub parse_arguments {
         },
 
         'quiet|q!' => sub {
-            close *STDOUT;
-            close *STDERR;
+            close STDOUT;
+            close STDERR;
         },
 
         map { defined $CONFIG{$_} && $CONFIG{$_} =~ /^[10]$/ ? "$_!" : "$_=s" } keys %CONFIG
@@ -537,9 +537,7 @@ foreach my $code (@ARGV) {
 }
 
 sub quit_required {
-    $_[0]      eq 'q'
-      or $_[0] eq 'quit'
-      or $_[0] eq 'exit';
+    $_[0] ~~ ['q', 'quit', 'exit'];
 }
 
 #---------------------- GO TO insert_url() IF $non_argv is FALSE ----------------------#
@@ -1087,7 +1085,7 @@ sub play_or_download {
         }
 
         # Replacing reserved characters with a space
-        $title =~ tr{\\/:*?"< >|}{ }s;
+        $title =~ tr{\\/:*?"< >|}{ }s;    #"
         if (not -e "$title.mp4") {
             if ($wget_is_available) {
 
@@ -1282,7 +1280,7 @@ sub format_time {
         $tmp_time = ${$_[0]} / 60 % 60;
         $tmp_time > 9 ? $tmp_time : "0$tmp_time";
       }
-      . q{:} 
+      . q{:}
       . do {
         $tmp_time = ${$_[0]} % 60;
         $tmp_time > 9 ? $tmp_time : "0$tmp_time";
@@ -1417,7 +1415,7 @@ sub print_results {
                 }
             }
             when (/\d/ and not /(?:\s|^)[^\d-]/) {
-                s/(?:\D|^)-+\d+(?:\w+)?//g;                          # remove resolution arguments (e.g.: --360p);
+                s/(?:\D|^)[-=]+\d+(?:\w+)?//g;                       # remove resolution arguments (e.g.: -4, -arg=\d);
                 s/(\d+)(?:-|[.][.])(\d+)/join q{ }, $1 .. $2;/eg;    # '2..5' or '2-5' to '2 3 4 5'
                 @picks = grep { $_ > 0 and $_ <= scalar @results if /^\d+$/ } split /[\s[:punct:]]+/, $_;
                 @picks
@@ -1640,7 +1638,7 @@ ERROR
     }
     else {
 
-        # This happens when video has been deleted or forbidden
+        # This happens when a video has been deleted or forbidden
         warn "\n$bred(x_x) Something went wrong...$reset\n\n", "$bred(x_x) Unable to stream: $reset$url\n\n";
         if ($video_results and not $dont_exit) {
             unless (@picks) {
