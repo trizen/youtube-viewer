@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 13 February 2012
+#  Latest edit on: 15 February 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -72,9 +72,9 @@
 eval 'exec perl -S $0 ${1+"$@"}'
   if 0;    # not running under some shell
 
+use 5.010;
 use strict;
-use feature ('switch');
-use autouse ('XML::Fast' => 'xml2hash');
+use autouse ('XML::Fast'   => 'xml2hash');
 use autouse ('URI::Escape' => 'uri_escape');
 use File::Spec::Functions qw(path tmpdir curdir rel2abs);
 
@@ -95,7 +95,7 @@ my $config_dir = (
 ) . "/$execname";
 
 my $config_file = "$config_dir/$execname.conf";
-my $noconfig    = grep { /^-+(?:W|noconfig)$/ } @ARGV;
+my $noconfig    = grep { /^-+(?>W|noconfig)$/ } @ARGV;
 my $debug_mode  = grep { /^-+debug$/ } @ARGV;
 
 # Unchangeable variables goes here
@@ -139,7 +139,7 @@ my %CONFIG = (
     # MPlayer options
     'cache'                => 30000,
     'cache_min'            => 5,
-    'lower_cache'          => 1000,
+    'lower_cache'          => 2000,
     'lower_cache_min'      => 3,
     'mplayer'              => get_mplayer(),
     'mplayer_srt_settings' => '-unicode -utf8',
@@ -259,11 +259,11 @@ my ($start_index, $download_video, $from_author, $playback, $sleep, @picks, @res
 my $contains_arguments   = qr/(?>\s|^)-+\w/;
 my $match_regexp         = qr{/([^\\/]*(?:\\.[^\\/]*)*)/};
 my $valid_playlist_code  = qr/^(?:PL)?([0-9A-Z]{16})$/;
-my $get_youtube_code     = qr{\b(?:v|embed|youtu[.]be)(?:[=/]|%3D)([\w\-]{11})};
+my $get_youtube_code     = qr{\b(?>v|embed|youtu[.]be)(?>[=/]|%3D)([\w\-]{11})};
 my $looks_like_gdata_url = qr{^https?://gdata[.]youtube[.]com/feeds/};
 
 # $1 will be the playlist code
-my $get_playlist_code = qr{(?:(?:(?:playlist[?]list|view_play_list[?]p)=)|\w#p/c/)(?:PL)?([A-Z0-9]{16})};
+my $get_playlist_code = qr{(?:(?:(?>playlist[?]list|view_play_list[?]p)=)|\w#p/c/)(?:PL)?([A-Z0-9]{16})};
 
 # $1 will be the Youtube username
 my $get_username = qr{^https?://(?:www[.])?youtube[.]com/(?:user/)?(\w{2,})(?:[?].*)?$};
@@ -383,7 +383,7 @@ $SIG{__DIE__} = sub {
     if (join('', @_) =~ m{^Can't locate (.+?)\.pm\b}) {    #'
         my $module = $1;
         $module =~ s{[/\\]+}{::}g;
-        die "\nModule $module is required!\n\nTo install the module, just type in terminal:\n\tsudo cpan $module\n";
+        die "\nModule $module is required!\n\nTo install it, just type in terminal:\n\tsudo cpan $module\n";
     }
     return 1;
 };
@@ -413,19 +413,19 @@ sub get_start_index {
 
 # Returns a list of arguments (from string ref)
 sub get_arguments_from_string {
-    return grep { chr ord $_ eq q{-} }
+    return grep { chr ord eq q{-} }
       split(/\s+/, ${$_[0]});
 }
 
 # Returns a list of keywords (from string ref)
 sub get_keywords_from_string {
-    return grep { chr ord $_ ne q{-} }
+    return grep { chr ord ne q{-} }
       split(/\s+/, ${$_[0]});
 }
 
 # Returns a list of keywords (from array ref)
 sub get_keywords_from_array {
-    return grep { chr ord $_ ne q{-} } @{$_[0]};
+    return grep { chr ord ne q{-} } @{$_[0]};
 }
 
 my @goto;
@@ -576,8 +576,8 @@ sub code_from_content {
 
 #---------------------- YOUTUBE-VIEWER USAGE ----------------------#
 sub help {
-    print "\n  " . q{=} x 30 . " \U$appname\E " . q{=} x 30 . "
-\t\t\t\t\t\t by Trizen (trizenx\@gmail.com)
+    print "\n  " . q{=} x 30 . " \U$appname\E " . q{=} x 30 . <<"HELP";
+\n\t\t\t\t\t\t by Trizen (trizenx\@gmail.com)
 \nUsage: $execname [options] ([code] || [url] || [keywords])
 \nBase Options:
    <url>                : play an YouTube video by URL
@@ -631,13 +631,14 @@ sub help {
 Tips and tricks:
   1. After search results, press <ENTER> for the next page
   2. After search results, insert 'back' for the previous page
-  3. View more 'hidden' features by executing '$execname -T'\n\n";
+  3. View more 'hidden' features by executing '$execname -T'\n
+HELP
     main_quit();
 }
 
 #---------------------- YOUTUBE-VIEWER TIPS AND TRICKS ----------------------#
 sub tricks {
-    print "
+    print <<"TRICKS";
                         $bred>>$bgreen Tips and tricks $bred<<$reset
 \n$bred*$bgreen STDIN arguments:$reset
 $stdin_help
@@ -657,7 +658,8 @@ $stdin_help
  ** Show playlists created by a specific user
     % $execname -up khanacademy\n
  ** Show latest videos (50) uploaded by a specific user and a colourful output
-    % $execname -results=50 -u google -C\n\n";
+    % $execname -results=50 -u google -C\n
+TRICKS
     main_quit();
 }
 
@@ -706,7 +708,7 @@ sub authenticate {
                             print "\b \b";
                         }
                         when ($_ >= 32) {
-                            $password = $password . $_;
+                            $password .= $_;
                         }
                     }
                 }
@@ -1376,7 +1378,7 @@ sub print_results {
             when (\&check_user_input) {
                 redo;
             }
-            when (/^\s*$/ or $_ eq 'next') {
+            when ([qr/^\s*$/, 'next']) {
                 next_page();
             }
             when ('back') {
@@ -1409,9 +1411,9 @@ sub print_results {
                 }
             }
             when (/\d/ and not /(?:\s|^)[^\d-]/) {
-                s/(?:\D|^)[-=]+\d+(?:\w+)?//g;                       # remove resolution arguments (e.g.: -4, -arg=\d);
-                s/(\d+)(?:-|[.][.])(\d+)/join q{ }, $1 .. $2;/eg;    # '2..5' or '2-5' to '2 3 4 5'
-                @picks = grep { $_ > 0 and $_ <= scalar @results if /^\d+$/ } split /[\s[:punct:]]+/, $_;
+                s/(?:\D|^)[-=]+\d+(?:\w+)?//g;                     # remove resolution arguments (e.g.: -4, -arg=\d);
+                s/(\d+)(?:-|\.\.)(\d+)/join q{ }, $1 .. $2;/eg;    # '2..5' or '2-5' to '2 3 4 5'
+                @picks = grep { $_ > 0 and $_ <= @results if /^\d+$/ } split /[\s[:punct:]]+/, $_;
                 @picks
                   ? foreach_pick()
                   : continue;
@@ -1431,7 +1433,7 @@ sub foreach_pick {
 
 #---------------------- NEXT PAGE ----------------------#
 sub next_page {
-    if ($youtube_gdata_url =~ s/(?<=[&?]start-index=)(\d+)/($1 + $CONFIG{results});/e) {
+    if ($youtube_gdata_url =~ s/[&?]start-index=\K(\d+)/($1 + $CONFIG{results})/e) {
         if ($playlists) {
             search_playlists($youtube_gdata_url, @_);
         }
@@ -1444,7 +1446,7 @@ sub next_page {
 
 #---------------------- PREVIOUS PAGE ----------------------#
 sub previous_page {
-    if ($youtube_gdata_url =~ s/(?<=[&?]start-index=)(\d+)/($1 - $CONFIG{results});/e) {
+    if ($youtube_gdata_url =~ s/[&?]start-index=\K(\d+)/($1 - $CONFIG{results})/e) {
         if ($playlists) {
             search_playlists($youtube_gdata_url, @_);
         }
@@ -1650,7 +1652,7 @@ ERROR
 
 sub main_quit {
     write_config_to_file() unless $noconfig;
-    exit;
+    exit 0;
 }
 
 main_quit();
