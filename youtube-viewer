@@ -253,7 +253,7 @@ my $youtube_gdata_url;           # used to store the gdata URL with API query pa
 my $start_with_page = 1;
 
 # Other global variables
-my ($start_index, $download_video, $from_author, $playback, $sleep, @picks, @results, %streaming);
+my ($start_index, $download_video, $from_author, $playback, @picks, @results, %streaming);
 
 #------------------------ REGEXP AREA ------------------------#
 my $contains_arguments   = qr/(?>\s|^)-+\w/;
@@ -444,7 +444,6 @@ sub parse_arguments {
         'users|U:s'           => sub { push @goto, {list_user_names         => length $_[1] ? pop() : $CONFIG{users_list}} },
 
         'author=s'         => \$from_author,
-        'sleep|S!'         => \$sleep,
         'all|A!'           => \$playback,
         'noconfig|W!'      => \$noconfig,
         'playlists|p!'     => \$playlists,
@@ -597,7 +596,6 @@ sub help {
    -C, --colors         : use colors for text output
    -d, --download       : downloads YouTube video(s) with LWP
    -N, --subscriptions  : show new subscription videos (requires authentication)
-   -S, --sleep          : sleep 1 sec when playling more videos
    -U, --users=file.txt : list YouTube usernames from a file
    -L, --lwp-download   : download videos with LWP (default: wget)
    -T, --tricks         : show more 'hidden' features of $appname
