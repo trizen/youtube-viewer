@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 15 February 2012
+#  Latest edit on: 16 February 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -368,16 +368,6 @@ foreach my $arg (@ARGV) {
 }
 @ARGV = @argv;
 
-# Exit unless there are more videos selected to play
-$SIG{'INT'} = sub {
-    @picks > 1
-      ? do {
-        @picks    = ();
-        $playback = 0;
-      }
-      : do { print "\n"; main_quit() };
-};
-
 # __DIE__ handle
 $SIG{__DIE__} = sub {
     if (join('', @_) =~ m{^Can't locate (.+?)\.pm\b}) {    #'
@@ -387,11 +377,6 @@ $SIG{__DIE__} = sub {
     }
     return 1;
 };
-
-# SIG handlers
-foreach my $sig (qw(HUP TERM KILL)) {
-    $SIG{$sig} = \&main_quit;
-}
 
 my $get_opt_required = 0;
 
@@ -1084,6 +1069,7 @@ sub play_or_download {
 
         # Replacing reserved characters with a space
         $title =~ tr{\\/:*?"< >|}{ }s;    #"
+
         if (not -e "$title.mp4") {
             if ($wget_is_available) {
 
@@ -1125,12 +1111,13 @@ sub play_or_download {
         delete $constant{'cwd'};
     }
 
+    if ($? == 256) {    # CTRL+C detected
+        $playback = 0;
+        print_results();
+    }
+
     print "\n";
     if (@picks) {
-        if ($playback or $sleep) {
-            print "${bred}[*]$bgreen Press CTRL+C to return to video results!$reset\n\n";
-            sleep 1;    # enough time to press CTRL+C
-        }
         foreach_pick();    # play the next video
     }
     elsif ($playback) {
@@ -1278,7 +1265,7 @@ sub format_time {
         $tmp_time = ${$_[0]} / 60 % 60;
         $tmp_time > 9 ? $tmp_time : "0$tmp_time";
       }
-      . q{:} 
+      . q{:}
       . do {
         $tmp_time = ${$_[0]} % 60;
         $tmp_time > 9 ? $tmp_time : "0$tmp_time";
@@ -1630,7 +1617,6 @@ ERROR
 
         # Select one resolution and play video
         play_or_download(select_resolution(), $info->{title});
-
     }
     else {
 
