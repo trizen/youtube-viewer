@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 16 February 2012
+#  Latest edit on: 27 February 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -95,17 +95,20 @@ my $config_dir = (
 ) . "/$execname";
 
 my $config_file = "$config_dir/$execname.conf";
-my $noconfig    = grep { /^-+(?>W|noconfig)$/ } @ARGV;
-my $debug_mode  = grep { /^-+debug$/ } @ARGV;
+
+my ($debug_mode, $update_config);
+
+my $noconfig = qr/^-+(?>W|noconfig)$/ ~~ @ARGV;
 
 # Unchangeable variables goes here
 my %constant = (
-                'win32' => $^O eq 'MSWin32' ? 1 : 0,
-                'dash_line' => '-' x 80
+                win32 => $^O eq 'MSWin32' ? 1 : 0,
+                dash_line     => '-' x 80,
+                gdata_version => 2,
                );
 
 # Set $PATH to @path
-my @path = path;
+my @path = path();
 
 # Locating gcap
 my $gcap;
@@ -137,43 +140,46 @@ sub get_mplayer {
 my %CONFIG = (
 
     # MPlayer options
-    'cache'                => 30000,
-    'cache_min'            => 5,
-    'lower_cache'          => 2000,
-    'lower_cache_min'      => 3,
-    'mplayer'              => get_mplayer(),
-    'mplayer_srt_settings' => '-unicode -utf8',
-    'mplayer_arguments'    => '-prefer-ipv4 -really-quiet -cache %d -cache-min %d',
+    cache                => 30000,
+    cache_min            => 5,
+    lower_cache          => 2000,
+    lower_cache_min      => 3,
+    mplayer              => get_mplayer(),
+    mplayer_srt_settings => '-unicode -utf8',
+    mplayer_arguments    => '-prefer-ipv4 -really-quiet -cache %d -cache-min %d',
 
     # Youtube options
-    'results'          => 20,
-    'resolution'       => 1080,
-    'region'           => undef,
-    'query_parameters' => undef,
-    'time_sort'        => 'all_time',
-    'order_by'         => 'relevance',
+    results                  => 20,
+    resolution               => 1080,
+    only_hd_videos           => undef,
+    safe_search              => undef,
+    only_videos_with_caption => undef,
+    duration                 => undef,
+    query_parameters         => undef,
+    time_sort                => 'all_time',
+    order_by                 => 'relevance',
 
     # URI options
-    'youtube_video_url'     => 'http://www.youtube.com/watch?v=%s',
-    'gdata_feeds_main_url'  => 'http://gdata.youtube.com/feeds/api',
-    'get_video_info'        => 'http://www.youtube.com/get_video_info',
-    'newsubscriptionvideos' => 'http://gdata.youtube.com/feeds/api/users/%s/newsubscriptionvideos',
+    youtube_video_url     => 'http://www.youtube.com/watch?v=%s',
+    gdata_feeds_main_url  => 'http://gdata.youtube.com/feeds/api',
+    get_video_info        => 'http://www.youtube.com/get_video_info',
+    newsubscriptionvideos => 'http://gdata.youtube.com/feeds/api/users/%s/newsubscriptionvideos',
 
     # Subtitle options
-    'srt_language' => 'en',
-    'tmp_dir'      => tmpdir(),
-    'gcap'         => $gcap,
+    srt_language => 'en',
+    tmp_dir      => tmpdir(),
+    gcap         => $gcap,
 
     # Others
-    'use_colors'         => 0,
-    'lwp_downloading'    => 0,
-    'fullscreen'         => 0,
-    'use_lower_cache'    => 0,
-    'perl_bin'           => $^X,
-    'thousand_separator' => q{,},
-    'downloads_folder'   => curdir(),
-    'editor'             => $ENV{'EDITOR'} // 'nano',          #/
-    'users_list'         => "$config_dir/youtube_users.txt",
+    use_colors         => 0,
+    lwp_downloading    => 0,
+    fullscreen         => 0,
+    use_lower_cache    => 0,
+    perl_bin           => $^X,
+    thousand_separator => q{,},
+    downloads_folder   => curdir(),
+    editor             => $ENV{'EDITOR'} // 'nano',          #/
+    users_list         => "$config_dir/youtube_users.txt",
 );
 
 my $stdin_help = <<'STDIN_HELP';
@@ -253,7 +259,7 @@ my $youtube_gdata_url;           # used to store the gdata URL with API query pa
 my $start_with_page = 1;
 
 # Other global variables
-my ($start_index, $download_video, $from_author, $playback, @picks, @results, %streaming);
+my ($start_index, $download_video, $author, $playback, @picks, @results, %streaming);
 
 #------------------------ REGEXP AREA ------------------------#
 my $contains_arguments   = qr/(?>\s|^)-+\w/;
@@ -398,14 +404,12 @@ sub get_start_index {
 
 # Returns a list of arguments (from string ref)
 sub get_arguments_from_string {
-    return grep { chr ord eq q{-} }
-      split(/\s+/, ${$_[0]});
+    return grep { chr ord eq q{-} } split(/\s+/, ${$_[0]});
 }
 
 # Returns a list of keywords (from string ref)
 sub get_keywords_from_string {
-    return grep { chr ord ne q{-} }
-      split(/\s+/, ${$_[0]});
+    return grep { chr ord ne q{-} } split(/\s+/, ${$_[0]});
 }
 
 # Returns a list of keywords (from array ref)
@@ -443,12 +447,15 @@ sub parse_arguments {
         'user-playlists|up=s' => sub { push @goto, {playlists_from_username => pop()} },
         'users|U:s'           => sub { push @goto, {list_user_names         => length $_[1] ? pop() : $CONFIG{users_list}} },
 
-        'author=s'         => \$from_author,
+        'author=s'         => \$author,
         'all|A!'           => \$playback,
         'noconfig|W!'      => \$noconfig,
         'playlists|p!'     => \$playlists,
         'debug!'           => \$debug_mode,
+        'update-config|S!' => \$update_config,
         'download|d!'      => \$download_video,
+        'safe-search=s'    => \$CONFIG{safe_search},
+        'hd=s'             => \$CONFIG{only_hd_videos},
         'cache-min=i'      => \$CONFIG{cache_min},
         'colors|C!'        => \$CONFIG{use_colors},
         'sub|lang=s'       => \$CONFIG{srt_language},
@@ -575,22 +582,25 @@ sub help {
    -p, --playlists      : search for YouTube playlists
    -M, --movies         : show YouTube movies categories
    --results=[1-50]     : how many videos to display per page
-   --region=<ID>        : set a specific regionID (ex: US)
-   -u  <username>       : list videos uploaded by a specific user
-   -up <username>       : list playlists created by a specific user
-   -author='USERNAME'   : search videos uploaded by a particular user
-   -order-by='ORDER'    : order entries by: published, viewCount or rating
-   -time='TIME'         : valid values are: today, this_week and this_month
-   -page='PAGE_NR'      : show video results starting with PAGE_NR (ex: 2)
+   -u, -user=s          : list videos uploaded by a specific user
+   -up=s                : list playlists created by a specific user
+   -author=s            : search videos uploaded by a particular user
+   -duration=s          : valid values are: short, medium, long
+   -hd=s                : valid value is: true
+   -caption=s           : valid values are: true, false
+   -safe-search=s       : valid values are: none, moderate, strict
+   -order-by=s          : order entries by: published, viewCount or rating
+   -time=s              : valid values are: today, this_week and this_month
+   -page=i              : show video results starting with 'i' (ex: 2)
    -2, -3, -4, -7, -1   : plays videos at 240p, 360p, 480p, 720p or 1080p
 \nMPlayer options:
    -f, --fullscreen     : plays video(s) in fullscreen mode
    -n, --novideo        : plays only the audio track of video(s)
    -l, --lower-cache    : set a lower cache for MPlayer (for slow connections)
-   -mplayer=<>          : set a media player (default: $CONFIG{mplayer})
-   -sub='LANG'          : subtitle language (default: en) (depends on gcap)
-   -cache='VALUE'       : set cache for MPlayer (default: $CONFIG{cache})
-   -cache-min='VALUE'   : set cache-min for MPlayer (default: $CONFIG{cache_min})
+   -mplayer=s           : set a media player (default: $CONFIG{mplayer})
+   -sub=s               : subtitle language (default: en) (depends on gcap)
+   -cache=i             : set cache for MPlayer (default: $CONFIG{cache})
+   -cache-min=i         : set cache-min for MPlayer (default: $CONFIG{cache_min})
 \nOther options:
    -A, --all            : plays all video results in order
    -C, --colors         : use colors for text output
@@ -599,6 +609,7 @@ sub help {
    -U, --users=file.txt : list YouTube usernames from a file
    -L, --lwp-download   : download videos with LWP (default: wget)
    -T, --tricks         : show more 'hidden' features of $appname
+   -S, --update-config  : update configuration file before exit
    -W, --noconfig       : don't apply config values, start with default values
    -Q, --query-params   : set query parameters (ex: '&duration=long&caption')
    -login               : prompt for login
@@ -608,8 +619,9 @@ sub help {
    -v, --version        : prints version and exits
    -h, --help           : prints help and exits
 
-*  -no-[argv] will negate the value of argument (ex: -no-fullscreen)
-** each config key is a valid argument (if is preceded by a dash (-))
+NOTE:
+    -no-[argv] will negate the value of argument (ex: -no-fullscreen)
+    each config key is a valid argument (if is preceded by a dash (-))
 
 Tips and tricks:
   1. After search results, press <ENTER> for the next page
@@ -706,9 +718,9 @@ sub authenticate {
         }
     }
 
-    print "\n\n** Should I save your authentification key into configuration?
--> if 'yes', you will be logged in automatically next time\n
-=>> Your answer (y/N): ";
+    print "\n\n** Should I save your authentification key into configuration?\n",
+      "-> if 'yes', you will be logged in automatically next time\n\n",
+      "=>> Your answer (y/N): ";
     my $remember_me = <STDIN> =~ /^y/i ? 1 : 0;
 
     set_lwp_useragent() unless $lwp_is_set;
@@ -845,16 +857,7 @@ my $playlist_index;
 
 sub playlists_from_username {
     my ($username) = @_;
-    search_playlists(
-                     $CONFIG{gdata_feeds_main_url}
-                       . "/users/"
-                       . $username
-                       . "/playlists?max-results="
-                       . $CONFIG{results}
-                       . "&start-index="
-                       . $start_index . "&v=2",
-                     'username'
-                    );
+    search_playlists($CONFIG{gdata_feeds_main_url} . "/users/$username/playlists?" . default_gdata_arguments(), 'username');
 }
 
 sub search_playlists {
@@ -863,13 +866,7 @@ sub search_playlists {
     $youtube_gdata_url =
         $arg =~ /$looks_like_gdata_url/o
       ? $arg
-      : $CONFIG{gdata_feeds_main_url}
-      . "/playlists/snippets?q="
-      . $arg
-      . "&start-index="
-      . $start_index
-      . "&max-results="
-      . $CONFIG{results} . "&v=2";
+      : $CONFIG{gdata_feeds_main_url} . "/playlists/snippets?q=$arg&" . default_gdata_arguments();
 
     $playlists = 1;
     parse_content($youtube_gdata_url);
@@ -1104,17 +1101,15 @@ sub play_or_download {
         }
 
         # Change directory back to the main working directory
-        chdir $constant{'cwd'}
-          if exists $constant{'cwd'};
-        delete $constant{'cwd'};
+        chdir delete $constant{'cwd'} if exists $constant{'cwd'};
     }
+    print "\n";
 
     if ($? == 256) {    # CTRL+C detected
         $playback = 0;
         print_results();
     }
 
-    print "\n";
     if (@picks) {
         foreach_pick();    # play the next video
     }
@@ -1134,6 +1129,53 @@ if (length($keywords)) {
     search() unless $dont_exit;
 }
 
+sub get_defined_pairs_from_array {
+
+    # ('arg', undef, 'text', 'value')
+    # --to--
+    # ('text', 'value')
+
+    foreach (my $i = 0 ; $i <= $#_ ; ++$i) {
+        if (not defined $_[$i]) {
+            splice(@_, --$i, 2);
+        }
+    }
+    @_;
+}
+
+sub array_to_gdata_arguments {
+    my @options = get_defined_pairs_from_array(@_);
+
+    # ('arg', 'value', 'option', 'true')
+    # --to--
+    # 'arg=value&option=true'
+
+    my $i   = -2;
+    my $x   = $#options - 1;
+    my $str = '';
+
+    while (1) {
+        if ($i + 3 < $x) {
+            $str .= $options[$i += 2] . '=' . $options[$i + 1] . '&';
+        }
+        else {
+            return
+              $str .=
+                $i + 3 == $x ? $options[-3] . '=' . $options[-2] . '&' . $options[-1]
+              : $i + 2 == $x ? $options[-2] . '=' . $options[-1]
+              :                $options[-1];
+        }
+    }
+}
+
+sub default_gdata_arguments {
+    array_to_gdata_arguments(
+                             'max-results' => $CONFIG{results},
+                             'start-index' => $start_index,
+                             'v'           => $constant{gdata_version},
+                            );
+}
+
 sub search {
     $keywords = shift() // $keywords;    #/
 
@@ -1148,22 +1190,21 @@ sub search {
 
     $youtube_gdata_url =
         $CONFIG{gdata_feeds_main_url}
-      . '/videos?q='
-      . $keywords
-      . '&max-results='
-      . $CONFIG{results}
-      . '&time='
-      . $CONFIG{time_sort}
-      . '&orderby='
-      . $CONFIG{order_by}
-      . '&start-index='
-      . $start_index . '&v=2';
-    if (defined $from_author) {
-        $youtube_gdata_url .= '&author=' . $from_author;
-    }
-    if (defined $CONFIG{region}) {
-        $youtube_gdata_url .= '&region=' . $CONFIG{region};
-    }
+      . '/videos?'
+      . array_to_gdata_arguments(
+                                 'q'           => $keywords,
+                                 'max-results' => $CONFIG{results},
+                                 'time'        => $CONFIG{time_sort},
+                                 'orderby'     => $CONFIG{order_by},
+                                 'start-index' => $start_index,
+                                 'safeSearch'  => $CONFIG{safe_search},
+                                 'hd'          => $CONFIG{only_hd_videos},
+                                 'caption'     => $CONFIG{only_videos_with_caption},
+                                 'duration'    => $CONFIG{duration},
+                                 'author'      => $author,
+                                 'v'           => $constant{gdata_version}
+                                );
+
     if (defined $CONFIG{query_parameters}) {
         unless ($CONFIG{query_parameters} =~ /^&/) {
             substr($CONFIG{query_parameters}, 0, 0, '&');
@@ -1177,11 +1218,8 @@ sub search {
 #---------------------- PREPARE GDATA FEEDS URL ----------------------#
 sub parse_url {
     ($youtube_gdata_url) = @_;
-    $youtube_gdata_url .= $youtube_gdata_url =~ /[?]/ ? '&' : '?';
-    $youtube_gdata_url .= "start-index=$start_index&max-results=$CONFIG{results}&v=2";
-    if (defined $CONFIG{region}) {
-        $youtube_gdata_url .= '&region=' . $CONFIG{region};
-    }
+    $youtube_gdata_url .= $youtube_gdata_url =~ /\?/ ? '&' : '?';
+    $youtube_gdata_url .= default_gdata_arguments();
     parse_content($youtube_gdata_url);
     print_results();
 }
@@ -1230,9 +1268,9 @@ sub parse_content {
              'title'       => $gdata->{'media:group'}{'media:title'}{'#text'},
              'author'      => $gdata->{'author'}{'name'},
              'favorited'   => $gdata->{'yt:statistics'}{'-favoriteCount'},
-             'duration'    => format_time(\$gdata->{'media:group'}{'yt:duration'}{'-seconds'}),
+             'duration'    => format_time($gdata->{'media:group'}{'yt:duration'}{'-seconds'}),
              'views'       => $gdata->{'yt:statistics'}{'-viewCount'} || 0,
-             'published'   => $gdata->{'published'} // 0,                                         #/
+             'published'   => $gdata->{'published'} // 0,                                        #/
              'category'    => $gdata->{'category'}[1]{'-label'},
              'description' => $gdata->{'media:group'}{'media:description'}{'#text'}
             };
@@ -1250,24 +1288,9 @@ sub parse_content {
 
 # Format seconds to HH:MM:SS
 sub format_time {
-    my $tmp_time;
-    do {
-        $tmp_time = ${$_[0]} / 3600 % 24;
-        $tmp_time > 0
-          ? $tmp_time > 9
-              ? "$tmp_time:"
-              : "0$tmp_time:"
-          : q{};
-      }
-      . do {
-        $tmp_time = ${$_[0]} / 60 % 60;
-        $tmp_time > 9 ? $tmp_time : "0$tmp_time";
-      }
-      . q{:}
-      . do {
-        $tmp_time = ${$_[0]} % 60;
-        $tmp_time > 9 ? $tmp_time : "0$tmp_time";
-      };
+    $_[0] >= 3600
+      ? join ':', map { sprintf '%02d', $_ } $_[0] / 3600 % 24, $_[0] / 60 % 60, $_[0] % 60
+      : join ':', map { sprintf '%02d', $_ } $_[0] / 60 % 60, $_[0] % 60;
 }
 
 sub check_user_input {
@@ -1338,12 +1361,15 @@ sub print_results {
 
           # Colored output (when using --colors or -C)
           ? printf
-"$cblack$bred%s$num$reset$cblack - $byellow%s$reset$cblack (${bpurle}by %s$reset$cblack) ($bblue%s$reset$cblack)$reset\n",
-          $num < 10 ? ' ' : '', $video->{title}, $video->{author}, $video->{duration}
+          "%s%s%s%d%s%s - %s%s%s%s (%sby %s%s%s) (%s%s%s%s)%s\n",
+          $cblack, $bred, $num < 10 ? ' ' : '', $num, $reset,
+            $cblack, $byellow, $video->{title}, $reset, $cblack,
+            $bpurle, $video->{author}, $reset, $cblack, $bblue,
+            $video->{duration}, $reset, $cblack, $reset
 
               # Normal output
-          : printf "$bred%s$num$reset - %s (by %s) (%s)\n", $num < 10 ? ' ' : '', $video->{title}, $video->{author},
-          $video->{duration};
+          : printf "$bred%s$num$reset - %s (by %s) (%s)\n", $num < 10 ? ' ' : '',
+          $video->{title}, $video->{author}, $video->{duration};
     }
 
     if ($playback) {
@@ -1515,20 +1541,13 @@ sub get_closed_caption {
     return $srt_file;
 }
 
+# Thousand separator
 sub set_thousands {
     return 0 unless $_[0];
     return $_[0] unless length $_[0] > 3;
-    my ($views) = @_;
-    if (index($views, $CONFIG{thousand_separator}) < 0) {
-        my $l = length($views) - 3;
-        my $i = ($l - 1) % 3 + 1;
-        my $x = substr($views, 0, $i) . $CONFIG{thousand_separator};
-        while ($i < $l) {
-            $x .= substr($views, $i, 3) . $CONFIG{thousand_separator};
-            $i += 3;
-        }
-        return $x . substr($views, $i);
-    }
+    my $number = shift;
+    $number =~ s/(?<=\d)(?=(?:\d{3})+$)/$CONFIG{thousand_separator}/g;
+    return $number;
 }
 
 sub get_youtube {
@@ -1574,12 +1593,13 @@ ERROR
 
         undef %streaming;
         my (@streaming_urls) =
-          grep (/^https?:/, split(/url%3D(.+?)%26/, $streaming));
-        @streaming{format_itags(map { /&itag=(\d+)&/ } @streaming_urls)} = grep {
+          grep /^https?:/, split(/url%3D(.+?)%26/, $streaming);
+        @streaming{format_itags(map /&itag=(\d+)&/, @streaming_urls)} =
+          grep {
             exists $itags{
                 do { /&itag=(\d+)&/; $1 }
               }
-        } @streaming_urls;
+          } @streaming_urls;
 
         if ($debug_mode) {
             while (my ($key, $value) = each %streaming) {
@@ -1591,7 +1611,7 @@ ERROR
             $info->{description} = 'No description available...';
         }
         $info->{category} =~ s/&amp;/&/;
-        $info->{published} = "$3.$2.$1" if $info->{published} =~ /^(\d\d\d\d)-(\d\d)-(\d\d)/;
+        $info->{published} = "$3.$2.$1" if $info->{published} =~ /^(\d{4})-(\d{2})-(\d{2})/;
 
         print "\n$bred=>> $bgreen$info->{title}$reset\n",
           "$constant{'dash_line'}\n",
@@ -1635,7 +1655,7 @@ ERROR
 }
 
 sub main_quit {
-    write_config_to_file() unless $noconfig;
+    write_config_to_file() if $update_config;
     exit 0;
 }
 
