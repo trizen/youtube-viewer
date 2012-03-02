@@ -395,12 +395,12 @@ sub get_start_index {
 
 # Returns a list of arguments
 sub get_arguments_from_string {
-    return grep { chr ord eq q{-} } split(q/ /, shift);
+    return grep { chr ord eq q{-} } split(q{ }, shift);
 }
 
 # Returns a list of keywords
 sub get_keywords_from_string {
-    return grep { chr ord ne q{-} } split(q/ /, shift);
+    return grep { chr ord ne q{-} } split(q{ }, shift);
 }
 
 # Returns a list of keywords
@@ -469,12 +469,7 @@ sub parse_arguments {
             close STDERR;
         },
 
-        map {
-            defined $CONFIG{$_}
-              && $CONFIG{$_} ~~
-              ['0', '1']
-              ? "$_!"
-              : "$_=s" } keys %CONFIG
+        map { defined $CONFIG{$_} && $CONFIG{$_} =~ /^[01]\z/ ? "$_!" : "$_=s" } keys %CONFIG
                                      );
     $keywords = join(q{ }, get_keywords_from_array(\@_)) if @_;
 
@@ -516,13 +511,10 @@ foreach my $code (@ARGV) {
         when (/$get_username/o) {
             videos_from_username($1);
         }
-        when (m{^https? : //
-          }
-          and /$valid_url/o
-      ) {
-         code_from_content($_);
-        };
-}
+        when (/$valid_url/o) {
+            code_from_content($_);
+        }
+    }
 }
 
 sub quit_required {
@@ -941,7 +933,7 @@ sub youtube_movies {
     foreach my $movie_cat_name ('most_popular', 'most_recent', 'trending') {
         my $cat_name = ucfirst $movie_cat_name;
         $cat_name =~ tr/_/ /;
-        print q/ /, $bred, ++$i, "$reset - $cat_name\n";
+        print q{ }, $bred, ++$i, "$reset - $cat_name\n";
         $movie_table{$i} = $movie_cat_name;
     }
     {
@@ -1176,9 +1168,7 @@ sub search {
         return;
     }
 
-    $youtube_gdata_url =
-        $CONFIG{gdata_feeds_main_url}
-      . '/videos?'
+    $youtube_gdata_url = "$CONFIG{gdata_feeds_main_url}/videos?"
       . array_to_gdata_arguments(
                                  'q'           => $keywords,
                                  'max-results' => $CONFIG{results},
@@ -1326,7 +1316,7 @@ sub check_user_input {
         when (/$valid_playlist_code/o) {
             list_playlist($_);
         }
-        when (m{^https?://} and /$valid_url/o) {
+        when (/$valid_url/o) {
             code_from_content($_);
         }
         when (\&is_code) {
