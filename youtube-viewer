@@ -29,7 +29,7 @@
 # [!] The most important changes are written in the changelog!
 #
 # [CHANGELOG]
-# - Switched to Term::Readline for a better STDIN support // Better colors // Info support     - NEW (v2.5.7)
+# - Switched to Term::ReadLine for a better STDIN support // Better colors // Info support     - NEW (v2.5.7)
 # - Added support for: -duration, -caption=s, -safe-search=s, -hd // Improved code quality     - NEW (v2.5.6)
 # - Added support for configuration file, improved stability, improved debug mode              - NEW (v2.5.5)
 # - Switched to XML::Fast for parsing gdata XML, in consequence, youtube-viewer is faster!     - NEW (v2.5.5)
@@ -202,7 +202,7 @@ e, edit-config  : edit and apply configuration
 load-config     : (re)load configuration file
 /my?[regex]*$/  : play videos matched by a regex (/i)
 reset, reload   : restart application
-q, quit, exit   : quit
+q, quit, exit   : close application
 STDIN_HELP
 
 my %MPLAYER;
@@ -241,9 +241,10 @@ my %itags = (
 my $key = 'AI39si5xZtotT-ABtXEHNYpPnfez4T9hfNTkMlWti5gVCbFOZ-wyw70RTTguH_53klpmj3G98sTJGXJF5YY61Zcu1r5XmR2w3Q';
 my %lwp_header = ('X-GData-Key' => "key=$key");
 
-#----------------------- ASCII COLOURS -----------------------#
+#----------------------- COLORS -----------------------#
 my %c = (
          bold    => '',
+         bred    => '',
          bgreen  => '',
          reset   => '',
          cblack  => '',
@@ -268,7 +269,7 @@ my $keywords = q{};                        # used to store keywords for search
 my $youtube_gdata_url;                     # used to store the gdata URL with API query parameters
 
 # Other global variables
-my ($lwp, $lwp_is_set, $video_id_from_arguments, $start_index, @picks, @results, %streaming);
+my ($lwp, $lwp_is_set, $wget_is_available, $video_id_from_arguments, $start_index, @picks, @results, %streaming);
 
 my %prompt = (
       select_video_to_play => "$c{reset}\n$c{bold}=>> $c{bgreen}Insert a number or search something else (? - help)$c{reset}\n> ",
@@ -315,8 +316,6 @@ my $valid_url = qr{^
 $}x;
 
 #---------------------- LOOKING FOR WGET ----------------------#
-my $wget_is_available;
-
 sub locate_wget {
     if (-x '/usr/bin/wget'
         or grep { $constant{'win32'} ? -e "$_\\wget" : -x "$_/wget" } @path) {
@@ -329,7 +328,7 @@ sub locate_wget {
 
 #---------------------- LWP::UserAgent ----------------------#
 sub set_lwp_useragent {
-    require LWP;
+    require LWP::UserAgent;
     $lwp = 'LWP::UserAgent'->new(
                                  keep_alive    => 1,
                                  env_proxy     => 1,
@@ -1259,6 +1258,7 @@ sub parse_content {
     }
 
     if ($opt{debug}) {
+        chdir($CONFIG{tmp_dir});
         open my $fh, '>', "$execname.debug" or die "Unable to write to $execname.debug: $!\n";
         local $, = "\n";
         print {$fh} (
@@ -1349,7 +1349,7 @@ sub print_results {
             $video->{duration}, $c{reset}, $c{cblack}, $c{reset}
 
           :    # Normal output
-          printf "$c{bold}%s$num$c{reset} - %s (by %s) (%s)\n", $num < 10 ? ' ' : '',
+          printf "$c{bold}%s$num$c{reset} - %s (by %s) (%s)\n", $num < 10 ? q{ } : q{},
           $video->{title}, $video->{author}, $video->{duration};
     }
 
