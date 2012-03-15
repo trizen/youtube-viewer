@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 14 March 2012
+#  Latest edit on: 15 March 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -268,7 +268,7 @@ my $keywords = q{};                        # used to store keywords for search
 my $youtube_gdata_url;                     # used to store the gdata URL with API query parameters
 
 # Other global variables
-my ($lwp, $video_id_from_arguments, $start_index, @picks, @results, %streaming);
+my ($lwp, $lwp_is_set, $video_id_from_arguments, $start_index, @picks, @results, %streaming);
 
 my %prompt = (
       select_video_to_play => "$c{reset}\n$c{bold}=>> $c{bgreen}Insert a number or search something else (? - help)$c{reset}\n> ",
@@ -331,18 +331,18 @@ sub locate_wget {
 sub set_lwp_useragent {
     require LWP;
     $lwp = 'LWP::UserAgent'->new(
-        keep_alive    => 1,
-        env_proxy     => 1,
-        timeout       => 60,
-        show_progress => $opt{debug} ? 1 : 0,
-        agent         => 'Mozilla/5.0 (X11; U; Linux i686; en-US) Chrome/10.0.648.45',
-
+                                 keep_alive    => 1,
+                                 env_proxy     => 1,
+                                 timeout       => 60,
+                                 show_progress => $opt{debug} ? 1 : 0,
+                                 agent         => 'Mozilla/5.0 (X11; U; Linux i686; en-US) Chrome/10.0.648.45',
                                 );
+    $lwp_is_set = 1;
     binmode *STDOUT, ":encoding(UTF-8)";
 }
 
 sub lwp_get {
-    set_lwp_useragent() unless exists $INC{'LWP.pm'};
+    set_lwp_useragent() unless $lwp_is_set;
     return $lwp->get($_[0], %lwp_header)->content;
 }
 
@@ -562,7 +562,7 @@ insert_url() unless length $keywords;
 
 #---------------------- GET A VIDEO CODE FROM AN WEBSITE CONTENT ----------------------#
 sub code_from_content {
-    set_lwp_useragent() unless exists $INC{'LWP.pm'};
+    set_lwp_useragent() unless $lwp_is_set;
 
     if ($lwp->get($_[0])->content =~ /$get_youtube_code/o) {
         get_youtube($1);
@@ -731,7 +731,7 @@ sub authenticate {
       "$c{bold}=>>$c{reset} Your answer [y/N]: ";
     my $remember_me = <STDIN> =~ /^y(?:es)?$/i ? 1 : 0;
 
-    set_lwp_useragent() unless exists $INC{'LWP.pm'};
+    set_lwp_useragent() unless $lwp_is_set;
     my $resp = $lwp->post(
                           "https://www.google.com/accounts/ClientLogin",
                           [Content => 'application/x-www-form-urlencoded',
