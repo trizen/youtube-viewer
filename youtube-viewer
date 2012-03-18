@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 17 March 2012
+#  Latest edit on: 18 March 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -478,8 +478,9 @@ sub parse_arguments {
         'order-by=s'       => \$CONFIG{order_by},
         'time=s'           => \$CONFIG{time_sort},
 
-        'page=i'     => sub { $opt{start_with_page} = pop },
-        'novideo|n!' => sub { $MPLAYER{novideo}     = '-novideo' },
+        'page=i'           => sub { $opt{start_with_page} = pop },
+        'append_mplayer=s' => sub { $MPLAYER{argv}        = pop },
+        'novideo|n!'       => sub { $MPLAYER{novideo}     = '-novideo' },
 
         'more|m' => sub {
             warn "-more option is deprecated! Use '-results=50' instead\n";
@@ -500,7 +501,8 @@ sub parse_arguments {
 
     # Dump config
     if ($opt{debug}) {
-        print "=>> CONFIG:\n", Config::_dump(\%CONFIG);
+        print "=>> CONFIG:\n" => Config::_dump(\%CONFIG),
+          "=>> MPLAYER:\n"    => Config::_dump(\%MPLAYER);
     }
 
     # Go to selected subroutines
@@ -605,10 +607,12 @@ sub help {
    -f  --fullscreen     : plays video(s) in fullscreen mode
    -n  --novideo        : plays only the audio track of video(s)
    -l  --lower-cache    : set a lower cache for MPlayer (for slow connections)
-   -sub=s               : subtitle language (default: en) (depends on gcap)
+   -sub=s   -lang=s     : subtitle language (default: en) (depends on gcap)
    -cache=i             : set cache for MPlayer (set: $CONFIG{cache})
    -cache-min=i         : set cache-min for MPlayer (set: $CONFIG{cache_min})
    -mplayer=s           : set a media player (set: $CONFIG{mplayer})
+   -mplayer_arguments=s : replace default arguments for media player
+   -append_mplayer=s    : add some arguments for media player
 \n$c{bgreen}Other options:$c{reset}
    -A  --all            : plays all video results in order
    -C  --colors         : use colors for text output
@@ -1335,7 +1339,7 @@ sub check_user_input {
 sub print_results {
 
     unless (@results) {
-        print "$c{bold}(x_x) No video results!$c{reset}\n";
+        warn "$c{bred}(x_x) No video results!$c{reset}\n";
         insert_url();
     }
 
@@ -1562,7 +1566,7 @@ Tips:
 ERROR
         }
         elsif (ref $info ne 'HASH') {
-            warn "$c{bred}** Unable to stream:$c{reset} ", sprintf($CONFIG{youtube_video_url}, $info), "\n\n";
+            warn "$c{bred}(x_x) Unable to stream:$c{reset} ", sprintf($CONFIG{youtube_video_url}, $info), "\n\n";
             return;
         }
     }
