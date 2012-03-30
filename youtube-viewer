@@ -623,7 +623,7 @@ sub help {
    -d  --download       : downloads YouTube video(s) with LWP
    -N  --subscriptions  : show new subscription videos (requires authentication)
    -U  --users=file.txt : list YouTube usernames from a file
-   -L  --lwp-download   : download videos with LWP (default: wget (if available))
+   -L  --lwp-download   : download videos with LWP (default: wget)
    -T  --tricks         : show more 'hidden' features of $appname
    -S  --update-config  : update configuration file before exit
    -W  --noconfig       : don't apply config values, start with default config
