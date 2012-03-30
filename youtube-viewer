@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 29 March 2012
+#  Latest edit on: 30 March 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -1355,8 +1355,8 @@ sub print_results {
           ?    # Results with details
           printf(
                  "$c{bold}%2d$c{reset}. $c{bblue}%s$c{reset}\n"
-                   . "    $c{bold}Views:$c{reset} %-15s $c{bold}Rating:$c{reset} %-12s $c{bold}Category:$c{reset} %s\n"
-                   . "    $c{bold}Published:$c{reset} %-11s $c{bold}Duration:$c{reset} %-10s $c{bold}Author:$c{reset} %s\n\n",
+                   . "    $c{bold}Views:$c{reset} %-16s $c{bold}Rating:$c{reset} %-12s $c{bold}Category:$c{reset} %s\n"
+                   . "    $c{bold}Published:$c{reset} %-12s $c{bold}Duration:$c{reset} %-10s $c{bold}Author:$c{reset} %s\n\n",
                  ++$num => $video->{title},
                  set_thousands($video->{views}) => sprintf('%.2f', $video->{rating}) => $video->{category},
                  format_date($video->{published}) => $video->{duration} => $video->{author}
