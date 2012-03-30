@@ -71,14 +71,19 @@
 # Special thanks to:
 # - Army (for bugs reports and for his great ideas)
 # - dhn (for adding youtube-viewer in freshports.org)
+# - stressat (for the great review of youtube-viewer: http://stressat.blogspot.com/2012/01/youtube-viewer.html)
+# - symbianflo (for packaging youtube-viewer for Mandriva distribution)
 
-eval 'exec perl -S $0 ${1+"$@"}'
+eval 'exec perl $0 ${1+"$@"}'
   if 0;    # not running under some shell
 
 use 5.010;
 use strict;
+
 use autouse 'XML::Fast'   => qw(xml2hash);
+use autouse 'List::Util'  => qw(first);
 use autouse 'URI::Escape' => qw(uri_escape);
+
 use File::Spec::Functions qw(path tmpdir curdir rel2abs);
 
 #-------FOR DEBUG ONLY-------#
@@ -98,7 +103,7 @@ my $config_dir = (
                  ) . "/$execname";
 
 my $config_file = "$config_dir/$execname.conf";
-my $noconfig = qr/^-+(?>W|noconfig)$/ ~~ @ARGV;
+my $noconfig = qr/^--?(?>W|noconfig)$/ ~~ @ARGV;
 
 # A better <STDIN> support:
 require Term::ReadLine;
@@ -131,7 +136,7 @@ sub get_mplayer {
             return $smplayer;    # Windows MPlayer
         }
         else {
-            warn "\n\n!!! Install SMPlayer in order to stream YouTube videos.\n\n";
+            warn "\n\n!!! Please install SMPlayer in order to stream YouTube videos.\n\n";
             return 'mplayer.exe';
         }
     }
@@ -183,7 +188,7 @@ my %CONFIG = (
     perl_bin             => $^X,
     thousand_separator   => q{,},
     downloads_folder     => curdir(),
-    editor               => $ENV{'EDITOR'} // 'nano',          #/
+    editor               => $ENV{'EDITOR'} || 'nano',
     users_list           => "$config_dir/youtube_users.txt",
 );
 
@@ -255,7 +260,7 @@ my %c = (
          bblue   => '',
         );
 
-if (!$constant{win32}) {    # if not running under Windows
+if (not $constant{win32}) {    # if not running under Windows
     $c{cblack}  = "\e[40m";                # background black
     $c{byellow} = "\e[1;33m";              # bold yellow
     $c{bpurle}  = "\e[1;35m";              # bold purple
@@ -271,7 +276,7 @@ my $keywords = q{};                        # used to store keywords for search
 my $youtube_gdata_url;                     # used to store the gdata URL with API query parameters
 
 # Other global variables
-my ($lwp, $lwp_is_set, $wget_is_available, $video_id_from_arguments, $start_index, @picks, @results, %streaming);
+my ($lwp, @picks, @results, %streaming);
 
 my %prompt = (
       select_video_to_play => "$c{reset}\n$c{bold}=>> $c{bgreen}Insert a number or search something else (? - help)$c{reset}\n> ",
@@ -319,13 +324,7 @@ $}x;
 
 #---------------------- LOOKING FOR WGET ----------------------#
 sub locate_wget {
-    if (-x '/usr/bin/wget'
-        or grep { $constant{'win32'} ? -e "$_\\wget" : -x "$_/wget" } @path) {
-        $wget_is_available = 1;
-    }
-    else {
-        $wget_is_available = 0;
-    }
+    $opt{wget} = first(sub { $constant{'win32'} ? -e "$_\\wget" : -x "$_/wget" }, @path) ? 1 : 0;
 }
 
 #---------------------- LWP::UserAgent ----------------------#
@@ -338,12 +337,12 @@ sub set_lwp_useragent {
                                  show_progress => $opt{debug} ? 1 : 0,
                                  agent         => 'Mozilla/5.0 (X11; U; Linux i686; en-US) Chrome/10.0.648.45',
                                 );
-    $lwp_is_set = 1;
+    $opt{lwp_is_set} = 1;
     binmode *STDOUT, ":encoding(UTF-8)";
 }
 
 sub lwp_get {
-    set_lwp_useragent() unless $lwp_is_set;
+    set_lwp_useragent() unless $opt{lwp_is_set};
     return $lwp->get($_[0], %lwp_header)->content;
 }
 
@@ -397,7 +396,11 @@ $SIG{__DIE__} = sub {
     if (join('', @_) =~ m{^Can't locate (.+?)\.pm\b}) {    #'
         my $module = $1;
         $module =~ s{[/\\]+}{::}g;
-        die "\nModule $module is required!\n\nTo install it, just type in terminal:\n\tsudo cpan $module\n";
+        die <<"REQ";
+Module $module is required!\n
+To install it, just type in terminal:
+    sudo cpan -i $module
+REQ
     }
     return 1;
 };
@@ -454,11 +457,11 @@ sub parse_arguments {
         'movies|M'          => sub { push @{$opt{subs}}, [\&youtube_movies] },
         'today|t'           => sub { push @{$opt{subs}}, [\&youtube_tops] },
         'a|all-time'        => sub { push @{$opt{subs}}, [\&youtube_tops, 'all_time'] },
-        'subscriptions|N:s' => sub { push @{$opt{subs}}, [\&get_new_subsc, $_[1] ? pop : 'default'] },
+        'subscriptions|N:s' => sub { push @{$opt{subs}}, [\&get_new_subsc, $_[-1] ? pop() : 'default'] },
         'login'             => sub { push @{$opt{subs}}, [\&authenticate] },
         'user|u=s'            => sub { push @{$opt{subs}}, [\&videos_from_username,    pop] },
         'user-playlists|up=s' => sub { push @{$opt{subs}}, [\&playlists_from_username, pop] },
-        'users|U:s' => sub { push @{$opt{subs}}, [\&list_user_names => $_[1] ? pop() : $CONFIG{users_list}] },
+        'users|U:s' => sub { push @{$opt{subs}}, [\&list_user_names => $_[-1] ? pop() : $CONFIG{users_list}] },
 
         'author=s'         => \$opt{author},
         'all|A!'           => \$opt{playback},
@@ -483,24 +486,21 @@ sub parse_arguments {
 
         'page=i'           => sub { $opt{start_with_page} = pop },
         'append_mplayer=s' => sub { $MPLAYER{argv}        = pop },
-        'novideo|n!'       => sub { $MPLAYER{novideo}     = '-novideo' },
+        'novideo|n!'       => sub { $MPLAYER{novideo}     = $_[-1] ? '-novideo' : '' },
+        'more|m!'          => sub { $CONFIG{results}      = $_[-1] ? 50 : 20 },
 
-        'more|m' => sub {
-            warn "-more option is deprecated! Use '-results=50' instead\n";
-            $CONFIG{results} = 50;
-        },
-
-        'quiet|q!' => sub {
+        'quiet|q' => sub {
             close STDOUT;
             close STDERR;
         },
 
         map { defined $CONFIG{$_} && $CONFIG{$_} =~ /^[01]\z/ ? "$_!" : "$_=s" } keys %CONFIG
                                      );
+
     $keywords = join(q{ }, get_keywords_from_array(\@_)) if @_;
 
     # Start with page N
-    $start_index = get_start_index();
+    $opt{start_index} = get_start_index();
 
     # Dump config
     if ($opt{debug}) {
@@ -518,7 +518,7 @@ sub parse_arguments {
     }
 }
 
-$start_index ||= get_start_index() || 1;
+$opt{start_index} ||= get_start_index() || 1;
 
 #---------------------- PARSING VIDEO CODES SPECIFIED AS ARGUMENTS ----------------------#
 foreach my $code (@ARGV) {
@@ -530,7 +530,7 @@ foreach my $code (@ARGV) {
             list_playlist($1);
         }
         when (/$get_youtube_code/o) {
-            $video_id_from_arguments = 1;
+            $opt{video_id_from_arguments} = 1;
             get_youtube($1);
         }
         when (/$get_username/o) {
@@ -566,7 +566,7 @@ insert_url() unless length $keywords;
 
 #---------------------- GET A VIDEO CODE FROM AN WEBSITE CONTENT ----------------------#
 sub code_from_content {
-    set_lwp_useragent() unless $lwp_is_set;
+    set_lwp_useragent() unless $opt{lwp_is_set};
 
     if ($lwp->get($_[0])->content =~ /$get_youtube_code/o) {
         get_youtube($1);
@@ -702,27 +702,17 @@ sub authenticate {
         if ($constant{win32}) {
             eval { require Term::ReadKey };
             if ($@) {
-                print "[!] Please install Term::ReadKey if you don't want your password to be visible while typing!\n";
+                say "[!] Please install Term::ReadKey if you don't want your password to be visible while typing!";
                 $password = $term->readline($prompt{password});
             }
             else {
-                my $key = 0;
-                my @ord_passwd;
+                $password = '';
                 print $prompt{password};
-                Term::ReadKey::ReadMode(4);
-                while (ord($key = Term::ReadKey::ReadKey(0)) != 10) {
-                    given (ord $key) {
-                        when ([127, 8]) {
-                            pop @ord_passwd;
-                            print "\b \b";
-                        }
-                        when ($_ >= 32) {
-                            push @ord_passwd, $_;
-                        }
-                    }
+                Term::ReadKey::ReadMode('noecho');
+                while (ord(my $key = Term::ReadKey::ReadKey(0)) != 10) {
+                    $password .= $key;
                 }
-                Term::ReadKey::ReadMode(0);
-                $password = join '', map { chr } @ord_passwd;
+                Term::ReadKey::ReadMode('restore');
             }
         }
         else {
@@ -738,7 +728,7 @@ sub authenticate {
       "$c{bold}=>>$c{reset} Your answer [y/N]: ";
     my $remember_me = <STDIN> =~ /^y(?:es)?$/i ? 1 : 0;
 
-    set_lwp_useragent() unless $lwp_is_set;
+    set_lwp_useragent() unless $opt{lwp_is_set};
     my $resp = $lwp->post(
                           "https://www.google.com/accounts/ClientLogin",
                           [Content => 'application/x-www-form-urlencoded',
@@ -755,7 +745,7 @@ sub authenticate {
             $CONFIG{auth}       = $auth;
             $opt{update_config} = 1;
         }
-        print "\n$c{bold}* $c{bgreen}Logged!$c{reset}\n";
+        say "\n$c{bold}* $c{bgreen}Logged!$c{reset}";
         set_auth_key($auth);
     }
     else {
@@ -768,7 +758,7 @@ sub authenticate {
 sub get_new_subsc {
     my ($user) = @_;
     unless ($lwp_header{Authorization}) {
-        print "[!] New subscription videos requires authentication!\n";
+        warn "[!] New subscription videos requires authentication!\n";
         authenticate();
     }
     parse_url(sprintf $CONFIG{newsubscriptionvideos}, $user);
@@ -778,7 +768,7 @@ sub get_new_subsc {
 sub list_user_names {
 
     my ($users_file) = @_;
-    return unless -f $users_file;
+    return unless -T $users_file;
 
     my $i = 0;
     my %usernames_table;
@@ -931,7 +921,7 @@ sub playlists_waiting_input {
                     playlists_from_username($_);
                 }
                 else {
-                    die "Unknown error!\n";
+                    print_results();
                 }
             }
         }
@@ -1029,7 +1019,7 @@ sub categories_area {
     }
 }
 
-sub check_mplayer_arguments {
+sub update_mplayer_arguments {
     if ($CONFIG{use_lower_cache} or not exists $streaming{720} or $CONFIG{resolution} < 720) {
         set_mplayer_arguments($CONFIG{lower_cache}, $CONFIG{lower_cache_min});
     }
@@ -1051,7 +1041,7 @@ sub play_or_download {
             chdir $CONFIG{downloads_folder};
         }
 
-        if (not defined $wget_is_available and not $CONFIG{lwp_downloading}) {
+        if (not defined $opt{wget} and not $CONFIG{lwp_downloading}) {
             locate_wget();
         }
 
@@ -1059,15 +1049,11 @@ sub play_or_download {
         $title =~ tr[ "*/:<>?\\|][ ]s;
 
         if (not -e "$title.mp4") {
-            if ($wget_is_available) {
-
-                # Download video with wget
+            if ($opt{wget}) {    # Download video with wget
                 system 'wget', '-nc', $streaming, '-O', "$title.mp4";
             }
-            else {
-
-                # Downloading video with LWP
-                print "** Saving to: '$title.mp4'\n";
+            else {               # Downloading video with LWP
+                say "** Saving to: '$title.mp4'";
                 $lwp->show_progress(1);
                 $lwp->mirror($streaming, "$title.mp4");
                 $lwp->show_progress(0) unless $opt{debug};
@@ -1077,9 +1063,9 @@ sub play_or_download {
             warn "** '$title.mp4' already exists...\n";
         }
     }
-    else {    # STREAMING
+    else {                       # STREAMING
 
-        check_mplayer_arguments();    # Update mplayer's arguments
+        update_mplayer_arguments();    # Update mplayer's arguments
 
         my @mplayer_line = split(' ', join(' ', $CONFIG{mplayer}, values %MPLAYER));
 
@@ -1093,7 +1079,7 @@ sub play_or_download {
         # Change directory back to the main working directory
         chdir delete $constant{'cwd'} if exists $constant{'cwd'};
     }
-    print "\n" unless $video_id_from_arguments;
+    print "\n" unless $opt{video_id_from_arguments};
 
     if ($?) {    # if non-zero exit code
         $opt{playback} = 0;
@@ -1106,16 +1092,16 @@ sub play_or_download {
     elsif ($opt{playback}) {
         next_page();
     }
-    if (@results and not $video_id_from_arguments) {
+    if (@results and not $opt{video_id_from_arguments}) {
         print_results();    # back to video results
     }
-    main_quit() unless $video_id_from_arguments;
+    main_quit() unless $opt{video_id_from_arguments};
     return 1;
 }
 
 #---------------------- SEARCH YOUTUBE VIDEOS ----------------------#
 if (length($keywords)) {
-    search() unless $video_id_from_arguments;
+    search() unless $opt{video_id_from_arguments};
 }
 
 sub get_defined_pairs_from_array {
@@ -1160,7 +1146,7 @@ sub array_to_gdata_arguments {
 sub default_gdata_arguments {
     array_to_gdata_arguments(
                              'max-results' => $CONFIG{results},
-                             'start-index' => $start_index,
+                             'start-index' => $opt{start_index},
                              'v'           => $constant{gdata_version},
                             );
 }
@@ -1183,7 +1169,7 @@ sub search {
                                  'max-results' => $CONFIG{results},
                                  'time'        => $CONFIG{time_sort},
                                  'orderby'     => $CONFIG{order_by},
-                                 'start-index' => $start_index,
+                                 'start-index' => $opt{start_index},
                                  'safeSearch'  => $CONFIG{safe_search},
                                  'hd'          => $CONFIG{only_hd_videos} ? 'true' : undef,
                                  'caption'     => $CONFIG{only_videos_with_caption},
@@ -1227,6 +1213,7 @@ sub parse_content {
         }
         else {
             warn "Error ocurred while parsing $_[0]\n$@\n";
+            exit 1 if ++$opt{retry} == 16;
             parse_content($_[0]);
         }
     }
@@ -1261,8 +1248,9 @@ sub parse_content {
              'duration'    => format_time($gdata->{'media:group'}{'yt:duration'}{'-seconds'}),
              'views'       => $gdata->{'yt:statistics'}{'-viewCount'},
              'published'   => $gdata->{'published'},
-             'category'    => $gdata->{'category'}[1]{'-label'},
              'description' => $gdata->{'media:group'}{'media:description'}{'#text'},
+             'category'    => ref $gdata->{'category'} eq 'ARRAY' ? $gdata->{'category'}[1]{'-label'}
+             : $gdata->{'category'}{'-label'} || 'Unknown',
             };
         ++$number;
         last unless ref $hash->{'feed'}{'entry'} eq 'ARRAY';
@@ -1336,7 +1324,7 @@ sub check_user_input {
             get_youtube($_);
         }
     }
-    return 0;
+    return;
 }
 
 #---------------------- PRINT VIDEO RESULTS ----------------------#
@@ -1349,34 +1337,32 @@ sub print_results {
 
     my $num = 0;
     foreach my $video (@results) {
+        if ($CONFIG{results_with_details}) {    # Results with details (when using --details or -D)
+            printf(
+                   "$c{bold}%2d$c{reset}. $c{bblue}%s$c{reset}\n"
+                     . "    $c{bold}Views:$c{reset} %-16s $c{bold}Rating:$c{reset} %-12s $c{bold}Category:$c{reset} %s\n"
+                     . "    $c{bold}Published:$c{reset} %-12s $c{bold}Duration:$c{reset} %-10s $c{bold}Author:$c{reset} %s\n\n",
+                   ++$num => $video->{title},
+                   set_thousands($video->{views}) => sprintf('%.2f', $video->{rating}) => $video->{category},
+                   format_date($video->{published}) => $video->{duration} => $video->{author}
+                  )
 
-        $CONFIG{results_with_details}
+        }
+        elsif ($CONFIG{use_colors}) {           # Colorful results (when using --colors or -C)
+            printf(
+                   "%s%s%2d%s%s - %s%s%s%s (%sby %s%s%s) (%s%s%s%s)%s\n",
+                   $c{cblack} => $c{bold}    => ++$num             => $c{reset},
+                   $c{cblack} => $c{byellow} => $video->{title}    => $c{reset},
+                   $c{cblack} => $c{bpurle}  => $video->{author}   => $c{reset},
+                   $c{cblack} => $c{bblue}   => $video->{duration} => $c{reset},
+                   $c{cblack} => $c{reset}
+                  )
 
-          ?    # Results with details
-          printf(
-                 "$c{bold}%2d$c{reset}. $c{bblue}%s$c{reset}\n"
-                   . "    $c{bold}Views:$c{reset} %-16s $c{bold}Rating:$c{reset} %-12s $c{bold}Category:$c{reset} %s\n"
-                   . "    $c{bold}Published:$c{reset} %-12s $c{bold}Duration:$c{reset} %-10s $c{bold}Author:$c{reset} %s\n\n",
-                 ++$num => $video->{title},
-                 set_thousands($video->{views}) => sprintf('%.2f', $video->{rating}) => $video->{category},
-                 format_date($video->{published}) => $video->{duration} => $video->{author}
-                )
-
-          : $CONFIG{use_colors}
-
-          ?    # Colorful results (when using --colors or -C)
-          printf(
-                 "%s%s%2d%s%s - %s%s%s%s (%sby %s%s%s) (%s%s%s%s)%s\n",
-                 $c{cblack} => $c{bold}    => ++$num             => $c{reset},
-                 $c{cblack} => $c{byellow} => $video->{title}    => $c{reset},
-                 $c{cblack} => $c{bpurle}  => $video->{author}   => $c{reset},
-                 $c{cblack} => $c{bblue}   => $video->{duration} => $c{reset},
-                 $c{cblack} => $c{reset}
-                )
-
-          :    # Normal results
-          printf("%s%2d%s - %s (by %s) (%s)\n",
-                 $c{bold}, ++$num, $c{reset}, $video->{title}, $video->{author}, $video->{duration});
+        }
+        else {                                  # Normal results
+            printf("%s%2d%s - %s (by %s) (%s)\n",
+                   $c{bold}, ++$num, $c{reset}, $video->{title}, $video->{author}, $video->{duration});
+        }
     }
 
     if ($opt{playback}) {
@@ -1411,7 +1397,7 @@ sub print_results {
             }
             when (/^i(?:nfo)?\s+(\d+)$/) {
                 my $i = $1;
-                continue if $i <= 0 or $i > @results;
+                continue if $i == 0 or $i > @results;
                 $opt{show_info_only} = 1;
                 get_youtube($results[$i - 1]);
                 $opt{show_info_only} = 0;
@@ -1666,14 +1652,14 @@ ERROR
 
         # This happens when a video has been deleted or forbidden
         warn "\n$c{bred}(x_x) Something went wrong...$c{reset}\n\n", "$c{bred}(x_x) Unable to stream: $c{reset}$url\n\n";
-        if (@results and not $video_id_from_arguments) {
+        if (@results and not $opt{video_id_from_arguments}) {
             unless (@picks) {
                 sleep 1;
                 print_results();
             }
         }
         else {
-            unless (@results or $video_id_from_arguments) {
+            unless (@results or $opt{video_id_from_arguments}) {
                 main_quit();
             }
         }
