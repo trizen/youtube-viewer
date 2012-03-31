@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 30 March 2012
+#  Latest edit on: 31 March 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -29,7 +29,7 @@
 # [!] The most important changes are written in the changelog!
 #
 # [CHANGELOG]
-# - Added support for detailed results (usage: -D or --details)                                - NEW (v2.5.8)
+# - Added support for detailed results (usage: -D or --details) // Support for comments        - NEW (v2.5.8)
 # - Switched to Term::ReadLine for a better STDIN support // Better colors // Info support     - NEW (v2.5.7)
 # - Added support for: -duration, -caption=s, -safe-search=s, -hd // Improved code quality     - NEW (v2.5.6)
 # - Added support for configuration file, improved stability, improved debug mode              - NEW (v2.5.5)
@@ -73,6 +73,7 @@
 # - dhn (for adding youtube-viewer in freshports.org)
 # - stressat (for the great review of youtube-viewer: http://stressat.blogspot.com/2012/01/youtube-viewer.html)
 # - symbianflo (for packaging youtube-viewer for Mandriva distribution)
+# - gotbletu (for the great video review of youtube-viewer: http://www.youtube.com/watch?v=FnJ67oAxVQ4)
 
 eval 'exec perl $0 ${1+"$@"}'
   if 0;    # not running under some shell
@@ -103,7 +104,7 @@ my $config_dir = (
                  ) . "/$execname";
 
 my $config_file = "$config_dir/$execname.conf";
-my $noconfig = qr/^--?(?>W|noconfig)$/ ~~ @ARGV;
+my $noconfig = qr/^--?(?>N|noconfig)$/ ~~ @ARGV;
 
 # A better <STDIN> support:
 require Term::ReadLine;
@@ -170,7 +171,7 @@ my %CONFIG = (
 
     # URI options
     youtube_video_url     => 'http://www.youtube.com/watch?v=%s',
-    gdata_feeds_main_url  => 'http://gdata.youtube.com/feeds/api',
+    feeds_main_url        => 'http://gdata.youtube.com/feeds/api',
     get_video_info        => 'http://www.youtube.com/get_video_info',
     newsubscriptionvideos => 'http://gdata.youtube.com/feeds/api/users/%s/newsubscriptionvideos',
 
@@ -194,22 +195,29 @@ my %CONFIG = (
 
 my $stdin_help = <<'STDIN_HELP';
 
-all             : play all results in order
-next            : go to the next page
-back            : go to the previous page
-login           : will prompt you for login
-logout          : will delete the authentication key
-[integer]       : play the corresponding video
-i [integer]     : show more informations about one video
-[keywords]      : search for youtube videos
-3-8, 3..8       : same as 3 4 5 6 7 8
-8 2 12 4 6 5 1  : play videos in your order
--argv -argv2=v  : set some arguments
-e, edit-config  : edit and apply configuration
-load-config     : (re)load configuration file
-/my?[regex]*$/  : play videos matched by a regex (/i)
-reset, reload   : restart application
-q, quit, exit   : close application
+all               : play all results in order
+next              : go to the next page (same as <ENTER>)
+back              : go to the previous page
+login             : will prompt you for login
+logout            : will delete the authentication key
+[integer]         : play the corresponding video
+i, info [i]       : show more informations about one video
+c, comments [i]   : show video comments (e.g.: c 19)
+r, related [i]    : show related videos (e.g.: r 6)
+v, videos [i]     : show author's latest videos
+p, playlists [i]  : show author's latest playlists
+subscribe [i]     : subscribe to author's channel
+like, dislike [i] : like or dislike a video
+fav, favorite [i] : favorite a video (e.g.: fav 3)
+[keywords]        : search for youtube videos
+3-8, 3..8         : same as 3 4 5 6 7 8
+8 2 12 4 6 5 1    : play videos in your order
+-argv -argv2=v    : set some arguments (e.g.: -u=google)
+e, edit-config    : edit and apply configuration
+load-config       : (re)load configuration file
+/my?[regex]*$/    : play videos matched by a regex (/i)
+reset, reload     : restart the application
+q, quit, exit     : close the application
 STDIN_HELP
 
 my %MPLAYER;
@@ -279,14 +287,16 @@ my $youtube_gdata_url;                     # used to store the gdata URL with AP
 my ($lwp, @picks, @results, %streaming);
 
 my %prompt = (
-      select_video_to_play => "$c{reset}\n$c{bold}=>> $c{bgreen}Insert a number or search something else (? - help)$c{reset}\n> ",
-      init_text            => "$c{reset}\n$c{bold}=>> $c{bgreen}Insert an YouTube URL or search something...$c{reset}\n> ",
-      email                => "$c{reset}\n$c{bold}=>> $c{bgreen}Email:$c{reset} ",
-      password             => "$c{reset}$c{bold}=>> $c{bgreen}Password:$c{reset} ",
-      user_from_list       => "$c{reset}\n$c{bold}=>> $c{bgreen}Pick one username$c{reset}\n> ",
-      video_playlists      => "$c{reset}\n$c{bold}=>> $c{bgreen}Pick one playlist or search something else$c{reset}\n> ",
-      user_playlists       => "$c{reset}\n$c{bold}=>> $c{bgreen}Pick one playlist or insert another username$c{reset}\n> ",
-      categories           => "$c{reset}\n$c{bold}=>> $c{bgreen}Pick one category$c{reset}\n> ",
+     comments_next_page => "$c{reset}\n$c{bold}=>> $c{bgreen}Press <ENTER> for the next page of comments (? - help)$c{reset}\n> ",
+     select_video_to_play => "$c{reset}\n$c{bold}=>> $c{bgreen}Insert a number or search something else (? - help)$c{reset}\n> ",
+     init_text            => "$c{reset}\n$c{bold}=>> $c{bgreen}Insert an YouTube URL or search something...$c{reset}\n> ",
+     email                => "$c{reset}\n$c{bold}=>> $c{bgreen}Email:$c{reset} ",
+     password             => "$c{reset}$c{bold}=>> $c{bgreen}Password:$c{reset} ",
+     user_from_list       => "$c{reset}\n$c{bold}=>> $c{bgreen}Pick one username$c{reset}\n> ",
+     video_playlists      => "$c{reset}\n$c{bold}=>> $c{bgreen}Pick one playlist or search something else$c{reset}\n> ",
+     user_playlists       => "$c{reset}\n$c{bold}=>> $c{bgreen}Pick one playlist or insert another username$c{reset}\n> ",
+     categories           => "$c{reset}\n$c{bold}=>> $c{bgreen}Pick one category$c{reset}\n> ",
+     needs_login          => "$c{bred}You need to login in order to use this feature!$c{reset}\n",
 );
 
 # Options
@@ -453,22 +463,25 @@ sub parse_arguments {
         '1080p|1' => sub { $CONFIG{'resolution'} = 1080 },
 
         # Other options
-        'categories|c'      => sub { push @{$opt{subs}}, [\&categories_area] },
-        'movies|M'          => sub { push @{$opt{subs}}, [\&youtube_movies] },
-        'today|t'           => sub { push @{$opt{subs}}, [\&youtube_tops] },
-        'a|all-time'        => sub { push @{$opt{subs}}, [\&youtube_tops, 'all_time'] },
-        'subscriptions|N:s' => sub { push @{$opt{subs}}, [\&get_new_subsc, $_[-1] ? pop() : 'default'] },
-        'login'             => sub { push @{$opt{subs}}, [\&authenticate] },
+        'categories|c'            => sub { push @{$opt{subs}}, [\&categories_area] },
+        'movies|M'                => sub { push @{$opt{subs}}, [\&youtube_movies] },
+        'today|t'                 => sub { push @{$opt{subs}}, [\&youtube_tops] },
+        'a|all-time'              => sub { push @{$opt{subs}}, [\&youtube_tops, 'all_time'] },
+        'subscriptions|S:s'       => sub { push @{$opt{subs}}, [\&get_new_subsc, $_[-1] ? pop() : 'default'] },
+        'favorites|favorited|F:s' => sub { push @{$opt{subs}}, [\&get_favorited_videos, $_[-1] ? pop() : 'default'] },
+        'recommended|R:s'         => sub { push @{$opt{subs}}, [\&get_recommended_videos, $_[-1] ? pop() : 'default'] },
+        'watched|W:s'             => sub { push @{$opt{subs}}, [\&get_watch_history, $_[-1] ? pop() : 'default'] },
+        'login'                   => sub { push @{$opt{subs}}, [\&authenticate] },
         'user|u=s'            => sub { push @{$opt{subs}}, [\&videos_from_username,    pop] },
         'user-playlists|up=s' => sub { push @{$opt{subs}}, [\&playlists_from_username, pop] },
-        'users|U:s' => sub { push @{$opt{subs}}, [\&list_user_names => $_[-1] ? pop() : $CONFIG{users_list}] },
+        'users:s' => sub { push @{$opt{subs}}, [\&list_user_names => $_[-1] ? pop() : $CONFIG{users_list}] },
 
         'author=s'         => \$opt{author},
         'all|A!'           => \$opt{playback},
-        'noconfig|W!'      => \$noconfig,
+        'noconfig|N!'      => \$noconfig,
         'playlists|p!'     => \$opt{playlists},
         'debug!'           => \$opt{debug},
-        'update-config|S!' => \$opt{update_config},
+        'update-config|U!' => \$opt{update_config},
         'download|d!'      => \$opt{download_video},
         'safe-search=s'    => \$CONFIG{safe_search},
         'hd!'              => \$CONFIG{only_hd_videos},
@@ -477,7 +490,6 @@ sub parse_arguments {
         'details|D!'       => \$CONFIG{results_with_details},
         'sub|lang=s'       => \$CONFIG{srt_language},
         'fs|f!'            => \$CONFIG{fullscreen},
-        'download-dir=s'   => \$CONFIG{downloads_folder},
         'l|lower-cache!'   => \$CONFIG{use_lower_cache},
         'query-params|Q=s' => \$CONFIG{query_parameters},
         'lwp-download|L!'  => \$CONFIG{lwp_downloading},
@@ -488,6 +500,8 @@ sub parse_arguments {
         'append_mplayer=s' => sub { $MPLAYER{argv}        = pop },
         'novideo|n!'       => sub { $MPLAYER{novideo}     = $_[-1] ? '-novideo' : '' },
         'more|m!'          => sub { $CONFIG{results}      = $_[-1] ? 50 : 20 },
+
+        'download-dir|downloads-dir=s' => \$CONFIG{downloads_folder},
 
         'quiet|q' => sub {
             close STDOUT;
@@ -606,6 +620,10 @@ sub help {
    -page=i              : show video results starting with 'i' (e.g.: 2)
    -hd                  : show only videos available in at least 720p
    -2  -3  -4  -7  -1   : plays videos at 240p, 360p, 480p, 720p or 1080p
+   -F  --favorites      : show latest favorited videos *
+   -R  --recommended    : show recommended videos for you *
+   -S  --subscriptions  : show new subscription videos *
+   -W  --watched        : show latest watched videos on YouTube *
 \n$c{bgreen}MPlayer options:$c{reset}
    -f  --fullscreen     : plays video(s) in fullscreen mode
    -n  --novideo        : plays only the audio track of video(s)
@@ -617,25 +635,25 @@ sub help {
    -mplayer_arguments=s : replace default arguments for media player
    -append_mplayer=s    : add some arguments for media player
 \n$c{bgreen}Other options:$c{reset}
-   -A  --all            : plays all video results in order
+   -d  --download       : download YouTube video(s)
+   -A  --all            : play all video results in order
    -C  --colors         : use colors to delimit the printed results
-   -D  --details        : print results with video details
-   -d  --download       : downloads YouTube video(s) with LWP
-   -N  --subscriptions  : show new subscription videos (requires authentication)
-   -U  --users=file.txt : list YouTube usernames from a file
+   -D  --details        : a new look for results, with more details
    -L  --lwp-download   : download videos with LWP (default: wget)
    -T  --tricks         : show more 'hidden' features of $appname
-   -S  --update-config  : update configuration file before exit
-   -W  --noconfig       : don't apply config values, start with default config
+   -U  --update-config  : update configuration file before exit
+   -N  --noconfig       : don't apply config values, start with default config
    -Q  --query-params   : set query parameters (e.g.: 'duration=long&caption')
-   -login               : prompt for login
-   -download-dir        : downloads directory (set: '$CONFIG{downloads_folder}')
+   -users=file.txt      : list YouTube usernames from a file
+   -login               : will prompt you for login
+   -downloads-dir       : downloads directory (set: '$CONFIG{downloads_folder}')
 \n$c{bgreen}Main options:$c{reset}
    -q  --quiet          : display no output
    -v  --version        : prints version and exits
    -h  --help           : prints help and exits
 
 $c{bold}NOTE:$c{reset}
+    * == requires authentication
     -no-[argv] will negate the value of argument (e.g.: -no-fullscreen)
     each config key is a valid argument (if is preceded by a dash (-))
 
@@ -683,7 +701,7 @@ sub version {
 
 sub set_auth_key {
     my ($auth) = @_;
-    $lwp_header{'Authorization'} = "GoogleLogin auth=$auth";
+    $lwp_header{Authorization} = "GoogleLogin auth=$auth";
 }
 
 sub log_out {
@@ -758,10 +776,37 @@ sub authenticate {
 sub get_new_subsc {
     my ($user) = @_;
     unless ($lwp_header{Authorization}) {
-        warn "[!] New subscription videos requires authentication!\n";
+        warn $prompt{needs_login};
         authenticate();
     }
     parse_url(sprintf $CONFIG{newsubscriptionvideos}, $user);
+}
+
+sub get_recommended_videos {
+    my ($user) = @_;
+    unless ($lwp_header{Authorization}) {
+        warn $prompt{needs_login};
+        authenticate();
+    }
+    parse_url("$CONFIG{feeds_main_url}/users/$user/recommendations");
+}
+
+sub get_favorited_videos {
+    my ($user) = @_;
+    unless ($lwp_header{Authorization}) {
+        warn $prompt{needs_login};
+        authenticate();
+    }
+    parse_url("$CONFIG{feeds_main_url}/users/$user/favorites");
+}
+
+sub get_watch_history {
+    my ($user) = @_;
+    unless ($lwp_header{Authorization}) {
+        warn $prompt{needs_login};
+        authenticate();
+    }
+    parse_url("$CONFIG{feeds_main_url}/users/$user/watch_history");
 }
 
 #---------------------- LIST YOUTUBE USERNAMES FROM A FILE ----------------------#
@@ -831,7 +876,7 @@ sub list_user_names {
 
 #---------------------- GET VIDEOS FROM A SPECIFIC USER ----------------------#
 sub videos_from_username {
-    parse_url("$CONFIG{gdata_feeds_main_url}/users/$_[0]/uploads");
+    parse_url("$CONFIG{feeds_main_url}/users/$_[0]/uploads");
 }
 
 #---------------------- PRINT PLAYLISTS ----------------------#
@@ -859,7 +904,7 @@ my $playlist_index;
 
 sub playlists_from_username {
     my ($username) = @_;
-    search_playlists("$CONFIG{gdata_feeds_main_url}/users/$username/playlists?" . default_gdata_arguments(), 'username');
+    search_playlists("$CONFIG{feeds_main_url}/users/$username/playlists?" . default_gdata_arguments(), 'username');
 }
 
 sub search_playlists {
@@ -868,7 +913,7 @@ sub search_playlists {
     $youtube_gdata_url =
         $arg =~ /$looks_like_gdata_url/o
       ? $arg
-      : $CONFIG{gdata_feeds_main_url} . "/playlists/snippets?q=$arg&" . default_gdata_arguments();
+      : $CONFIG{feeds_main_url} . "/playlists/snippets?q=$arg&" . default_gdata_arguments();
 
     $opt{playlists} = 1;
     parse_content($youtube_gdata_url);
@@ -931,7 +976,7 @@ sub playlists_waiting_input {
 #---------------------- LIST A YOUTUBE PLAYLIST ----------------------#
 sub list_playlist {
     $opt{playlists} = 0;
-    parse_url("$CONFIG{gdata_feeds_main_url}/playlists/$_[0]");
+    parse_url("$CONFIG{feeds_main_url}/playlists/$_[0]");
 }
 
 #---------------------- LIST YOUTUBE MOVIE CATEGORIES ----------------------#
@@ -951,7 +996,7 @@ sub youtube_movies {
                 redo;
             }
             when (exists $movie_table{$_}) {
-                parse_url("$CONFIG{gdata_feeds_main_url}/charts/movies/$movie_table{$_}");
+                parse_url("$CONFIG{feeds_main_url}/charts/movies/$movie_table{$_}");
             }
         }
     }
@@ -961,7 +1006,7 @@ sub youtube_movies {
 sub youtube_tops {
     my $i             = 0;
     my $today         = $_[0] && $_[0] eq 'all_time' ? 0 : 1;
-    my $standardfeeds = "$CONFIG{gdata_feeds_main_url}/standardfeeds";
+    my $standardfeeds = "$CONFIG{feeds_main_url}/standardfeeds";
     my %tops_table;
     print "\n";
     foreach my $cat_top_name (
@@ -1010,7 +1055,7 @@ sub categories_area {
                 redo;
             }
             when (exists $categories_table{$_}) {
-                parse_url("$CONFIG{gdata_feeds_main_url}/videos?category=$categories_table{$_}");
+                parse_url("$CONFIG{feeds_main_url}/videos?category=$categories_table{$_}");
             }
             default {
                 insert_url();
@@ -1163,7 +1208,7 @@ sub search {
         return;
     }
 
-    $youtube_gdata_url = "$CONFIG{gdata_feeds_main_url}/videos?"
+    $youtube_gdata_url = "$CONFIG{feeds_main_url}/videos?"
       . array_to_gdata_arguments(
                                  'q'           => $keywords,
                                  'max-results' => $CONFIG{results},
@@ -1245,7 +1290,7 @@ sub parse_content {
              'likes'       => $gdata->{'yt:rating'}{'-numLikes'} || 0,
              'dislikes'    => $gdata->{'yt:rating'}{'-numDislikes'} || 0,
              'favorited'   => $gdata->{'yt:statistics'}{'-favoriteCount'},
-             'duration'    => format_time($gdata->{'media:group'}{'yt:duration'}{'-seconds'}),
+             'duration'    => format_time($gdata->{'media:group'}{'yt:duration'}{'-seconds'} || 0),
              'views'       => $gdata->{'yt:statistics'}{'-viewCount'},
              'published'   => $gdata->{'published'},
              'description' => $gdata->{'media:group'}{'media:description'}{'#text'},
@@ -1395,13 +1440,50 @@ sub print_results {
                     continue;
                 }
             }
-            when (/^i(?:nfo)?\s+(\d+)$/) {
+            when (/^((?:dis)?like)\s+(\d+)\s*$/) {
+                my ($rating, $i) = ($1, $2);
+                continue if $i == 0 or $i > @results;
+                send_rating_to_video($results[$i - 1]->{code}, $rating);
+                redo;
+            }
+            when (/^c(?:omments)?\s+(\d+)\s*$/) {
+                my $i = $1;
+                continue if $i == 0 or $i > @results;
+                show_comments($results[$i - 1]->{code});
+            }
+            when (/^fav(?:orite)?\s+(\d+)\s*$/) {
+                my $i = $1;
+                continue if $i == 0 or $i > @results;
+                favorite_video($results[$i - 1]->{code});
+                redo;
+            }
+            when (/^r(?:elated(?:[- _]videos)?)?\s+(\d+)\s*$/) {
+                my $i = $1;
+                continue if $i == 0 or $i > @results;
+                show_related_videos($results[$i - 1]->{code});
+            }
+            when (/^sub(?:scribe)?\s+(\d+)\s*$/) {
+                my $i = $1;
+                continue if $i == 0 or $i > @results;
+                subscribe_channel($results[$i - 1]->{author});
+            }
+            when (/^i(?:nfo)?\s+(\d+)\s*$/) {
                 my $i = $1;
                 continue if $i == 0 or $i > @results;
                 $opt{show_info_only} = 1;
                 get_youtube($results[$i - 1]);
                 $opt{show_info_only} = 0;
                 redo;
+            }
+            when (/^v(?:ideos)?\s+(\d+)\s*$/) {
+                my $i = $1;
+                continue if $i == 0 or $i > @results;
+                videos_from_username($results[$i - 1]->{author});
+            }
+            when (/^p(?:laylists)?\s+(\d+)\s*$/) {
+                my $i = $1;
+                continue if $i == 0 or $i > @results;
+                playlists_from_username($results[$i - 1]->{author});
             }
             when ('all') {
                 @picks = 1 .. scalar @results;
@@ -1562,7 +1644,7 @@ sub get_youtube {
     my $info = shift();
 
     if (ref $info ne 'HASH') {
-        parse_content("$CONFIG{gdata_feeds_main_url}/videos/$info?v=2");
+        parse_content("$CONFIG{feeds_main_url}/videos/$info?v=2");
         $info = $results[0] if @results;
         if (@results and ref $info eq 'HASH' and not defined $info->{code}) {
             die <<"ERROR";
@@ -1664,6 +1746,181 @@ ERROR
             }
         }
     }
+}
+
+sub show_related_videos {
+    my ($code) = @_;
+    parse_url("$CONFIG{feeds_main_url}/videos/$code/related");
+}
+
+sub send_rating_to_video {
+    my ($code, $rating) = @_;
+    my $uri = "$CONFIG{feeds_main_url}/videos/$code/ratings";
+
+    say _save(
+        'POST', $uri, <<"XML_HEADER"
+<?xml version="1.0" encoding="UTF-8"?>
+<entry xmlns="http://www.w3.org/2005/Atom"
+       xmlns:yt="http://gdata.youtube.com/schemas/2007">
+<yt:rating value="$rating"/>
+</entry>
+XML_HEADER
+             ) ? "\u${rating}d!" : 'Error!';
+}
+
+sub send_comment_to_video {
+    my ($code, $comment) = @_;
+
+    return unless length $comment;
+
+    my $uri = "$CONFIG{feeds_main_url}/videos/$code/comments";
+
+    say _save(
+        'POST', $uri, <<"XML_HEADER"
+<?xml version="1.0" encoding="UTF-8"?>
+<entry xmlns="http://www.w3.org/2005/Atom"
+    xmlns:yt="http://gdata.youtube.com/schemas/2007">
+  <content>$comment</content>
+</entry>
+XML_HEADER
+             ) ? 'Comment sent' : 'Error!';
+}
+
+sub subscribe_channel {
+    my ($user) = @_;
+    my $uri = "$CONFIG{feeds_main_url}/users/default/subscriptions";
+
+    say _save(
+        'POST', $uri, <<"XML_HEADER"
+<?xml version="1.0" encoding="UTF-8"?>
+<entry xmlns="http://www.w3.org/2005/Atom"
+  xmlns:yt="http://gdata.youtube.com/schemas/2007">
+    <category scheme="http://gdata.youtube.com/schemas/2007/subscriptiontypes.cat"
+      term="channel"/>
+    <yt:username>$user</yt:username>
+</entry>
+XML_HEADER
+             ) ? "Successfully subscribed to user: $user" : 'Error!';
+}
+
+sub favorite_video {
+    my ($code) = @_;
+    my $uri = "$CONFIG{feeds_main_url}/users/default/favorites";
+
+    say _save(
+        'POST', $uri, <<"XML_HEADER"
+<?xml version="1.0" encoding="UTF-8"?>
+<entry xmlns="http://www.w3.org/2005/Atom">
+  <id>$code</id>
+</entry>
+XML_HEADER
+             ) ? "** Successfully favorited video: $code" : 'Error!';
+}
+
+sub _request {
+    my ($req) = @_;
+
+    my $res = $lwp->request($req);
+    if ($res->is_success) {
+        return $res->content();
+    }
+    else {
+        warn "Error: $res->code\n", $res->content;
+        return;
+    }
+}
+
+sub _prepare_request {
+    my ($req, $length) = @_;
+    $req->header('GData-Version' => 2);
+    $req->header('Content-Length' => $length) if ($length);
+
+    if ($lwp_header{Authorization}) {
+        $req->header(Authorization => $lwp_header{Authorization});
+        $req->header('X-GData-Key' => $lwp_header{'X-GData-Key'});
+    }
+    else {
+        warn $prompt{needs_login};
+    }
+}
+
+sub _save {
+    my ($method, $uri, $content) = @_;
+
+    my $req = HTTP::Request->new("$method" => $uri);
+    $req->content_type('application/atom+xml; charset=UTF-8');
+    _prepare_request($req, length($content));
+    $req->content($content);
+
+    return _request($req);
+}
+
+sub show_comments {
+    my ($code, $index) = @_;
+
+    print "\n";
+    $index ||= 1;
+    my $hash = xml2hash(
+                        lwp_get(
+                                "$CONFIG{feeds_main_url}/videos/$code/comments?"
+                                  . array_to_gdata_arguments(
+                                                             'v'           => $constant{gdata_version},
+                                                             'start-index' => $index
+                                                            )
+                               )
+                       );
+
+    my $number = 0;
+    while (
+           my $gdata =
+             ref $hash->{'feed'}{'entry'} eq 'ARRAY' ? $hash->{'feed'}{'entry'}[$number]
+           : ref $hash->{'feed'}{'entry'} eq 'HASH'  ? $hash->{'feed'}{'entry'}
+           : $hash->{'entry'}
+      ) {
+        last unless defined $gdata;
+        printf("$c{bold}%s$c{reset} on %s said:\n\t%s\n\n",
+               $gdata->{author}{name},
+               format_date($gdata->{updated}),
+               $gdata->{content});
+        ++$number;
+        last unless ref $hash->{'feed'}{'entry'} eq 'ARRAY';
+    }
+
+    if ($number == 0) {
+        print "No comments!\n\n";
+        print_results();
+    }
+
+    {
+        given ($term->readline($prompt{comments_next_page})) {
+            when (q{}) {
+                show_comments($code, $index + $CONFIG{results});
+            }
+            when (['?', 'help', 'h']) {
+                print "\n", <<"HELP";
+<ENTER>     : next page of comments
+c, comment  : sent a comment to this video
+d, done     : return to video results
+?, h, help  : this message
+HELP
+                redo;
+            }
+            when (['c', 'comment']) {
+                print "$c{bold}=>> $c{bgreen}Write your comment here - press CTRL+D when you are done$c{reset}\n";
+                local @ARGV;
+                my @comment = <>;
+                chomp(my $comment = join('', @comment));
+                $comment =~ s/[[:cntrl:]]+//g;
+                send_comment_to_video($code, $comment);
+                redo;
+            }
+            default {
+                print "\n";
+                print_results();
+            }
+        }
+    }
+    return 1;
 }
 
 sub main_quit {
