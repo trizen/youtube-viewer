@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 31 March 2012
+#  Latest edit on: 01 April 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -1910,7 +1910,7 @@ HELP
                 local @ARGV;
                 my @comment = <>;
                 chomp(my $comment = join('', @comment));
-                $comment =~ s/[[:cntrl:]]+//g;
+                $comment =~ s/[^\s[:^cntrl:]]+//g;
                 send_comment_to_video($code, $comment);
                 redo;
             }
