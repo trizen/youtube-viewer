@@ -635,8 +635,8 @@ sub help {
    -mplayer_arguments=s : replace default arguments for media player
    -append_mplayer=s    : add some arguments for media player
 \n$c{bgreen}Other options:$c{reset}
-   -d  --download       : download YouTube video(s)
-   -A  --all            : play all video results in order
+   -d  --download       : download the video(s)
+   -A  --all            : play all the video results in order
    -C  --colors         : use colors to delimit the printed results
    -D  --details        : a new look for results, with more details
    -L  --lwp-download   : download videos with LWP (default: wget)
@@ -1907,9 +1907,7 @@ HELP
             }
             when (['c', 'comment']) {
                 print "$c{bold}=>> $c{bgreen}Write your comment here - press CTRL+D when you are done$c{reset}\n";
-                local @ARGV;
-                my @comment = <>;
-                chomp(my $comment = join('', @comment));
+                chomp(my $comment = join(q{}, <STDIN>));
                 $comment =~ s/[^\s[:^cntrl:]]+//g;
                 send_comment_to_video($code, $comment);
                 redo;
