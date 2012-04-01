@@ -1503,7 +1503,7 @@ sub print_results {
             }
             when (/\d/ and not /(?:\s|^)[^\d-]/) {
                 s/(?:\D|^)[-=]+\d+(?:\w+)?//g;                     # remove numeric arguments (e.g.: -4, -arg=\d);
-                s/(\d+)(?:-|\.\.)(\d+)/join q{ }, $1 .. $2;/eg;    # '2..5' or '2-5' to '2 3 4 5'
+                s/(\d+)(?:-|\.\.)(\d+)/join q{ }, $1 < $2 ? $1 .. $2 : reverse($2 .. $1);/eg;    # '2..5' or '2-5' to '2 3 4 5', or '3..1 to '3 2 1'
                 @picks = grep { $_ > 0 and $_ <= @results if /^\d+$/ } split /[\s[:punct:]]+/, $_;
                 @picks
                   ? foreach_pick()
