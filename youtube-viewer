@@ -279,6 +279,10 @@ if (not $constant{win32}) {    # if not running under Windows
     $c{reset}   = "\e[0m";                 # reset color
 }
 
+if (qr/^--?nocolors$/ ~~ \@ARGV) {         # --nocolors
+    %c = map { $_ => q{} } keys %c;
+}
+
 #---------------------- GLOBAL VARIABLES ----------------------#
 my $keywords = q{};                        # used to store keywords for search
 my $youtube_gdata_url;                     # used to store the gdata URL with API query parameters
@@ -478,6 +482,8 @@ sub parse_arguments {
 
         'author=s'         => \$opt{author},
         'all|A!'           => \$opt{playback},
+        'nocolors'         => \$opt{no_colors},
+        'nostdin'          => \$opt{no_stdin},
         'noconfig|N!'      => \$noconfig,
         'playlists|p!'     => \$opt{playlists},
         'debug!'           => \$opt{debug},
@@ -486,7 +492,7 @@ sub parse_arguments {
         'safe-search=s'    => \$CONFIG{safe_search},
         'hd!'              => \$CONFIG{only_hd_videos},
         'cache-min=i'      => \$CONFIG{cache_min},
-        'colors|C!'        => \$CONFIG{use_colors},
+        'colors|C'         => \$CONFIG{use_colors},
         'details|D!'       => \$CONFIG{results_with_details},
         'sub|lang=s'       => \$CONFIG{srt_language},
         'fs|f!'            => \$CONFIG{fullscreen},
@@ -515,6 +521,12 @@ sub parse_arguments {
 
     # Start with page N
     $opt{start_index} = get_start_index();
+
+    if ($opt{no_stdin}) {    # poor implementation of --nostdin
+        $term = q{};
+        $SIG{__DIE__} = sub { exit 0 };
+        close STDERR;
+    }
 
     # Dump config
     if ($opt{debug}) {
@@ -1502,8 +1514,13 @@ sub print_results {
                 }
             }
             when (/\d/ and not /(?:\s|^)[^\d-]/) {
-                s/(?:\D|^)[-=]+\d+(?:\w+)?//g;                     # remove numeric arguments (e.g.: -4, -arg=\d);
-                s/(\d+)(?:-|\.\.)(\d+)/join q{ }, $1 < $2 ? $1 .. $2 : reverse($2 .. $1);/eg;    # '2..5' or '2-5' to '2 3 4 5', or '3..1 to '3 2 1'
+
+                # remove numeric arguments (e.g.: -4, -arg=\d);
+                s/(?:\D|^)[-=]+\d+(?:\w+)?//g;
+
+                # '2..5' or '2-5' to '2 3 4 5', or '3..1 to '3 2 1'
+                s/(\d+)(?:-|\.\.)(\d+)/join q{ }, $1 < $2 ? $1 .. $2 : reverse($2 .. $1);/eg;
+
                 @picks = grep { $_ > 0 and $_ <= @results if /^\d+$/ } split /[\s[:punct:]]+/, $_;
                 @picks
                   ? foreach_pick()
