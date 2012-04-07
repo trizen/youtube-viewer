@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 03 April 2012
+#  Latest edit on: 07 April 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -1913,7 +1913,7 @@ sub show_comments {
     {
         given ($term->readline($prompt{comments_next_page})) {
             when (q{}) {
-                show_comments($code, $index + $CONFIG{results});
+                show_comments($code, $index + 25);
             }
             when (['?', 'help', 'h']) {
                 print "\n", <<"HELP";
