@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 07 April 2012
+#  Latest edit on: 15 April 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -195,9 +195,9 @@ my %CONFIG = (
 
 my $stdin_help = <<'STDIN_HELP';
 
-all               : play all results in order
+all               : play all the results in order
 next              : go to the next page (same as <ENTER>)
-back              : go to the previous page
+back              : return to the previous page
 login             : will prompt you for login
 logout            : will delete the authentication key
 [integer]         : play the corresponding video
@@ -211,10 +211,10 @@ like, dislike [i] : like or dislike a video
 fav, favorite [i] : favorite a video (e.g.: fav 3)
 [keywords]        : search for youtube videos
 3-8, 3..8         : same as 3 4 5 6 7 8
-8 2 12 4 6 5 1    : play videos in your order
+8 2 12 4 6 5 1    : play the videos in your order
 -argv -argv2=v    : set some arguments (e.g.: -u=google)
-e, edit-config    : edit and apply configuration
-load-config       : (re)load configuration file
+e, edit-config    : edit and apply the configuration
+load-config       : (re)load the configuration file
 /my?[regex]*$/    : play videos matched by a regex (/i)
 reset, reload     : restart the application
 q, quit, exit     : close the application
@@ -616,11 +616,11 @@ sub help {
    <keywords>           : search and list YouTube videos
    <playlist_url>       : list a playlist of YouTube videos
 \n$c{bgreen}YouTube options:$c{reset}
-   -t  --today          : shows today YouTube tops
-   -a  --all-time       : shows all time YouTube tops
-   -c  --categories     : shows available YouTube categories
-   -p  --playlists      : search for YouTube playlists
-   -M  --movies         : show YouTube movies categories
+   -t  --today          : show YouTube tops of today
+   -a  --all-time       : show YouTube tops of all time
+   -c  --categories     : show available YouTube categories
+   -p  --playlists      : search for playlists of videos
+   -M  --movies         : show YouTube category of movies
    -results=[1-50]      : how many videos to display per page
    -u=s  -user=s        : list videos uploaded by a specific user
    -up=s                : list playlists created by a specific user
@@ -628,51 +628,51 @@ sub help {
    -duration=s          : valid values are: short, medium, long
    -caption=s           : valid values are: true, false
    -safe-search=s       : valid values are: none, moderate, strict
-   -order-by=s          : order entries by: published, viewCount or rating
+   -order-by=s          : order entries by: published, viewCount and rating
    -time=s              : valid values are: today, this_week and this_month
-   -page=i              : show video results starting with 'i' (e.g.: 2)
-   -hd                  : show only videos available in at least 720p
-   -2  -3  -4  -7  -1   : plays videos at 240p, 360p, 480p, 720p or 1080p
-   -F  --favorites      : show latest favorited videos *
-   -R  --recommended    : show recommended videos for you *
-   -S  --subscriptions  : show new subscription videos *
-   -W  --watched        : show latest watched videos on YouTube *
+   -page=i              : show video results starting with the page 'i'
+   -hd                  : show only the videos available in at least 720p
+   -2  -3  -4  -7  -1   : resolution of videos: 240p, 360p, 480p, 720p or 1080p
+   -F  --favorites      : show the latest favorited videos *
+   -R  --recommended    : show the recommended videos for you *
+   -S  --subscriptions  : show the new subscription videos *
+   -W  --watched        : show the latest watched videos on YouTube *
 \n$c{bgreen}MPlayer options:$c{reset}
-   -f  --fullscreen     : plays video(s) in fullscreen mode
-   -n  --novideo        : plays only the audio track of video(s)
-   -l  --lower-cache    : set a lower cache for MPlayer (for slow connections)
+   -f  --fullscreen     : set the fullscreen mode for mplayer (-fs)
+   -n  --novideo        : play the music only without a video in the foreground
+   -l  --lower-cache    : use a lower cache for MPlayer (for slow connections)
    -sub=s   -lang=s     : subtitle language (default: en) (depends on gcap)
-   -cache=i             : set cache for MPlayer (set: $CONFIG{cache})
-   -cache-min=i         : set cache-min for MPlayer (set: $CONFIG{cache_min})
+   -cache=i             : set the cache for MPlayer (set: $CONFIG{cache})
+   -cache-min=i         : set the cache-min for MPlayer (set: $CONFIG{cache_min})
    -mplayer=s           : set a media player (set: $CONFIG{mplayer})
-   -mplayer_arguments=s : replace default arguments for media player
-   -append_mplayer=s    : add some arguments for media player
+   -mplayer_arguments=s : replace default arguments for the media player
+   -append_mplayer=s    : add some arguments for the media player
 \n$c{bgreen}Other options:$c{reset}
    -d  --download       : download the video(s)
    -A  --all            : play all the video results in order
-   -C  --colors         : use colors to delimit the printed results
-   -D  --details        : a new look for results, with more details
-   -L  --lwp-download   : download videos with LWP (default: wget)
+   -C  --colors         : use colors to delimit the video results
+   -D  --details        : a new look for the results, with more details
+   -L  --lwp-download   : download the videos with LWP (default: wget)
    -T  --tricks         : show more 'hidden' features of $appname
-   -U  --update-config  : update configuration file before exit
-   -N  --noconfig       : don't apply config values, start with default config
+   -U  --update-config  : update the configuration file before exit
+   -N  --noconfig       : start the $appname with the default config
    -Q  --query-params   : set query parameters (e.g.: 'duration=long&caption')
    -users=file.txt      : list YouTube usernames from a file
    -login               : will prompt you for login
    -downloads-dir       : downloads directory (set: '$CONFIG{downloads_folder}')
 \n$c{bgreen}Main options:$c{reset}
    -q  --quiet          : display no output
-   -v  --version        : prints version and exits
-   -h  --help           : prints help and exits
+   -v  --version        : print version and exit
+   -h  --help           : print help and exit
 
 $c{bold}NOTE:$c{reset}
     * == requires authentication
-    -no-[argv] will negate the value of argument (e.g.: -no-fullscreen)
-    each config key is a valid argument (if is preceded by a dash (-))
+    -no-[argv] will negate the value of the argument (e.g.: -no-fullscreen)
+    each config key is a valid argument (if it's preceded by a dash (-))
 
 $c{bgreen}Tips and tricks:$c{reset}
-  1. After search results, press <ENTER> for the next page
-  2. After search results, insert 'back' for the previous page
+  1. After the search results, press <ENTER> for the next page
+  2. After the search results, insert 'back' for the previous page
   3. View more 'hidden' features by executing '$execname -T'\n
 HELP
     main_quit();
@@ -688,7 +688,7 @@ $stdin_help
     -A option will play ALL video results, including videos from the next pages;\n
     /REGEXP/ will match case-insensitive (e.g.: /test/ matches 'TeSt');\n
     When multiple videos are selected to play, pressing CTRL+C
-        will just empty the playlist and return to video results.
+        will just empty the playlist and return to the video results.
 \n$c{bold}* $c{bgreen}Configuration file$c{reset}
     Since 2.5.5 version, $appname supports a configuration file.
     Config file is: '$config_file'
