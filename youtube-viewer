@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 15 April 2012
+#  Latest edit on: 22 April 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -74,6 +74,7 @@
 # - stressat (for the great review of youtube-viewer: http://stressat.blogspot.com/2012/01/youtube-viewer.html)
 # - symbianflo (for packaging youtube-viewer for Mandriva distribution)
 # - gotbletu (for the great video review of youtube-viewer: http://www.youtube.com/watch?v=FnJ67oAxVQ4)
+# - Julian Ospald for adding youtube-viewer in gentoo portage tree
 
 eval 'exec perl $0 ${1+"$@"}'
   if 0;    # not running under some shell
@@ -82,10 +83,9 @@ use 5.010;
 use strict;
 
 use autouse 'XML::Fast'   => qw(xml2hash);
-use autouse 'List::Util'  => qw(first);
 use autouse 'URI::Escape' => qw(uri_escape);
 
-use File::Spec::Functions qw(path tmpdir curdir rel2abs);
+use File::Spec::Functions qw(catdir curdir path rel2abs tmpdir);
 
 #-------FOR DEBUG ONLY-------#
 # use diagnostics -v;
@@ -226,7 +226,7 @@ my %MPLAYER;
 sub set_mplayer_arguments {
     my ($cache, $cache_min) = @_;
     $MPLAYER{mplayer_arguments} = sprintf $CONFIG{mplayer_arguments}, $cache, $cache_min;
-    $MPLAYER{fullscreen} = $CONFIG{fullscreen} ? '-fs' : '';
+    $MPLAYER{fullscreen} = $CONFIG{fullscreen} ? q{-fs} : q{};
     return 1;
 }
 
@@ -258,14 +258,14 @@ my %lwp_header = ('X-GData-Key' => "key=$key");
 
 #----------------------- COLORS -----------------------#
 my %c = (
-         bold    => '',
-         bred    => '',
-         bgreen  => '',
-         reset   => '',
-         cblack  => '',
-         byellow => '',
-         bpurle  => '',
-         bblue   => '',
+         bold    => q{},
+         bred    => q{},
+         bgreen  => q{},
+         reset   => q{},
+         cblack  => q{},
+         byellow => q{},
+         bpurle  => q{},
+         bblue   => q{},
         );
 
 if (not $constant{win32}) {    # if not running under Windows
@@ -338,7 +338,13 @@ $}x;
 
 #---------------------- LOOKING FOR WGET ----------------------#
 sub locate_wget {
-    $opt{wget} = first(sub { $constant{'win32'} ? -e "$_\\wget" : -x "$_/wget" }, @path) ? 1 : 0;
+    foreach my $dir (@path) {
+        if (-x (my $wget_path = catdir($dir, 'wget'))) {
+            $opt{wget} = $wget_path;
+            return 1;
+        }
+    }
+    return;
 }
 
 #---------------------- LWP::UserAgent ----------------------#
@@ -407,7 +413,7 @@ apply_configuration() unless $noconfig;
 
 # __DIE__ handle
 $SIG{__DIE__} = sub {
-    if (join('', @_) =~ m{^Can't locate (.+?)\.pm\b}) {    #'
+    if (join(q{}, @_) =~ m{^Can't locate (.+?)\.pm\b}) {    #'
         my $module = $1;
         $module =~ s{[/\\]+}{::}g;
         die <<"REQ";
@@ -505,7 +511,7 @@ sub parse_arguments {
 
         'page=i'           => sub { $opt{start_with_page} = pop },
         'append_mplayer=s' => sub { $MPLAYER{argv}        = pop },
-        'novideo|n!'       => sub { $MPLAYER{novideo}     = $_[-1] ? '-novideo' : '' },
+        'novideo|n!'       => sub { $MPLAYER{novideo}     = $_[-1] ? q{-novideo} : q{} },
         'more|m!'          => sub { $CONFIG{results}      = $_[-1] ? 50 : 20 },
 
         'download-dir|downloads-dir=s' => \$CONFIG{downloads_folder},
@@ -737,7 +743,7 @@ sub authenticate {
                 $password = $term->readline($prompt{password});
             }
             else {
-                $password = '';
+                $password = q{};
                 print $prompt{password};
                 Term::ReadKey::ReadMode('noecho');
                 while (ord(my $key = Term::ReadKey::ReadKey(0)) != 10) {
@@ -1185,7 +1191,7 @@ sub array_to_gdata_arguments {
 
     my $i   = -2;
     my $x   = $#options - 1;
-    my $str = '';
+    my $str = q{};
 
     while (1) {
         if ($i + 3 < $x) {
@@ -1213,8 +1219,7 @@ sub search {
     $keywords = shift() // $keywords;    #/
 
     # Get words which doesn't begins with a dash (-);
-    $keywords = join(q{ }, get_keywords_from_string($keywords));
-    $keywords = uri_escape($keywords);
+    $keywords = uri_escape(join(q{ }, get_keywords_from_string($keywords)));
 
     if ($opt{playlists}) {
         search_playlists($keywords, 'playlists');
@@ -1404,8 +1409,7 @@ sub print_results {
                    ++$num => $video->{title},
                    set_thousands($video->{views}) => sprintf('%.2f', $video->{rating}) => $video->{category},
                    format_date($video->{published}) => $video->{duration} => $video->{author}
-                  )
-
+                  );
         }
         elsif ($CONFIG{use_colors}) {           # Colorful results (when using --colors or -C)
             printf(
@@ -1415,8 +1419,7 @@ sub print_results {
                    $c{cblack} => $c{bpurle}  => $video->{author}   => $c{reset},
                    $c{cblack} => $c{bblue}   => $video->{duration} => $c{reset},
                    $c{cblack} => $c{reset}
-                  )
-
+                  );
         }
         else {                                  # Normal results
             printf("%s%2d%s - %s (by %s) (%s)\n",
@@ -1523,7 +1526,7 @@ sub print_results {
                 # '2..5' or '2-5' to '2 3 4 5', or '3..1 to '3 2 1'
                 s/(\d+)(?:-|\.\.)(\d+)/join q{ }, $1 < $2 ? $1 .. $2 : reverse($2 .. $1);/eg;
 
-                @picks = grep { $_ > 0 and $_ <= @results if /^\d+$/ } split /[\s[:punct:]]+/, $_;
+                @picks = grep { /^\d+$/ and $_ > 0 and $_ <= @results } split /[\s,]+/, $_;
                 @picks
                   ? foreach_pick()
                   : continue;
@@ -1643,7 +1646,7 @@ sub get_closed_caption {
 
     return defined $srt_file
       ? "$CONFIG{mplayer_srt_settings} -sub $srt_file"
-      : '';
+      : q{};
 }
 
 sub format_date {
@@ -1653,10 +1656,16 @@ sub format_date {
 # Thousand separator
 sub set_thousands {
     return 0 unless $_[0];
-    return $_[0] unless length $_[0] > 3;
-    my $number = shift;
-    $number =~ s/(?<=\d)(?=(?:\d{3})+$)/$CONFIG{thousand_separator}/g;
-    return $number;
+    length($_[0]) > 3 or return $_[0];
+    my $n = shift;
+    my $l = length($n) - 3;
+    my $i = ($l - 1) % 3 + 1;
+    my $x = substr($n, 0, $i) . $CONFIG{thousand_separator};
+    while ($i < $l) {
+        $x .= substr($n, $i, 3) . $CONFIG{thousand_separator};
+        $i += 3;
+    }
+    $x . substr($n, $i);
 }
 
 sub get_youtube {
@@ -1683,7 +1692,7 @@ ERROR
     my $content = lwp_get("$CONFIG{get_video_info}?&video_id=$code&el=detailpage&ps=default&eurl=&gl=US&hl=en");
     my $url     = sprintf($CONFIG{youtube_video_url}, $code);
 
-    $MPLAYER{arguments} = '';
+    $MPLAYER{arguments} = q{};
     if (    not $opt{download_video}
         and -e $CONFIG{gcap}
         and not exists $MPLAYER{novideo}
