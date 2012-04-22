@@ -1105,18 +1105,18 @@ sub play_or_download {
             chdir $CONFIG{downloads_folder};
         }
 
-        if (not defined $opt{wget} and not $CONFIG{lwp_downloading}) {
-            locate_wget();
+        if (not defined $opt{located_wget} and not $CONFIG{lwp_downloading}) {
+            $opt{located_wget} = locate_wget() || -1;
         }
 
         # Replacing reserved characters with a space
         $title =~ tr[ "*/:<>?\\|][ ]s;
 
         if (not -e "$title.mp4") {
-            if ($opt{wget}) {    # Download video with wget
-                system 'wget', '-nc', $streaming, '-O', "$title.mp4";
+            if (defined $opt{wget}) {    # Download video with wget
+                system $opt{wget}, q{-nc}, $streaming, '-O', "$title.mp4";
             }
-            else {               # Downloading video with LWP
+            else {                       # Downloading video with LWP
                 say "** Saving to: '$title.mp4'";
                 $lwp->show_progress(1);
                 $lwp->mirror($streaming, "$title.mp4");
@@ -1127,9 +1127,9 @@ sub play_or_download {
             warn "** '$title.mp4' already exists...\n";
         }
     }
-    else {                       # STREAMING
+    else {                               # STREAMING
 
-        update_mplayer_arguments();    # Update mplayer's arguments
+        update_mplayer_arguments();      # Update mplayer's arguments
 
         my @mplayer_line = split(' ', join(' ', $CONFIG{mplayer}, values %MPLAYER));
 
