@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 22 April 2012
+#  Latest edit on: 24 April 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -501,6 +501,7 @@ sub parse_arguments {
         'cache-min=i'      => \$CONFIG{cache_min},
         'colors|C'         => \$CONFIG{use_colors},
         'details|D!'       => \$CONFIG{results_with_details},
+        'caption=s'        => \$CONFIG{only_videos_with_caption},
         'sub|lang=s'       => \$CONFIG{srt_language},
         'fs|f!'            => \$CONFIG{fullscreen},
         'l|lower-cache!'   => \$CONFIG{use_lower_cache},
