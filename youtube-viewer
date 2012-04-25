@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 Jun 2010
-#  Latest edit on: 24 April 2012
+#  Latest edit on: 25 April 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -76,7 +76,7 @@
 # - gotbletu (for the great video review of youtube-viewer: http://www.youtube.com/watch?v=FnJ67oAxVQ4)
 # - Julian Ospald for adding youtube-viewer in gentoo portage tree
 
-eval 'exec perl $0 ${1+"$@"}'
+eval 'exec perl -S $0 ${1+"$@"}'
   if 0;    # not running under some shell
 
 use 5.010;
@@ -100,7 +100,11 @@ my $execname = 'youtube-viewer';
 my $config_dir = (
                   exists $ENV{XDG_CONFIG_HOME}
                   ? $ENV{XDG_CONFIG_HOME}
-                  : ($ENV{HOME} || $ENV{LOGDIR} || (getpwuid($<))[7] || `echo -n ~`) . '/.config'
+                  : (   $ENV{HOME}
+                     || $ENV{LOGDIR}
+                     || (getpwuid($<))[7]
+                     || `echo -n ~`)
+                    . '/.config'
                  ) . "/$execname";
 
 my $config_file = "$config_dir/$execname.conf";
@@ -123,8 +127,8 @@ my @path = path();
 # Locating gcap
 my $gcap;
 foreach my $path (@path, @INC) {
-    if (-e "$path/gcap") {
-        $gcap = "$path/gcap";
+    if (-e (my $gcap_path = catdir($path, 'gcap'))) {
+        $gcap = $gcap_path;
         last;
     }
 }
@@ -132,7 +136,7 @@ foreach my $path (@path, @INC) {
 # Get mplayer line
 sub get_mplayer {
     if ($constant{win32}) {
-        my $smplayer = $ENV{'ProgramFiles'} . '\\SMPlayer\\mplayer\\mplayer.exe';
+        my $smplayer = $ENV{ProgramFiles} . '\\SMPlayer\\mplayer\\mplayer.exe';
         if (-e $smplayer) {
             return $smplayer;    # Windows MPlayer
         }
@@ -142,7 +146,8 @@ sub get_mplayer {
         }
     }
     else {
-        return 'mplayer'         # *NIX MPlayer
+        my $mplayer_path = '/usr/bin/mplayer';
+        return -x $mplayer_path ? $mplayer_path : q{mplayer}    # *NIX MPlayer
     }
 }
 
@@ -170,10 +175,10 @@ my %CONFIG = (
     order_by                 => 'relevance',
 
     # URI options
-    youtube_video_url     => 'http://www.youtube.com/watch?v=%s',
-    feeds_main_url        => 'http://gdata.youtube.com/feeds/api',
-    get_video_info        => 'http://www.youtube.com/get_video_info',
-    newsubscriptionvideos => 'http://gdata.youtube.com/feeds/api/users/%s/newsubscriptionvideos',
+    youtube_video_url   => 'http://www.youtube.com/watch?v=%s',
+    feeds_main_url      => 'http://gdata.youtube.com/feeds/api',
+    get_video_info      => 'http://www.youtube.com/get_video_info',
+    google_client_login => 'https://www.google.com/accounts/ClientLogin',
 
     # Subtitle options
     srt_language => 'en',
@@ -189,7 +194,7 @@ my %CONFIG = (
     perl_bin             => $^X,
     thousand_separator   => q{,},
     downloads_folder     => curdir(),
-    editor               => $ENV{'EDITOR'} || 'nano',
+    editor               => $ENV{EDITOR} || 'nano',
     users_list           => "$config_dir/youtube_users.txt",
 );
 
@@ -428,6 +433,7 @@ REQ
 sub require_getopt_long {
     require Getopt::Long;
     Getopt::Long::Configure('no_ignore_case');
+    $opt{required_getopt} = 1;
 }
 
 # Parsing arguments
@@ -456,7 +462,7 @@ sub get_keywords_from_array {
 }
 
 sub parse_arguments {
-    require_getopt_long() unless exists $INC{'Getopt/Long.pm'};
+    require_getopt_long() unless $opt{required_getopt};
     Getopt::Long::GetOptionsFromArray(
         \@_, \%CONFIG,
 
@@ -466,11 +472,11 @@ sub parse_arguments {
         'version|V|v'    => \&version,
 
         # Resolutions
-        '240p|2'  => sub { $CONFIG{'resolution'} = 240 },
-        '360p|3'  => sub { $CONFIG{'resolution'} = 360 },
-        '480p|4'  => sub { $CONFIG{'resolution'} = 480 },
-        '720p|7'  => sub { $CONFIG{'resolution'} = 720 },
-        '1080p|1' => sub { $CONFIG{'resolution'} = 1080 },
+        '240p|2'  => sub { $CONFIG{resolution} = 240 },
+        '360p|3'  => sub { $CONFIG{resolution} = 360 },
+        '480p|4'  => sub { $CONFIG{resolution} = 480 },
+        '720p|7'  => sub { $CONFIG{resolution} = 720 },
+        '1080p|1' => sub { $CONFIG{resolution} = 1080 },
 
         # Other options
         'categories|c'            => sub { push @{$opt{subs}}, [\&categories_area] },
@@ -768,7 +774,7 @@ sub authenticate {
 
     set_lwp_useragent() unless $opt{lwp_is_set};
     my $resp = $lwp->post(
-                          "https://www.google.com/accounts/ClientLogin",
+                          $CONFIG{google_client_login},
                           [Content => 'application/x-www-form-urlencoded',
                            Email   => $email,
                            Passwd  => $password,
@@ -799,7 +805,7 @@ sub get_new_subsc {
         warn $prompt{needs_login};
         authenticate();
     }
-    parse_url(sprintf $CONFIG{newsubscriptionvideos}, $user);
+    parse_url("$CONFIG{feeds_main_url}/users/$user/newsubscriptionvideos");
 }
 
 sub get_recommended_videos {
@@ -976,7 +982,7 @@ sub playlists_waiting_input {
                 }
             }
             when (/^\d+$/ and $_ > 0 and $_ <= @results) {
-                list_playlist($results[$_ - 1]{'playlistID'});
+                list_playlist($results[$_ - 1]{playlistID});
             }
             default {
                 if ($mode eq 'playlists') {
@@ -1085,7 +1091,9 @@ sub categories_area {
 }
 
 sub update_mplayer_arguments {
-    if ($CONFIG{use_lower_cache} or not exists $streaming{720} or $CONFIG{resolution} < 720) {
+    if (   $CONFIG{use_lower_cache}
+        or not exists $streaming{720}
+        or $CONFIG{resolution} < 720) {
         set_mplayer_arguments($CONFIG{lower_cache}, $CONFIG{lower_cache_min});
     }
     else {
@@ -1142,7 +1150,7 @@ sub play_or_download {
         }
 
         # Change directory back to the main working directory
-        chdir delete $constant{'cwd'} if exists $constant{'cwd'};
+        chdir delete $constant{cwd} if exists $constant{cwd};
     }
     print "\n" unless $opt{video_id_from_arguments};
 
@@ -1284,9 +1292,9 @@ sub parse_content {
 
     while (
            my $gdata =
-             ref $hash->{'feed'}{'entry'} eq 'ARRAY' ? $hash->{'feed'}{'entry'}[$number]
-           : ref $hash->{'feed'}{'entry'} eq 'HASH'  ? $hash->{'feed'}{'entry'}
-           : $hash->{'entry'}
+             ref $hash->{feed}{entry} eq 'ARRAY' ? $hash->{feed}{entry}[$number]
+           : ref $hash->{feed}{entry} eq 'HASH'  ? $hash->{feed}{entry}
+           : $hash->{entry}
       ) {
         last unless defined $gdata;
 
@@ -1295,8 +1303,8 @@ sub parse_content {
           # Playlists
           ? {
              'playlistID' => $gdata->{'yt:playlistId'},
-             'title'      => $gdata->{'title'},
-             'author'     => $gdata->{'author'}{'name'},
+             'title'      => $gdata->{title},
+             'author'     => $gdata->{author}{name},
              'count'      => $gdata->{'yt:countHint'}
             }
 
@@ -1304,20 +1312,20 @@ sub parse_content {
           : {
              'code'        => $gdata->{'media:group'}{'yt:videoid'},
              'title'       => $gdata->{'media:group'}{'media:title'}{'#text'},
-             'author'      => $gdata->{'author'}{'name'},
+             'author'      => $gdata->{author}{name},
              'rating'      => $gdata->{'gd:rating'}{'-average'} || 0,
              'likes'       => $gdata->{'yt:rating'}{'-numLikes'} || 0,
              'dislikes'    => $gdata->{'yt:rating'}{'-numDislikes'} || 0,
              'favorited'   => $gdata->{'yt:statistics'}{'-favoriteCount'},
              'duration'    => format_time($gdata->{'media:group'}{'yt:duration'}{'-seconds'} || 0),
              'views'       => $gdata->{'yt:statistics'}{'-viewCount'},
-             'published'   => $gdata->{'published'},
+             'published'   => $gdata->{published},
              'description' => $gdata->{'media:group'}{'media:description'}{'#text'},
-             'category'    => ref $gdata->{'category'} eq 'ARRAY' ? $gdata->{'category'}[1]{'-label'}
-             : $gdata->{'category'}{'-label'} || 'Unknown',
+             'category'    => ref $gdata->{category} eq 'ARRAY' ? $gdata->{category}[1]{'-label'}
+             : $gdata->{category}{'-label'} || 'Unknown',
             };
         ++$number;
-        last unless ref $hash->{'feed'}{'entry'} eq 'ARRAY';
+        last unless ref $hash->{feed}{entry} eq 'ARRAY';
     }
 
     if ($opt{debug}) {
@@ -1509,7 +1517,7 @@ sub print_results {
             }
             when (chr ord eq q{/} and /$match_regexp/o) {
                 my $match = qr/$1/i;
-                @picks = grep { $results[$_ - 1]->{'title'} =~ /$match/ } 1 .. @results;
+                @picks = grep { $results[$_ - 1]->{title} =~ /$match/ } 1 .. @results;
                 if (@picks) {
                     foreach_pick();
                 }
@@ -1616,8 +1624,8 @@ sub format_itags {
 sub get_closed_caption {
     my ($code) = @_;
 
-    unless (exists $constant{'cwd'}) {
-        $constant{'cwd'} = rel2abs(curdir());
+    unless (exists $constant{cwd}) {
+        $constant{cwd} = rel2abs(curdir());
     }
 
     # Change dir to $TMP and get the SRT file
@@ -1651,7 +1659,8 @@ sub get_closed_caption {
 }
 
 sub format_date {
-    return "$3.$2.$1" if shift() =~ /^(\d{4})-(\d{2})-(\d{2})/;
+    return "$3.$2.$1"
+      if $_[0] =~ /^(\d{4})-(\d{2})-(\d{2})/;
 }
 
 # Thousand separator
@@ -1712,11 +1721,11 @@ ERROR
 
         undef %streaming;
         my (@streaming_urls) =
-          grep /^https?:/, split(/url%3D(.+?)%26/, $streaming);
-        @streaming{format_itags(map /&itag=(\d+)&/, @streaming_urls)} =
+          grep m{^https?:}, split(m{url%3D(.+?)%26}, $streaming);
+        @streaming{format_itags(map m{&itag=(\d+)&}, @streaming_urls)} =
           grep {
             exists $itags{
-                do { /&itag=(\d+)&/; $1 }
+                do { m{&itag=(\d+)&}; $1 }
               }
           } @streaming_urls;
 
@@ -1731,15 +1740,15 @@ ERROR
         }
 
         print "\n$c{bold}=>>$c{reset} Description\n",
-          "$constant{'dash_line'}\n",
-          "$info->{description}\n$constant{'dash_line'}\n",
+          "$constant{dash_line}\n",
+          "$info->{description}\n$constant{dash_line}\n",
           "$c{bold}=>>$c{reset} View & Download\n",
-          "$constant{'dash_line'}\n$c{bold}* URL:$c{reset} ";
+          "$constant{dash_line}\n$c{bold}* URL:$c{reset} ";
 
         print STDOUT $url;
 
-        print "\n$c{bold}* GET:$c{reset} $streaming_urls[0]\n$constant{'dash_line'}\n",
-          q{ } x ((length($constant{'dash_line'}) - length($info->{title})) / 2 - 4),
+        print "\n$c{bold}* GET:$c{reset} $streaming_urls[0]\n$constant{dash_line}\n",
+          q{ } x ((length($constant{dash_line}) - length($info->{title})) / 2 - 4),
           "$c{bold}=>>$c{reset} $c{bgreen}$info->{title}$c{reset} $c{bold}<<=$c{reset}\n\n",
           "** $c{bold}Author$c{reset}    : $info->{author}\n",
           "** $c{bold}Category$c{reset}  : $info->{category}\n",
@@ -1752,7 +1761,7 @@ ERROR
             $info->{published}
               ? sprintf("** $c{bold}Published$c{reset} : %s\n", format_date($info->{published}))
               : q{};
-          }, "$constant{'dash_line'}\n";
+          }, "$constant{dash_line}\n";
 
         return if $opt{show_info_only};
 
@@ -1902,9 +1911,9 @@ sub show_comments {
     my $number = 0;
     while (
            my $gdata =
-             ref $hash->{'feed'}{'entry'} eq 'ARRAY' ? $hash->{'feed'}{'entry'}[$number]
-           : ref $hash->{'feed'}{'entry'} eq 'HASH'  ? $hash->{'feed'}{'entry'}
-           : $hash->{'entry'}
+             ref $hash->{feed}{entry} eq 'ARRAY' ? $hash->{feed}{entry}[$number]
+           : ref $hash->{feed}{entry} eq 'HASH'  ? $hash->{feed}{entry}
+           : $hash->{entry}
       ) {
         last unless defined $gdata;
         printf("$c{bold}%s$c{reset} on %s said:\n\t%s\n\n",
@@ -1912,7 +1921,7 @@ sub show_comments {
                format_date($gdata->{updated}),
                $gdata->{content});
         ++$number;
-        last unless ref $hash->{'feed'}{'entry'} eq 'ARRAY';
+        last unless ref $hash->{feed}{entry} eq 'ARRAY';
     }
 
     if ($number == 0) {
