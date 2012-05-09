@@ -17,8 +17,8 @@
 #
 #-------------------------------------------------------
 #  Appname: youtube-viewer
-#  Created on: 02 Jun 2010
-#  Latest edit on: 25 April 2012
+#  Created on: 02 June 2010
+#  Latest edit on: 09 May 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 #
@@ -93,7 +93,7 @@ use File::Spec::Functions qw(catdir curdir path rel2abs tmpdir);
 #----------------------------#
 
 my $appname  = 'Youtube Viewer';
-my $version  = '2.5.8';
+my $version  = '2.5.9';
 my $execname = 'youtube-viewer';
 
 # Configuration dir/file
