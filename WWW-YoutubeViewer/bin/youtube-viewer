@@ -273,7 +273,7 @@ HELP
 my $complete_help = <<"STDIN_HELP";
 
 $base_options
-${control_help}:all              : play all the results in order
+$control_help
 
 $action_options
 # YouTube
