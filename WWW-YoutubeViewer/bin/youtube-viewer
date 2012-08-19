@@ -984,7 +984,7 @@ sub parse_arguments {
         'cache-min|cache_min=i'                 => \$opt{cache_min},
         'lower-cache|lower_cache=i'             => \$opt{lower_cache},
         'lower-cache-min|lower_cache_min=i'     => \$opt{lower_cache_min},
-        'append_mplayer|append-mplayer=s'       => \$opt{append_mplayer},
+        'append_mplayer|append-mplayer=s'       => \$MPLAYER{other_args},
         'mplayer_arguments|mplayer-arguments=s' => \$opt{mplayer_arguments},
 
         # Others
@@ -1236,7 +1236,7 @@ HELP
 sub _parse_options2 {
     my ($input) = @_;
 
-    warn(colored("\n[!] Invalid input: $input", 'bold red') . "\n\n") if $opt{debug};
+    warn(colored("\n[!] Invalid input: $input", 'bold red') . "\n\n") if $yv_obj->get_debug;
 
     my ($args, $keywords) = $term->parse_options($input);
 
@@ -2099,6 +2099,8 @@ sub play_videos {
                                  )
                             );
 
+            say "@mplayer_line" if $yv_obj->get_debug;
+
             system @mplayer_line, $streaming->{streaming}{url};
             return if $?;
         }
@@ -2117,9 +2119,13 @@ sub print_video_info {
 
     print STDOUT sprintf($CONFIG{youtube_video_url}, $info->{videoID});
 
+    my $title_length = do {
+        use bytes;
+        length($info->{title});
+    };
+
     print "\n$constant{dash_line}\n",
-      q{ } x ((length($constant{dash_line}) - length($info->{title})) / 2 - 4) =>
-      (_bold_color("=>> $info->{title} <<=") . "\n\n"),
+      q{ } x ((length($constant{dash_line}) - $title_length) / 2 - 4) => (_bold_color("=>> $info->{title} <<=") . "\n\n"),
       map(sprintf(q{** } . "%-18s: %s\n", _bold_color($_->[0]), $_->[1]),
           (
            ['Author'    => $info->{author}],
