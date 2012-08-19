@@ -1280,6 +1280,9 @@ sub get_user_input {
 
     my $input = $term->readline($text);
 
+    $input =~ s/^\s+//;
+    $input =~ s/\s+$//;
+
     return q{:next} if $input eq q{};    # <ENTER> for the next page
 
     my ($args, $keywords) = _parse_options($input);
