@@ -456,7 +456,6 @@ Help options:
 NOTE:
     * == requires authentication
     -no-[argv] will negate the value of the argument (e.g.: -no-fullscreen)
-    each config key is a valid argument (if it's preceded by a dash (-))
 
 HELP
     main_quit(0);
@@ -794,7 +793,7 @@ sub apply_configuration {
             }
         }
         else {
-            print_playlists($yv_obj->search_for_playlists($value ne q{} ? $value : @{$keywords}));
+            print_playlists($yv_obj->search_for_playlists($value ne q{} ? ($value, @{$keywords}) : @{$keywords}));
         }
     }
 
