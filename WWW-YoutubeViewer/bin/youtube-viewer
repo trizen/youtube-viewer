@@ -2378,6 +2378,7 @@ sub print_videos {
                         foreach my $num (@nums) {
                             print_video_info($videos->[$num]);
                         }
+                        _press_enter_to_continue();
                     }
                     else {
                         warn_no_video_selected();
