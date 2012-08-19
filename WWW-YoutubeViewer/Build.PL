@@ -15,7 +15,6 @@ my $builder = Module::Build->new(
         'File::Spec::Functions' => 0,
         'Getopt::Long'          => 0,
         'HTTP::Request'         => 0,
-        'List::Util'            => 0,
         'LWP::UserAgent'        => 0,
         'Term::ANSIColor'       => 0,
         'Term::UI'              => 0,
@@ -24,7 +23,10 @@ my $builder = Module::Build->new(
         'URI::Escape'           => 0,
         'XML::Fast'             => 0,
     },
-    recommends         => { 'Term::ReadLine::Gnu::XS' => 0, },
+    recommends         => {
+        'Term::ReadLine::Gnu::XS' => 0,
+        'List::Util'              => 0,
+    },
     add_to_cleanup     => ['WWW-YoutubeViewer-*'],
     create_makefile_pl => 'traditional',
 );

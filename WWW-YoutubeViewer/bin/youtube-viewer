@@ -78,9 +78,6 @@
 # - gotbletu (for the great video review of youtube-viewer: http://www.youtube.com/watch?v=FnJ67oAxVQ4)
 # - Julian Ospald for adding youtube-viewer in the gentoo portage tree
 
-eval 'exec perl -S $0 ${1+"$@"}'
-  if 0;    # not running under some shell
-
 =head1 NAME
 
 youtube-viewer - YouTube from command line.
@@ -2015,7 +2012,7 @@ sub download_video {
     my ($streaming, $info) = @_;
 
     my $title = join(q{ }, split(q{ }, $info->{title}));
-    $title =~ tr["*/:<>?\\|][%];
+    $title =~ tr{:"*/<>?\\|}{%};
 
     $title .=
         $streaming->{streaming}{type} =~ /\bmp4\b/i  ? q{.mp4}
