@@ -190,7 +190,7 @@ my %CONFIG = (
 
     # Others
     colors               => $constant{win32} ^ 1,
-    use_webm             => 0,
+    prefer_webm          => 0,
     clobber              => 0,
     lwp_downloading      => $constant{win32},
     fullscreen           => 0,
@@ -201,7 +201,6 @@ my %CONFIG = (
     auth_key             => undef,
     thousand_separator   => q{,},
     downloads_folder     => curdir(),
-    VERSION              => $version,
 );
 
 my %MPLAYER;
@@ -332,8 +331,7 @@ if (ref $CONFIG ne 'HASH') {
 my @valid_keys = grep exists $CONFIG{$_}, keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
 
-if (ref $CONFIG ne 'HASH' or not defined $CONFIG->{VERSION} or $CONFIG{VERSION} ne $version) {
-    $CONFIG{VERSION} = $version;
+if (ref $CONFIG ne 'HASH' or not %CONFIG ~~ %{$CONFIG}) {
     dump_configuration();
 }
 
@@ -793,18 +791,18 @@ sub apply_configuration {
             }
         }
         else {
-            print_playlists($yv_obj->search_for_playlists($value ne q{} ? ($value, @{$keywords}) : @{$keywords}));
+            print_playlists($yv_obj->search_for_playlists($value, @{$keywords}));
         }
     }
 
     if (defined $opt->{search_videos}) {
         my $value = delete $opt->{search_videos};
-        print_videos($yv_obj->search($value eq q{} ? @{$keywords} : $value));
+        print_videos($yv_obj->search($value, @{$keywords}));
     }
 
     if (defined $opt->{search_channels}) {
         my $value = delete $opt->{search_channels};
-        print_channels($yv_obj->search_channels($value eq q{} ? @{$keywords} : $value));
+        print_channels($yv_obj->search_channels($value, @{$keywords}));
     }
 
     if (delete $opt->{show_categories}) {
@@ -968,7 +966,6 @@ sub parse_arguments {
         'colors|colored!' => \$opt{colors},
 
         'noconfig'                 => \$opt{noconfig},
-        'webm|use-webm|use_webm!'  => \$opt{use_webm},
         'playlists|p:s'            => \$opt{search_playlists},
         'debug!'                   => \$opt{debug},
         'download|d!'              => \$opt{download_video},
@@ -1022,7 +1019,7 @@ foreach my $arg (@ARGV) {
 # itag => resolution
 my %itags = (
 
-    $opt{use_webm}
+    $opt{prefer_webm}
     ? (
        45 => 720,    # webm
        44 => 480,    # webm

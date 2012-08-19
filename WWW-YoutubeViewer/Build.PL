@@ -24,8 +24,10 @@ my $builder = Module::Build->new(
         'XML::Fast'             => 0,
     },
     recommends         => {
-        'Term::ReadLine::Gnu::XS' => 0,
         'List::Util'              => 0,
+        'LWP::Protocol::https'    => 0,
+        'Term::ReadKey'           => 0,
+        'Term::ReadLine::Gnu::XS' => 0,
     },
     add_to_cleanup     => ['WWW-YoutubeViewer-*'],
     create_makefile_pl => 'traditional',
