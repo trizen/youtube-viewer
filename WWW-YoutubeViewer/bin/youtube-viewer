@@ -136,6 +136,12 @@ my $xdg_config_home =
 my $config_dir = catdir($xdg_config_home, $execname);
 my $config_file = catfile($config_dir, "$execname.conf");
 
+if (not -d $config_dir) {
+    require File::Path;
+    File::Path::make_path($config_dir)
+      or warn "[!] Can't create dir '$config_dir': $!";
+}
+
 # Set $PATH to @path
 my @path = path();
 
@@ -311,7 +317,7 @@ EOD
 sub dump_configuration {
     require Data::Dump;
     open my $config_fh, '>', $config_file
-      or die "$0: Can't open '${config_file}' for write: $!";
+      or do { warn "[!] Can't open '${config_file}' for write: $!"; return };
     my $dumped_config = q{our $CONFIG = } . Data::Dump::dump(\%CONFIG);
     print $config_fh $config_documentation, $dumped_config;
     close $config_fh;
