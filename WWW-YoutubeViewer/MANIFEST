@@ -1,0 +1,11 @@
+ignore.txt
+MANIFEST
+README
+Build.PL
+Changes
+bin/youtube-viewer
+t/pod.t
+t/pod-coverage.t
+t/00-load.t
+t/boilerplate.t
+lib/WWW/YoutubeViewer.pm
