@@ -30,7 +30,7 @@
 # [!] The most important changes are written in the changelog!
 #
 # [CHANGELOG]
-# - Youtube Viewer 3.0 is out! More available options, better functionality and new bugs :)    - NEW (v3.0.0)
+# - Youtube Viewer 3.0 has been released! New options, better functionality and new bugs :)    - NEW (v3.0.0)
 # - Added support for detailed results (usage: -D or --details) // Support for comments        - NEW (v2.5.8)
 # - Switched to Term::ReadLine for a better STDIN support // Better colors // Info support     - NEW (v2.5.7)
 # - Added support for: -duration, -caption=s, -safe-search=s, -hd // Improved code quality     - NEW (v2.5.6)
@@ -83,8 +83,8 @@
 youtube-viewer - YouTube from command line.
 
 See: youtube-viewer --help
-     youtube-viewer --examples
      youtube-viewer --tricks
+     youtube-viewer --examples
      youtube-viewer --stdin-help
 
 =head1 LICENSE AND COPYRIGHT
@@ -338,10 +338,6 @@ if (ref $CONFIG ne 'HASH' or not defined $CONFIG->{VERSION} or $CONFIG{VERSION} 
 }
 
 @opt{keys %CONFIG} = values(%CONFIG);
-
-use Data::Dump qw(pp);
-pp \%opt;
-exit;
 
 {
     my $i = length $key;
