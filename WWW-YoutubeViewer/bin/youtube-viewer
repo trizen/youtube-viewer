@@ -339,6 +339,10 @@ if (ref $CONFIG ne 'HASH' or not defined $CONFIG->{VERSION} or $CONFIG{VERSION} 
 
 @opt{keys %CONFIG} = values(%CONFIG);
 
+use Data::Dump qw(pp);
+pp \%opt;
+exit;
+
 {
     my $i = length $key;
     $key =~ s/(.{$i})(.)/$2$1/g while $i--;
@@ -442,7 +446,7 @@ Other options:
    --gdata-url=s        : print video results from a valid gdata URL
    --get-term-width     : adjust the text for your terminal width
    --login              : will prompt you for login
-   --clobber            : overwrite an existent video
+   --clobber            : overwrite an existent video (with -d)
    --downloads-dir      : downloads directory (set: '$CONFIG{downloads_folder}')
 
 Help options:
@@ -489,7 +493,7 @@ $region_ids
 
 ** Things *NOT* to do:
 1. BAD : $execname Term1nators
-   GOOD: $execname -V Term1nators
+   GOOD: $execname -V=Term1nators
 
 REASON:
     'Term1nators' look like a videoID, but is not.
@@ -575,7 +579,7 @@ Command: $execname --tops=all --region=JP
 Results: show all time tops for the Japan country.
 
 Command: $execname cats -order-by=viewCount -duration=short
-Results: search for 'cats' videos, ordered by ViewCount and short long.
+Results: search for 'cats' videos, ordered by ViewCount and short length.
 
 Command: $execname --channels russian music
 Results: search for channels.
