@@ -202,6 +202,7 @@ my %CONFIG = (
     fullscreen           => 0,
     use_lower_cache      => 0,
     results_with_details => 0,
+    results_with_colors  => 0,
     adj_for_term_width   => $constant{win32} ^ 1,
     download_with_wget   => $constant{win32} ^ 1,
     auth_key             => undef,
@@ -274,7 +275,6 @@ my $complete_help = <<"STDIN_HELP";
 
 $base_options
 $control_help
-
 $action_options
 # YouTube
 :i(nfo)=i,i       : show video informations
