@@ -101,7 +101,8 @@ See http://dev.perl.org/licenses/ for more information.
 
 use 5.010;
 use strict;
-use warnings;
+
+#use warnings;  # debug only
 
 require WWW::YoutubeViewer;
 use File::Spec::Functions qw(catdir catfile curdir path rel2abs tmpdir);
@@ -376,7 +377,6 @@ usage: $execname [options] ([code] || [url] || [keywords])
 
 Base Options:
    <url>                : play an YouTube video by URL
-   <code>               : play an YouTube video by code
    <keywords>           : search and list YouTube videos
    <playlist_url>       : list a playlist of YouTube videos
 
@@ -393,7 +393,7 @@ YouTube options:
    -up --user-pl=s      : list playlists created by a specific user
    -uf --user-fav=s     : list the videos favorited by a specific user
    -V  --videos=K-WORDS : search for YouTube videos (default mode)
-   -id --video-id=ID,ID : play the YouTube videos by video IDs
+   -id --videoids=ID,ID : play the YouTube videos by video IDs
    --channels           : search for Youtube channels
    -author=s            : search in videos uploaded by a specific user
    -duration=s          : filter search results based on video length
@@ -490,29 +490,11 @@ $cat_ids
 ** Valid region IDs:
 $region_ids
 
-** Things *NOT* to do:
-1. BAD : $execname Term1nators
-   GOOD: $execname -V=Term1nators
-
-REASON:
-    'Term1nators' look like a videoID, but is not.
-    '-V' or '--search' argument will tell $appname
-    to search for videos, not to play a video by videoID.
-
-2. BAD : $execname somevideoid
-   GOOD: $execname -id=somevideoid
-
-REASON:
-    'somevideoid' look like a keyword, so $appname will use it for search.
-    '-id' or '-video-id' will tell $appname to play a video by ID.
-    '-ids' supports more video IDs separated by commas. (-ids=someid,someid...)
-
-3. BAD : $execname -mplayer=vlc
-   GOOD: Edit the configuration file, also set the appropriate arguments.
-
-REASONE:
-    '-mplayer=vlc' will set the media player to vlc, but the mplayer arguments
-    doesn't work for vlc. So, edit the configuration file instead!
+** Playing videos
+1. To play videos other player than mplayer, you need to change the
+   configuration file. You can execute '$execname -mplayer=vlc' for
+   example, but the mplayer arguments doesn't work for vlc.
+   The full command should be: $execname -mplayer=vlc -mplayer-arg=' '
 
 ** More STDIN help:
 1. ':r', ':return' will return to the previous section.
@@ -942,7 +924,7 @@ sub parse_arguments {
         'get-description|get_description=s'          => \$opt{get_description},
         'comments=s'                                 => \$opt{get_comments},
         'search|videos|V:s'                          => \$opt{search_videos},
-        'video-id|videoid|id|ids=s'                  => \$opt{play_video_ids},
+        'video-ids|videoids|id|ids=s'                => \$opt{play_video_ids},
         'tops|video-tops|t:s'                        => \$opt{show_tops},
         'c|categories|show-categories'               => \$opt{show_categories},
         'channels|search-channels|search_channels:s' => \$opt{search_channels},
@@ -1013,13 +995,6 @@ sub parse_arguments {
     apply_configuration(\%opt, $keywords);
 }
 
-# Convert valid video IDs to Youtube URLs
-foreach my $arg (@ARGV) {
-    if (is_video_id($arg)) {
-        $arg = sprintf($CONFIG{youtube_video_url}, $arg);
-    }
-}
-
 # --- ITAGS ---
 
 # itag => resolution
@@ -1060,6 +1035,7 @@ for (my $i = 0 ; $i <= $#ARGV ; $i++) {
 
     if ($arg =~ /$get_video_id_re/) {
         splice(@ARGV, $i--, 1);
+        $opt{_should_exit} = 1;
         my $videoID = $1;
         my $info    = $yv_obj->get_video_info($videoID);
         if (@{$info->{results}}) {
@@ -1073,6 +1049,7 @@ for (my $i = 0 ; $i <= $#ARGV ; $i++) {
     }
     elsif ($arg =~ /$get_playlist_id_re/) {
         splice(@ARGV, $i--, 1);
+        $opt{_should_exit} = 1;
         my $playlistID = $1;
         my $videos     = $yv_obj->get_videos_from_playlist($playlistID);
         if (@{$videos->{results}}) {
@@ -1083,11 +1060,11 @@ for (my $i = 0 ; $i <= $#ARGV ; $i++) {
         }
     }
 
-    main_quit(0) if not grep chr ord ne q{-}, @ARGV;
+    main_quit(0) if $opt{_should_exit} and not grep chr ord ne q{-}, @ARGV;
 }
 
-if (grep chr ord ne q{-}, @ARGV) {
-    print_videos($yv_obj->search(grep chr ord ne q{-}, @ARGV));
+if (my @keywords = grep chr ord ne q{-}, @ARGV) {
+    print_videos($yv_obj->search(@keywords));
 }
 elsif (-t) {
     first_user_input();
@@ -1104,16 +1081,16 @@ sub require_getopt_long {
     $opt{getopt_required} = 1;
 }
 
-sub is_video_id {
-    my ($id) = @_;
-    length($id) == 11
-      and $id     =~ /$valid_video_id_re/
-      and $id     =~ /[0-9A-Z_\-]/
-      and not $id =~ /^[A-Z][a-z]++$/
-      and not $id =~ /^[A-Z]++$/
-      and not $id =~ /^--?+[a-z]++$/
-      and not $id =~ /^--?+[a-z]++[\-_][a-z]++$/;
-}
+#sub is_video_id {
+#    my ($id) = @_;
+#    length($id) == 11
+#      and $id     =~ /$valid_video_id_re/
+#      and $id     =~ /[0-9A-Z_\-]/
+#      and not $id =~ /^[A-Z][a-z]++$/
+#      and not $id =~ /^[A-Z]++$/
+#      and not $id =~ /^--?+[a-z]++$/
+#      and not $id =~ /^--?+[a-z]++[\-_][a-z]++$/;
+#}
 
 sub _get_video_id {
     my ($value) = @_;
@@ -1395,11 +1372,8 @@ sub general_options {
         when (/^v(?:ideoids?)?=(.*)/) {
             if (my @ids = split(/[,\s]+/, $1)) {
                 foreach my $id (@ids) {
-                    if (not $id =~ /$valid_video_id_re/) {
-                        warn_invalid_video_id($id);
-                        next;
-                    }
-                    if (not play_videos($yv_obj->get_video_info($id)->{results})) {
+                    my $videoID = _get_video_id($id) // next;
+                    if (not play_videos($yv_obj->get_video_info($videoID)->{results})) {
                         last;
                     }
                 }
