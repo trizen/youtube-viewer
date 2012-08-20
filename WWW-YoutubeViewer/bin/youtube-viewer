@@ -652,6 +652,10 @@ sub apply_configuration {
         }
     }
 
+    if ($opt->{adj_for_term_width}) {
+        adj_for_term_width();
+    }
+
     if (defined $opt->{page} and $opt->{page} > 0) {
         $yv_obj->set_page(delete $opt->{page});
     }
@@ -1679,7 +1683,7 @@ sub print_categories {
         printf "%s. %s\n", colored(sprintf('%2d', ++$i), 'bold'), $category->{label};
     }
 
-    my @keywords = get_input_for_video_tops();
+    my @keywords = get_input_for_categories();
 
     foreach my $key (@keywords) {
         if ($key =~ /$valid_opt_re/) {
