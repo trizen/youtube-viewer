@@ -373,7 +373,7 @@ sub help {
 \n  $eqs \U$appname\E $eqs
 \t\t\t\t\t\t by Trizen (trizenx\@gmail.com)
 
-usage: $execname [options] ([code] || [url] || [keywords])
+usage: $execname [options] ([url] || [keywords])
 
 Base Options:
    <url>                : play an YouTube video by URL
@@ -491,7 +491,7 @@ $cat_ids
 $region_ids
 
 ** Playing videos
-1. To play videos other player than mplayer, you need to change the
+1. To stream the videos in other players, you need to change the
    configuration file. You can execute '$execname -mplayer=vlc' for
    example, but the mplayer arguments doesn't work for vlc.
    The full command should be: $execname -mplayer=vlc -mplayer-arg=' '
@@ -961,13 +961,13 @@ sub parse_arguments {
         'hd|high-definition!'      => \$opt{hd},
 
         # MPlayer
-        'mplayer=s'                             => \$opt{mplayer},
-        'cache=i'                               => \$opt{cache},
-        'cache-min|cache_min=i'                 => \$opt{cache_min},
-        'lower-cache|lower_cache=i'             => \$opt{lower_cache},
-        'lower-cache-min|lower_cache_min=i'     => \$opt{lower_cache_min},
-        'append_mplayer|append-mplayer=s'       => \$MPLAYER{other_args},
-        'mplayer_arguments|mplayer-arguments=s' => \$opt{mplayer_arguments},
+        'mplayer=s'                                          => \$opt{mplayer},
+        'cache=i'                                            => \$opt{cache},
+        'cache-min|cache_min=i'                              => \$opt{cache_min},
+        'lower-cache|lower_cache=i'                          => \$opt{lower_cache},
+        'lower-cache-min|lower_cache_min=i'                  => \$opt{lower_cache_min},
+        'append_mplayer|append-mplayer=s'                    => \$MPLAYER{other_args},
+        'mplayer_arguments|mplayer-args|mplayer-arguments=s' => \$opt{mplayer_arguments},
 
         # Others
         'colorful|C'       => \$opt{results_with_colors},
