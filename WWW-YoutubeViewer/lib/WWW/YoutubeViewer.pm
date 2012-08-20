@@ -127,6 +127,39 @@ sub new {
     return $self;
 }
 
+sub set_prefer_https {
+    my ($self, $bool) = @_;
+    $self->{prefer_https} = $bool;
+
+    if ($self->{prefer_https}) {
+        eval { require LWP::Protocol::https };
+        if ($@) {
+            warn "[!] LWP::Protocol::https is not installed!\n";
+            return;
+        }
+        foreach my $key (grep /_url\z/, keys %valid_options) {
+            my $url = $valid_options{$key}{default};
+            $url =~ s{^http://}{https://};
+            $self->{$key} = $url;
+        }
+    }
+    else {
+        foreach my $key (grep /_url\z/, keys %valid_options) {
+            next if $key eq 'google_login_url';
+            my $url = $valid_options{$key}{default};
+            $url =~ s{^https://}{http://};
+            $self->{$key} = $url;
+        }
+    }
+
+    return 1;
+}
+
+sub get_prefer_https {
+    my ($self) = @_;
+    return $self->{prefer_https};
+}
+
 sub get_start_index_var {
     my ($self, $page, $results) = @_;
     return $results * $page - $results + 1;
@@ -1116,6 +1149,14 @@ Returns the latest videos watched on Youtube.
 =item list_to_gdata_arguments(%options)
 
 Returns a valid string of arguments, with defined values.
+
+=item set_prefer_https($bool)
+
+Will use https:// protocol instead of http://.
+
+=item get_prefer_https()
+
+Will return the value of prefer_https.
 
 =item login($email, $password)
 

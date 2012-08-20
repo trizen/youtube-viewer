@@ -123,9 +123,8 @@ my %opt = ();
 
 # Unchangeable variables goes here
 my %constant = (
-                gdata_version => 2,
-                dash_line     => q{-} x 80,
-                win32         => $^O =~ /^mswin\d/i || 0,
+                dash_line => q{-} x 80,
+                win32     => $^O =~ /^mswin\d/i || 0,
                );
 
 my $xdg_config_home =
@@ -198,6 +197,7 @@ my %CONFIG = (
     # Others
     colors               => $constant{win32} ^ 1,
     prefer_webm          => 0,
+    prefer_https         => 0,
     clobber              => 0,
     lwp_downloading      => $constant{win32},
     fullscreen           => 0,
@@ -447,6 +447,7 @@ Other options:
    --get-term-width     : adjust the text for your terminal width
    --login              : will prompt you for login
    --clobber            : overwrite an existent video (with -d)
+   --prefer-https       : use the HTTPS protocol instead of the HTTP protocol
    --downloads-dir      : downloads directory (set: '$CONFIG{downloads_folder}')
 
 Help options:
@@ -677,6 +678,10 @@ sub apply_configuration {
                 return $_[0];
             };
         }
+    }
+
+    if (defined $opt->{prefer_https}) {
+        $yv_obj->set_prefer_https(delete $opt->{prefer_https});
     }
 
     # ... SUBROUTINE CALLS ... #
@@ -949,9 +954,10 @@ sub parse_arguments {
         'duration=s'               => \$opt{duration},
         'time=s'                   => \$opt{time},
 
-        'author=s'        => \$opt{author},
-        'all|A!'          => \$opt{play_all},
-        'colors|colored!' => \$opt{colors},
+        'author=s'                   => \$opt{author},
+        'all|A!'                     => \$opt{play_all},
+        'colors|colored!'            => \$opt{colors},
+        'prefer_https|prefer-https!' => \$opt{prefer_https},
 
         'noconfig'                 => \$opt{noconfig},
         'playlists|p:s'            => \$opt{search_playlists},
