@@ -602,6 +602,7 @@ sub _get_pairs_from_info_data {
     foreach my $block (split(/,/, $content)) {
         foreach my $pair (split(/&/, $block)) {
             my ($key, $value) = split(/=/, $pair);
+            next unless defined $key;
             $array[$i]->{$key} = uri_unescape($value);
         }
         ++$i;

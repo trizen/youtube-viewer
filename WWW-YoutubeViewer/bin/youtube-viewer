@@ -679,12 +679,12 @@ sub apply_configuration {
         $yv_obj->set_caption(delete $opt->{caption});
     }
 
-    if (defined $opt->{more_results}) {
-        $yv_obj->set_results(delete $opt->{more_results} ? 50 : $CONFIG{results});
-    }
-
     if (defined $opt->{results}) {
         $yv_obj->set_results(delete $opt->{results});
+    }
+
+    if (defined $opt->{more_results}) {
+        $yv_obj->set_results(delete($opt->{more_results}) ? 50 : $CONFIG{results});
     }
 
     if (delete $opt->{authenticate}) {
