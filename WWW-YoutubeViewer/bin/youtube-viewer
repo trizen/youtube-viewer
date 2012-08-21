@@ -2186,7 +2186,7 @@ sub print_video_info {
     print STDOUT sprintf($CONFIG{youtube_video_url}, $info->{videoID});
 
     my $title_length = do {
-        use bytes;
+        #use bytes;
         length($info->{title});
     };
 
