@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 20 August 2012
+#  Latest edit on: 21 August 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -213,6 +213,8 @@ my %CONFIG = (
     auth_key             => undef,
     thousand_separator   => q{,},
     downloads_folder     => curdir(),
+    ffmpeg_command       => 'ffmpeg -i %s %s',
+    convert_to           => undef,
 );
 
 local $SIG{__WARN__} = sub { warn @_; ++$opt{_error} };
@@ -466,6 +468,7 @@ Other options:
    -N  --noconfig       : start the $appname with the default config
    -I  --non-interactive: do not prompt for the first user input
    -q  --quiet          : do not display any warning
+   --convert-to=FORMAT  : convert video to a specific format (with -d)
    --really-quiet       : do not display any warning or output
    --comments=ID/URL    : show comments for a YouTube video
    --get-title=ID/URL   : get and print the title for a video
@@ -932,6 +935,7 @@ sub parse_arguments {
         'safe-search|safeSearch=s' => \$opt{safe_search},
         'hd|high-definition!'      => \$opt{hd},
         'I|non-interactive'        => \$opt{non_interactive},
+        'convert-to|convert_to=s'  => \$opt{convert_to},
 
         # MPlayer
         'mplayer=s'                                          => \$opt{mplayer},
@@ -1998,7 +2002,7 @@ sub get_valid_numbers {
     foreach my $id (split(/[,\s]+/, $input)) {
         push @output,
             $id =~ /$range_num_re/ ? _get_range_numbers($1, $2)
-          : $id =~ /^[0-9]+$/         ? $id
+          : $id =~ /^[0-9]+$/      ? $id
           :                          next;
     }
 
@@ -2110,6 +2114,13 @@ sub download_video {
         $yv_obj->lwp_mirror($streaming->{streaming}{url}, $title);
     }
 
+    if (defined $opt{convert_to}) {
+        my $output = $title;
+        $output =~ s/\.\w{2,5}$//;
+        my $ffmpeg = sprintf($CONFIG{ffmpeg_command}, $title, "$output.$opt{convert_to}");
+        system get_quotewords(qr/\s+/, 1, $ffmpeg);
+    }
+
     return 1;    # no error
 }
 
@@ -2186,6 +2197,7 @@ sub print_video_info {
     print STDOUT sprintf($CONFIG{youtube_video_url}, $info->{videoID});
 
     my $title_length = do {
+
         #use bytes;
         length($info->{title});
     };
