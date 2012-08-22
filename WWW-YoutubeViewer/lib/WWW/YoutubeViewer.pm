@@ -601,6 +601,7 @@ sub _get_pairs_from_info_data {
 
     foreach my $block (split(/,/, $content)) {
         foreach my $pair (split(/&/, $block)) {
+            $pair =~ s{^url_encoded_fmt_stream_map=(?=url=)}{}im;
             my ($key, $value) = split(/=/, $pair);
             next unless defined $key;
             $array[$i]->{$key} = uri_unescape($value);
