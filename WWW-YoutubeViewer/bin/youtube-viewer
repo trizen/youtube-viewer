@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 21 August 2012
+#  Latest edit on: 22 August 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -437,6 +437,7 @@ YouTube options:
    -page=i              : get results starting with a specific page
    -results=[1-50]      : how many results to display per page
    -2  -3  -4  -7  -1   : resolutions: 240p, 360p, 480p, 720p or 1080p
+   --resolution=RES     : resolutions: 1080, 720, 480, 360, 340, 240, 144
    -F  --favorites      : show the latest favorited videos *
    -R  --recommended    : show the recommended videos for you *
    -S  --subscriptions  : show the new subscription videos *
@@ -536,6 +537,16 @@ $region_ids
    configuration file. You can execute '$execname -mplayer=vlc' for
    example, but the mplayer arguments doesn't work for vlc.
    The full command should be: $execname -mplayer=vlc -mplayer-arg=' '
+
+2. Available resolutions: 1080, 720, 480, 360, 340, 240, 144
+   1080 = mp4
+   720  = mp4 (unless webm is prefered)
+   480  = flv (unless webm is prefered)
+   360  = flv (unless webm is prefered)
+   340  = mp4 (actually is 360p)
+   240  = flv
+   180  = 3gpp (mp4v, mp4a)
+   144  = 3gpp (mp4v, mp4a)
 
 ** Arguments
 1. Almost all booleans arguments can be negated with a '-no-' prefix.
@@ -890,6 +901,7 @@ sub parse_arguments {
         '480p|4'  => sub { $opt{resolution} = 480 },
         '720p|7'  => sub { $opt{resolution} = 720 },
         '1080p|1' => sub { $opt{resolution} = 1080 },
+        'res|resolution=s' => \$opt{resolution},
 
         'movies|M'                                   => \$opt{show_movies},
         'get_title|get-title=s'                      => \$opt{get_title},
@@ -990,8 +1002,10 @@ my %itags = (
       ),
 
     37 => 1080,
-    18 => 240,
-    5  => 210,
+    36 => 180,
+    18 => 340,
+    5  => 240,
+    17 => 144,
 );
 
 # resolution => itag
@@ -2020,7 +2034,9 @@ sub _find_streaming_url {
                 next unless $url_ref->{itag} == $wanted_itag;
             }
 
+            next unless exists $url_ref->{url};
             next unless exists $itags{$url_ref->{itag}};
+
             $streaming = $url_ref;
             last;
         }
