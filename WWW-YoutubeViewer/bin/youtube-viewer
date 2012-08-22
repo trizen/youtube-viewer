@@ -453,6 +453,8 @@ MPlayer options:
    -l  --lower-cache    : use a lower cache for MPlayer (for slow connections)
    -cache=i             : set the cache for MPlayer (set: $CONFIG{cache})
    -cache-min=i         : set the cache-min for MPlayer (set: $CONFIG{cache_min})
+   -lcache=i            : set the lower-cache for MPlayer (set: $CONFIG{lower_cache})
+   -lcache-min=i        : set the lower-cache-min for MPlayer (set: $CONFIG{lower_cache_min})
    -mplayer=s           : set a media player (set: $CONFIG{mplayer})
    -mplayer_arguments=s : replace default arguments for the media player
    -append_mplayer=s    : add some arguments for the media player
@@ -547,6 +549,9 @@ $region_ids
    240  = flv
    180  = 3gpp (mp4v, mp4a)
    144  = 3gpp (mp4v, mp4a)
+
+3. lower_cache and lower_cache_min values are used when -l (--lower-cache)
+   is specified as argument, or if the resolution of a video is lower than 720p.
 
 ** Arguments
 1. Almost all booleans arguments can be negated with a '-no-' prefix.
@@ -953,8 +958,8 @@ sub parse_arguments {
         'mplayer=s'                                          => \$opt{mplayer},
         'cache=i'                                            => \$opt{cache},
         'cache-min|cache_min=i'                              => \$opt{cache_min},
-        'lower-cache|lower_cache=i'                          => \$opt{lower_cache},
-        'lower-cache-min|lower_cache_min=i'                  => \$opt{lower_cache_min},
+        'lcache|lower-cache|lower_cache=i'                   => \$opt{lower_cache},
+        'lcache-minlower-cache-min|lower_cache_min=i'        => \$opt{lower_cache_min},
         'append_mplayer|append-mplayer=s'                    => \$MPLAYER{other_args},
         'mplayer_arguments|mplayer-args|mplayer-arguments=s' => \$opt{mplayer_arguments},
 
