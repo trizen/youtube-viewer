@@ -326,20 +326,20 @@ sub get_content {
     my ($self, $url, %opts) = @_;
 
     my $hash;
-    eval { $hash = xml2hash($self->lwp_get($url) // return); 1 };
+    eval { $hash = xml2hash($self->lwp_get($url)) // return undef; 1 };
 
     if ($@) {
-        if ($@ =~ /Module (\S+) is required/) {
+        if ($@ =~ /^Can't locate (\S+)\.pm\b/) {
             (my $module = $1) =~ s{[\\/]+}{::}g;
             warn <<"ERROR";
 Error: Module $module is required.
 To install it, just execute the following command:
     cpan -i $module
 ERROR
-            return;
+            return undef;
         }
-        warn "XML::Fast: Error occured while parsing the XML from: $url\n";
-        return;
+        warn "XML::Fast: Error occured while parsing the XML content of: $url\n";
+        return undef;
     }
 
     if ($self->get_debug) {
