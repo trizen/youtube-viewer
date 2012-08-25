@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 22 August 2012
+#  Latest edit on: 25 August 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -945,7 +945,7 @@ sub parse_arguments {
         'colors|colored!'            => \$opt{colors},
         'prefer_https|prefer-https!' => \$opt{prefer_https},
 
-        'noconfig'                 => \$opt{noconfig},
+        'noconfig|N'               => \$opt{noconfig},
         'playlists|p:s'            => \$opt{search_playlists},
         'debug!'                   => \$opt{debug},
         'download|d!'              => \$opt{download_video},
@@ -1100,13 +1100,12 @@ sub apply_input_arguments {
 sub get_mplayer {
     if ($constant{win32}) {
         my $smplayer = catfile($ENV{ProgramFiles}, qw(SMPlayer mplayer mplayer.exe));
-        if (-e $smplayer) {
-            return $smplayer;    # Windows MPlayer
-        }
-        else {
+
+        if (not -e $smplayer) {
             warn "\n\n!!! Please install SMPlayer in order to stream YouTube videos.\n\n";
-            return 'mplayer.exe';
         }
+
+        return $smplayer;    # Windows MPlayer
     }
     else {
         my $mplayer_path = '/usr/bin/mplayer';
