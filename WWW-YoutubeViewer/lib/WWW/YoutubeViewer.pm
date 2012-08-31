@@ -1,8 +1,8 @@
 package WWW::YoutubeViewer;
 
+use utf8;
 use 5.010;
 use strict;
-use warnings;
 
 use autouse 'XML::Fast'   => qw{ xml2hash($;%) };
 use autouse 'URI::Escape' => qw{ uri_escape uri_escape_utf8 uri_unescape };
@@ -178,6 +178,10 @@ sub back_page_is_available {
 
 sub escape_string {
     my ($self, $string) = @_;
+
+    if ($self->get_escape_utf8) {
+        utf8::decode($string);
+    }
 
     my $escaped =
       $self->get_escape_utf8()
