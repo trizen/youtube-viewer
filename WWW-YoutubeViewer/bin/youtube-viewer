@@ -1041,9 +1041,8 @@ for (my $i = 0 ; $i <= $#ARGV ; $i++) {
     }
 }
 
-if (my $keywords = join(q{ }, grep chr ord ne q{-}, @ARGV)) {
-    utf8::decode($keywords);
-    print_videos($yv_obj->search($keywords));
+if (my @keywords = grep chr ord ne q{-}, @ARGV) {
+    print_videos($yv_obj->search(@keywords));
 }
 elsif (-t and not $opt{non_interactive}) {
     first_user_input();
