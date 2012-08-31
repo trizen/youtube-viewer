@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 25 August 2012
+#  Latest edit on: 31 August 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -99,6 +99,7 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
+use utf8;
 use 5.010;
 use strict;
 
@@ -160,7 +161,7 @@ my $opt_begin_chars = q{:;=};
 my $range_num_re         = qr{^([0-9]++)(?>-|\.\.)([0-9]++)$};
 my $digit_or_equal_re    = q{(?(?=[1-9])=?+|=)};
 my $non_digit_or_opt_re  = qr{^(?!.*?$range_num_re)(?:[^$opt_begin_chars]+[0-9]*[^0-9]|[0-9]{3}|[^0-9$opt_begin_chars])};
-my $get_video_id_re      = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)([\w\-]{11})};
+my $get_video_id_re      = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)([0-9A-Za-z_\-]{11})};
 my $valid_playlist_id_re = qr{^(?:PL)?([A-Z0-9]{16})$};
 my $valid_video_id_re    = qr{^[0-9A-Za-z_\-]{11}$};
 my $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)(?:PL)?([A-Z0-9]{16})\b};
@@ -362,6 +363,7 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      auth_key    => $CONFIG{auth_key},
                                      app_name    => $appname,
                                      app_version => $version,
+                                     escape_utf8 => 1,
                                     );
 
 {
@@ -1227,6 +1229,7 @@ sub get_user_input {
     my ($text) = @_;
 
     my $input = $term->readline($text);
+    utf8::decode($input);
 
     $input =~ s/^\s+//;
     $input =~ s/\s+$//;
