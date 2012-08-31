@@ -1159,13 +1159,7 @@ HELP
             }
             else {
                 given ($key) {
-                    when (/$get_video_id_re/) {
-                        my $info = $yv_obj->get_video_info($1);
-                        play_videos($info->{results});
-                    }
-                    when (/$get_playlist_id_re/) {
-                        get_and_print_videos_from_playlist($1);
-                    }
+                    when (\&youtube_urls) { }    # do nothing
                     default {
                         push @for_search, $key;
                     }
@@ -1423,6 +1417,21 @@ sub edit_configuration_file {
     _apply_config();
 }
 
+sub youtube_urls {
+    given (shift) {
+        when (/$get_video_id_re/) {
+            my $info = $yv_obj->get_video_info($1);
+            play_videos($info->{results});
+            return 1;
+        }
+        when (/$get_playlist_id_re/) {
+            get_and_print_videos_from_playlist($1);
+            return 1;
+        }
+    }
+    return;
+}
+
 sub general_options {
 
     if ($opt{adj_for_term_width}) {
@@ -1617,6 +1626,7 @@ sub print_channels {
         }
         else {
             given ($key) {
+                when (\&youtube_urls) { }    # do nothing
                 when (/^[0-9]++$/ and $_ != 0 and $_ <= @{$channels}) {
                     print_videos($yv_obj->get_videos_from_username($channels->[$_ - 1]{author}));
                 }
@@ -1734,6 +1744,7 @@ HELP
         }
         else {
             given ($key) {
+                when (\&youtube_urls) { }    # do nothing
                 when (/^[0-9]++$/ and $_ != 0 and $_ <= @{$comments}) {
                     print_videos($yv_obj->get_videos_from_username($comments->[$_ - 1]{author}));
                 }
@@ -1777,6 +1788,7 @@ sub print_categories {
         }
         else {
             given ($key) {
+                when (\&youtube_urls) { }    # do nothing
                 when (/^[0-9]++$/ and $_ != 0 and $_ <= @categories) {
                     my $cat_id = $categories[$_ - 1]{term};
                     print_videos($yv_obj->get_videos_from_category($cat_id));
@@ -1819,6 +1831,7 @@ sub print_movies {
         }
         else {
             given ($key) {
+                when (\&youtube_urls) { }    # do nothing
                 when (/^[0-9]++$/ and $_ != 0 and $_ <= @{WWW::YoutubeViewer::movie_IDs}) {
                     print_videos($yv_obj->get_movies(${WWW::YoutubeViewer::movie_IDs}[$_ - 1]));
                 }
@@ -1862,6 +1875,7 @@ sub print_video_tops {
         }
         else {
             given ($key) {
+                when (\&youtube_urls) { }    # do nothing
                 when (/^[0-9]++$/ and $_ != 0 and $_ <= @{WWW::YoutubeViewer::feeds_IDs}) {
                     $top_opts{feed_id} = ${WWW::YoutubeViewer::feeds_IDs}[$_ - 1];
                     undef $top_opts{time_id} if $_ ~~ [3, 5, 8, 9];    # doesn't support the 'time' option
@@ -1986,6 +2000,7 @@ FORMAT
         }
         else {
             given ($key) {
+                when (\&youtube_urls) { }    # do nothing
                 when (/^[0-9]++$/ and $_ != 0 and $_ <= @{$playlists} and not $contains_keywords) {
                     get_and_print_videos_from_playlist($playlists->[$_ - 1]{playlistID});
                 }
@@ -2480,6 +2495,7 @@ sub print_videos {
         }
         else {
             given ($key) {
+                when (\&youtube_urls) { }    # do nothing
                 when (
                       not $contains_keywords and ((/^[0-9]{1,2}$/ and $_ > 0 and $_ <= @{$videos})
                                                   or /$range_num_re/)
