@@ -41,6 +41,8 @@ our @region_IDs = qw(
   IT JP MX NL NZ PL RU ZA KR ES SE TW US
   );
 
+our @feed_methods = qw(newsubscriptionvideos recommendations favorites watch_history);
+
 my %valid_options = (
 
     # Main options
@@ -57,6 +59,7 @@ my %valid_options = (
     safe_search => {valid => [qw(strict moderate none)],                 default => undef},
 
     # Others
+    debug       => {valid => [0 .. 2],    default => 0},
     lwp_timeout => {valid => [qr/^\d+$/], default => 60},
     author      => {valid => [qr/^\w+$/], default => undef},
     auth_key    => {valid => [qr/^.{5}/], default => undef},
@@ -64,10 +67,9 @@ my %valid_options = (
     app_version => {valid => [qr/^\d/],   default => $VERSION},
     app_name    => {valid => [qr/^./],    default => 'Youtube Viewer'},
 
-    categories_language => {valid => [qr/^[a-z]++-\w+/], default => 'en-US'},
+    categories_language => {valid => [qr/^[a-z]++-\w/], default => 'en-US'},
 
     # Booleans
-    debug          => {valid => [1, 0], default => 0},
     lwp_keep_alive => {valid => [1, 0], default => 1},
     lwp_env_proxy  => {valid => [1, 0], default => 1},
     escape_utf8    => {valid => [1, 0], default => 0},
@@ -346,7 +348,7 @@ ERROR
         return undef;
     }
 
-    if ($self->get_debug) {
+    if ($self->get_debug == 2) {
         require Data::Dump;
         Data::Dump::pp($hash);
     }
@@ -897,7 +899,7 @@ sub get_video_info {
     }
 
     # Create subroutines that require authentication
-    foreach my $method (qw(newsubscriptionvideos recommendations favorites watch_history)) {
+    foreach my $method (@feed_methods) {
 
         *{__PACKAGE__ . '::get_' . $method} = sub {
 

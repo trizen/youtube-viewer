@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 31 August 2012
+#  Latest edit on: 01 September 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -187,7 +187,7 @@ my %CONFIG = (
     caption             => undef,
     duration            => undef,
     time_sort           => undef,
-    order_by            => undef,
+    orderby             => undef,
     categories_language => 'en-US',
 
     # URI options
@@ -200,15 +200,18 @@ my %CONFIG = (
     gcap          => $gcap,
 
     # Others
+    debug                => 0,
     colors               => $constant{win32} ^ 1,
     prefer_webm          => 0,
     prefer_https         => 0,
     clobber              => 0,
+    skip_if_exists       => 0,
     lwp_downloading      => $constant{win32},
     fullscreen           => 0,
     use_lower_cache      => 0,
     results_with_details => 0,
     results_with_colors  => 0,
+    non_interactive      => 0,
     adj_for_term_width   => $constant{win32} ^ 1,
     download_with_wget   => $constant{win32} ^ 1,
     auth_key             => undef,
@@ -492,7 +495,7 @@ Help options:
    -H  --stdin-help     : show the valid stdin options for $appname
    -v  --version        : print version and exit
    -h  --help           : print help and exit
-       --debug          : see behind the scenes
+       --debug:1,2      : see behind the scenes
 
 NOTE:
     * == requires authentication
@@ -506,17 +509,12 @@ sub wrap_text {
     my (%args) = @_;
 
     require Text::Wrap;
-
-    #no warnings 'once';
     ${Text::Wrap::columns} = $args{columns} // length($constant{dash_line});
 
     return Text::Wrap::wrap($args{i_tab}, $args{s_tab}, @{$args{text}});
 }
 
 sub tricks {
-
-    #no warnings 'once';
-
     my $tab = "\t\t";
     my $cat_ids = wrap_text(
                             i_tab => $tab,
@@ -650,6 +648,13 @@ sub version {
 sub apply_configuration {
     my ($opt, $keywords) = @_;
 
+    if ($yv_obj->get_debug == 2
+        or (defined($opt->{debug}) and $opt->{debug} == 2)) {
+        require Data::Dump;
+        say "=>> Options with keywords: <@{$keywords}>";
+        Data::Dump::pp($opt);
+    }
+
     # ... BASIC OPTIONS ... #
     if (delete $opt->{quiet}) {
         close STDERR;
@@ -661,48 +666,21 @@ sub apply_configuration {
     }
 
     # ... YOUTUBE OPTIONS ... #
-    if (defined $opt->{author}) {
-        $yv_obj->set_author(delete $opt->{author});
-    }
-
-    if (defined $opt->{orderby}) {
-        $yv_obj->set_orderby(delete $opt->{orderby});
-    }
-
-    if (defined $opt->{time}) {
-        $yv_obj->set_time(delete $opt->{time});
-    }
-
-    if (defined $opt->{region}) {
-        $yv_obj->set_region(delete $opt->{region});
-    }
-
-    if (defined $opt->{category}) {
-        $yv_obj->set_category(delete $opt->{category});
-    }
-
-    if (defined $opt{categories_language}) {
-        $yv_obj->set_categories_language(delete $opt{categories_language});
-    }
-
-    if (defined $opt->{safe_search}) {
-        $yv_obj->set_safe_search(delete $opt->{safe_search});
+    foreach my $method_name (
+                             qw(
+                             author orderby region category debug
+                             categories_language safe_search time
+                             caption results prefer_https duration
+                             )
+      ) {
+        if (defined $opt->{$method_name}) {
+            my $code = \&{"WWW::YoutubeViewer::set_$method_name"};
+            $yv_obj->$code(delete $opt->{$method_name});
+        }
     }
 
     if (defined $opt->{hd}) {
-        $yv_obj->set_hd(delete $opt->{hd} ? 'true' : undef);
-    }
-
-    if (defined $opt->{duration}) {
-        $yv_obj->set_duration(delete $opt->{duration});
-    }
-
-    if (defined $opt->{caption}) {
-        $yv_obj->set_caption(delete $opt->{caption});
-    }
-
-    if (defined $opt->{results}) {
-        $yv_obj->set_results(delete $opt->{results});
+        $yv_obj->set_hd(delete($opt->{hd}) ? 'true' : undef);
     }
 
     if (defined $opt->{more_results}) {
@@ -725,10 +703,6 @@ sub apply_configuration {
     }
 
     # ... OTHER OPTIONS ... #
-    if (defined $opt->{debug}) {
-        $yv_obj->set_debug(delete $opt->{debug});
-    }
-
     if (defined $opt->{shuffle_playlist}) {
         require List::Util;
         $opt{shuffle} = delete $opt->{shuffle_playlist};
@@ -737,21 +711,14 @@ sub apply_configuration {
     if (defined $opt->{colors}) {
         $opt{_colors} = $opt->{colors};
         if (delete $opt->{colors}) {
-
-            #no warnings 'redefine';
             require Term::ANSIColor;
             *colored = \&Term::ANSIColor::colored;
         }
         else {
-            #no warnings 'redefine';
             *colored = sub {
                 return $_[0];
             };
         }
-    }
-
-    if (defined $opt->{prefer_https}) {
-        $yv_obj->set_prefer_https(delete $opt->{prefer_https});
     }
 
     # ... SUBROUTINE CALLS ... #
@@ -833,11 +800,14 @@ sub apply_configuration {
         print_movies();
     }
 
-    if (defined $opt->{newsubscriptionvideos}) {
-        my $user   = delete $opt->{newsubscriptionvideos};
-        my $videos = $yv_obj->get_newsubscriptionvideos($user);
-        if (defined $videos) {
-            print_videos($videos);
+    foreach my $feed_name (@{WWW::YoutubeViewer::feed_methods}) {
+        if (defined $opt->{$feed_name}) {
+            my $user   = delete $opt->{$feed_name};
+            my $code   = \&{"WWW::YoutubeViewer::get_$feed_name"};
+            my $videos = $yv_obj->$code($user);
+            if (defined $videos) {
+                print_videos($videos);
+            }
         }
     }
 
@@ -845,33 +815,9 @@ sub apply_configuration {
         get_and_print_comments(split(/[,\s]+/, delete($opt->{get_comments})));
     }
 
-    if (defined $opt->{recommendations}) {
-        my $user   = delete $opt->{recommendations};
-        my $videos = $yv_obj->get_recommendations($user);
-        if (defined $videos) {
-            print_videos($videos);
-        }
-    }
-
-    if (defined $opt->{favorites}) {
-        my $user   = delete $opt->{favorites};
-        my $videos = $yv_obj->get_favorites($user);
-        if (defined $videos) {
-            print_videos($videos);
-        }
-    }
-
-    if (defined $opt->{watch_history}) {
-        my $user   = delete $opt->{watch_history};
-        my $videos = $yv_obj->get_watch_history($user);
-        if (defined $videos) {
-            print_videos($videos);
-        }
-    }
-
     if (defined $opt->{get_gdata_url}) {
         my $url = delete $opt->{get_gdata_url};
-        if ($url =~ m{^https?://(?:www\.)?gdata\.youtube\.com\b}) {
+        if ($url =~ m{^https?://(?:www\.)?gdata\.youtube\.com/api\b}) {
             print_videos(
                          {
                           url     => $url,
@@ -950,7 +896,7 @@ sub parse_arguments {
 
         'noconfig|N'               => \$opt{noconfig},
         'playlists|p:s'            => \$opt{search_playlists},
-        'debug!'                   => \$opt{debug},
+        'debug:1'                  => \$opt{debug},
         'download|d!'              => \$opt{download_video},
         'safe-search|safeSearch=s' => \$opt{safe_search},
         'hd|high-definition!'      => \$opt{hd},
