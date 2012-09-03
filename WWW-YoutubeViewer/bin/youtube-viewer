@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 01 September 2012
+#  Latest edit on: 03 September 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -668,9 +668,10 @@ sub apply_configuration {
     # ... YOUTUBE OPTIONS ... #
     foreach my $method_name (
                              qw(
-                             author orderby region category debug
-                             categories_language safe_search time
-                             caption results prefer_https duration
+                             caption results duration
+                             author orderby region category
+                             categories_language safe_search
+                             page debug time prefer_https
                              )
       ) {
         if (defined $opt->{$method_name}) {
@@ -696,10 +697,6 @@ sub apply_configuration {
 
     if ($opt->{adj_for_term_width}) {
         adj_for_term_width();
-    }
-
-    if (defined $opt->{page} and $opt->{page} > 0) {
-        $yv_obj->set_page(delete $opt->{page});
     }
 
     # ... OTHER OPTIONS ... #
@@ -2065,7 +2062,13 @@ sub download_video {
     my ($streaming, $info) = @_;
 
     my $title = join(q{ }, split(q{ }, $info->{title}));
-    $title =~ tr{:"*/<>?\\|}{%};
+
+    if ($^O ~~ [qw(linux freebsd openbsd)]) {
+        $title =~ tr{/}{%};
+    }
+    else {
+        $title =~ tr{:"*/?\\|<>}{;'+%$%%«»};
+    }
 
     $title .=
         $streaming->{streaming}{type} =~ /\bmp4\b/i  ? q{.mp4}
