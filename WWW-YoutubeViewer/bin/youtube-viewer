@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 03 September 2012
+#  Latest edit on: 04 September 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -247,8 +247,6 @@ my $action_options = <<'ACTIONS';
 # Actions
 :login            : will prompt you for login
 :logout           : will delete the authentication key
-:edit-config      : edit and apply the configuration
-:load-config      : (re)load the configuration file
 ACTIONS
 
 my $control_help = <<'CONTROL';
@@ -449,8 +447,8 @@ YouTube options:
    -W  --watched        : show the latest watched videos on YouTube *
    --subscribe=USER     : subscribe to a user's channel *
    --favorite=ID/URL    : favorite a YouTube video by URL or ID *
-   --like=ID/URL        : set a 'like' rating to one or more videos
-   --dislike=ID/URL     : set a 'dislike' rating to one or more videos
+   --like=ID/URL        : send a 'like' rating to one or more videos *
+   --dislike=ID/URL     : send a 'dislike' rating to one or more videos *
 
 MPlayer options:
    -f  --fullscreen     : set the fullscreen mode for mplayer (-fs)
@@ -535,6 +533,9 @@ $cat_ids
 ** Valid region IDs:
 $region_ids
 
+NOTE: Categories and region IDs are case sensitive!
+      [orderby, time, duration]'s values are also case sensitive!
+
 ** Playing videos
 1. To stream the videos in other players, you need to change the
    configuration file. You can execute '$execname -mplayer=vlc' for
@@ -602,7 +603,7 @@ Results: play all the video results (-A)
          -A will include the videos from the next pages as well.
 
 Command: $execname -comments=http://www.youtube.com/watch?v=U6_8oIPFREY
-Results: show video comments for a specific video (or videoID)
+Results: show video comments for a specific video URL or videoID
 
 Command: $execname -results=5 -up=khanacademy -D
 Results: set 5 results,
@@ -1361,11 +1362,6 @@ sub decode_entities {
 
 sub quit_required { $_[0] ~~ ['q', 'quit', 'exit'] }
 
-sub edit_configuration_file {
-    system $ENV{EDITOR} // 'nano', $config_file;
-    _apply_config();
-}
-
 sub youtube_urls {
     given (shift) {
         when (/$get_video_id_re/) {
@@ -1400,14 +1396,6 @@ sub general_options {
         }
         when ('logout') {
             logout();
-            return 1;
-        }
-        when ('edit-config') {
-            edit_configuration_file();
-            return 1;
-        }
-        when ('load-config') {
-            _apply_config();
             return 1;
         }
         when (['reset', 'reload', 'restart']) {
