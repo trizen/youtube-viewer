@@ -292,7 +292,7 @@ $action_options
 :d(ownload)=i,i   : download the selected videos
 :c(omments)=i     : show video comments
 :r(elated)=i      : show related videos
-:a(uhtor)=i       : show author's latest videos
+:a(uthor)=i       : show author's latest videos
 :p(laylists)=i    : show author's latest playlists
 :subscribe=i      : subscribe to author's channel
 :(dis)like=i      : like or dislike a video
