@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 04 September 2012
+#  Latest edit on: 11 September 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -773,7 +773,12 @@ sub apply_configuration {
     }
 
     if (defined $opt->{user_videos}) {
-        print_videos($yv_obj->get_videos_from_username(delete $opt->{user_videos}));
+        if ($opt->{user_videos} =~ /^\w+$/) {
+            print_videos($yv_obj->get_videos_from_username(delete $opt->{user_videos}));
+        }
+        else {
+            warn_invalid("username", $opt->{user_videos});
+        }
     }
 
     if (defined $opt->{user_playlists}) {
@@ -1458,11 +1463,11 @@ sub warn_needs_auth {
 
 # ... GET INPUT SUBS ... #
 sub get_input_for_first_time {
-    return get_user_input(_bold_color("\n=>> Insert a valid code or search for videos (:h for help)") . "\n> ");
+    return get_user_input(_bold_color("\n=>> Search for YouTube videos (:h for help)") . "\n> ");
 }
 
 sub get_input_for_channels {
-    return get_user_input(_bold_color("\n=>> Select one channel (:h for help)") . "\n> ");
+    return get_user_input(_bold_color("\n=>> Select a channel (:h for help)") . "\n> ");
 }
 
 sub get_input_for_search {
@@ -1470,7 +1475,7 @@ sub get_input_for_search {
 }
 
 sub get_input_for_playlists {
-    return get_user_input(_bold_color("\n=>> Select one playlist (:h for help)") . "\n> ");
+    return get_user_input(_bold_color("\n=>> Select a playlist (:h for help)") . "\n> ");
 }
 
 sub get_input_for_comments {
@@ -1478,11 +1483,11 @@ sub get_input_for_comments {
 }
 
 sub get_input_for_video_tops {
-    return get_user_input(_bold_color("\n=>> Select one video top (:h for help)") . "\n> ");
+    return get_user_input(_bold_color("\n=>> Select a video top (:h for help)") . "\n> ");
 }
 
 sub get_input_for_categories {
-    return get_user_input(_bold_color("\n=>> Select one category (:h for help)") . "\n> ");
+    return get_user_input(_bold_color("\n=>> Select a category (:h for help)") . "\n> ");
 }
 
 # ... PRINT SUBROUTINES ... #
