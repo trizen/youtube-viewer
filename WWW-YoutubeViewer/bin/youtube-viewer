@@ -152,7 +152,7 @@ foreach my $path (path()) {
     }
 }
 
-my $opt_begin_chars = q{:;=};
+my $opt_begin_chars = q{:;=};   # stdin option begin chars
 
 # Regular expressions
 my $range_num_re         = qr{^([0-9]++)(?>-|\.\.)([0-9]++)$};
