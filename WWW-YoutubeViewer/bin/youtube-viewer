@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 11 September 2012
+#  Latest edit on: 12 September 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -122,7 +122,7 @@ my $key = 'eTj9NtCyOsGMliTTwz-T85muGT-ARAwVREslfB_giHP3X339Jkpn5Xf71pQXY96xWtFY1
 # Options (key=>value) goes here
 my %opt = ();
 
-# Unchangeable variables goes here
+# Unchangeable data goes here
 my %constant = (
                 dash_line => q{-} x 80,
                 win32     => $^O =~ /^mswin\d/i || 0,
@@ -143,12 +143,9 @@ if (not -d $config_dir) {
       or warn "[!] Can't create dir '$config_dir': $!";
 }
 
-# Set $PATH to @path
-my @path = path();
-
 # Locating gcap
 my $gcap;
-foreach my $path (@path) {
+foreach my $path (path()) {
     if (-e (my $gcap_path = catfile($path, 'gcap'))) {
         $gcap = $gcap_path;
         last;
@@ -292,7 +289,7 @@ $action_options
 :d(ownload)=i,i   : download the selected videos
 :c(omments)=i     : show video comments
 :r(elated)=i      : show related videos
-:a(uhtor)=i       : show author's latest videos
+:a(uthor)=i       : show author's latest videos
 :p(laylists)=i    : show author's latest playlists
 :subscribe=i      : subscribe to author's channel
 :(dis)like=i      : like or dislike a video
