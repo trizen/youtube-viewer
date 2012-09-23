@@ -59,13 +59,13 @@ my %valid_options = (
     safe_search => {valid => [qw(strict moderate none)],                 default => undef},
 
     # Others
-    debug       => {valid => [0 .. 2],    default => 0},
-    lwp_timeout => {valid => [qr/^\d+$/], default => 60},
-    author      => {valid => [qr/^\w+$/], default => undef},
-    auth_key    => {valid => [qr/^.{5}/], default => undef},
-    key         => {valid => [qr/^.{5}/], default => undef},
-    app_version => {valid => [qr/^\d/],   default => $VERSION},
-    app_name    => {valid => [qr/^./],    default => 'Youtube Viewer'},
+    debug       => {valid => [0 .. 2],                          default => 0},
+    lwp_timeout => {valid => [qr/^\d+$/],                       default => 60},
+    auth_key    => {valid => [qr/^.{5}/],                       default => undef},
+    key         => {valid => [qr/^.{5}/],                       default => undef},
+    author      => {valid => [qr{^(?:\w+|(?:\w+[-.]+\w+)+)\z}], default => undef},
+    app_version => {valid => [qr/^\d/],                         default => $VERSION},
+    app_name    => {valid => [qr/^./],                          default => 'Youtube Viewer'},
 
     categories_language => {valid => [qr/^[a-z]++-\w/], default => 'en-US'},
 
@@ -137,7 +137,6 @@ sub set_prefer_https {
         eval { require LWP::Protocol::https };
         if ($@) {
             warn "[!] LWP::Protocol::https is not installed!\n";
-            return;
         }
         foreach my $key (grep /_url\z/, keys %valid_options) {
             my $url = $valid_options{$key}{default};
@@ -294,14 +293,13 @@ sub lwp_get {
 
     my %lwp_header = $self->_get_lwp_header();
 
-    undef $self->{last_lwp_error};
     my $response = $self->{lwp}->get($url, %lwp_header);
 
     if ($response->is_success) {
         return $response->content;
     }
     else {
-        warn '[' . ($self->{last_lwp_error} = $response->status_line()) . "] Error occured on URL: $url\n";
+        warn '[' . $response->status_line() . "] Error occured on URL: $url\n";
     }
 
     return;
@@ -332,7 +330,11 @@ sub get_content {
     my ($self, $url, %opts) = @_;
 
     my $hash;
-    eval { $hash = xml2hash($self->lwp_get($url)) // return undef; 1 };
+    eval {
+        $hash = xml2hash($self->lwp_get($url)
+        // return undef)
+        // return undef;
+    };
 
     if ($@) {
         if ($@ =~ /^Can't locate (\S+)\.pm\b/) {
@@ -369,18 +371,21 @@ ERROR
           ? {
              playlistID => $gdata->{'yt:playlistId'},
              title      => $gdata->{'title'},
+             name       => $gdata->{'author'}{'name'},
              author     => ($gdata->{'author'}{'uri'} =~ m{^.*/([^/]+)}),
              count      => $gdata->{'yt:countHint'},
              summary    => $gdata->{'summary'},
              published  => $gdata->{'published'},
              updated    => $gdata->{'updated'},
+             thumbnail  => $gdata->{'media:group'}{'media:thumbnail'}[0]{'-url'},
             }
 
           : $opts{comments}
 
           # Comments
           ? {
-             author    => $gdata->{'author'}{'name'},
+             name      => $gdata->{'author'}{'name'},
+             author    => ($gdata->{'author'}{'uri'} =~ m{^.*/([^/]+)}),
              content   => $gdata->{'content'},
              published => $gdata->{'published'},
             }
@@ -390,7 +395,8 @@ ERROR
           # Channels
           ? {
              title       => $gdata->{'title'},
-             author      => $gdata->{'author'}{'name'},
+             name        => $gdata->{'author'}{'name'},
+             author      => ($gdata->{'author'}{'uri'} =~ m{^.*/([^/]+)}),
              summary     => $gdata->{'summary'},
              thumbnail   => $gdata->{'media:thumbnail'}{'-url'},
              updated     => $gdata->{'updated'},
@@ -402,6 +408,7 @@ ERROR
           : {
              videoID     => $gdata->{'media:group'}{'yt:videoid'},
              title       => $gdata->{'media:group'}{'media:title'}{'#text'},
+             name        => $gdata->{'author'}{'name'},
              author      => ($gdata->{'author'}{'uri'} =~ m{^.*/([^/]+)}),
              rating      => $gdata->{'gd:rating'}{'-average'} || 0,
              likes       => $gdata->{'yt:rating'}{'-numLikes'} || 0,
@@ -625,6 +632,11 @@ sub get_streaming_urls {
 
     my $content = uri_unescape($self->lwp_get($url) // return);
     my @info = $self->_get_pairs_from_info_data($content);
+
+    if ($self->get_debug == 2) {
+        require Data::Dump;
+        Data::Dump::pp(\@info);
+    }
 
     if (exists $info[0]{status} and $info[0]->{status} eq q{fail}) {
         warn "\n[!] Error occurred on getting info for video ID: $videoID\n";

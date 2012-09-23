@@ -18,18 +18,15 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 12 September 2012
+#  Latest edit on: 23 September 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
-# [?] What is this script for?
-#  - This script is useful to search and watch YouTube videos with MPlayer...
-#  - Have fun!
-#
-# [!] The most important changes are written in the changelog!
+# youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
 #
 # [CHANGELOG]
+# - Added support for more resolutions, UTF-8 support, --convert-to=FMT and many bug-fixes     - NEW (v3.0.1)
 # - Youtube Viewer 3.0 has been released! New options, better functionality and new bugs :)    - NEW (v3.0.0)
 # - Added support for detailed results (usage: -D or --details) // Support for comments        - NEW (v2.5.8)
 # - Switched to Term::ReadLine for a better STDIN support // Better colors // Info support     - NEW (v2.5.7)
@@ -71,12 +68,13 @@
 # - Added support for 720p and 1080p YouTube Videos...                                         - (v1.0.*)
 
 # Special thanks to:
-# - Army (for bug reports and for his great ideas)
-# - dhn (for adding youtube-viewer in freshports.org)
+# - Army (for the bug reports and for his great ideas: https://aur.archlinux.org/packages.php?ID=37779&comments=all)
+# - dhn (for adding youtube-viewer in freshports.org: http://www.freshports.org/multimedia/youtube-viewer)
 # - stressat (for the great review of youtube-viewer: http://stressat.blogspot.com/2012/01/youtube-viewer.html)
-# - symbianflo (for packaging youtube-viewer for Mandriva distribution)
+# - symbianflo (for packaging youtube-viewer for Mandriva: https://abf.rosalinux.ru/symbianflo/youtube-viewer)
 # - gotbletu (for the great video review of youtube-viewer: http://www.youtube.com/watch?v=FnJ67oAxVQ4)
-# - Julian Ospald for adding youtube-viewer in the gentoo portage tree
+# - Julian Ospald (for adding youtube-viewer in the gentoo portage tree: http://packages.gentoo.org/package/net-misc/youtube-viewer)
+# - 666philb (for packaging gtk-youtube-viewer for Puppy Linux: http://www.murga-linux.com/puppy/viewtopic.php?t=76835)
 
 =head1 NAME
 
@@ -109,7 +107,7 @@ require WWW::YoutubeViewer;
 use File::Spec::Functions qw(catdir catfile curdir path rel2abs tmpdir);
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.0.0';
+my $version  = '3.0.1';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
@@ -128,10 +126,8 @@ my %constant = (
                 win32     => $^O =~ /^mswin\d/i || 0,
                );
 
-my $xdg_config_home =
-    $ENV{XDG_CONFIG_HOME}
-  ? $ENV{XDG_CONFIG_HOME}
-  : catdir(($ENV{HOME} || $ENV{LOGDIR} || (getpwuid($<))[7] || `echo -n ~`), '.config');
+my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
+  || catdir(($ENV{HOME} || $ENV{LOGDIR} || (getpwuid($<))[7] || `echo -n ~`), '.config');
 
 # Configuration dir/file
 my $config_dir = catdir($xdg_config_home, $execname);
@@ -152,17 +148,18 @@ foreach my $path (path()) {
     }
 }
 
-my $opt_begin_chars = q{:;=};   # stdin option begin chars
+my $opt_begin_chars = q{:;=};    # stdin option begin chars
 
 # Regular expressions
 my $range_num_re         = qr{^([0-9]++)(?>-|\.\.)([0-9]++)$};
 my $digit_or_equal_re    = qr{(?(?=[1-9])=?+|=)};
 my $non_digit_or_opt_re  = qr{^(?!$range_num_re)(?:[^$opt_begin_chars]+[0-9]*[^0-9]|[0-9]{3}|[^0-9$opt_begin_chars])};
 my $get_video_id_re      = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)([0-9A-Za-z_\-]{11})};
-my $valid_playlist_id_re = qr{^(?:PL)?([A-Z0-9]{16})$};
-my $valid_video_id_re    = qr{^[0-9A-Za-z_\-]{11}$};
+my $valid_playlist_id_re = qr{^(?:PL)?([A-Z0-9]{16})\z};
+my $valid_video_id_re    = qr{^[0-9A-Za-z_\-]{11}\z};
 my $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)(?:PL)?([A-Z0-9]{16})\b};
 my $valid_opt_re         = qr{^[$opt_begin_chars]([A-Za-z]++(?:-[A-Za-z]++)?(?>${digit_or_equal_re}.*)?)$};
+my $valid_username_re    = qr{^(?:\w+|(?:\w+[-.]+\w+)+)\z};
 
 # Main configuration
 my %CONFIG = (
@@ -177,13 +174,15 @@ my %CONFIG = (
     mplayer_arguments => '-prefer-ipv4 -really-quiet -cache %d -cache-min %d',
 
     # Youtube options
+    prefer_webm         => 0,
+    prefer_https        => 0,
     results             => 20,
-    resolution          => 1080,
+    resolution          => 'original',
     hd                  => undef,
     safe_search         => undef,
     caption             => undef,
     duration            => undef,
-    time_sort           => undef,
+    time                => undef,
     orderby             => undef,
     categories_language => 'en-US',
 
@@ -199,8 +198,6 @@ my %CONFIG = (
     # Others
     debug                => 0,
     colors               => $constant{win32} ^ 1,
-    prefer_webm          => 0,
-    prefer_https         => 0,
     clobber              => 0,
     skip_if_exists       => 0,
     lwp_downloading      => $constant{win32},
@@ -233,7 +230,7 @@ sub set_mplayer_arguments {
 
 my $base_options = <<'BASE';
 # Base
-[keywords]        : search for youtube videos
+[keywords]        : search for YouTube videos
 [youtube-url]     : play a video by YouTube URL
 :v(ideoid)=ID     : play a video by Video ID
 [playlist-url]    : list a playlist of videos
@@ -308,8 +305,8 @@ $other_options
 $notes_options
 ** Examples:
 :regex="\\w \\d" -> play videos matched by a regular expression.
-:i1,4 :quit    -> show informations for the 1st and 4th video and quit.
-:d18-20,1,2    -> download the 18th, 19th, 20th, 1st and 2nd videos.
+:info=1,4      -> show informations for the first and 4th video.
+:d18-20,1,2    -> download the videos: 18, 19, 20, 1 and 2.
 -u=google -D   -> list videos from google with extra details.
 3 4 :next 9    -> play the 3rd and 4th videos from the current
                   page, go to the next page and play the 9th video.
@@ -420,22 +417,23 @@ YouTube options:
    -uf --user-fav=s     : list the videos favorited by a specific user
    -V  --videos=K-WORDS : search for YouTube videos (default mode)
    -id --videoids=ID,ID : play the YouTube videos by video IDs
+   -rv --related=URL/ID : show related videos for a video ID/URL
    --channels           : search for Youtube channels
-   -author=s            : search in videos uploaded by a specific user
-   -duration=s          : filter search results based on video length
+   --author=s           : search in videos uploaded by a specific user
+   --duration=s         : filter search results based on video length
                           valid values are: short, medium, long
-   -caption=s           : only videos with/without closed captions
+   --caption=s          : only videos with/without closed captions
                           valid values are: true, false
-   -category=s          : search only for videos in a specific category
+   --category=s         : search only for videos in a specific category
                           this option can also be used with the --tops argument
-   -safe-search=s       : YouTube will skip restricted videos for your location
+   --safe-search=s      : YouTube will skip restricted videos for your location
                           valid values are: none, moderate, strict
-   -orderby=s           : order entries by: published, viewCount or rating
-   -time=s              : show only videos uploaded within the specified time
+   --orderby=s          : order entries by: published, viewCount or rating
+   --time=s             : show only videos uploaded within the specified time
                           valid values are: today, this_week and this_month
-   -hd                  : search only for videos available in at least 720p
-   -page=i              : get results starting with a specific page
-   -results=[1-50]      : how many results to display per page
+   --hd                 : search only for videos available in at least 720p
+   --page=i             : get results starting with a specific page
+   --results=[1-50]     : how many results to display per page
    -2  -3  -4  -7  -1   : resolutions: 240p, 360p, 480p, 720p or 1080p
    --resolution=RES     : resolutions: 1080, 720, 480, 360, 340, 240, 144
    -F  --favorites      : show the latest favorited videos *
@@ -539,7 +537,7 @@ NOTE: Categories and region IDs are case sensitive!
    example, but the mplayer arguments doesn't work for vlc.
    The full command should be: $execname -mplayer=vlc -mplayer-arg=' '
 
-2. Available resolutions: 1080, 720, 480, 360, 340, 240, 144
+2. Available resolutions: original, 1080, 720, 480, 360, 340, 240, 144
    1080 = mp4
    720  = mp4 (unless webm is prefered)
    480  = flv (unless webm is prefered)
@@ -549,11 +547,11 @@ NOTE: Categories and region IDs are case sensitive!
    180  = 3gpp (mp4v, mp4a)
    144  = 3gpp (mp4v, mp4a)
 
-3. lower_cache and lower_cache_min values are used when -l (--lower-cache)
+3. lower_cache and lower_cache_min values are used when -l (--use-lower-cache)
    is specified as argument, or if the resolution of a video is lower than 720p.
 
 ** Arguments
-1. Almost all booleans arguments can be negated with a '-no-' prefix.
+1. Almost all booleans arguments can be negated with a '--no-' prefix.
 2. Arguments that require an ID/URL, you can specify more than one,
    separated by whitespace (quoted), or separated by commas.
 
@@ -770,12 +768,16 @@ sub apply_configuration {
     }
 
     if (defined $opt->{user_videos}) {
-        if ($opt->{user_videos} =~ /^\w+$/) {
+        if ($opt->{user_videos} =~ /$valid_username_re/) {
             print_videos($yv_obj->get_videos_from_username(delete $opt->{user_videos}));
         }
         else {
             warn_invalid("username", $opt->{user_videos});
         }
+    }
+
+    if (defined $opt->{related_videos}) {
+        get_and_print_related_videos(split(/[,\s]+/, delete($opt->{related_videos})));
     }
 
     if (defined $opt->{user_playlists}) {
@@ -784,7 +786,7 @@ sub apply_configuration {
 
     if (defined $opt->{user_favorited_videos}) {
         my $username = delete $opt->{user_favorited_videos};
-        if ($username =~ /^\w+$/) {
+        if ($username =~ /$valid_username_re/) {
             print_videos($yv_obj->get_favorited_videos_from_username($username));
         }
         else {
@@ -874,10 +876,11 @@ sub parse_arguments {
         'subscribe=s'                             => \$opt{subscribe_channel},
         'favorite=s'                              => \$opt{favorite_video},
 
-        'login|authenticate'   => \$opt{authenticate},
-        'user|username|u|uv=s' => \$opt{user_videos},
-        'user-playlists|up=s'  => \$opt{user_playlists},
-        'user-favorited|uf=s'  => \$opt{user_favorited_videos},
+        'login|authenticate'     => \$opt{authenticate},
+        'user|username|u|uv=s'   => \$opt{user_videos},
+        'user-playlists|up=s'    => \$opt{user_playlists},
+        'user-favorited|uf=s'    => \$opt{user_favorited_videos},
+        'related-videos|rl|rv=s' => \$opt{related_videos},
 
         'catlang|cl|hl=s'              => \$opt{categories_language},
         'category|cat=s'               => \$opt{category},
@@ -909,11 +912,12 @@ sub parse_arguments {
         'cache-min|cache_min=i'                              => \$opt{cache_min},
         'lcache|lower-cache|lower_cache=i'                   => \$opt{lower_cache},
         'lcache-minlower-cache-min|lower_cache_min=i'        => \$opt{lower_cache_min},
+        'l|use-lower-cache|ulc|use_lower_cache!'             => \$opt{use_lower_cache},
         'append_mplayer|append-mplayer=s'                    => \$MPLAYER{other_args},
         'mplayer_arguments|mplayer-args|mplayer-arguments=s' => \$opt{mplayer_arguments},
 
         # Others
-        'colorful|C'       => \$opt{results_with_colors},
+        'colorful|C!'      => \$opt{results_with_colors},
         'details|D!'       => \$opt{results_with_details},
         'caption=s'        => \$opt{caption},
         'fullscreen|fs|f!' => \$opt{fullscreen},
@@ -957,6 +961,7 @@ my %itags = (
        34 => 360,
       ),
 
+    38 => 'original',
     37 => 1080,
     36 => 180,
     18 => 340,
@@ -1029,7 +1034,6 @@ sub get_valid_video_id {
 
     unless (defined $id) {
         warn_invalid('videoID', $value);
-        print "\n";
         return;
     }
 
@@ -1282,8 +1286,10 @@ sub rating_videos {
 
 sub get_and_play_video_ids {
     foreach my $id (@_) {
+
         my $videoID = get_valid_video_id($id) // next;
         my $info = $yv_obj->get_video_info($videoID);
+
         if (@{$info->{results}}) {
             if (not play_videos($info->{results})) {
                 return 1;
@@ -1298,13 +1304,31 @@ sub get_and_play_video_ids {
 
 sub get_and_print_video_info {
     foreach my $id (@_) {
+
         my $videoID = get_valid_video_id($id) // next;
         my $info = $yv_obj->get_video_info($videoID);
+
         if (@{$info->{results}}) {
             print_video_info($info->{results}[0]);
         }
         else {
             warn_cant_get('information', $videoID);
+        }
+    }
+    return 1;
+}
+
+sub get_and_print_related_videos {
+    foreach my $id (@_) {
+
+        my $videoID = get_valid_video_id($id) // next;
+        my $info = $yv_obj->get_related_videos($videoID);
+
+        if (@{$info->{results}}) {
+            print_videos($info);
+        }
+        else {
+            warn_cant_get('related videos', $videoID);
         }
     }
     return 1;
@@ -1321,6 +1345,7 @@ sub get_and_print_comments {
 
 sub get_and_print_videos_from_playlist {
     my ($playlistID) = @_;
+
     if ($playlistID =~ /$valid_playlist_id_re/) {
         my $info = $yv_obj->get_videos_from_playlist($playlistID);
         if (@{$info->{results}}) {
@@ -1340,7 +1365,7 @@ sub subscribe_to_channels {
     return if not authenticated();
 
     foreach my $channel (@_) {
-        if ($channel =~ /^\w+$/) {
+        if ($channel =~ /$valid_username_re/) {
             if ($yv_obj->subscribe_channel($channel)) {
                 print "** Successfully subscribed to channel: $channel\n";
             }
@@ -1613,7 +1638,7 @@ HELP
           wrap_text(
                     i_tab => q{ } x 4,
                     s_tab => q{ } x 4,
-                    text  => [$comment->{content} // 'No description available...']
+                    text  => [$comment->{content} // 'Empty comment...']
                    ),
           ;
     }
@@ -2039,7 +2064,7 @@ sub get_streaming_url {
 sub update_mplayer_arguments {
     my ($resolution) = @_;
 
-    if (   $CONFIG{use_lower_cache}
+    if (   $opt{use_lower_cache}
         or $resolution < 720) {
         set_mplayer_arguments($opt{lower_cache}, $opt{lower_cache_min});
     }
@@ -2061,10 +2086,11 @@ sub download_video {
     }
 
     $title .=
-        $streaming->{streaming}{type} =~ /\bmp4\b/i  ? q{.mp4}
-      : $streaming->{streaming}{type} =~ /\bflv\b/i  ? q{.flv}
-      : $streaming->{streaming}{type} =~ /\bwebm\b/i ? q{.webm}
-      :                                                q{.mp4};
+        $streaming->{streaming}{type} =~ /\bmp4\b/i   ? q{.mp4}
+      : $streaming->{streaming}{type} =~ /\bflv\b/i   ? q{.flv}
+      : $streaming->{streaming}{type} =~ /\bwebm\b/i  ? q{.webm}
+      : $streaming->{streaming}{type} =~ /\b3gpp?\b/i ? q{.3gp}
+      :                                                 q{.mp4};
 
     if ($opt{skip_if_exists} and -e $title) {
         say "** Video '$title' already exists. Skipping...";
@@ -2212,6 +2238,10 @@ sub print_videos {
     my $url    = $results->{url};
     my $videos = $results->{results};
 
+    if (not @{$videos}) {
+        warn colored("\n[!] No video results!", 'bold red') . "\n";
+    }
+
     my $num = 0;
     foreach my $video (@{$videos}) {
         if ($opt{results_with_details}) {
@@ -2310,7 +2340,7 @@ sub print_videos {
                 when (/^a(?:uthor)?${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($videos, $1)) {
                         foreach my $id (@nums) {
-                            my $username = ${$videos}[$id]{author};
+                            my $username = $videos->[$id]{author};
                             my $request  = $yv_obj->get_videos_from_username($username);
                             if (@{$request->{results}}) {
                                 print_videos($request);
@@ -2327,7 +2357,7 @@ sub print_videos {
                 when (/^p(?:laylists?)?${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($videos, $1)) {
                         foreach my $id (@nums) {
-                            my $username = ${$videos}[$id]{author};
+                            my $username = $videos->[$id]{author};
                             my $request  = $yv_obj->get_playlists_from_username($username);
                             if (@{$request->{results}}) {
                                 print_playlists($request);
@@ -2344,7 +2374,7 @@ sub print_videos {
                 when (/^((?:dis)?like)${digit_or_equal_re}(.*)/) {
                     my $rating = $1;
                     if (my @nums = get_valid_numbers($videos, $2)) {
-                        rating_videos($rating, map ${$videos}[$_]{videoID}, @nums);
+                        rating_videos($rating, map $videos->[$_]{videoID}, @nums);
                     }
                     else {
                         warn_no_thing_selected('video');
@@ -2352,7 +2382,7 @@ sub print_videos {
                 }
                 when (/^fav(?:orite)?+${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($videos, $1)) {
-                        favorite_videos(map ${$videos}[$_]{videoID}, @nums);
+                        favorite_videos(map $videos->[$_]{videoID}, @nums);
                     }
                     else {
                         warn_no_thing_selected('video');
@@ -2360,7 +2390,7 @@ sub print_videos {
                 }
                 when (/^subscribe${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($videos, $1)) {
-                        subscribe_to_channels(map ${$videos}[$_]{author}, @nums);
+                        subscribe_to_channels(map $videos->[$_]{author}, @nums);
                     }
                     else {
                         warn_no_thing_selected('video');
@@ -2385,7 +2415,7 @@ sub print_videos {
                 }
                 when (/^c(?:omments?)?${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($videos, $1)) {
-                        get_and_print_comments(map ${$videos}[$_]{videoID}, @nums);
+                        get_and_print_comments(map $videos->[$_]{videoID}, @nums);
                     }
                     else {
                         warn_no_thing_selected('video');
@@ -2393,7 +2423,7 @@ sub print_videos {
                 }
                 when (/^r(?:elated)?${digit_or_equal_re}(.*)/) {
                     if (my ($id) = get_valid_numbers($videos, $1)) {
-                        print_videos($yv_obj->get_related_videos(${$videos}[$id]{videoID}));
+                        get_and_print_related_videos($videos->[$id]{videoID});
                     }
                     else {
                         warn_no_thing_selected('video');
