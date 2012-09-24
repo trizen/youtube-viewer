@@ -617,6 +617,7 @@ CTRL+U : username list window
 CTRL+Y : CLI youtube viewer
 CTRL+D : video details window
 CTRL+F : show feeds window
+CTRL+G : show videos favorited by the author of a selected video
 CTRL+R : show related videos for a selected video
 CTRL+M : show videos from the author of a selected video
 CTRL+S : add the author name of a selected video into the users list
@@ -689,6 +690,7 @@ $accel->connect(ord('d'), ['control-mask'], ['visible'], \&show_details_window);
 $accel->connect(ord('f'), ['control-mask'], ['visible'], \&show_feeds_window);
 $accel->connect(ord('s'), ['control-mask'], ['visible'], \&add_user_to_favorites);
 $accel->connect(ord('r'), ['control-mask'], ['visible'], \&show_related_videos);
+$accel->connect(ord('g'), ['control-mask'], ['visible'], \&get_user_favorited_videos);
 $accel->connect(ord('m'), ['control-mask'], ['visible'], \&show_more_videos_from_username);
 $accel->connect(0xffff,   ['lock-mask'],    ['visible'], \&delete_selected_row);
 $accel->connect(0xffc8,   ['lock-mask'],    ['visible'], \&maximize_unmaximize_mainw);
@@ -1940,6 +1942,7 @@ sub comments_row_activated {
     my $value = $feeds_liststore->get($iter, 1);
 
     if (defined $value and $value =~ m{^https?://}) {
+        $feeds_liststore->remove($iter);
         my $comments = $yv_obj->next_page($value, comments => 1);
         if (@{$comments->{results}}) {
             print_comments($comments);
@@ -1952,14 +1955,14 @@ sub comments_row_activated {
     return 1;
 }
 
+sub get_user_favorited_videos {
+    my $username = get_username_for_selected_video() // return;
+    favorited_videos_from_username($username);
+}
+
 sub get_username_for_selected_video {
     my $iter = $treeview->get_selection->get_selected() or return;
     return $liststore->get($iter, 6);
-}
-
-sub goto_youtube_user_profile {
-    my $url = sprintf($CONFIG{youtube_profile_url}, (get_username_for_selected_video() or return));
-    execute_external_program((defined $CONFIG{browser} ? $CONFIG{browser} : 'xdg-open'), $url);
 }
 
 sub show_related_videos {

@@ -2,62 +2,6 @@
 <interface>
   <requires lib="gtk+" version="2.18"/>
   <!-- interface-naming-policy project-wide -->
-  <object class="GtkAboutDialog" id="aboutdialog1">
-    <property name="can_focus">False</property>
-    <property name="border_width">5</property>
-    <property name="window_position">center-on-parent</property>
-    <property name="type_hint">normal</property>
-    <property name="transient_for">__MAIN__</property>
-    <property name="program_name">Glade</property>
-    <property name="copyright" translatable="yes">Copyright © 2010-2012 by Trizen</property>
-    <property name="comments" translatable="yes">Written in Perl, Gtk2 and Glade under the GPLv3.</property>
-    <property name="website">http://trizen.googlecode.com</property>
-    <property name="website_label" translatable="yes">Developer's website</property>
-    <property name="authors">[+] Developer/Maintainer:
- =&gt;  Trizen (trizenx@gmail.com)
-    * Core
-    * GUI
-
-[+] Contributor:
-  =&gt; Ovidiu D. Nițan (nitanovidiu@gmail.com)
-    * Threads
-    * GUI fixes</property>
-    <signal name="destroy" handler="hide_about_window" swapped="no"/>
-    <signal name="delete-event" handler="hide_about_window" swapped="no"/>
-    <signal name="response" handler="hide_about_window" swapped="no"/>
-    <child internal-child="vbox">
-      <object class="GtkVBox" id="dialog-vbox3">
-        <property name="can_focus">False</property>
-        <child internal-child="action_area">
-          <object class="GtkHButtonBox" id="dialog-action_area3">
-            <property name="can_focus">False</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="pack_type">end</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <placeholder/>
-        </child>
-      </object>
-    </child>
-  </object>
-  <object class="GtkAdjustment" id="adjustment1">
-    <property name="lower">1</property>
-    <property name="upper">50</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment2">
-    <property name="lower">1</property>
-    <property name="upper">4096</property>
-    <property name="value">1</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
   <object class="GtkWindow" id="__MAIN__">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -1187,6 +1131,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
                                                 <property name="secondary_icon_activatable">False</property>
                                                 <property name="primary_icon_sensitive">True</property>
                                                 <property name="secondary_icon_sensitive">True</property>
+                                                <signal name="button-press-event" handler="clear_text" swapped="no"/>
                                                 <signal name="activate" handler="favorited_videos_from_username" swapped="no"/>
                                               </object>
                                             </child>
@@ -1548,6 +1493,62 @@ When the specified resolution is not found, it falls down to a lower resolution.
       </object>
     </child>
   </object>
+  <object class="GtkAboutDialog" id="aboutdialog1">
+    <property name="can_focus">False</property>
+    <property name="border_width">5</property>
+    <property name="window_position">center-on-parent</property>
+    <property name="type_hint">normal</property>
+    <property name="transient_for">__MAIN__</property>
+    <property name="program_name">Glade</property>
+    <property name="copyright" translatable="yes">Copyright © 2010-2012 by Trizen</property>
+    <property name="comments" translatable="yes">Written in Perl, Gtk2 and Glade under the GPLv3.</property>
+    <property name="website">http://trizen.googlecode.com</property>
+    <property name="website_label" translatable="yes">Developer's website</property>
+    <property name="authors">[+] Developer/Maintainer:
+ =&gt;  Trizen (trizenx@gmail.com)
+    * Core
+    * GUI
+
+[+] Contributor:
+  =&gt; Ovidiu D. Nițan (nitanovidiu@gmail.com)
+    * Threads
+    * GUI fixes</property>
+    <signal name="destroy" handler="hide_about_window" swapped="no"/>
+    <signal name="delete-event" handler="hide_about_window" swapped="no"/>
+    <signal name="response" handler="hide_about_window" swapped="no"/>
+    <child internal-child="vbox">
+      <object class="GtkVBox" id="dialog-vbox3">
+        <property name="can_focus">False</property>
+        <child internal-child="action_area">
+          <object class="GtkHButtonBox" id="dialog-action_area3">
+            <property name="can_focus">False</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkAdjustment" id="adjustment1">
+    <property name="lower">1</property>
+    <property name="upper">50</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment2">
+    <property name="lower">1</property>
+    <property name="upper">4096</property>
+    <property name="value">1</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
   <object class="GtkWindow" id="details_window">
     <property name="can_focus">False</property>
     <property name="border_width">2</property>
@@ -1872,17 +1873,122 @@ When the specified resolution is not found, it falls down to a lower resolution.
       </object>
     </child>
   </object>
+  <object class="GtkMenu" id="detailsmenu">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <child>
+      <object class="GtkImageMenuItem" id="details">
+        <property name="label" translatable="yes">Show video details</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="tooltip_text" translatable="yes">(CTRL+D)</property>
+        <property name="image">image8</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="show_details_window" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="menuitem9">
+        <property name="label" translatable="yes">Comments / Ratings</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="image">image30</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="show_feeds_window" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="separator">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="queue_playback">
+        <property name="label" translatable="yes">Add to playback queue</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="image">image9</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="queue_playback" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="menuitem1">
+        <property name="label" translatable="yes">Play videos from queue</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="image">image10</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="play_videos_from_queue" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="play_all_videos">
+        <property name="label" translatable="yes">Play all video results</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="image">image16</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="play_all_video_results" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="menuitem2">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="play_in_new_term">
+        <property name="label" translatable="yes">Play it in a new terminal</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="image">image5</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="play_selected_video_with_cli_youtube_viewer" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="download_video">
+        <property name="label" translatable="yes">Download Youtube video</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="image">image15</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="download_video" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="open_youtube">
+        <property name="label" translatable="yes">Open the YouTube website</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="image">image7</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="open_youtube_url" swapped="no"/>
+      </object>
+    </child>
+  </object>
+  <object class="GtkImage" id="download_icon3">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">emblem-downloads</property>
+  </object>
   <object class="GtkImage" id="download_icon1">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">emblem-downloads</property>
   </object>
   <object class="GtkImage" id="download_icon2">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-downloads</property>
-  </object>
-  <object class="GtkImage" id="download_icon3">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">emblem-downloads</property>
@@ -2003,315 +2109,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
     <action-widgets>
       <action-widget response="0">button3</action-widget>
     </action-widgets>
-  </object>
-  <object class="GtkWindow" id="help_window">
-    <property name="can_focus">False</property>
-    <property name="title" translatable="yes">Help</property>
-    <property name="window_position">center-on-parent</property>
-    <property name="default_width">480</property>
-    <property name="default_height">400</property>
-    <property name="transient_for">__MAIN__</property>
-    <signal name="destroy" handler="hide_help_window" swapped="no"/>
-    <signal name="delete-event" handler="hide_help_window" swapped="no"/>
-    <child>
-      <object class="GtkVBox" id="vbox251">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <child>
-          <object class="GtkScrolledWindow" id="scrolledwindow3">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="hscrollbar_policy">automatic</property>
-            <property name="vscrollbar_policy">automatic</property>
-            <child>
-              <object class="GtkTextView" id="textview2">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="pixels_below_lines">1</property>
-                <property name="indent">3</property>
-              </object>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">True</property>
-            <property name="fill">True</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkHButtonBox" id="hbuttonbox4">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="spacing">5</property>
-            <property name="homogeneous">True</property>
-            <property name="layout_style">end</property>
-            <child>
-              <object class="GtkButton" id="button19">
-                <property name="label">gtk-about</property>
-                <property name="use_action_appearance">False</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
-                <signal name="clicked" handler="show_about_window" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="button28">
-                <property name="label">gtk-close</property>
-                <property name="use_action_appearance">False</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
-                <signal name="clicked" handler="hide_help_window" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="pack_type">end</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">1</property>
-          </packing>
-        </child>
-      </object>
-    </child>
-  </object>
-  <object class="GtkImage" id="icon_from_pixbux">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-missing-image</property>
-  </object>
-  <object class="GtkImage" id="image10">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">media-playback-start</property>
-  </object>
-  <object class="GtkImage" id="image11">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">face-smile-big</property>
-  </object>
-  <object class="GtkImage" id="image12">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">face-sad</property>
-  </object>
-  <object class="GtkImage" id="image13">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-favorite</property>
-  </object>
-  <object class="GtkImage" id="image14">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-documents</property>
-  </object>
-  <object class="GtkImage" id="image15">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-downloads</property>
-  </object>
-  <object class="GtkImage" id="image16">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">start-here</property>
-  </object>
-  <object class="GtkImage" id="image17">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">applications-multimedia</property>
-  </object>
-  <object class="GtkImage" id="image18">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-display</property>
-  </object>
-  <object class="GtkImage" id="image19">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">applications-internet</property>
-  </object>
-  <object class="GtkImage" id="image20">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-x-generic</property>
-  </object>
-  <object class="GtkImage" id="image21">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">mail-send</property>
-  </object>
-  <object class="GtkImage" id="image22">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">mail-send</property>
-  </object>
-  <object class="GtkImage" id="image23">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">mail-send</property>
-  </object>
-  <object class="GtkImage" id="image24">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-favorite</property>
-  </object>
-  <object class="GtkImage" id="image25">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-display</property>
-  </object>
-  <object class="GtkImage" id="image26">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">applications-internet</property>
-  </object>
-  <object class="GtkImage" id="image27">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-x-generic</property>
-  </object>
-  <object class="GtkImage" id="image28">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-  </object>
-  <object class="GtkImage" id="image29">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">application-exit</property>
-  </object>
-  <object class="GtkImage" id="image30">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-favorite</property>
-  </object>
-  <object class="GtkMenu" id="detailsmenu">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <child>
-      <object class="GtkImageMenuItem" id="details">
-        <property name="label" translatable="yes">Show video details</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="tooltip_text" translatable="yes">(CTRL+D)</property>
-        <property name="image">image8</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="show_details_window" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="menuitem9">
-        <property name="label" translatable="yes">Comments / Ratings</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image30</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="show_feeds_window" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkSeparatorMenuItem" id="separator">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="queue_playback">
-        <property name="label" translatable="yes">Add to playback queue</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image9</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="queue_playback" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="menuitem1">
-        <property name="label" translatable="yes">Play videos from queue</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image10</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="play_videos_from_queue" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="play_all_videos">
-        <property name="label" translatable="yes">Play all video results</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image16</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="play_all_video_results" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkSeparatorMenuItem" id="menuitem2">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="play_in_new_term">
-        <property name="label" translatable="yes">Play it in a new terminal</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image5</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="play_selected_video_with_cli_youtube_viewer" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="download_video">
-        <property name="label" translatable="yes">Download Youtube video</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image15</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="download_video" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="open_youtube">
-        <property name="label" translatable="yes">Open the YouTube website</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image7</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="open_youtube_url" swapped="no"/>
-      </object>
-    </child>
-  </object>
-  <object class="GtkImage" id="image31">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">applications-internet</property>
-  </object>
-  <object class="GtkImage" id="image32">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-x-generic</property>
   </object>
   <object class="GtkWindow" id="feeds_window">
     <property name="can_focus">False</property>
@@ -2600,7 +2397,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                           <object class="GtkVButtonBox" id="vbuttonbox4">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="layout_style">end</property>
                             <child>
                               <object class="GtkButton" id="button24">
                                 <property name="label" translatable="yes">Add video to favorites</property>
@@ -2644,16 +2440,15 @@ When the specified resolution is not found, it falls down to a lower resolution.
                           <object class="GtkVButtonBox" id="vbuttonbox3">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="layout_style">end</property>
                             <child>
-                              <object class="GtkButton" id="button15">
-                                <property name="label" translatable="yes">Show related videos</property>
+                              <object class="GtkButton" id="button20">
+                                <property name="label" translatable="yes">Get videos from this user</property>
                                 <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
-                                <property name="image">image32</property>
-                                <signal name="clicked" handler="show_related_videos" swapped="no"/>
+                                <property name="image">image56</property>
+                                <signal name="clicked" handler="show_more_videos_from_username" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -2662,14 +2457,14 @@ When the specified resolution is not found, it falls down to a lower resolution.
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="button20">
-                                <property name="label" translatable="yes">More videos from this user</property>
+                              <object class="GtkButton" id="button13">
+                                <property name="label" translatable="yes">Get user's favorited videos</property>
                                 <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
-                                <property name="image">image56</property>
-                                <signal name="clicked" handler="show_more_videos_from_username" swapped="no"/>
+                                <property name="image">image74</property>
+                                <signal name="clicked" handler="get_user_favorited_videos" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -2688,16 +2483,15 @@ When the specified resolution is not found, it falls down to a lower resolution.
                           <object class="GtkVButtonBox" id="vbuttonbox1">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="layout_style">end</property>
                             <child>
-                              <object class="GtkButton" id="button13">
-                                <property name="label" translatable="yes">See YouTube user's channel</property>
+                              <object class="GtkButton" id="button15">
+                                <property name="label" translatable="yes">Show related videos</property>
                                 <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
-                                <property name="image">image70</property>
-                                <signal name="clicked" handler="goto_youtube_user_profile" swapped="no"/>
+                                <property name="image">image73</property>
+                                <signal name="clicked" handler="show_related_videos" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -2723,8 +2517,8 @@ When the specified resolution is not found, it falls down to a lower resolution.
                             </child>
                           </object>
                           <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
                             <property name="position">2</property>
                           </packing>
                         </child>
@@ -2799,6 +2593,210 @@ When the specified resolution is not found, it falls down to a lower resolution.
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkWindow" id="help_window">
+    <property name="can_focus">False</property>
+    <property name="title" translatable="yes">Help</property>
+    <property name="window_position">center-on-parent</property>
+    <property name="default_width">480</property>
+    <property name="default_height">400</property>
+    <property name="transient_for">__MAIN__</property>
+    <signal name="destroy" handler="hide_help_window" swapped="no"/>
+    <signal name="delete-event" handler="hide_help_window" swapped="no"/>
+    <child>
+      <object class="GtkVBox" id="vbox251">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <child>
+          <object class="GtkScrolledWindow" id="scrolledwindow3">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="hscrollbar_policy">automatic</property>
+            <property name="vscrollbar_policy">automatic</property>
+            <child>
+              <object class="GtkTextView" id="textview2">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="pixels_below_lines">1</property>
+                <property name="indent">3</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHButtonBox" id="hbuttonbox4">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="spacing">5</property>
+            <property name="homogeneous">True</property>
+            <property name="layout_style">end</property>
+            <child>
+              <object class="GtkButton" id="button19">
+                <property name="label">gtk-about</property>
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+                <signal name="clicked" handler="show_about_window" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="button28">
+                <property name="label">gtk-close</property>
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+                <signal name="clicked" handler="hide_help_window" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="pack_type">end</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkImage" id="icon_from_pixbux">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-missing-image</property>
+  </object>
+  <object class="GtkImage" id="image10">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">media-playback-start</property>
+  </object>
+  <object class="GtkImage" id="image11">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">face-smile-big</property>
+  </object>
+  <object class="GtkImage" id="image12">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">face-sad</property>
+  </object>
+  <object class="GtkImage" id="image13">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">emblem-favorite</property>
+  </object>
+  <object class="GtkImage" id="image14">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">emblem-documents</property>
+  </object>
+  <object class="GtkImage" id="image15">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">emblem-downloads</property>
+  </object>
+  <object class="GtkImage" id="image16">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">start-here</property>
+  </object>
+  <object class="GtkImage" id="image17">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">applications-multimedia</property>
+  </object>
+  <object class="GtkImage" id="image18">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">video-display</property>
+  </object>
+  <object class="GtkImage" id="image19">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">applications-internet</property>
+  </object>
+  <object class="GtkImage" id="image20">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">video-x-generic</property>
+  </object>
+  <object class="GtkImage" id="image21">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">mail-send</property>
+  </object>
+  <object class="GtkImage" id="image22">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">mail-send</property>
+  </object>
+  <object class="GtkImage" id="image23">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">mail-send</property>
+  </object>
+  <object class="GtkImage" id="image24">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">emblem-favorite</property>
+  </object>
+  <object class="GtkImage" id="image25">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">video-display</property>
+  </object>
+  <object class="GtkImage" id="image26">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">applications-internet</property>
+  </object>
+  <object class="GtkImage" id="image27">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">video-x-generic</property>
+  </object>
+  <object class="GtkImage" id="image28">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+  </object>
+  <object class="GtkImage" id="image29">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">application-exit</property>
+  </object>
+  <object class="GtkImage" id="image30">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">emblem-favorite</property>
+  </object>
+  <object class="GtkImage" id="image31">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">applications-internet</property>
+  </object>
+  <object class="GtkImage" id="image32">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">video-x-generic</property>
   </object>
   <object class="GtkImage" id="image33">
     <property name="visible">True</property>
@@ -2998,12 +2996,27 @@ When the specified resolution is not found, it falls down to a lower resolution.
   <object class="GtkImage" id="image70">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="icon_name">applications-internet</property>
+    <property name="icon_name">emblem-documents</property>
   </object>
   <object class="GtkImage" id="image71">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">list-add</property>
+  </object>
+  <object class="GtkImage" id="image72">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">emblem-documents</property>
+  </object>
+  <object class="GtkImage" id="image73">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">video-x-generic</property>
+  </object>
+  <object class="GtkImage" id="image74">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">emblem-favorite</property>
   </object>
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>
