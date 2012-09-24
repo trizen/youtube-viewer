@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 23 September 2012
+#  Latest edit on: 24 September 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -211,6 +211,7 @@ my %CONFIG = (
     auth_key             => undef,
     thousand_separator   => q{,},
     downloads_folder     => curdir(),
+    keep_original_video  => 0,
     ffmpeg_command       => 'ffmpeg -i %s %s',
     convert_to           => undef,
 );
@@ -470,11 +471,13 @@ Other options:
    -I  --non-interactive: do not prompt for the first user input
    -q  --quiet          : do not display any warning
    --convert-to=FORMAT  : convert video to a specific format (with -d)
+   --ffmpeg-command=s   : ffmpeg command for converting videos after download
+   --keep-original      : keep the original video after converting
    --really-quiet       : do not display any warning or output
    --comments=ID/URL    : show comments for a YouTube video
    --get-title=ID/URL   : get and print the title for a video
    --get-desc=ID/URL    : get and print the description for a video
-   --gdata-url=s        : print video results from a valid gdata URL
+   --gdata-url=s        : print video results from a valid GData URL
    --get-term-width     : adjust the text for your terminal width
    --login              : will prompt you for login
    --clobber            : overwrite an existent video (with -d)
@@ -905,6 +908,8 @@ sub parse_arguments {
         'hd|high-definition!'      => \$opt{hd},
         'I|non-interactive'        => \$opt{non_interactive},
         'convert-to|convert_to=s'  => \$opt{convert_to},
+        'ffmpeg-command=s'         => \$opt{ffmpeg_command},
+        'keep-original-video!'     => \$opt{keep_original_video},
 
         # MPlayer
         'mplayer=s'                                          => \$opt{mplayer},
@@ -2117,7 +2122,7 @@ sub download_video {
 
     $title = catfile($opt{downloads_folder}, $title);
 
-    if (defined $CONFIG{download_with_wget} and not $opt{lwp_downloading}) {
+    if ($CONFIG{download_with_wget} and not $opt{lwp_downloading}) {
         system "wget", ($opt{clobber} ? () : q{-nc}), $streaming->{streaming}{url}, q{-O}, $title;
         return if $?;
     }
@@ -2128,8 +2133,17 @@ sub download_video {
     if (defined $opt{convert_to}) {
         my $output = $title;
         $output =~ s/\.\w{2,5}$//;
-        my $ffmpeg = sprintf($CONFIG{ffmpeg_command}, $title, "$output.$opt{convert_to}");
-        system get_quotewords(qr/\s+/, 1, $ffmpeg);
+
+        my $new_file = "$output.$opt{convert_to}";
+        my $ffmpeg = sprintf($opt{ffmpeg_command}, map { s/"/\\"/g; qq{"$_"} }
+                               map { rel2abs($_) } $title, $new_file);
+        say $ffmpeg if $yv_obj->get_debug;
+        system $ffmpeg;
+
+        if (not $? and not $opt{keep_original_video}) {
+            unlink $title
+              or warn_cant_do('unlink', $title);
+        }
     }
 
     return 1;
