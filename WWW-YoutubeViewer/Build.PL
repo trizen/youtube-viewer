@@ -75,12 +75,12 @@ if ($gtk_youtube_viewer) {
     my $main_share_dir = catdir($main_dir, qw(share));
 
     my $share_dir                = catdir($dest_dir,               qw(usr share));
+    my $pixmaps_dir              = catdir($dest_dir,               qw(pixmaps));
     my $applications_dir         = catdir($share_dir,              qw(applications));
     my $gtk_youtube_viewer_dir   = catdir($share_dir,              qw(gtk-youtube-viewer));
     my $gtk_youtube_viewer_icons = catdir($gtk_youtube_viewer_dir, qw(icons));
-    my $icons_dir                = catdir($share_dir,              qw(icons));
 
-    if (my @dirs_to_create = grep({not -d} $gtk_youtube_viewer_icons, $applications_dir, $icons_dir)) {
+    if (my @dirs_to_create = grep({not -d} $gtk_youtube_viewer_icons, $applications_dir, $pixmaps_dir)) {
         make_path(
                   @dirs_to_create,
                   {
@@ -103,7 +103,7 @@ if ($gtk_youtube_viewer) {
     foreach my $copy_instructions (
                                    {
                                     icon_dir => 'icons',
-                                    dest_dir => $icons_dir,
+                                    dest_dir => $pixmaps_dir,
                                    },
                                    {
                                     icon_dir => 'gtk-youtube-viewer-icons',
