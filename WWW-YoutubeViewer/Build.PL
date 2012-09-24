@@ -75,7 +75,7 @@ if ($gtk_youtube_viewer) {
     my $main_share_dir = catdir($main_dir, qw(share));
 
     my $share_dir                = catdir($dest_dir,               qw(usr share));
-    my $pixmaps_dir              = catdir($dest_dir,               qw(pixmaps));
+    my $pixmaps_dir              = catdir($share_dir,              qw(pixmaps));
     my $applications_dir         = catdir($share_dir,              qw(applications));
     my $gtk_youtube_viewer_dir   = catdir($share_dir,              qw(gtk-youtube-viewer));
     my $gtk_youtube_viewer_icons = catdir($gtk_youtube_viewer_dir, qw(icons));
