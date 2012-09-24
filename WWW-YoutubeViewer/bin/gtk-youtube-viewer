@@ -722,7 +722,7 @@ sub set_auth_key {
     my ($auth_key) = @_;
     $yv_obj->set_auth_key($auth_key) or return;
     change_subscription_page(1);
-    $statusbar->push(1, "Logged...");
+    $statusbar->push(1, "Logged.");
     return 1;
 }
 
@@ -1090,7 +1090,7 @@ sub log_out {
     undef $CONFIG{auth_key};
     dump_configuration();
     $yv_obj->set_auth_key();
-    $statusbar->push(1, "Not logged");
+    $statusbar->push(1, "Not logged.");
     return 1;
 }
 
@@ -1252,7 +1252,7 @@ sub _get_pixbuf_thumbnail {
     my $thumbnail =
       $CONFIG{use_threads_for_thumbs}
       ? threads_lwp_get($url)
-      : $yv_obj->{lwp}->get($url)->content;
+      : $yv_obj->lwp_get($url);
 
     my $pixbuf;
     if ($thumbnail) {
@@ -2085,18 +2085,10 @@ sub set_video_details {
     $linkbutton->set_label($url);
     $linkbutton->set_uri($url);
 
-    if ($CONFIG{search_playlists}) {
-        foreach my $nr (qw(1 2 3)) {
-            $gui->get_object("image$nr")->set_from_pixbuf($default_thumb);
-        }
-    }
-    else {
-
-        # Getting thumbs
-        foreach my $nr (qw(1 2 3)) {
-            my $pixbuf = _get_pixbuf_thumbnail(sprintf($CONFIG{thumb_url}, $code, $nr));
-            $gui->get_object("image$nr")->set_from_pixbuf($pixbuf);
-        }
+    # Getting thumbs
+    foreach my $nr (qw(1 2 3)) {
+        my $pixbuf = _get_pixbuf_thumbnail(sprintf($CONFIG{thumb_url}, $code, $nr));
+        $gui->get_object("image$nr")->set_from_pixbuf($pixbuf);
     }
 
     # Setting textview description
