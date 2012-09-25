@@ -2221,11 +2221,7 @@ sub print_video_info {
 
     print STDOUT sprintf($CONFIG{youtube_video_url}, $info->{videoID});
 
-    my $title_length = do {
-
-        #use bytes;
-        length($info->{title});
-    };
+    my $title_length = length($info->{title});
 
     print "\n$constant{dash_line}\n",
       q{ } x ((length($constant{dash_line}) - $title_length) / 2 - 4) => (_bold_color("=>> $info->{title} <<=") . "\n\n"),
