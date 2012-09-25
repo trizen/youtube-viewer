@@ -318,7 +318,7 @@ my $valid_playlist_id_re = qr{^(?:PL)?([A-Z0-9]{16})\z};
 my $valid_video_id_re    = qr{^[0-9A-Za-z_\-]{11}\z};
 my $get_video_id_re      = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)([0-9A-Za-z_\-]{11})};
 my $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)(?:PL)?([A-Z0-9]{16})\b};
-my $valid_username_re    = qr{^(?:\w+|(?:\w+[-.]+\w+)+)\z};
+my $valid_username_re    = qr{^(?:\w+(?:[-.]++\w++)*)\z};
 
 {
     my $i = length $key;

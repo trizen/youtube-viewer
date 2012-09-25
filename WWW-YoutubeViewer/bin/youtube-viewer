@@ -159,7 +159,7 @@ my $valid_playlist_id_re = qr{^(?:PL)?([A-Z0-9]{16})\z};
 my $valid_video_id_re    = qr{^[0-9A-Za-z_\-]{11}\z};
 my $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)(?:PL)?([A-Z0-9]{16})\b};
 my $valid_opt_re         = qr{^[$opt_begin_chars]([A-Za-z]++(?:-[A-Za-z]++)?(?>${digit_or_equal_re}.*)?)$};
-my $valid_username_re    = qr{^(?:\w+|(?:\w+[-.]+\w+)+)\z};
+my $valid_username_re    = qr{^(?:\w+(?:[-.]++\w++)*)\z};
 
 # Main configuration
 my %CONFIG = (

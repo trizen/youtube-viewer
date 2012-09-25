@@ -47,7 +47,7 @@ my %valid_options = (
 
     # Main options
     v           => {valid => [],                                         default => 2},
-    page        => {valid => [qr/^(\d+)(?(?{$1==0})(?!))$/],             default => 1},
+    page        => {valid => [qr/^(?!0+\z)(\d+)\z/],                     default => 1},
     results     => {valid => [1 .. 50],                                  default => 10},
     hd          => {valid => [qw(true)],                                 default => undef},
     caption     => {valid => [qw(true false)],                           default => undef},
@@ -63,7 +63,7 @@ my %valid_options = (
     lwp_timeout => {valid => [qr/^\d+$/],                       default => 60},
     auth_key    => {valid => [qr/^.{5}/],                       default => undef},
     key         => {valid => [qr/^.{5}/],                       default => undef},
-    author      => {valid => [qr{^(?:\w+|(?:\w+[-.]+\w+)+)\z}], default => undef},
+    author      => {valid => [qr{^(?:\w+(?:[-.]++\w++)*)\z}],   default => undef},
     app_version => {valid => [qr/^\d/],                         default => $VERSION},
     app_name    => {valid => [qr/^./],                          default => 'Youtube Viewer'},
 
