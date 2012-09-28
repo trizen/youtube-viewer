@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 24 September 2012
+#  Latest edit on: 28 September 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -406,13 +406,13 @@ Base Options:
 
 YouTube options:
    -t  --tops           : show today YouTube video tops
-   -t=all --tops=all    : show all time YouTube video tops
-   -r --region=ID       : list top videos for a specific region
+       --tops=all       : show all time YouTube video tops
+   -r  --region=ID      : list top videos for a specific region
    -M  --movies         : show YouTube category of movies
    -c  --categories     : show available YouTube categories
    -hl --catlang=s      : language for categories (default: en-US)
    -p  --playlists      : search for playlists of videos
-   -p=ID --playlist=ID  : list a playlist of videos by playlistID
+       --playlist=ID    : list a playlist of videos by playlistID
    -u  --user=s         : list videos uploaded by a specific user
    -up --user-pl=s      : list playlists created by a specific user
    -uf --user-fav=s     : list the videos favorited by a specific user
@@ -447,43 +447,48 @@ YouTube options:
    --dislike=ID/URL     : send a 'dislike' rating to one or more videos *
 
 MPlayer options:
-   -f  --fullscreen     : set the fullscreen mode for mplayer (-fs)
-   -n  --novideo        : play the music only without a video in the foreground
-   -l  --lower-cache    : use a lower cache for MPlayer (for slow connections)
-   -cache=i             : set the cache for MPlayer (set: $CONFIG{cache})
-   -cache-min=i         : set the cache-min for MPlayer (set: $CONFIG{cache_min})
-   -lcache=i            : set the lower-cache for MPlayer (set: $CONFIG{lower_cache})
-   -lcache-min=i        : set the lower-cache-min for MPlayer (set: $CONFIG{lower_cache_min})
-   -mplayer=s           : set a media player (set: $CONFIG{mplayer})
-   -mplayer_arguments=s : replace default arguments for the media player
-   -append_mplayer=s    : add some arguments for the media player
+   -f  --fullscreen!    : set the fullscreen mode for mplayer (-fs)
+   -n  --novideo!       : play the music only without a video in the foreground
+   -l  --use-lc         : use a lower cache for MPlayer (for slow connections)
+   --cache=i            : set the cache for MPlayer (set: $opt{cache})
+   --cache-min=i        : set the cache-min for MPlayer (set: $opt{cache_min})
+   --lcache=i           : set the lower-cache for MPlayer (set: $opt{lower_cache})
+   --lcache-min=i       : set the lower-cache-min for MPlayer (set: $opt{lower_cache_min})
+   --mplayer=s          : set a media player (set: $opt{mplayer})
+   --mplayer-args=s     : replace the arguments for the media player
+   --mplayer-srt-args=s : replace the subtitle arguments for the media player
+   --append-mplayer=s   : add some arguments for the media player
 
 Other options:
-   -d  --download       : download the video(s)
+   -d  --download!      : download the video(s)
    -i  --info=ID/URL    : show video informations for a videoID or URL
-   -A  --all            : play all the video results in order
-   -s  --shuffle        : shuffle the playlist before playing (with -A)
-   -C  --colors         : use colors to delimit the video results
-   -D  --details        : a new look for the results, with more details
-   -L  --lwp-download   : download the videos with LWP (default: wget)
+   -A  --all!           : play all the video results in order
+   -s  --shuffle!       : shuffle the playlist before playing (with -A)
+   -C  --colorful!      : use colors to delimit the video results
+   -D  --details!       : a new look for the results, with more details
+   -L  --lwp-download!  : download the videos with LWP (default: wget)
    -U  --update-config  : update the configuration file before exit
    -N  --noconfig       : start the $appname with the default config
    -I  --non-interactive: do not prompt for the first user input
    -q  --quiet          : do not display any warning
+   --really-quiet       : do not display any warning or output
+   --use-colors!        : use ANSI colors for text
    --convert-to=FORMAT  : convert video to a specific format (with -d)
    --ffmpeg-command=s   : ffmpeg command for converting videos after download
-   --keep-original      : keep the original video after converting
-   --really-quiet       : do not display any warning or output
+   --keep-original!     : keep the original video after converting
    --comments=ID/URL    : show comments for a YouTube video
    --get-title=ID/URL   : get and print the title for a video
    --get-desc=ID/URL    : get and print the description for a video
+   --gcap=s             : set the full path to the gcap script
+   --get-captions!      : download the closed captions (with gcap)
+   --captions-dir=s     : the directory where to download the .srt files
    --gdata-url=s        : print video results from a valid GData URL
    --get-term-width     : adjust the text for your terminal width
    --login              : will prompt you for login
    --clobber            : overwrite an existent video (with -d)
-   --skip-if-exists     : don't download videos which already exists (with -d)
-   --prefer-https       : use the HTTPS protocol instead of the HTTP protocol
-   --downloads-dir      : downloads directory (set: '$CONFIG{downloads_folder}')
+   --skip-if-exists!    : don't download videos which already exists (with -d)
+   --prefer-https!      : use the HTTPS protocol instead of the HTTP protocol
+   --downloads-dir=s    : downloads directory (set: '$opt{downloads_folder}')
 
 Help options:
    -T  --tricks         : show more 'hidden' features of $appname
@@ -495,7 +500,7 @@ Help options:
 
 NOTE:
     * == requires authentication
-    -no-[argv] will negate the value of the argument (e.g.: -no-fullscreen)
+    --no-[argv] will negate the value of the argument (e.g.: --no-fullscreen)
 
 HELP
     main_quit(0);
@@ -538,7 +543,7 @@ NOTE: Categories and region IDs are case sensitive!
 1. To stream the videos in other players, you need to change the
    configuration file. You can execute '$execname -mplayer=vlc' for
    example, but the mplayer arguments doesn't work for vlc.
-   The full command should be: $execname -mplayer=vlc -mplayer-arg=' '
+   The full command should be: $execname -mplayer=vlc -mplayer-arg=-q
 
 2. Available resolutions: original, 1080, 720, 480, 360, 340, 240, 144
    1080 = mp4
@@ -896,9 +901,9 @@ sub parse_arguments {
         'like=s'                     => \$opt{like_video},
         'dislike=s'                  => \$opt{dislike_video},
         'author=s'                   => \$opt{author},
-        'all|A!'                     => \$opt{play_all},
-        'colors|colored!'            => \$opt{colors},
-        'prefer_https|prefer-https!' => \$opt{prefer_https},
+        'all|A|play-all!'            => \$opt{play_all},
+        'use-colors|colors|colored!' => \$opt{colors},
+        'prefer-https|prefer_https!' => \$opt{prefer_https},
 
         'noconfig|N'               => \$opt{noconfig},
         'playlists|p:s'            => \$opt{search_playlists},
@@ -912,14 +917,15 @@ sub parse_arguments {
         'keep-original-video!'     => \$opt{keep_original_video},
 
         # MPlayer
-        'mplayer=s'                                          => \$opt{mplayer},
-        'cache=i'                                            => \$opt{cache},
-        'cache-min|cache_min=i'                              => \$opt{cache_min},
-        'lcache|lower-cache|lower_cache=i'                   => \$opt{lower_cache},
-        'lcache-minlower-cache-min|lower_cache_min=i'        => \$opt{lower_cache_min},
-        'l|use-lower-cache|ulc|use_lower_cache!'             => \$opt{use_lower_cache},
-        'append_mplayer|append-mplayer=s'                    => \$MPLAYER{other_args},
-        'mplayer_arguments|mplayer-args|mplayer-arguments=s' => \$opt{mplayer_arguments},
+        'mplayer=s'                                                 => \$opt{mplayer},
+        'cache=i'                                                   => \$opt{cache},
+        'cache-min|cache_min=i'                                     => \$opt{cache_min},
+        'lcache|lower-cache|lower_cache=i'                          => \$opt{lower_cache},
+        'lcache-minlower-cache-min|lower_cache_min=i'               => \$opt{lower_cache_min},
+        'use-lower-cache|l|use_lower_cache|use-lc!'                 => \$opt{use_lower_cache},
+        'append_mplayer|append-mplayer=s'                           => \$MPLAYER{other_args},
+        'mplayer_arguments|mplayer-args|mplayer-arguments=s'        => \$opt{mplayer_arguments},
+        'mplayer_srt_args|mplayer-srt-arguments|mplayer-srt-args=s' => \$opt{mplayer_srt_args},
 
         # Others
         'colorful|C!'      => \$opt{results_with_colors},
@@ -937,13 +943,16 @@ sub parse_arguments {
         'shuffle|s!'         => \$opt{shuffle_playlist},
         'more|m!'            => \$opt{more_results},
         'gdata-url=s'        => \$opt{get_gdata_url},
+        'gcap=s'             => \$opt{gcap},
 
         'quiet|q!'      => \$opt{quiet},
         'really-quiet!' => \$opt{really_quiet},
 
+        'thousand-separator=s'           => \$opt{thousand_separator},
+        'captions-dir|captions_dir=s'    => \$opt{captions_dir},
         'skip-if-exists|skip_if_exists!' => \$opt{skip_if_exists},
 
-        'downloads_folder|downloads-folder|download-dir|downloads-dir=s' => \$opt{downloads_folder},
+        'downloads-dir|downloads_folder|downloads-folder|download-dir=s' => \$opt{downloads_folder},
     );
 
     apply_configuration(\%opt, $keywords);
@@ -2047,7 +2056,7 @@ sub get_streaming_url {
     }
 
     # Download the closed-captions
-    if ($has_cc and $CONFIG{get_captions} and defined $CONFIG{gcap} and not $opt{novideo}) {
+    if ($has_cc and $opt{get_captions} and defined $opt{gcap} and not $opt{novideo}) {
         $srt_file = download_caption($video_id);
     }
 
@@ -2069,8 +2078,8 @@ sub get_streaming_url {
 sub update_mplayer_arguments {
     my ($resolution) = @_;
 
-    if (   $opt{use_lower_cache}
-        or $resolution < 720) {
+    if ($opt{use_lower_cache}
+        or not $resolution ~~ [qw(original 1080 720)]) {
         set_mplayer_arguments($opt{lower_cache}, $opt{lower_cache_min});
     }
     else {
@@ -2122,7 +2131,7 @@ sub download_video {
 
     $title = catfile($opt{downloads_folder}, $title);
 
-    if ($CONFIG{download_with_wget} and not $opt{lwp_downloading}) {
+    if ($opt{download_with_wget} and not $opt{lwp_downloading}) {
         system "wget", ($opt{clobber} ? () : q{-nc}), $streaming->{streaming}{url}, q{-O}, $title;
         return if $?;
     }
@@ -2142,7 +2151,7 @@ sub download_video {
 
         if (not $? and not $opt{keep_original_video}) {
             unlink $title
-              or warn colored("[!] Can't unlink file '$title': $!", 'bold red'). "\n\n";
+              or warn colored("[!] Can't unlink file '$title': $!", 'bold red') . "\n\n";
         }
     }
 
@@ -2185,10 +2194,10 @@ sub play_videos {
                                   $opt{mplayer},
                                   (
                                    defined $streaming->{srt_file}
-                                   ? sprintf($CONFIG{mplayer_srt_args}, $streaming->{srt_file})
-                                   : q{}
+                                   ? sprintf($opt{mplayer_srt_args}, $streaming->{srt_file})
+                                   : ()
                                   ),
-                                  grep({ defined and $_ ne q{} } values %MPLAYER),
+                                  grep({defined and /\S/} values %MPLAYER),
                                  )
                             );
 
@@ -2528,9 +2537,9 @@ sub set_thousands {    # ugly, but fast
     my $n = shift;
     my $l = length($n) - 3;
     my $i = ($l - 1) % 3 + 1;
-    my $x = substr($n, 0, $i) . $CONFIG{thousand_separator};
+    my $x = substr($n, 0, $i) . $opt{thousand_separator};
     while ($i < $l) {
-        $x .= substr($n, $i, 3) . $CONFIG{thousand_separator};
+        $x .= substr($n, $i, 3) . $opt{thousand_separator};
         $i += 3;
     }
     $x . substr($n, $i);
@@ -2581,18 +2590,18 @@ sub download_caption {
 
     my $main_cwd = rel2abs(curdir());
 
-    if (not -d $CONFIG{captions_dir}) {
+    if (not -d $opt{captions_dir}) {
         require File::Path;
-        File::Path::make_path($CONFIG{captions_dir}) or do {
-            warn "[!] Can't create directory $CONFIG{captions_dir}: $!\n";
+        File::Path::make_path($opt{captions_dir}) or do {
+            warn "[!] Can't create directory $opt{captions_dir}: $!\n";
             return;
         };
     }
     elsif (not -w _) {
-        warn "[!] Can't write into directory: $CONFIG{captions_dir}\n";
+        warn "[!] Can't write into directory: $opt{captions_dir}\n";
     }
 
-    chdir $CONFIG{captions_dir};
+    chdir $opt{captions_dir};
 
     my $i = 0;
     my $srt_file;
@@ -2617,7 +2626,7 @@ sub download_caption {
             }
 
             if (not defined $srt_file) {
-                system $^X, $CONFIG{gcap}, "http://youtube.com/v/$code";
+                system $^X, $opt{gcap}, "http://youtube.com/v/$code";
                 if ($? == 0 and not $i++) {
                     redo;
                 }

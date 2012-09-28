@@ -59,13 +59,13 @@ my %valid_options = (
     safe_search => {valid => [qw(strict moderate none)],                 default => undef},
 
     # Others
-    debug       => {valid => [0 .. 2],                          default => 0},
-    lwp_timeout => {valid => [qr/^\d+$/],                       default => 60},
-    auth_key    => {valid => [qr/^.{5}/],                       default => undef},
-    key         => {valid => [qr/^.{5}/],                       default => undef},
-    author      => {valid => [qr{^(?:\w+(?:[-.]++\w++)*)\z}],   default => undef},
-    app_version => {valid => [qr/^\d/],                         default => $VERSION},
-    app_name    => {valid => [qr/^./],                          default => 'Youtube Viewer'},
+    debug       => {valid => [0 .. 2],                        default => 0},
+    lwp_timeout => {valid => [qr/^\d+$/],                     default => 60},
+    auth_key    => {valid => [qr/^.{5}/],                     default => undef},
+    key         => {valid => [qr/^.{5}/],                     default => undef},
+    author      => {valid => [qr{^(?:\w+(?:[-.]++\w++)*)\z}], default => undef},
+    app_version => {valid => [qr/^\d/],                       default => $VERSION},
+    app_name    => {valid => [qr/^./],                        default => 'Youtube Viewer'},
 
     categories_language => {valid => [qr/^[a-z]++-\w/], default => 'en-US'},
 
@@ -330,11 +330,7 @@ sub get_content {
     my ($self, $url, %opts) = @_;
 
     my $hash;
-    eval {
-        $hash = xml2hash($self->lwp_get($url)
-        // return undef)
-        // return undef;
-    };
+    eval { $hash = xml2hash($self->lwp_get($url) // return undef) // return undef; };
 
     if ($@) {
         if ($@ =~ /^Can't locate (\S+)\.pm\b/) {
@@ -622,8 +618,8 @@ sub _get_pairs_from_info_data {
         ++$i;
     }
 
-    foreach my $hash_ref(@array){
-        if(exists $hash_ref->{url} and exists $hash_ref->{sig}){
+    foreach my $hash_ref (@array) {
+        if (exists $hash_ref->{url} and exists $hash_ref->{sig}) {
             $hash_ref->{url} .= "&signature=$hash_ref->{sig}";
         }
     }

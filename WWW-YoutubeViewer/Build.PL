@@ -1,4 +1,6 @@
-use 5.006;
+#!/usr/bin/perl
+
+use 5.010;
 use strict;
 use warnings;
 use Module::Build;
@@ -66,11 +68,11 @@ $builder->create_build_script();
 if ($gtk_youtube_viewer) {
 
     use File::Basename qw(dirname);
-    use File::Spec::Functions qw(rel2abs catfile catdir);
+    use File::Spec::Functions qw(rel2abs catfile catdir rootdir);
     use File::Copy qw(copy);
     use File::Path qw(make_path);
 
-    my $dest_dir       = $builder->destdir;
+    my $dest_dir       = $builder->destdir // rootdir();
     my $main_dir       = dirname(rel2abs($0));
     my $main_share_dir = catdir($main_dir, qw(share));
 

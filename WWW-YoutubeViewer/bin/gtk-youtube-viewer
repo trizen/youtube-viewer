@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 24 September 2012
+#  Latest edit on: 28 September 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -219,16 +219,16 @@ foreach my $sig (qw(HUP TERM INT KILL)) {
     $SIG{$sig} = \&on_mainw_destroy;
 }
 
-# Locate glade interface
+# Locating the .glade interface file and icons dir
 my ($interface_path, $icons_path);
 if (-f (my $glade_file = catfile(updir(), 'share', "$execname.glade"))) {
     $interface_path = rel2abs($glade_file);
     $icons_path = catdir(dirname($interface_path), 'gtk-youtube-viewer-icons');
 }
 else {
-    foreach my $usr_dir (qw(/usr /usr/local)) {
-        if (-e ($interface_path = "$usr_dir/share/$execname/$execname.glade")) {
-            $icons_path = "$usr_dir/share/$execname/icons";
+    foreach my $usr_dir (qw(/usr /usr/local . ..)) {
+        if (-e ($interface_path = catfile($usr_dir, 'share', $execname, "$execname.glade"))) {
+            $icons_path = catdir($usr_dir, 'share', $execname, 'icons');
             last;
         }
     }
@@ -1595,8 +1595,8 @@ sub get_streaming_url {
 sub update_mplayer_arguments {
     my ($resolution) = @_;
 
-    if (   $CONFIG{use_lower_cache}
-        or $resolution < 720) {
+    if ($CONFIG{use_lower_cache}
+        or not $resolution ~~ [qw(original 1080 720)]) {
         set_mplayer_arguments($CONFIG{lower_cache}, $CONFIG{lower_cache_min});
     }
     else {
@@ -1637,7 +1637,7 @@ sub play_videos {
                                ? sprintf($CONFIG{mplayer_srt_args}, $streaming->{srt_file})
                                : q{}
                               ),
-                              grep { defined and $_ ne q{} } values %MPLAYER
+                              grep { defined and /\S/ } values %MPLAYER
                              )
                         );
 
