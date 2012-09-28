@@ -107,7 +107,7 @@ require WWW::YoutubeViewer;
 use File::Spec::Functions qw(catdir catfile curdir path rel2abs tmpdir);
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.0.1';
+my $version  = '3.0.2';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
@@ -2142,7 +2142,7 @@ sub download_video {
 
         if (not $? and not $opt{keep_original_video}) {
             unlink $title
-              or warn_cant_do('unlink', $title);
+              or warn colored("[!] Can't unlink file '$title': $!", 'bold red'). "\n\n";
         }
     }
 
@@ -2188,7 +2188,7 @@ sub play_videos {
                                    ? sprintf($CONFIG{mplayer_srt_args}, $streaming->{srt_file})
                                    : q{}
                                   ),
-                                  grep { defined and $_ ne q{} } values %MPLAYER
+                                  grep({ defined and $_ ne q{} } values %MPLAYER),
                                  )
                             );
 

@@ -17,7 +17,7 @@ Version 0.01
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -47,7 +47,7 @@ my %valid_options = (
 
     # Main options
     v           => {valid => [],                                         default => 2},
-    page        => {valid => [qr/^(?!0+\z)(\d+)\z/],                     default => 1},
+    page        => {valid => [qr/^(?!0+\z)\d+\z/],                       default => 1},
     results     => {valid => [1 .. 50],                                  default => 10},
     hd          => {valid => [qw(true)],                                 default => undef},
     caption     => {valid => [qw(true false)],                           default => undef},
@@ -620,6 +620,12 @@ sub _get_pairs_from_info_data {
             $array[$i]->{$key} = uri_unescape($value);
         }
         ++$i;
+    }
+
+    foreach my $hash_ref(@array){
+        if(exists $hash_ref->{url} and exists $hash_ref->{sig}){
+            $hash_ref->{url} .= "&signature=$hash_ref->{sig}";
+        }
     }
 
     return @array;
