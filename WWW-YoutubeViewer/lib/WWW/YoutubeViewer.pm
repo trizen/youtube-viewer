@@ -13,7 +13,7 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
@@ -976,7 +976,7 @@ Favorite a video. Returns true on success.
 
 =item full_gdata_arguments()
 
-Returns a string with all GData arguments.
+Returns a string with all the GData arguments.
 
 =item get_app_name()
 
@@ -1018,6 +1018,7 @@ Returns the category value.
 
 Return a hash reference containing the URL and RESULTS:
     {url => '...', results => [...]}
+
 Valid %opts:
     playlists => 1, comments => 1, videos => 1, channels => 1
 
@@ -1039,7 +1040,7 @@ Returns the latest favorited videos by a username.
 
 =item get_favorites(;$user)
 
-Returns the latest favorited videos, for the current logged user.
+Returns the latest favorited videos for the current logged user.
 
 =item get_feeds_url()
 
@@ -1293,7 +1294,7 @@ Set a category value. (ex: 'Music')
 
 =item set_debug($bool)
 
-Set the debug mode. 1 for true.
+Set the debug level. (available: 0, 1, 2)
 
 =item set_duration($duration_id)
 
