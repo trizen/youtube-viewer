@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 28 September 2012
+#  Latest edit on: 29 September 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -369,7 +369,7 @@ my $yv_obj = WWW::YoutubeViewer->new(
             foreach my $id (@_) {
                 my $videoID = get_valid_video_id($id) // next;
                 my $info = $yv_obj->get_video_info($videoID);
-                if (@{$info->{results}}) {
+                if (ref $info and @{$info->{results}}) {
                     say $info->{results}[0]{$name};
                 }
                 else {
@@ -1304,7 +1304,7 @@ sub get_and_play_video_ids {
         my $videoID = get_valid_video_id($id) // next;
         my $info = $yv_obj->get_video_info($videoID);
 
-        if (@{$info->{results}}) {
+        if (ref $info and @{$info->{results}}) {
             if (not play_videos($info->{results})) {
                 return 1;
             }
@@ -1322,7 +1322,7 @@ sub get_and_print_video_info {
         my $videoID = get_valid_video_id($id) // next;
         my $info = $yv_obj->get_video_info($videoID);
 
-        if (@{$info->{results}}) {
+        if (ref $info and @{$info->{results}}) {
             print_video_info($info->{results}[0]);
         }
         else {
@@ -1338,7 +1338,7 @@ sub get_and_print_related_videos {
         my $videoID = get_valid_video_id($id) // next;
         my $info = $yv_obj->get_related_videos($videoID);
 
-        if (@{$info->{results}}) {
+        if (ref $info and @{$info->{results}}) {
             print_videos($info);
         }
         else {
@@ -1362,7 +1362,7 @@ sub get_and_print_videos_from_playlist {
 
     if ($playlistID =~ /$valid_playlist_id_re/) {
         my $info = $yv_obj->get_videos_from_playlist($playlistID);
-        if (@{$info->{results}}) {
+        if (ref $info and @{$info->{results}}) {
             print_videos($info);
         }
         else {
@@ -1530,6 +1530,11 @@ sub get_input_for_categories {
 sub print_channels {
     my ($results) = @_;
 
+    if (ref $results ne 'HASH' or not @{$results->{results}}) {
+        warn colored("\n[!] No channels found...", 'bold red') . "\n";
+        $results = {results => []} unless ref $results;
+    }
+
     my $url      = $results->{url};
     my $channels = $results->{results};
 
@@ -1574,7 +1579,7 @@ sub print_channels {
                 when (['n', 'next']) {
                     if (not $url ~~ $opt{_last_page_urls}) {
                         my $request = $yv_obj->next_page($url, channels => 1);
-                        if (@{$request->{results}}) {
+                        if (ref $request and @{$request->{results}}) {
                             print_channels($request);
                         }
                         else {
@@ -1625,6 +1630,11 @@ sub print_channels {
 sub print_comments {
     my ($videoID, $results) = @_;
 
+    if (ref $results ne 'HASH' or not @{$results->{results}}) {
+        warn colored("\n[!] No comments found...", 'bold red') . "\n";
+        $results = {results => []} unless ref $results;
+    }
+
     my $url      = $results->{url};
     my $comments = $results->{results};
 
@@ -1641,10 +1651,6 @@ $action_options
 $other_options
 $notes_options
 HELP
-
-    if (not @{$comments}) {
-        warn colored("\n[!] No comments found...", 'bold red') . "\n";
-    }
 
     my $i = 0;
     foreach my $comment (@{$comments}) {
@@ -1671,7 +1677,7 @@ HELP
                 when (['n', 'next']) {
                     if (not $url ~~ $opt{_last_page_urls}) {
                         my $request = $yv_obj->next_page($url, comments => 1);
-                        if (@{$request->{results}}) {
+                        if (ref $request and @{$request->{results}}) {
                             print_comments($videoID, $request);
                         }
                         else {
@@ -1871,6 +1877,11 @@ sub print_video_tops {
 sub print_playlists {
     my ($results) = @_;
 
+    if (ref $results ne 'HASH' or not @{$results->{results}}) {
+        warn colored("\n[!] No playlist results!", 'bold red') . "\n";
+        $results = {results => []} unless ref $results;
+    }
+
     my $url       = $results->{url};
     my $playlists = $results->{results};
 
@@ -1931,7 +1942,7 @@ FORMAT
                 when (['n', 'next']) {
                     if (not $url ~~ $opt{_last_page_urls}) {
                         my $request = $yv_obj->next_page($url, playlists => 1);
-                        if (@{$request->{results}}) {
+                        if (ref $request and @{$request->{results}}) {
                             print_playlists($request);
                         }
                         else {
@@ -2151,7 +2162,7 @@ sub download_video {
 
         if (not $? and not $opt{keep_original_video}) {
             unlink $title
-              or warn colored("[!] Can't unlink file '$title': $!", 'bold red') . "\n\n";
+              or warn colored("\n[!] Can't unlink file '$title': $!", 'bold red') . "\n\n";
         }
     }
 
@@ -2254,12 +2265,13 @@ sub print_video_info {
 sub print_videos {
     my ($results, %args) = @_;
 
+    if (ref $results ne 'HASH' or not @{$results->{results}}) {
+        warn colored("\n[!] No video results!", 'bold red') . "\n";
+        $results = {results => []} unless ref $results;
+    }
+
     my $url    = $results->{url};
     my $videos = $results->{results};
-
-    if (not @{$videos}) {
-        warn colored("\n[!] No video results!", 'bold red') . "\n";
-    }
 
     my $num = 0;
     foreach my $video (@{$videos}) {
@@ -2333,7 +2345,7 @@ sub print_videos {
                 when (['n', 'next']) {
                     if (not $url ~~ $opt{_last_page_urls}) {
                         my $request = $yv_obj->next_page($url);
-                        if (@{$request->{results}}) {
+                        if (ref $request and @{$request->{results}}) {
                             print_videos($request, @keywords ? (auto => 1) : ());
                         }
                         else {
@@ -2361,7 +2373,7 @@ sub print_videos {
                         foreach my $id (@nums) {
                             my $username = $videos->[$id]{author};
                             my $request  = $yv_obj->get_videos_from_username($username);
-                            if (@{$request->{results}}) {
+                            if (ref $request and @{$request->{results}}) {
                                 print_videos($request);
                             }
                             else {
@@ -2378,7 +2390,7 @@ sub print_videos {
                         foreach my $id (@nums) {
                             my $username = $videos->[$id]{author};
                             my $request  = $yv_obj->get_playlists_from_username($username);
-                            if (@{$request->{results}}) {
+                            if (ref $request and @{$request->{results}}) {
                                 print_playlists($request);
                             }
                             else {
