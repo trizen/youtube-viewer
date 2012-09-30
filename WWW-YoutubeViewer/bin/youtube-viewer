@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 29 September 2012
+#  Latest edit on: 30 September 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -827,7 +827,7 @@ sub apply_configuration {
 
     if (defined $opt->{get_gdata_url}) {
         my $url = delete $opt->{get_gdata_url};
-        if ($url =~ m{^https?://(?:www\.)?gdata\.youtube\.com/api\b}) {
+        if ($url =~ m{^https?://(?:www\.)?gdata\.youtube\.com/feeds/api/}i) {
             print_videos(
                          {
                           url     => $url,

@@ -109,7 +109,7 @@ my %CONFIG = (
     active_hd_combobox           => 0,
     active_caption_combobox      => 0,
     active_duration_combobox     => 0,
-    active_safe_search_combobox  => 0,
+    active_safe_search_combobox  => 1,
 
     # MPlayer options
     cache             => 30000,
