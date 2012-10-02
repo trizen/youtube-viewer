@@ -1530,7 +1530,7 @@ sub get_input_for_categories {
 sub print_channels {
     my ($results) = @_;
 
-    if (ref $results ne 'HASH' or not @{$results->{results}}) {
+    if (not @{$results->{results}}) {
         warn colored("\n[!] No channels found...", 'bold red') . "\n";
         $results = {results => []} unless ref $results;
     }
@@ -1630,7 +1630,7 @@ sub print_channels {
 sub print_comments {
     my ($videoID, $results) = @_;
 
-    if (ref $results ne 'HASH' or not @{$results->{results}}) {
+    if (not @{$results->{results}}) {
         warn colored("\n[!] No comments found...", 'bold red') . "\n";
         $results = {results => []} unless ref $results;
     }
@@ -1877,7 +1877,7 @@ sub print_video_tops {
 sub print_playlists {
     my ($results) = @_;
 
-    if (ref $results ne 'HASH' or not @{$results->{results}}) {
+    if (not @{$results->{results}}) {
         warn colored("\n[!] No playlist results!", 'bold red') . "\n";
         $results = {results => []} unless ref $results;
     }
@@ -2265,7 +2265,7 @@ sub print_video_info {
 sub print_videos {
     my ($results, %args) = @_;
 
-    if (ref $results ne 'HASH' or not @{$results->{results}}) {
+    if (not @{$results->{results}}) {
         warn colored("\n[!] No video results!", 'bold red') . "\n";
         $results = {results => []} unless ref $results;
     }
