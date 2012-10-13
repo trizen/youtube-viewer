@@ -155,9 +155,9 @@ my $range_num_re         = qr{^([0-9]++)(?>-|\.\.)([0-9]++)$};
 my $digit_or_equal_re    = qr{(?(?=[1-9])|=)};
 my $non_digit_or_opt_re  = qr{^(?!$range_num_re)(?:[^$opt_begin_chars]+[0-9]*[^0-9]|[0-9]{3}|[^0-9$opt_begin_chars])};
 my $get_video_id_re      = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)([0-9A-Za-z_\-]{11})};
-my $valid_playlist_id_re = qr{^(?:PL)?([A-Z0-9]{16})\z};
+my $valid_playlist_id_re = qr{^(?:PL)?([a-zA-Z0-9]{16,32})\z};
 my $valid_video_id_re    = qr{^[0-9A-Za-z_\-]{11}\z};
-my $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)(?:PL)?([A-Z0-9]{16})\b};
+my $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)(?:PL)?([a-zA-Z0-9]{16,32})\b};
 my $valid_opt_re         = qr{^[$opt_begin_chars]([A-Za-z]++(?:-[A-Za-z]++)?(?>${digit_or_equal_re}.*)?)$};
 my $valid_username_re    = qr{^(?:\w+(?:[-.]++\w++)*)\z};
 
