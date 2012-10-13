@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 28 September 2012
+#  Latest edit on: 14 October 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -42,7 +42,7 @@ use File::Spec::Functions qw(
   );
 
 my $appname  = 'GTK Youtube Viewer';
-my $version  = '3.0.2';
+my $version  = '3.0.3';
 my $execname = 'gtk-youtube-viewer';
 
 # Developer key
@@ -248,7 +248,7 @@ my (
     $thumbs_checkbutton,    $search_for_combobox, $spin_start_with_page, $fullscreen_checkbutton, $notebook,
     $search_entry,          $from_author_entry,   $gif_spinner,          $hbox2,                  $feeds_window,
     $feeds_treeview,        $feeds_liststore,     $feeds_statusbar,      $safesearch_combobox,    $hd_combobox,
-    $caption_combobox,      $duration_combobox,
+    $caption_combobox,      $duration_combobox,   $warnings_window,      $warnings_textview,      $errors_textview,
    );
 
 sub get_objects {
@@ -264,6 +264,7 @@ sub get_objects {
         'details_window'    => \$details_window,
         'aboutdialog1'      => \$about_window,
         'feeds_window'      => \$feeds_window,
+        'warnings_window'   => \$warnings_window,
 
         # Others
         'treeview1'              => \$users_treeview,
@@ -274,6 +275,8 @@ sub get_objects {
         'liststore2'             => \$users_liststore,
         'liststore11'            => \$feeds_liststore,
         'textview3'              => \$config_view,
+        'warnings_textview'      => \$warnings_textview,
+        'errors_textview'        => \$errors_textview,
         'search_entry'           => \$search_entry,
         'statusbar1'             => \$statusbar,
         'treeviewcolumn2'        => \$thumbs_column,
@@ -302,6 +305,37 @@ sub get_objects {
 }
 get_objects();
 
+# __WARN__ handle
+local $SIG{__WARN__} = sub {
+    my $warning = _strip_edge_spaces(join('', @_));
+    return if $warning =~ m'\bunhandled exception in callback:';
+
+    $warning = "[" . localtime(time) . "]: " . $warning . "\n";
+    print STDERR $warning;
+
+    set_text($warnings_textview, $warning, append => 1);
+};
+
+# __DIE__ handle
+local $SIG{__DIE__} = sub {
+    return if not [caller]->[0] ~~ [qw(main WWW::YoutubeViewer)];
+    my $error = join('', @_);
+    set_text(
+        $errors_textview,
+        $error . do {
+            if ($error =~ m{^Can't locate (.+?)\.pm\b}) {
+                my $module = $1;
+                $module =~ s{[/\\]+}{::}g;
+                "\nThe module $module is required!\n\nTo install the module, just type in terminal:\n\tsudo cpan $module\n";
+            }
+          }
+          . "\n=>> Previous warnings:\n" . get_text($warnings_textview)
+    );
+    warn $error;
+    $errors_window->show;
+    return 1;
+};
+
 #---------------------- LOAD IMAGES ----------------------#
 my $app_icon_pixbuf  = 'Gtk2::Gdk::Pixbuf'->new_from_file("$icons_path/$execname.png");
 my $user_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/user.png", 16, 16);
@@ -314,10 +348,11 @@ $mainw->set_title("$appname $version");
 $mainw->set_icon($app_icon_pixbuf);
 
 #------------------------ REGEXP AREA ------------------------#
-my $valid_playlist_id_re = qr{^(?:PL)?([A-Z0-9]{16})\z};
+my $playlist_id_re       = qr{(?:PL)?([a-zA-Z0-9]{16,32})};
+my $valid_playlist_id_re = qr{^$playlist_id_re\z};
 my $valid_video_id_re    = qr{^[0-9A-Za-z_\-]{11}\z};
 my $get_video_id_re      = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)([0-9A-Za-z_\-]{11})};
-my $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)(?:PL)?([A-Z0-9]{16})\b};
+my $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)$playlist_id_re\b};
 my $valid_username_re    = qr{^(?:\w+(?:[-.]++\w++)*)\z};
 
 {
@@ -478,7 +513,7 @@ sub set_threads {
     return 1 if defined $queue;
 
     $gif_spinner->set_from_animation($animation);
-    say "* Initializing threads...";
+    warn "* Initializing threads...\n";
 
     require threads;
     require Thread::Queue;
@@ -521,9 +556,16 @@ sub threads_lwp_get {
 
 # Set text to a 'textview' object
 sub set_text {
-    my ($object, $text) = @_;
+    my ($object, $text, %args) = @_;
     my $object_buffer = $object->get_buffer;
-    $object_buffer->set_text($text);
+
+    if ($args{append}) {
+        my $iter = $object_buffer->get_end_iter;
+        $object_buffer->insert($iter, $text);
+    }
+    else {
+        $object_buffer->set_text($text);
+    }
     $object->set_buffer($object_buffer);
     return 1;
 }
@@ -536,23 +578,6 @@ sub get_text {
     my $end_iter      = $object_buffer->get_end_iter;
     return $object_buffer->get_text($start_iter, $end_iter, undef);
 }
-
-# __DIE__ handle
-$SIG{__DIE__} = sub {
-    my $error = join('', @_);
-    set_text(
-        $gui->get_object('errors_text'),
-        $error . do {
-            if ($error =~ m{^Can't locate (.+?)\.pm\b}) {
-                my $module = $1;
-                $module =~ s{[/\\]+}{::}g;
-                "\nThe module $module is required!\n\nTo install the module, just type in terminal:\n\tsudo cpan $module\n";
-            }
-          }
-    );
-    $errors_window->show;
-    return 1;
-};
 
 # Setting application icons
 my $user_icon = $gui->get_object('icon_from_pixbux')->new_from_pixbuf($user_icon_pixbuf);
@@ -569,6 +594,9 @@ $users_treeview->signal_connect('button_press_event', \&users_menu_popup);
 # Menu popup
 sub menu_popup {
     my ($treeview, $event) = @_;
+
+    #return 0 unless $treeview->get_selection->get_selected();
+
     if ($event->button != 3) {
         return 0;
     }
@@ -617,6 +645,7 @@ CTRL+U : username list window
 CTRL+Y : CLI youtube viewer
 CTRL+D : video details window
 CTRL+F : show feeds window
+CTRL+W : show the warnings window
 CTRL+G : show videos favorited by the author of a selected video
 CTRL+R : show related videos for a selected video
 CTRL+M : show videos from the author of a selected video
@@ -692,6 +721,7 @@ $accel->connect(ord('s'), ['control-mask'], ['visible'], \&add_user_to_favorites
 $accel->connect(ord('r'), ['control-mask'], ['visible'], \&show_related_videos);
 $accel->connect(ord('g'), ['control-mask'], ['visible'], \&get_user_favorited_videos);
 $accel->connect(ord('m'), ['control-mask'], ['visible'], \&show_more_videos_from_username);
+$accel->connect(ord('w'), ['control-mask'], ['visible'], \&show_warnings_window);
 $accel->connect(0xffff,   ['lock-mask'],    ['visible'], \&delete_selected_row);
 $accel->connect(0xffc8,   ['lock-mask'],    ['visible'], \&maximize_unmaximize_mainw);
 $mainw->add_accel_group($accel);
@@ -776,6 +806,18 @@ sub show_help_window {
 
 sub hide_help_window {
     $help_window->hide;
+    return 1;
+}
+
+# Warnings window
+
+sub show_warnings_window {
+    $warnings_window->show;
+    return 1;
+}
+
+sub hide_warnings_window {
+    $warnings_window->hide;
     return 1;
 }
 
@@ -1556,11 +1598,8 @@ sub _strip_edge_spaces {
 sub get_streaming_url {
     my ($video_id) = @_;
 
-    my @warn;
-    local $SIG{__WARN__} = sub { push @warn, @_ };
-
     my @urls = $yv_obj->get_streaming_urls($video_id)
-      or die join("\n", map { _strip_edge_spaces($_) } @warn) . "\n";
+      or die "Can't get the streaming URLs for videoID: $video_id.\n";
 
     my $srt_file;
 

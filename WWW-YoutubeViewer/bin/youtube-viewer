@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 30 September 2012
+#  Latest edit on: 14 October 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -26,6 +26,7 @@
 # youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
 #
 # [CHANGELOG]
+# - Some minor bug-fixes // New options has been added: --pp, :pp, :anp, :kregex               - NEW (v3.0.3)
 # - Added support for more resolutions, UTF-8 support, --convert-to=FMT and many bug-fixes     - NEW (v3.0.1)
 # - Youtube Viewer 3.0 has been released! New options, better functionality and new bugs :)    - NEW (v3.0.0)
 # - Added support for detailed results (usage: -D or --details) // Support for comments        - NEW (v2.5.8)
@@ -107,7 +108,7 @@ require WWW::YoutubeViewer;
 use File::Spec::Functions qw(catdir catfile curdir path rel2abs tmpdir);
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.0.2';
+my $version  = '3.0.3';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
@@ -148,16 +149,17 @@ foreach my $path (path()) {
     }
 }
 
-my $opt_begin_chars = q{:;=};    # stdin option begin chars
+my $opt_begin_chars = q{:;=};    # stdin option valid begin chars
 
 # Regular expressions
 my $range_num_re         = qr{^([0-9]++)(?>-|\.\.)([0-9]++)$};
 my $digit_or_equal_re    = qr{(?(?=[1-9])|=)};
 my $non_digit_or_opt_re  = qr{^(?!$range_num_re)(?:[^$opt_begin_chars]+[0-9]*[^0-9]|[0-9]{3}|[^0-9$opt_begin_chars])};
-my $get_video_id_re      = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)([0-9A-Za-z_\-]{11})};
-my $valid_playlist_id_re = qr{^(?:PL)?([a-zA-Z0-9]{16,32})\z};
+my $playlist_id_re       = qr{(?:PL)?([a-zA-Z0-9]{16,32})};
+my $valid_playlist_id_re = qr{^$playlist_id_re\z};
 my $valid_video_id_re    = qr{^[0-9A-Za-z_\-]{11}\z};
-my $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)(?:PL)?([a-zA-Z0-9]{16,32})\b};
+my $get_video_id_re      = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)([0-9A-Za-z_\-]{11})};
+my $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)$playlist_id_re\b};
 my $valid_opt_re         = qr{^[$opt_begin_chars]([A-Za-z]++(?:-[A-Za-z]++)?(?>${digit_or_equal_re}.*)?)$};
 my $valid_username_re    = qr{^(?:\w+(?:[-.]++\w++)*)\z};
 
@@ -300,7 +302,9 @@ $action_options
 8 2 12 4 6 5 1    : play the videos in your order
 :q(ueue)=i,i,...  : add videos to queue and play them later
 :pq, :play-queue  : play videos from queue (if any)
+:anp :nnp         : auto-next-page, no-next-page
 :regex=my?[regex] : play videos matched by a regex (/i)
+:kregex=KEY,RE    : play videos if the value of KEY matches the RE
 
 $other_options
 $notes_options
@@ -369,7 +373,7 @@ my $yv_obj = WWW::YoutubeViewer->new(
             foreach my $id (@_) {
                 my $videoID = get_valid_video_id($id) // next;
                 my $info = $yv_obj->get_video_info($videoID);
-                if (ref $info and @{$info->{results}}) {
+                if (@{$info->{results}}) {
                     say $info->{results}[0]{$name};
                 }
                 else {
@@ -413,6 +417,7 @@ YouTube options:
    -hl --catlang=s      : language for categories (default: en-US)
    -p  --playlists      : search for playlists of videos
        --playlist=ID    : list a playlist of videos by playlistID
+       --pp=ID,ID       : play the videos from the given playlist IDs
    -u  --user=s         : list videos uploaded by a specific user
    -up --user-pl=s      : list playlists created by a specific user
    -uf --user-fav=s     : list the videos favorited by a specific user
@@ -529,6 +534,20 @@ sub tricks {
                                text  => [@{WWW::YoutubeViewer::region_IDs}]
                               );
 
+    my $valid_keys = wrap_text(
+        i_tab => $tab,
+        s_tab => $tab,
+        text  => [
+            sort qw(
+              favorited videoID
+              name duration author
+              description dislikes
+              rating published views
+              category title likes
+              )
+        ]
+    );
+
     print <<"TRICKS";
 ** Valid categories:
 $cat_ids
@@ -569,17 +588,31 @@ NOTE: Categories and region IDs are case sensitive!
    of videos, inserting ':r' will return back to the playlist results.
    Also, for the previous page, you can insert ':b', but ':r' is faster!
 
-2. "6" (quoted) will search for videos with the keyword '6'.
+2. "6" (quoted) or -V=6 will search for videos with the keyword '6'.
 
 3. If a stdin option is followed by one or more digits, the equal sign,
    which separates the option from value, can be omited.
    For example:
-        :i2,4  is equivalent with -i=2,4
-        :d1-5  is equivalent with -d=1,2,3,4,5
-        :c10   is equivalent with -c=10
+        :i2,4  is equivalent with :i=2,4
+        :d1-5  is equivalent with :d=1,2,3,4,5
+        :c10   is equivalent with :c=10
 
 4. When more videos are selected to play, you can stop them by
    pressing CTRL+C. $appname will return to the previous section.
+
+5. For the option ':kregex', the valid keys are:
+   $valid_keys
+
+6. Space inside the values of the STDIN options, can be either escaped
+   or backslashed.
+   For example:
+        :re=video\ title     ==     :re="video title"
+
+7. ':anp' stands for the "Auto Next Page". How do we use it?
+   Well, let's search for some videos. Now, if we'd want to play
+   only the videos matched by a regex, we'd say :re="REGEX".
+   But, what if we'd want to play the videos from the next pages too?
+   In this case, ':anp' is your friend. Use it wisely!
 
 ** Closed-Captions
     To get the closed-captions (subtitles) for videos, you need to install
@@ -597,6 +630,8 @@ TRICKS
 
 sub examples {
     print <<"EXAMPLES";
+==== COMMAND LINE EXAMPLES ====
+
 Command: $execname -A -n -4 russian music -category=Music
 Results: play all the video results (-A)
          only audio, no video (-n)
@@ -634,6 +669,74 @@ Results: search for channels.
 
 Command: $execname --uf=Google
 Results: show latest videos favorited by a user.
+
+==== USER INPUT EXAMPLES ====
+
+A STDIN option can begin with ':', ';' or '='.
+
+Command: <ENTER>, :n, :next
+Results: get the next page of results.
+
+Command: :b, :back
+Results: get the previos page of results.
+
+Command: :i4..6, :i7-9, :i20-4, :i2, :i=4, :info=4
+Results: show video informations for the selected videos.
+
+Command: :d5,2, :d=3, :download=5
+Results: download the selected videos.
+
+Command: :c2, :comments=4
+Results: show comments for a selected video.
+
+Command: :r4, :related=6
+Results: show related videos for a selected video.
+
+Command: :a14, :author=12
+Results: show videos uploaded by the author who uploaded the selected video.
+
+Command: :p9, :playlists=14
+Results: show playlists created by the author who uploaded the selected video.
+
+Command: :subscribe=7
+Results: subscribe to the author's channel who uploaded the selected video.
+
+Command: :like=2, :dislike=4,5
+Results: like or dislike the selected videos.
+
+Command: :fav=4, :favorite=3..5
+Results: favorite the selected videos.
+
+Command: 3, 5..7, 12-1, 9..4, 2 3 9
+Results: play the selected videos.
+
+Command: :q3,5, :q=4, :queue=3-9
+Results: enqueue the selected videos to play them later.
+
+Command: :pq, :play-queue
+Results: play the videos added by the :queue option.
+
+Command: :re="^Google Tricks"
+Results: play videos matched by a regex.
+Example: valid title: "Google Tricks & Easter eggs"
+
+Command: :regex="Google.*part \\d+/\\d+"
+Example: valid title: "The GOOGLE company (part 1/4)"
+
+Command: :kregex=author,^google\$
+Results: play only the videos uploaded by google.
+
+Command: :kre=category,"^(?:People & Blogs|Entertainment)\$"
+Results: play only the videos from the specified categories.
+
+Command: :kre=views,"^(\\d+)\\z(?(?{ \$1 > 1000 })(?=)|(?!))"
+Results: play only the videos which have more than 1000 of views.
+
+Command: :anp 1 2 3
+Results: play the first three videos from every page.
+
+Command: :r, :return
+Results: return to the previous section.
 EXAMPLES
     main_quit(0);
 }
@@ -751,9 +854,13 @@ sub apply_configuration {
         get_and_play_video_ids(split(/[,\s]+/, delete $opt->{play_video_ids}));
     }
 
+    if (defined $opt->{play_playlists}) {
+        get_and_play_playlists(split(/[,\s]+/, delete $opt->{play_playlists}));
+    }
+
     if (defined $opt->{search_playlists}) {
         my $value = delete($opt->{search_playlists});
-        if ($value =~ /$valid_playlist_id_re/) {
+        if ($value =~ /$valid_playlist_id_re/ and not @{$keywords}) {
             get_and_print_videos_from_playlist($1);
         }
         else {
@@ -907,6 +1014,7 @@ sub parse_arguments {
 
         'noconfig|N'               => \$opt{noconfig},
         'playlists|p:s'            => \$opt{search_playlists},
+        'play-playlists|pp=s'      => \$opt{play_playlists},
         'debug:1'                  => \$opt{debug},
         'download|d!'              => \$opt{download_video},
         'safe-search|safeSearch=s' => \$opt{safe_search},
@@ -1054,6 +1162,22 @@ sub get_valid_video_id {
     return $id;
 }
 
+sub get_valid_playlist_id {
+    my ($value) = @_;
+
+    my $id =
+        $value =~ /$get_playlist_id_re/   ? $1
+      : $value =~ /$valid_playlist_id_re/ ? $value
+      :                                     undef;
+
+    unless (defined $id) {
+        warn_invalid('playlistID', $value);
+        return;
+    }
+
+    return $id;
+}
+
 sub apply_input_arguments {
     my ($args, $keywords) = @_;
 
@@ -1151,7 +1275,8 @@ HELP
 sub _parse_options2 {
     my ($input) = @_;
 
-    warn(colored("\n[!] Invalid input: $input", 'bold red') . "\n\n") if $yv_obj->get_debug;
+    warn(colored("\n[!] Input with an odd number of quotes: <$input>", 'bold red') . "\n\n")
+      if $yv_obj->get_debug;
 
     my ($args, $keywords) = $term->parse_options($input);
 
@@ -1304,14 +1429,23 @@ sub get_and_play_video_ids {
         my $videoID = get_valid_video_id($id) // next;
         my $info = $yv_obj->get_video_info($videoID);
 
-        if (ref $info and @{$info->{results}}) {
+        if (@{$info->{results}}) {
             if (not play_videos($info->{results})) {
-                return 1;
+                return;
             }
         }
         else {
             warn_cant_do('play', $videoID);
         }
+    }
+    return 1;
+}
+
+sub get_and_play_playlists {
+    foreach my $id (@_) {
+        my $videos = $yv_obj->get_videos_from_playlist(get_valid_playlist_id($id) // next);
+        local $opt{play_all} = 1;
+        print_videos($videos, auto => 1);
     }
     return 1;
 }
@@ -1322,7 +1456,7 @@ sub get_and_print_video_info {
         my $videoID = get_valid_video_id($id) // next;
         my $info = $yv_obj->get_video_info($videoID);
 
-        if (ref $info and @{$info->{results}}) {
+        if (@{$info->{results}}) {
             print_video_info($info->{results}[0]);
         }
         else {
@@ -1338,7 +1472,7 @@ sub get_and_print_related_videos {
         my $videoID = get_valid_video_id($id) // next;
         my $info = $yv_obj->get_related_videos($videoID);
 
-        if (ref $info and @{$info->{results}}) {
+        if (@{$info->{results}}) {
             print_videos($info);
         }
         else {
@@ -1362,7 +1496,7 @@ sub get_and_print_videos_from_playlist {
 
     if ($playlistID =~ /$valid_playlist_id_re/) {
         my $info = $yv_obj->get_videos_from_playlist($playlistID);
-        if (ref $info and @{$info->{results}}) {
+        if (@{$info->{results}}) {
             print_videos($info);
         }
         else {
@@ -1532,7 +1666,6 @@ sub print_channels {
 
     if (not @{$results->{results}}) {
         warn colored("\n[!] No channels found...", 'bold red') . "\n";
-        $results = {results => []} unless ref $results;
     }
 
     my $url      = $results->{url};
@@ -1579,7 +1712,7 @@ sub print_channels {
                 when (['n', 'next']) {
                     if (not $url ~~ $opt{_last_page_urls}) {
                         my $request = $yv_obj->next_page($url, channels => 1);
-                        if (ref $request and @{$request->{results}}) {
+                        if (@{$request->{results}}) {
                             print_channels($request);
                         }
                         else {
@@ -1632,7 +1765,6 @@ sub print_comments {
 
     if (not @{$results->{results}}) {
         warn colored("\n[!] No comments found...", 'bold red') . "\n";
-        $results = {results => []} unless ref $results;
     }
 
     my $url      = $results->{url};
@@ -1677,7 +1809,7 @@ HELP
                 when (['n', 'next']) {
                     if (not $url ~~ $opt{_last_page_urls}) {
                         my $request = $yv_obj->next_page($url, comments => 1);
-                        if (ref $request and @{$request->{results}}) {
+                        if (@{$request->{results}}) {
                             print_comments($videoID, $request);
                         }
                         else {
@@ -1875,11 +2007,10 @@ sub print_video_tops {
 }
 
 sub print_playlists {
-    my ($results) = @_;
+    my ($results, %args) = @_;
 
     if (not @{$results->{results}}) {
         warn colored("\n[!] No playlist results!", 'bold red') . "\n";
-        $results = {results => []} unless ref $results;
     }
 
     my $url       = $results->{url};
@@ -1927,7 +2058,15 @@ FORMAT
         }
     }
 
-    my @keywords = get_input_for_playlists();
+    state @keywords;
+    if ($args{auto}) { }    # do nothing...
+    else {
+        @keywords = get_input_for_playlists();
+        if (scalar(@keywords) == 0) {
+            print_playlists($results);
+        }
+    }
+
     my $contains_keywords = grep /$non_digit_or_opt_re/, @keywords;
 
     my @for_search;
@@ -1936,13 +2075,13 @@ FORMAT
             given ($1) {
                 when (\&general_options) { }    # do nothing
                 when (['h', 'help']) {
-                    print "\n$control_help$general_help";
+                    print "\n$control_help", ":pp=i,i           : play videos from the selected playlists\n", $general_help;
                     _press_enter_to_continue();
                 }
                 when (['n', 'next']) {
                     if (not $url ~~ $opt{_last_page_urls}) {
                         my $request = $yv_obj->next_page($url, playlists => 1);
-                        if (ref $request and @{$request->{results}}) {
+                        if (@{$request->{results}}) {
                             print_playlists($request);
                         }
                         else {
@@ -1982,6 +2121,15 @@ FORMAT
                         warn_no_thing_selected('playlist');
                     }
                 }
+                when (/^pp${digit_or_equal_re}(.*)/) {
+                    if (my @ids = get_valid_numbers($playlists, $1)) {
+                        my $arg = "--pp=" . join(q{,}, map { $_->{playlistID} } @{$playlists}[@ids]);
+                        apply_input_arguments([$arg]);
+                    }
+                    else {
+                        warn_no_thing_selected('playlist');
+                    }
+                }
                 default {
                     warn_invalid('option', $_);
                 }
@@ -2005,6 +2153,20 @@ FORMAT
     }
 
     print_playlists($results);
+}
+
+sub _compile_regex {
+    my ($value) = @_;
+    $value =~ s{^(?<quote>['"])(?<regex>.+)\g{quote}$}{$+{regex}}s;
+
+    my $re = eval { use re qw(eval); qr/$value/i };
+
+    if ($@) {
+        warn colored("\n[!] Invalid regex: $@", 'bold red') . "\n";
+        return;
+    }
+
+    return $re;
 }
 
 sub _get_range_numbers {
@@ -2267,7 +2429,6 @@ sub print_videos {
 
     if (not @{$results->{results}}) {
         warn colored("\n[!] No video results!", 'bold red') . "\n";
-        $results = {results => []} unless ref $results;
     }
 
     my $url    = $results->{url};
@@ -2309,13 +2470,18 @@ sub print_videos {
         }
     }
 
-    if ($opt{play_all} and @{$videos}) {
-        if (play_videos($opt{shuffle} ? [List::Util::shuffle(@{$videos})] : $videos)) {
-            print_videos($yv_obj->next_page($url), auto => 1);
+    if ($opt{play_all}) {
+        if (@{$videos}) {
+            if (play_videos($opt{shuffle} ? [List::Util::shuffle(@{$videos})] : $videos)) {
+                print_videos($yv_obj->next_page($url), auto => 1);
+            }
+            else {
+                $opt{play_all} = 0;
+                print_videos($results);
+            }
         }
         else {
             $opt{play_all} = 0;
-            print_videos($results);
         }
     }
 
@@ -2331,6 +2497,7 @@ sub print_videos {
     state @for_search;
     state @for_play;
 
+    my @copy_of_keywords = @keywords;
     my $contains_keywords = grep /$non_digit_or_opt_re/, @keywords;
 
     while (@keywords) {
@@ -2345,16 +2512,26 @@ sub print_videos {
                 when (['n', 'next']) {
                     if (not $url ~~ $opt{_last_page_urls}) {
                         my $request = $yv_obj->next_page($url);
-                        if (ref $request and @{$request->{results}}) {
+                        if (@{$request->{results}}) {
                             print_videos($request, @keywords ? (auto => 1) : ());
                         }
                         else {
                             push @{$opt{_last_page_urls}}, $url;
                             warn_last_page();
+                            if ($opt{auto_next_page}) {
+                                $opt{auto_next_page} = 0;
+                                @copy_of_keywords = ();
+                                last;
+                            }
                         }
                     }
                     else {
                         warn_last_page();
+                        if ($opt{auto_next_page}) {
+                            $opt{auto_next_page} = 0;
+                            @copy_of_keywords = ();
+                            last;
+                        }
                     }
                 }
                 when (['b', 'back']) {
@@ -2373,7 +2550,7 @@ sub print_videos {
                         foreach my $id (@nums) {
                             my $username = $videos->[$id]{author};
                             my $request  = $yv_obj->get_videos_from_username($username);
-                            if (ref $request and @{$request->{results}}) {
+                            if (@{$request->{results}}) {
                                 print_videos($request);
                             }
                             else {
@@ -2390,7 +2567,7 @@ sub print_videos {
                         foreach my $id (@nums) {
                             my $username = $videos->[$id]{author};
                             my $request  = $yv_obj->get_playlists_from_username($username);
-                            if (ref $request and @{$request->{results}}) {
+                            if (@{$request->{results}}) {
                                 print_playlists($request);
                             }
                             else {
@@ -2480,15 +2657,40 @@ sub print_videos {
                         warn_no_thing_selected('video');
                     }
                 }
-                when (/^re(?:gex)?=(.*)/) {
+                when (['anp']) {    # auto-next-page
+                    $opt{auto_next_page} = 1;
+                }
+                when (['nnp']) {    # no-next-page
+                    $opt{auto_next_page} = 0;
+                }
+                when (/^[ks]re(?:gex)?=(.*)/) {
                     my $value = $1;
-                    $value = $2 if $value =~ /^(['"])(.*)\1$/;
-
-                    my $re = eval { qr/$value/i };
-                    if ($@) {
-                        warn colored("\n[!] Invalid regex: $@", 'bold red') . "\n\n";
+                    if ($value =~ /^([a-zA-Z]++)(?>,|=>)(.+)/) {
+                        if (defined(my $re = _compile_regex($2))) {
+                            my $key = $1;
+                            if (exists $videos->[0]{$key}) {
+                                if (my @nums = grep { $videos->[$_]{$key} =~ /$re/ } 0 .. $#{$videos}) {
+                                    if (not play_videos([@{$videos}[@nums]])) {
+                                        print_videos($results);
+                                    }
+                                }
+                                else {
+                                    warn colored("\n[!] No video ($key) matched by the regex: $re", 'bold red') . "\n";
+                                }
+                            }
+                            else {
+                                warn colored("\n[!] Invalid key: <$key>.", 'bold red'),
+                                  colored("\n[*] Valid keys are: ", 'bold red')
+                                  . colored(join(q{, }, sort keys %{$videos->[0]}), 'bold green') . "\n";
+                            }
+                        }
                     }
                     else {
+                        warn colored("\n[!] Invalid Special Regexp: <$value>.", 'bold red') . "\n";
+                    }
+                }
+                when (/^re(?:gex)?=(.*)/) {
+                    if (defined(my $re = _compile_regex($1))) {
                         if (my @nums = grep { $videos->[$_]{title} =~ /$re/ } 0 .. $#{$videos}) {
                             if (not play_videos([@{$videos}[@nums]])) {
                                 print_videos($results);
@@ -2534,8 +2736,43 @@ sub print_videos {
     if (@for_search) {
         print_videos($yv_obj->search(splice(@for_search)));
     }
+    elsif ($opt{auto_next_page}) {
+        @keywords = (':next', grep { not $_ ~~ [qw(:n :next :anp)] } @copy_of_keywords);
 
-    print_videos($results);
+        if (@keywords > 1) {
+            my $timeout = 2;
+            print colored("\n[*] Press <ENTER> in $timeout seconds to stop the :anp option.", 'bold green');
+            eval {
+                local $SIG{ALRM} = sub {
+                    die "alarm\n";
+                };
+                alarm $timeout;
+                scalar <STDIN>;
+                alarm 0;
+            };
+
+            if ($@) {
+                if ($@ eq "alarm\n") {
+                    print_videos($results, auto => 1);
+                }
+                else {
+                    warn colored("\n[!] Unexpected error: <$@>.", 'bold red') . "\n";
+                }
+            }
+            else {
+                $opt{auto_next_page} = 0;
+                print_videos($results);
+            }
+        }
+        else {
+            warn colored("\n[!] Option ':anp' works only combined with other options!", 'bold red') . "\n";
+            $opt{auto_next_page} = 0;
+            print_videos($results);
+        }
+    }
+
+    print_videos($results)
+      unless $args{auto};
 
     return 1;
 }
