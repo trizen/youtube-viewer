@@ -1446,6 +1446,8 @@ sub print_playlists {
 
     foreach my $playlist (@{$playlists}) {
 
+        next if $playlist->{count} == 0;
+
         my $iter = $liststore->append;
         my $row_description = $playlist->{summary} || 'No description available...';
 
