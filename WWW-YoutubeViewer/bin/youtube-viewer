@@ -535,8 +535,8 @@ sub tricks {
                               );
 
     my $valid_keys = wrap_text(
-        i_tab => $tab,
-        s_tab => $tab,
+        i_tab => q{},
+        s_tab => q{ } x 3,
         text  => [
             sort qw(
               favorited videoID
@@ -578,7 +578,7 @@ NOTE: Categories and region IDs are case sensitive!
    is specified as argument, or if the resolution of a video is lower than 720p.
 
 ** Arguments
-1. Almost all booleans arguments can be negated with a '--no-' prefix.
+1. Almost all boolean arguments can be negated with a '--no-' prefix.
 2. Arguments that require an ID/URL, you can specify more than one,
    separated by whitespace (quoted), or separated by commas.
 
@@ -606,7 +606,7 @@ NOTE: Categories and region IDs are case sensitive!
 6. Space inside the values of the STDIN options, can be either escaped
    or backslashed.
    For example:
-        :re=video\ title     ==     :re="video title"
+        :re=video\\ title     ==     :re="video title"
 
 7. ':anp' stands for the "Auto Next Page". How do we use it?
    Well, let's search for some videos. Now, if we'd want to play
@@ -670,6 +670,7 @@ Results: search for channels.
 Command: $execname --uf=Google
 Results: show latest videos favorited by a user.
 
+
 ==== USER INPUT EXAMPLES ====
 
 A STDIN option can begin with ':', ';' or '='.
@@ -678,7 +679,7 @@ Command: <ENTER>, :n, :next
 Results: get the next page of results.
 
 Command: :b, :back
-Results: get the previos page of results.
+Results: get the previous page of results.
 
 Command: :i4..6, :i7-9, :i20-4, :i2, :i=4, :info=4
 Results: show video informations for the selected videos.
