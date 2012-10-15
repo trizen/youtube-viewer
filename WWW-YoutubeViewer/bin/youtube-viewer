@@ -1058,6 +1058,7 @@ sub parse_arguments {
         'really-quiet!' => \$opt{really_quiet},
 
         'thousand-separator=s'           => \$opt{thousand_separator},
+        'get-captions|get_captions!'     => \$opt{get_captions},
         'captions-dir|captions_dir=s'    => \$opt{captions_dir},
         'skip-if-exists|skip_if_exists!' => \$opt{skip_if_exists},
 
