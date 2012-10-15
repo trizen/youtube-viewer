@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 14 October 2012
+#  Latest edit on: 15 October 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -517,7 +517,7 @@ sub wrap_text {
     require Text::Wrap;
     ${Text::Wrap::columns} = $args{columns} // length($constant{dash_line});
 
-    return Text::Wrap::wrap($args{i_tab}, $args{s_tab}, @{$args{text}});
+    return eval { Text::Wrap::wrap($args{i_tab}, $args{s_tab}, @{$args{text}}) } // "@{$args{text}}";
 }
 
 sub tricks {
