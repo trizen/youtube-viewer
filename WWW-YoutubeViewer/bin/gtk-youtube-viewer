@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 14 October 2012
+#  Latest edit on: 21 October 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -348,7 +348,7 @@ $mainw->set_title("$appname $version");
 $mainw->set_icon($app_icon_pixbuf);
 
 #------------------------ REGEXP AREA ------------------------#
-my $playlist_id_re       = qr{(?:PL)?([a-zA-Z0-9]{16,32})};
+my $playlist_id_re       = qr{(?:PL)?([a-zA-Z0-9_\-]{16,32})};
 my $valid_playlist_id_re = qr{^$playlist_id_re\z};
 my $valid_video_id_re    = qr{^[0-9A-Za-z_\-]{11}\z};
 my $get_video_id_re      = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)([0-9A-Za-z_\-]{11})};
