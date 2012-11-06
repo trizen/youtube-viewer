@@ -647,10 +647,7 @@ sub get_streaming_urls {
         warn "[*] Reason: $reason\n";
         return;
     }
-    return grep {
-        (exists $_->{itag} and exists $_->{url} and exists $_->{type} and not $_->{type} =~ /\b3gpp?+\b/i)
-          or exists $_->{has_cc}
-    } @info;
+    return grep { (exists $_->{itag} and exists $_->{url} and exists $_->{type}) or exists $_->{has_cc} } @info;
 }
 
 sub search_channels {
