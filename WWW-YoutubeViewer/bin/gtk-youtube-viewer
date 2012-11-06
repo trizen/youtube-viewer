@@ -2033,7 +2033,7 @@ sub subscribe_channel {
     my $user = get_username_for_selected_video();
     $feeds_statusbar->push(
                            0, $yv_obj->subscribe_channel($user)
-                           ? 'Successfully subscribed to channel: $user.'
+                           ? "Successfully subscribed to channel: $user."
                            : 'Error!'
                           );
 }

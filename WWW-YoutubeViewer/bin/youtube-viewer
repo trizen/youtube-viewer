@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 21 October 2012
+#  Latest edit on: 06 November 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -1788,13 +1788,16 @@ HELP
 
     my $i = 0;
     foreach my $comment (@{$comments}) {
-        printf "\n%s on %s said:\n%s\n", colored($comment->{author}, 'bold'), format_date($comment->{published}),
-          wrap_text(
-                    i_tab => q{ } x 4,
-                    s_tab => q{ } x 4,
-                    text  => [$comment->{content} // 'Empty comment...']
-                   ),
-          ;
+        printf(
+               "\n%s on %s said:\n%s\n",
+               colored($comment->{name}, 'bold'),
+               format_date($comment->{published}),
+               wrap_text(
+                         i_tab => q{ } x 4,
+                         s_tab => q{ } x 4,
+                         text  => [$comment->{content} // 'Empty comment...']
+                        ),
+              );
     }
 
     my @keywords = get_input_for_comments();
