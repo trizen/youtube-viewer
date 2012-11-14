@@ -1706,6 +1706,11 @@ sub get_input_for_categories {
     return get_user_input(_bold_color("\n=>> Select a category (:h for help)") . "\n> ");
 }
 
+sub valid_num {
+    my ($num, $array_ref) = @_;
+    return $num =~ /^[0-9]{1,2}\z/ and $num != 0 and $num <= @{$array_ref};
+}
+
 # ... PRINT SUBROUTINES ... #
 sub print_channels {
     my ($results) = @_;
@@ -1775,7 +1780,7 @@ sub print_channels {
         else {
             given ($key) {
                 when (\&youtube_urls) { }    # do nothing
-                when (/^[0-9]++$/ and $_ != 0 and $_ <= @{$channels}) {
+                when (valid_num($_, $channels)) {
                     print_videos($yv_obj->get_videos_from_username($channels->[$_ - 1]{author}));
                 }
                 default {
@@ -1883,7 +1888,7 @@ HELP
         else {
             given ($key) {
                 when (\&youtube_urls) { }    # do nothing
-                when (/^[0-9]++$/ and $_ != 0 and $_ <= @{$comments}) {
+                when (valid_num($_, $comments)) {
                     print_videos($yv_obj->get_videos_from_username($comments->[$_ - 1]{author}));
                 }
                 default {
@@ -1952,7 +1957,7 @@ sub print_courses {
         else {
             given ($key) {
                 when (\&youtube_urls) { }    # do nothing
-                when (/^[0-9]++$/ and $_ != 0 and $_ <= @{$courses}) {
+                when (valid_num($_, $courses)) {
                     print_videos($yv_obj->get_video_lectures_from_course($courses->[$_ - 1]{courseID}));
                 }
                 default {
@@ -2015,7 +2020,7 @@ sub print_categories {
         else {
             given ($key) {
                 when (\&youtube_urls) { }    # do nothing
-                when (/^[0-9]++$/ and $_ != 0 and $_ <= @{$categories}) {
+                when (valid_num($_, $categories)) {
                     my $cat_id = $categories->[$_ + $track - 1]{term};
                     if ($edu_mode) {
                         my $reply = $term->get_reply(
@@ -2042,7 +2047,7 @@ sub print_categories {
         }
     }
 
-    __SUB__->(pos => $track, categories => $categories, edu => $edu_mode);
+    __SUB__->(@_);
 }
 
 sub print_movies {
@@ -2075,7 +2080,7 @@ sub print_movies {
         else {
             given ($key) {
                 when (\&youtube_urls) { }    # do nothing
-                when (/^[0-9]++$/ and $_ != 0 and $_ <= @{WWW::YoutubeViewer::movie_IDs}) {
+                when (valid_num($_, \@{WWW::YoutubeViewer::movie_IDs})) {
                     print_videos($yv_obj->get_movies(${WWW::YoutubeViewer::movie_IDs}[$_ - 1]));
                 }
                 default {
@@ -2120,7 +2125,7 @@ sub print_video_tops {
         else {
             given ($key) {
                 when (\&youtube_urls) { }    # do nothing
-                when (/^[0-9]++$/ and $_ != 0 and $_ <= @{WWW::YoutubeViewer::feeds_IDs}) {
+                when (valid_num($_, \@{WWW::YoutubeViewer::feeds_IDs})) {
                     $top_opts{feed_id} = ${WWW::YoutubeViewer::feeds_IDs}[$_ - 1];
                     undef $top_opts{time_id} if $_ ~~ [3, 5, 8, 9];    # doesn't support the 'time' option
                     print_videos($yv_obj->get_video_tops(%top_opts));
@@ -2253,7 +2258,7 @@ FORMAT
         else {
             given ($key) {
                 when (\&youtube_urls) { }    # do nothing
-                when (/^[0-9]++$/ and $_ != 0 and $_ <= @{$playlists} and not $contains_keywords) {
+                when (valid_num($_, $playlists) and not $contains_keywords) {
                     get_and_print_videos_from_playlist($playlists->[$_ - 1]{playlistID});
                 }
                 default {
@@ -2301,7 +2306,7 @@ sub get_valid_numbers {
     foreach my $id (split(/[,\s]+/, $input)) {
         push @output,
             $id =~ /$range_num_re/ ? _get_range_numbers($1, $2)
-          : $id =~ /^[0-9]+$/      ? $id
+          : $id =~ /^[0-9]{1,2}\z/ ? $id
           :                          next;
     }
 
@@ -2854,10 +2859,7 @@ sub print_videos {
         else {
             given ($key) {
                 when (\&youtube_urls) { }    # do nothing
-                when (
-                      not $contains_keywords and ((/^[0-9]{1,2}$/ and $_ > 0 and $_ <= @{$videos})
-                                                  or /$range_num_re/)
-                  ) {
+                when (not $contains_keywords and (valid_num($_, $videos) or /$range_num_re/)) {
                     my @for_play;
                     if (defined $1) {
                         my @ids = get_valid_numbers($videos, "$1..$2");

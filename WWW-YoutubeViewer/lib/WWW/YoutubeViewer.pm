@@ -314,15 +314,13 @@ sub lwp_mirror {
       unless defined $self->{lwp};
 
     my %lwp_header = $self->_get_lwp_header();
-
-    undef $self->{last_lwp_error};
     my $response = $self->{lwp}->mirror($url, $name);
 
     if ($response->is_success) {
         return 1;
     }
     else {
-        warn '[' . ($self->{last_lwp_error} = $response->status_line()) . "] Error occured on URL: $url\n";
+        warn '[' . $response->status_line() . "] Error occured on URL: $url\n";
     }
 
     return;
@@ -656,7 +654,7 @@ sub _get_categories {
     $url = $self->_concat_args($url, 'hl' => $self->get_categories_language(), 'v' => $self->get_v());
 
     require File::Spec;
-    my ($file) = $url =~ m{/([^/]+\.cat)\b};
+    my ($file) = $url =~ m{/(\w+\.cat)\b};
     my $cat_file = File::Spec->catfile($self->get_config_dir(), $file);
 
     if (not -f $cat_file) {
