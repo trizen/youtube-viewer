@@ -13,11 +13,11 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 SYNOPSIS
 
@@ -66,6 +66,7 @@ my %valid_options = (
     author      => {valid => [qr{^(?:\w+(?:[-.]++\w++)*)\z}], default => undef},
     app_version => {valid => [qr/^\d/],                       default => $VERSION},
     app_name    => {valid => [qr/^./],                        default => 'Youtube Viewer'},
+    config_dir  => {valid => [qr/^./],                        default => q{.}},
 
     categories_language => {valid => [qr/^[a-z]++-\w/], default => 'en-US'},
 
@@ -75,11 +76,12 @@ my %valid_options = (
     escape_utf8    => {valid => [1, 0], default => 0},
 
     # No input value alowed
-    categories_url   => {valid => [], default => 'http://gdata.youtube.com/schemas/2007/categories.cat'},
-    feeds_url        => {valid => [], default => 'http://gdata.youtube.com/feeds/api'},
-    google_login_url => {valid => [], default => 'https://www.google.com/accounts/ClientLogin'},
-    video_info_url   => {valid => [], default => 'http://www.youtube.com/get_video_info'},
-    video_info_args  => {valid => [], default => '?video_id=%s&el=detailpage&ps=default&eurl=&gl=US&hl=en'},
+    categories_url    => {valid => [], default => 'http://gdata.youtube.com/schemas/2007/categories.cat'},
+    educategories_url => {valid => [], default => 'http://gdata.youtube.com/schemas/2007/educategories.cat'},
+    feeds_url         => {valid => [], default => 'http://gdata.youtube.com/feeds/api'},
+    google_login_url  => {valid => [], default => 'https://www.google.com/accounts/ClientLogin'},
+    video_info_url    => {valid => [], default => 'http://www.youtube.com/get_video_info'},
+    video_info_args   => {valid => [], default => '?video_id=%s&el=detailpage&ps=default&eurl=&gl=US&hl=en'},
 
     # LWP user agent
     lwp_agent => {valid => [qr/^.{5}/], default => 'Mozilla/5.0 (X11; U; Linux i686; en-US) Chrome/10.0.648.45'},
@@ -326,6 +328,18 @@ sub lwp_mirror {
     return;
 }
 
+sub _get_thumbnail_from_gdata {
+    my ($self, $gdata) = @_;
+    return (
+            ref($gdata->{'media:group'}) eq 'ARRAY'
+            ? $gdata->{'media:group'}[0]{'-url'}
+            : ref($gdata->{'media:group'}) eq 'HASH' ? ref($gdata->{'media:group'}{'media:thumbnail'}) eq 'ARRAY'
+                  ? $gdata->{'media:group'}{'media:thumbnail'}[0]{'-url'}
+                  : $gdata->{'media:group'}{'media:thumbnail'}{'-url'}
+              : q{}
+           );
+}
+
 sub get_content {
     my ($self, $url, %opts) = @_;
 
@@ -368,12 +382,12 @@ ERROR
              playlistID => $gdata->{'yt:playlistId'},
              title      => $gdata->{'title'},
              name       => $gdata->{'author'}{'name'},
-             author     => ($gdata->{'author'}{'uri'} =~ m{^.*/([^/]+)}),
+             author     => $gdata->{'author'}{'yt:userId'},
              count      => $gdata->{'yt:countHint'},
              summary    => $gdata->{'summary'},
              published  => $gdata->{'published'},
              updated    => $gdata->{'updated'},
-             thumbnail  => $gdata->{'media:group'}{'media:thumbnail'}[0]{'-url'},
+             thumbnail  => $self->_get_thumbnail_from_gdata($gdata),
             }
 
           : $opts{comments}
@@ -381,7 +395,7 @@ ERROR
           # Comments
           ? {
              name      => $gdata->{'author'}{'name'},
-             author    => ($gdata->{'author'}{'uri'} =~ m{^.*/([^/]+)}),
+             author    => $gdata->{'author'}{'yt:userId'},
              content   => $gdata->{'content'},
              published => $gdata->{'published'},
             }
@@ -392,12 +406,23 @@ ERROR
           ? {
              title       => $gdata->{'title'},
              name        => $gdata->{'author'}{'name'},
-             author      => ($gdata->{'author'}{'uri'} =~ m{^.*/([^/]+)}),
+             author      => $gdata->{'author'}{'yt:userId'},
              summary     => $gdata->{'summary'},
              thumbnail   => $gdata->{'media:thumbnail'}{'-url'},
              updated     => $gdata->{'updated'},
              subscribers => $gdata->{'yt:channelStatistics'}{'-subscriberCount'},
-             views       => $gdata->{'yt:channelStatistics'}{'-viewCount'}
+             views       => $gdata->{'yt:channelStatistics'}{'-viewCount'},
+            }
+
+          : $opts{courses}
+
+          # Courses
+          ? {
+             title     => $gdata->{'title'},
+             updated   => $gdata->{'updated'},
+             courseID  => $gdata->{'yt:playlistId'},
+             summary   => $gdata->{'summary'},
+             thumbnail => $self->_get_thumbnail_from_gdata($gdata),
             }
 
           # Videos
@@ -405,14 +430,14 @@ ERROR
              videoID     => $gdata->{'media:group'}{'yt:videoid'},
              title       => $gdata->{'media:group'}{'media:title'}{'#text'},
              name        => $gdata->{'author'}{'name'},
-             author      => ($gdata->{'author'}{'uri'} =~ m{^.*/([^/]+)}),
+             author      => $gdata->{'author'}{'yt:userId'},
              rating      => $gdata->{'gd:rating'}{'-average'} || 0,
              likes       => $gdata->{'yt:rating'}{'-numLikes'} || 0,
              dislikes    => $gdata->{'yt:rating'}{'-numDislikes'} || 0,
              favorited   => $gdata->{'yt:statistics'}{'-favoriteCount'},
              duration    => $gdata->{'media:group'}{'yt:duration'}{'-seconds'} || 0,
              views       => $gdata->{'yt:statistics'}{'-viewCount'},
-             published   => $gdata->{'published'},
+             published   => $gdata->{'media:group'}{'yt:uploaded'},
              description => $gdata->{'media:group'}{'media:description'}{'#text'},
              category    => ref $gdata->{'category'} eq 'ARRAY' ? ($gdata->{'category'}[1]{'-label'} || 'Unknown')
              : ($gdata->{'category'}{'-label'} || 'Unknown'),
@@ -444,6 +469,13 @@ sub prepare_url {
     return $url;
 }
 
+sub _make_feed_url_with_args {
+    my ($self, $suburl, @args) = @_;
+
+    my $url = $self->prepare_url($self->get_feeds_url() . $suburl);
+    return $self->_concat_args($url, @args);
+}
+
 sub get_videos_from_category {
     my ($self, $cat_id) = @_;
 
@@ -454,8 +486,46 @@ sub get_videos_from_category {
         return;
     }
 
-    my $url = $self->prepare_url($self->get_feeds_url() . '/videos');
-    $url = $self->_concat_args($url, ('category' => $cat_id));
+    my $url = $self->_make_feed_url_with_args('/videos', ('category' => $cat_id));
+
+    return {
+            url     => $url,
+            results => $self->get_content($url),
+           };
+}
+
+sub get_courses_from_category {
+    my ($self, $cat_id) = @_;
+
+    # http://gdata.youtube.com/feeds/api/edu/courses?category=CAT_ID
+
+    my $url = $self->_make_feed_url_with_args('/edu/courses', ('category' => $cat_id));
+
+    return {
+            url     => $url,
+            results => $self->get_content($url, courses => 1),
+           };
+}
+
+sub get_video_lectures_from_course {
+    my ($self, $course_id) = @_;
+
+    # http://gdata.youtube.com/feeds/api/edu/lectures?course=COURSE_ID
+
+    my $url = $self->_make_feed_url_with_args('/edu/lectures', ('course' => $course_id));
+
+    return {
+            url     => $url,
+            results => $self->get_content($url),
+           };
+}
+
+sub get_video_lectures_from_category {
+    my ($self, $cat_id) = @_;
+
+    # http://gdata.youtube.com/feeds/api/edu/lectures?category=CAT_ID
+
+    my $url = $self->_make_feed_url_with_args('/edu/lectures', ('category' => $cat_id));
 
     return {
             url     => $url,
@@ -473,7 +543,7 @@ sub get_movies {
 
     # http://gdata.youtube.com/feeds/api/charts/movies/most_popular
 
-    my $url = $self->prepare_url($self->get_feeds_url() . "/charts/movies/$movie_id");
+    my $url = $self->_make_feed_url_with_args("/charts/movies/$movie_id");
 
     return {
             url     => $url,
@@ -568,7 +638,7 @@ sub _populate_category_regions {
 sub _concat_args {
     my ($self, $url, @args) = @_;
 
-    return $url if not scalar(@args);
+    return $url if scalar(@args) == 0;
     my $args = $self->list_to_gdata_arguments(@args);
 
     if (not defined($args) or $args eq q{}) {
@@ -580,13 +650,26 @@ sub _concat_args {
     return $url;
 }
 
-sub get_categories {
-    my ($self) = @_;
+sub _get_categories {
+    my ($self, $url) = @_;
 
-    my $url = $self->get_categories_url();
-    $url = $self->_concat_args($url, 'hl' => $self->get_categories_language, 'v' => $self->get_v);
+    $url = $self->_concat_args($url, 'hl' => $self->get_categories_language(), 'v' => $self->get_v());
 
-    my $hash = xml2hash($self->lwp_get($url));
+    require File::Spec;
+    my ($file) = $url =~ m{/([^/]+\.cat)\b};
+    my $cat_file = File::Spec->catfile($self->get_config_dir(), $file);
+
+    if (not -f $cat_file) {
+        $self->lwp_mirror($url, $cat_file) or return;
+    }
+
+    my $hash = xml2hash(
+        do {
+            open my $fh, '<:encoding(UTF-8)', $cat_file or do { warn "Can't open file '$cat_file' for reading: $!"; return };
+            local $/;
+            <$fh>;
+          }
+    );
 
     my @categories;
     foreach my $cat (@{$hash->{'app:categories'}{'atom:category'}}) {
@@ -595,11 +678,24 @@ sub get_categories {
           scalar {
                   label   => $cat->{'-label'},
                   term    => $cat->{'-term'},
-                  regions => [split(q{ }, $cat->{'yt:browsable'}{'-regions'})],
+                  regions => (
+                               exists($cat->{'yt:browsable'})
+                            && exists($cat->{'yt:browsable'}{'-regions'}) ? [split(q{ }, $cat->{'yt:browsable'}{'-regions'})] : []
+                  ),
                  };
     }
 
-    return @categories;
+    return \@categories;
+}
+
+sub get_categories {
+    my ($self) = @_;
+    return $self->_get_categories($self->get_categories_url());
+}
+
+sub get_educategories {
+    my ($self) = @_;
+    return $self->_get_categories($self->get_educategories_url());
 }
 
 sub _get_pairs_from_info_data {
@@ -656,7 +752,7 @@ sub search_channels {
     # https://gdata.youtube.com/feeds/api/channels?q=soccer&v=2
 
     my $keywords = $self->escape_string("@keywords");
-    my $url = $self->_concat_args($self->prepare_url($self->get_feeds_url() . "/channels"), 'q' => $keywords);
+    my $url = $self->_make_feed_url_with_args('/channels', ('q' => $keywords));
 
     return {
             url     => $url,
@@ -669,7 +765,7 @@ sub search_for_playlists {
 
     my $keywords = $self->escape_string("@keywords");
 
-    my $url = $self->_concat_args($self->prepare_url($self->get_feeds_url() . "/playlists/snippets"), ('q' => $keywords));
+    my $url = $self->_make_feed_url_with_args('/playlists/snippets', ('q' => $keywords));
 
     return {
             url     => $url,
@@ -995,17 +1091,40 @@ Returns caption value.
 
 Returns the YouTube categories.
 
+=item get_educategories()
+
+Returns the EDU YouTube categories.
+
 =item get_categories_language()
 
 Returns the categories language value.
 
 =item get_categories_url()
 
-Returns the categories URL.
+Returns the YouTube categories URL.
+
+=item get_educategories_url()
+
+Returns the EDU YouTube categories URL.
 
 =item get_category()
 
 Returns the category value.
+
+=item get_video_lectures_from_category($cat_id)
+
+Get the video lectures from a specific category ID.
+$cat_id can be any valid category ID from the EDU categories.
+
+=item get_courses_from_category($cat_id)
+
+Get the courses from a specific category ID.
+$cat_id can be any valid category ID from the EDU categories.
+
+=item get_video_lectures_from_course($course_id)
+
+Get the video lectures from a specific course ID.
+$course_id can be any valid course ID from the EDU categories.
 
 =item get_content($url;%opts)
 
@@ -1018,6 +1137,10 @@ Valid %opts:
 =item get_debug()
 
 Returns the debug value.
+
+=item get_config_dir()
+
+Get the configuration directory.
 
 =item get_duration()
 
@@ -1249,6 +1372,10 @@ Set the authentication key.
 
 Set the author value.
 
+=item set_config_dir($dir)
+
+Set a configuration dir, where to save the cateogires files.
+
 =item set_caption($value)
 
 Set the caption value. ('true', 'false' or undef)
@@ -1278,6 +1405,10 @@ Can't be changed!
 Can't be changed!
 
 =item set_video_info_args()
+
+Can't be changed!
+
+=item set_educategories_url()
 
 Can't be changed!
 
@@ -1317,9 +1448,9 @@ Set the env_proxy value for LWP.
 
 Set the keep_alive value for LWP.
 
-=item set_lwp_timeout($bool)
+=item set_lwp_timeout($sec).
 
-Set the timeout value for LWP. (in seconds)
+Set the timeout value for LWP, in seconds. Default: 60
 
 =item set_lwp_useragent()
 
