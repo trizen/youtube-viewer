@@ -63,7 +63,7 @@ my %valid_options = (
     lwp_timeout => {valid => [qr/^\d+$/],                     default => 60},
     auth_key    => {valid => [qr/^.{5}/],                     default => undef},
     key         => {valid => [qr/^.{5}/],                     default => undef},
-    author      => {valid => [qr{^(?:\w+(?:[-.]++\w++)*)\z}], default => undef},
+    author      => {valid => [qr{^[\-\w]{2,64}\z}],           default => undef},
     app_version => {valid => [qr/^\d/],                       default => $VERSION},
     app_name    => {valid => [qr/^./],                        default => 'Youtube Viewer'},
     config_dir  => {valid => [qr/^./],                        default => q{.}},

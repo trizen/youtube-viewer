@@ -2313,45 +2313,272 @@ strict - YouTube will try to exclude all restricted content.</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkFrame" id="frame11">
+                                      <object class="GtkExpander" id="more_options_expander">
                                         <property name="visible">True</property>
-                                        <property name="can_focus">False</property>
-                                        <property name="label_xalign">0</property>
-                                        <property name="shadow_type">none</property>
+                                        <property name="can_focus">True</property>
+                                        <signal name="activate" handler="activate_more_options_expander" swapped="no"/>
                                         <child>
-                                          <object class="GtkAlignment" id="alignment12">
+                                          <object class="GtkVBox" id="vbox20">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="left_padding">12</property>
                                             <child>
-                                              <object class="GtkSpinButton" id="spinbutton1">
+                                              <object class="GtkFrame" id="frame11">
                                                 <property name="visible">True</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="tooltip_text" translatable="yes">The maximum number of results per page.
+                                                <property name="can_focus">False</property>
+                                                <property name="label_xalign">0</property>
+                                                <property name="shadow_type">none</property>
+                                                <child>
+                                                  <object class="GtkAlignment" id="alignment12">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="left_padding">12</property>
+                                                    <child>
+                                                      <object class="GtkSpinButton" id="spinbutton1">
+                                                        <property name="visible">True</property>
+                                                        <property name="can_focus">True</property>
+                                                        <property name="tooltip_text" translatable="yes">The maximimum number of results per page.
 Recommended: 10</property>
-                                                <property name="max_length">2</property>
-                                                <property name="invisible_char">•</property>
-                                                <property name="width_chars">2</property>
-                                                <property name="invisible_char_set">True</property>
-                                                <property name="primary_icon_activatable">False</property>
-                                                <property name="secondary_icon_activatable">False</property>
-                                                <property name="primary_icon_sensitive">True</property>
-                                                <property name="secondary_icon_sensitive">True</property>
-                                                <property name="adjustment">adjustment1</property>
-                                                <property name="climb_rate">1</property>
-                                                <property name="numeric">True</property>
-                                                <property name="update_policy">if-valid</property>
-                                                <signal name="value-changed" handler="spin_results_per_page_changed" swapped="no"/>
+                                                        <property name="max_length">2</property>
+                                                        <property name="invisible_char">•</property>
+                                                        <property name="width_chars">2</property>
+                                                        <property name="invisible_char_set">True</property>
+                                                        <property name="primary_icon_activatable">False</property>
+                                                        <property name="secondary_icon_activatable">False</property>
+                                                        <property name="primary_icon_sensitive">True</property>
+                                                        <property name="secondary_icon_sensitive">True</property>
+                                                        <property name="adjustment">adjustment1</property>
+                                                        <property name="climb_rate">1</property>
+                                                        <property name="numeric">True</property>
+                                                        <property name="update_policy">if-valid</property>
+                                                        <signal name="value-changed" handler="spin_results_per_page_changed" swapped="no"/>
+                                                      </object>
+                                                    </child>
+                                                  </object>
+                                                </child>
+                                                <child type="label">
+                                                  <object class="GtkLabel" id="label19">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="label" translatable="yes">&lt;b&gt;Results per page:&lt;/b&gt;</property>
+                                                    <property name="use_markup">True</property>
+                                                  </object>
+                                                </child>
                                               </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">False</property>
+                                                <property name="position">0</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkFrame" id="frame9">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="label_xalign">0</property>
+                                                <property name="shadow_type">none</property>
+                                                <child>
+                                                  <object class="GtkAlignment" id="alignment9">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="left_padding">12</property>
+                                                    <child>
+                                                      <object class="GtkSpinButton" id="spinbutton2">
+                                                        <property name="visible">True</property>
+                                                        <property name="can_focus">True</property>
+                                                        <property name="tooltip_text" translatable="yes">List videos, starting with a specific page.</property>
+                                                        <property name="invisible_char">•</property>
+                                                        <property name="invisible_char_set">True</property>
+                                                        <property name="caps_lock_warning">False</property>
+                                                        <property name="primary_icon_activatable">False</property>
+                                                        <property name="secondary_icon_activatable">False</property>
+                                                        <property name="primary_icon_sensitive">True</property>
+                                                        <property name="secondary_icon_sensitive">True</property>
+                                                        <property name="adjustment">adjustment2</property>
+                                                        <property name="climb_rate">1</property>
+                                                        <property name="numeric">True</property>
+                                                        <property name="update_policy">if-valid</property>
+                                                        <signal name="value-changed" handler="spin_start_with_page_changed" swapped="no"/>
+                                                      </object>
+                                                    </child>
+                                                  </object>
+                                                </child>
+                                                <child type="label">
+                                                  <object class="GtkLabel" id="label7">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="label" translatable="yes">&lt;b&gt;Start with page:&lt;/b&gt;</property>
+                                                    <property name="use_markup">True</property>
+                                                  </object>
+                                                </child>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">False</property>
+                                                <property name="position">1</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkFrame" id="frame13">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="label_xalign">0</property>
+                                                <property name="shadow_type">none</property>
+                                                <child>
+                                                  <object class="GtkAlignment" id="alignment13">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="left_padding">12</property>
+                                                    <child>
+                                                      <object class="GtkEntry" id="from_author_entry">
+                                                        <property name="visible">True</property>
+                                                        <property name="can_focus">True</property>
+                                                        <property name="tooltip_text" translatable="yes">Search in videos uploaded by a specific author.
+Unless the author name is valid, this field is ignored.</property>
+                                                        <property name="invisible_char">•</property>
+                                                        <property name="text" translatable="yes">Insert a valid author name...</property>
+                                                        <property name="invisible_char_set">True</property>
+                                                        <property name="primary_icon_activatable">False</property>
+                                                        <property name="secondary_icon_activatable">False</property>
+                                                        <property name="primary_icon_sensitive">True</property>
+                                                        <property name="secondary_icon_sensitive">True</property>
+                                                        <signal name="button-press-event" handler="clear_text" swapped="no"/>
+                                                        <signal name="activate" handler="search" swapped="no"/>
+                                                      </object>
+                                                    </child>
+                                                  </object>
+                                                </child>
+                                                <child type="label">
+                                                  <object class="GtkLabel" id="label17">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="label" translatable="yes">&lt;b&gt;From author:&lt;/b&gt;</property>
+                                                    <property name="use_markup">True</property>
+                                                  </object>
+                                                </child>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">False</property>
+                                                <property name="position">2</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkFrame" id="frame25">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="label_xalign">0</property>
+                                                <property name="shadow_type">none</property>
+                                                <child>
+                                                  <object class="GtkAlignment" id="alignment24">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="left_padding">12</property>
+                                                    <child>
+                                                      <object class="GtkEntry" id="category_id_entry">
+                                                        <property name="visible">True</property>
+                                                        <property name="can_focus">True</property>
+                                                        <property name="tooltip_text" translatable="yes">Search in videos uploaded in a specific category.
+Unless the categoryID is valid, this field is ignored.</property>
+                                                        <property name="invisible_char">•</property>
+                                                        <property name="text" translatable="yes">Insert a valid category ID...</property>
+                                                        <property name="primary_icon_activatable">False</property>
+                                                        <property name="secondary_icon_activatable">False</property>
+                                                        <property name="primary_icon_sensitive">True</property>
+                                                        <property name="secondary_icon_sensitive">True</property>
+                                                        <signal name="button-press-event" handler="clear_text" swapped="no"/>
+                                                        <signal name="activate" handler="search" swapped="no"/>
+                                                      </object>
+                                                    </child>
+                                                  </object>
+                                                </child>
+                                                <child type="label">
+                                                  <object class="GtkLabel" id="label33">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="label" translatable="yes">&lt;b&gt;CategoryID:&lt;/b&gt;</property>
+                                                    <property name="use_markup">True</property>
+                                                  </object>
+                                                </child>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">True</property>
+                                                <property name="fill">True</property>
+                                                <property name="position">3</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkFrame" id="frame1">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="label_xalign">0</property>
+                                                <property name="shadow_type">none</property>
+                                                <child>
+                                                  <object class="GtkAlignment" id="alignment1">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="left_padding">12</property>
+                                                    <child>
+                                                      <object class="GtkVBox" id="vbox10">
+                                                        <property name="visible">True</property>
+                                                        <property name="can_focus">False</property>
+                                                        <child>
+                                                          <object class="GtkCheckButton" id="thumbs_checkbutton">
+                                                            <property name="label" translatable="yes">Show thumbnails</property>
+                                                            <property name="use_action_appearance">False</property>
+                                                            <property name="visible">True</property>
+                                                            <property name="can_focus">True</property>
+                                                            <property name="receives_default">False</property>
+                                                            <property name="draw_indicator">True</property>
+                                                            <signal name="toggled" handler="thumbs_checkbutton_toggled" swapped="no"/>
+                                                          </object>
+                                                          <packing>
+                                                            <property name="expand">False</property>
+                                                            <property name="fill">False</property>
+                                                            <property name="position">0</property>
+                                                          </packing>
+                                                        </child>
+                                                        <child>
+                                                          <object class="GtkCheckButton" id="fullscreen_checkbutton">
+                                                            <property name="label" translatable="yes">Fullscreen mode</property>
+                                                            <property name="use_action_appearance">False</property>
+                                                            <property name="visible">True</property>
+                                                            <property name="can_focus">True</property>
+                                                            <property name="receives_default">False</property>
+                                                            <property name="draw_indicator">True</property>
+                                                            <signal name="toggled" handler="toggled_mplayer_fullscreen" swapped="no"/>
+                                                          </object>
+                                                          <packing>
+                                                            <property name="expand">False</property>
+                                                            <property name="fill">False</property>
+                                                            <property name="position">1</property>
+                                                          </packing>
+                                                        </child>
+                                                      </object>
+                                                    </child>
+                                                  </object>
+                                                </child>
+                                                <child type="label">
+                                                  <object class="GtkLabel" id="label4">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="label" translatable="yes">&lt;b&gt;Search options&lt;/b&gt;</property>
+                                                    <property name="use_markup">True</property>
+                                                  </object>
+                                                </child>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">False</property>
+                                                <property name="position">4</property>
+                                              </packing>
                                             </child>
                                           </object>
                                         </child>
                                         <child type="label">
-                                          <object class="GtkLabel" id="label19">
+                                          <object class="GtkLabel" id="label32">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">&lt;b&gt;Results per page:&lt;/b&gt;</property>
-                                            <property name="use_markup">True</property>
+                                            <property name="label" translatable="yes">More options</property>
                                           </object>
                                         </child>
                                       </object>
@@ -2362,181 +2589,33 @@ Recommended: 10</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkFrame" id="frame9">
+                                      <object class="GtkHButtonBox" id="hbuttonbox6">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
-                                        <property name="label_xalign">0</property>
-                                        <property name="shadow_type">none</property>
+                                        <property name="homogeneous">True</property>
+                                        <property name="layout_style">center</property>
                                         <child>
-                                          <object class="GtkAlignment" id="alignment9">
+                                          <object class="GtkButton" id="button8">
+                                            <property name="label">gtk-find</property>
+                                            <property name="use_action_appearance">False</property>
                                             <property name="visible">True</property>
-                                            <property name="can_focus">False</property>
-                                            <property name="left_padding">12</property>
-                                            <child>
-                                              <object class="GtkSpinButton" id="spinbutton2">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="tooltip_text" translatable="yes">Show videos starting with a specific page.
-This option is based on number of results per page.
-Implemented as: results * page - results + 1</property>
-                                                <property name="invisible_char">•</property>
-                                                <property name="caps_lock_warning">False</property>
-                                                <property name="primary_icon_activatable">False</property>
-                                                <property name="secondary_icon_activatable">False</property>
-                                                <property name="primary_icon_sensitive">True</property>
-                                                <property name="secondary_icon_sensitive">True</property>
-                                                <property name="adjustment">adjustment2</property>
-                                                <property name="climb_rate">1</property>
-                                                <property name="numeric">True</property>
-                                                <property name="update_policy">if-valid</property>
-                                                <signal name="value-changed" handler="spin_start_with_page_changed" swapped="no"/>
-                                              </object>
-                                            </child>
+                                            <property name="can_focus">True</property>
+                                            <property name="receives_default">True</property>
+                                            <property name="use_stock">True</property>
+                                            <signal name="clicked" handler="search" swapped="no"/>
                                           </object>
-                                        </child>
-                                        <child type="label">
-                                          <object class="GtkLabel" id="label7">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">&lt;b&gt;Start with page:&lt;/b&gt;</property>
-                                            <property name="use_markup">True</property>
-                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">False</property>
+                                            <property name="position">0</property>
+                                          </packing>
                                         </child>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
                                         <property name="fill">False</property>
+                                        <property name="padding">14</property>
                                         <property name="position">7</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkFrame" id="frame13">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">False</property>
-                                        <property name="label_xalign">0</property>
-                                        <property name="shadow_type">none</property>
-                                        <child>
-                                          <object class="GtkAlignment" id="alignment13">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">False</property>
-                                            <property name="left_padding">12</property>
-                                            <child>
-                                              <object class="GtkEntry" id="from_author_entry">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="tooltip_text" translatable="yes">Search videos uploaded by a specific user.
-Unless the input is valid, this option is ignored.</property>
-                                                <property name="invisible_char">•</property>
-                                                <property name="text" translatable="yes">Insert a valid YouTube author name...</property>
-                                                <property name="invisible_char_set">True</property>
-                                                <property name="primary_icon_activatable">False</property>
-                                                <property name="secondary_icon_activatable">False</property>
-                                                <property name="primary_icon_sensitive">True</property>
-                                                <property name="secondary_icon_sensitive">True</property>
-                                                <signal name="button-press-event" handler="clear_text" swapped="no"/>
-                                                <signal name="activate" handler="search" swapped="no"/>
-                                              </object>
-                                            </child>
-                                          </object>
-                                        </child>
-                                        <child type="label">
-                                          <object class="GtkLabel" id="label17">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">&lt;b&gt;From author:&lt;/b&gt;</property>
-                                            <property name="use_markup">True</property>
-                                          </object>
-                                        </child>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">8</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkFrame" id="frame1">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">False</property>
-                                        <property name="label_xalign">0</property>
-                                        <property name="shadow_type">none</property>
-                                        <child>
-                                          <object class="GtkAlignment" id="alignment1">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">False</property>
-                                            <property name="left_padding">12</property>
-                                            <child>
-                                              <object class="GtkVBox" id="vbox10">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <child>
-                                                  <object class="GtkCheckButton" id="thumbs_checkbutton">
-                                                    <property name="label" translatable="yes">Show thumbnails</property>
-                                                    <property name="use_action_appearance">False</property>
-                                                    <property name="visible">True</property>
-                                                    <property name="can_focus">True</property>
-                                                    <property name="receives_default">False</property>
-                                                    <property name="tooltip_text" translatable="yes">Show thumbnails for videos (may be slow)</property>
-                                                    <property name="draw_indicator">True</property>
-                                                    <signal name="toggled" handler="thumbs_checkbutton_toggled" swapped="no"/>
-                                                  </object>
-                                                  <packing>
-                                                    <property name="expand">False</property>
-                                                    <property name="fill">False</property>
-                                                    <property name="position">0</property>
-                                                  </packing>
-                                                </child>
-                                                <child>
-                                                  <object class="GtkCheckButton" id="fullscreen_checkbutton">
-                                                    <property name="label" translatable="yes">Fullscreen mode</property>
-                                                    <property name="use_action_appearance">False</property>
-                                                    <property name="visible">True</property>
-                                                    <property name="can_focus">True</property>
-                                                    <property name="receives_default">False</property>
-                                                    <property name="tooltip_text" translatable="yes">Set fullscreen mode (-fs) for mplayer.</property>
-                                                    <property name="draw_indicator">True</property>
-                                                    <signal name="toggled" handler="toggled_mplayer_fullscreen" swapped="no"/>
-                                                  </object>
-                                                  <packing>
-                                                    <property name="expand">False</property>
-                                                    <property name="fill">False</property>
-                                                    <property name="position">1</property>
-                                                  </packing>
-                                                </child>
-                                              </object>
-                                            </child>
-                                          </object>
-                                        </child>
-                                        <child type="label">
-                                          <object class="GtkLabel" id="label4">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">&lt;b&gt;Search options&lt;/b&gt;</property>
-                                            <property name="use_markup">True</property>
-                                          </object>
-                                        </child>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">9</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkButton" id="button8">
-                                        <property name="label">gtk-find</property>
-                                        <property name="use_action_appearance">False</property>
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="receives_default">True</property>
-                                        <property name="tooltip_text" translatable="yes">Search for results...</property>
-                                        <property name="use_stock">True</property>
-                                        <signal name="clicked" handler="search" swapped="no"/>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">10</property>
                                       </packing>
                                     </child>
                                     <child>
@@ -2582,7 +2661,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
                                         <property name="expand">False</property>
                                         <property name="fill">False</property>
                                         <property name="pack_type">end</property>
-                                        <property name="position">11</property>
+                                        <property name="position">8</property>
                                       </packing>
                                     </child>
                                   </object>

@@ -18,20 +18,17 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 21 October 2012
+#  Latest edit on: 15 November 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
 use strict;
-
-#-----FOR DEBUG ONLY----#
-# use diagnostics -v;
-# use warnings FATAL => 'all';
-#-----------------------#
-
 use 5.010;
-use Gtk2 qw(-init);
 
+#use lib qw(../lib);    # devel only
+#use warnings;          # debug only
+
+use Gtk2 qw(-init);
 require WWW::YoutubeViewer;
 use File::Basename qw(dirname);
 use File::Spec::Functions qw(
@@ -110,6 +107,7 @@ my %CONFIG = (
     active_caption_combobox      => 0,
     active_duration_combobox     => 0,
     active_safe_search_combobox  => 1,
+    active_more_options_expander => 0,
 
     # MPlayer options
     cache             => 30000,
@@ -249,6 +247,7 @@ my (
     $search_entry,          $from_author_entry,   $gif_spinner,          $hbox2,                  $feeds_window,
     $feeds_treeview,        $feeds_liststore,     $feeds_statusbar,      $safesearch_combobox,    $hd_combobox,
     $caption_combobox,      $duration_combobox,   $warnings_window,      $warnings_textview,      $errors_textview,
+    $category_id_entry,     $more_options_expander,
    );
 
 sub get_objects {
@@ -282,6 +281,8 @@ sub get_objects {
         'treeviewcolumn2'        => \$thumbs_column,
         'textview2'              => \$textview_help,
         'from_author_entry'      => \$from_author_entry,
+        'category_id_entry'      => \$category_id_entry,
+        'more_options_expander'  => \$more_options_expander,
         'notebook1'              => \$notebook,
         'combobox1'              => \$sort_combobox,
         'combobox2'              => \$sort_by_time_combobox,
@@ -428,6 +429,9 @@ sub apply_configuration {
     if ($CONFIG{use_threads}) {
         set_threads();
     }
+
+    # Set the "More options" expander
+    $more_options_expander->set_expanded($CONFIG{active_more_options_expander});
 
     # Combo boxes setting config value
     $sort_combobox->set_active($CONFIG{active_sort_by_combobox});
@@ -656,6 +660,7 @@ CTRL+W : show the warnings window
 CTRL+G : show videos favorited by the author of a selected video
 CTRL+R : show related videos for a selected video
 CTRL+M : show videos from the author of a selected video
+CTRL+K : show playlists from the author of a selected video
 CTRL+S : add the author name of a selected video into the users list
 CTRL+Q : close the application
 DEL : remove the selected video from the list
@@ -728,6 +733,7 @@ $accel->connect(ord('s'), ['control-mask'], ['visible'], \&add_user_to_favorites
 $accel->connect(ord('r'), ['control-mask'], ['visible'], \&show_related_videos);
 $accel->connect(ord('g'), ['control-mask'], ['visible'], \&get_user_favorited_videos);
 $accel->connect(ord('m'), ['control-mask'], ['visible'], \&show_more_videos_from_username);
+$accel->connect(ord('k'), ['control-mask'], ['visible'], \&show_playlists_from_username);
 $accel->connect(ord('w'), ['control-mask'], ['visible'], \&show_warnings_window);
 $accel->connect(0xffff,   ['lock-mask'],    ['visible'], \&delete_selected_row);
 $accel->connect(0xffc8,   ['lock-mask'],    ['visible'], \&maximize_unmaximize_mainw);
@@ -998,13 +1004,18 @@ sub spin_start_with_page_changed {
 
 # Menu items
 sub toggled_mplayer_fullscreen {
-    $CONFIG{fullscreen} = $fullscreen_checkbutton->get_active || 0;
+    $CONFIG{fullscreen} = $fullscreen_checkbutton->get_active() || 0;
 }
 
 # Check buttons toggles
 sub thumbs_checkbutton_toggled {
-    $CONFIG{show_thumbs} = ($_[0]->get_active || 0);
+    $CONFIG{show_thumbs} = ($_[0]->get_active() || 0);
     $thumbs_column->set_visible($CONFIG{show_thumbs});
+}
+
+# "More options" expander
+sub activate_more_options_expander {
+    $CONFIG{active_more_options_expander} = $_[0]->get_expanded() ? 0 : 1;
 }
 
 # Get main window size
@@ -1213,6 +1224,7 @@ sub search {
 
     $liststore->clear if $CONFIG{clear_list};
     $yv_obj->set_author($from_author_entry->get_text);
+    $yv_obj->set_category($category_id_entry->get_text);
 
     if ($CONFIG{search_playlists}) {
         print_playlists($yv_obj->search_for_playlists($keywords));
