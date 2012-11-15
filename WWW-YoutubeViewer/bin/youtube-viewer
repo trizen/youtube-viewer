@@ -1582,18 +1582,19 @@ sub youtube_urls {
         when (/$get_video_id_re/) {
             my $info = $yv_obj->get_video_info($+{video_id});
             play_videos($info->{results});
-            return 1;
         }
         when (/$get_playlist_id_re/) {
             get_and_print_videos_from_playlist($+{playlist_id});
-            return 1;
         }
         when (/$get_course_id_re/) {
             get_and_print_videos_from_course($+{course_id});
-            return 1;
+        }
+        default {
+            return;
         }
     }
-    return;
+
+    return 1;
 }
 
 sub general_options {
@@ -1629,7 +1630,6 @@ sub general_options {
             else {
                 warn_last_page();
             }
-            return 1;
         }
         when ($_ ~~ ['b', 'back'] and defined $url) {
             if ($yv_obj->back_page_is_available($url)) {
@@ -1639,23 +1639,19 @@ sub general_options {
             else {
                 warn_first_page();
             }
-            return 1;
         }
         when ('login') {
             my $auth_key = authenticate();
             if (defined $auth_key) {
                 $yv_obj->set_auth_key($auth_key);
             }
-            return 1;
         }
         when ('logout') {
             logout();
-            return 1;
         }
         when (['reset', 'reload', 'restart']) {
             @ARGV = ();
             do $0;
-            return 1;
         }
         when (/^dv${digit_or_equal_re}(.*)/ and ref $results eq 'ARRAY') {
             if (my @nums = get_valid_numbers($results, $1)) {
@@ -1670,7 +1666,6 @@ sub general_options {
             else {
                 warn_no_thing_selected('result');
             }
-            return 1;
         }
         when (/^v(?:ideoids?)?=(.*)/) {
             if (my @ids = split(/[,\s]+/, $1)) {
@@ -1679,28 +1674,25 @@ sub general_options {
             else {
                 warn colored("\n[!] No video ID specified!", 'bold red') . "\n";
             }
-            return 1;
         }
         when (/^playlist(?:ID)?=(.*)/) {
             get_and_print_videos_from_playlist($1);
-            return 1;
         }
         when (/^course(?:ID)?=(.*)/) {
             get_and_print_videos_from_course($1);
-            return 1;
         }
         when (/^courses=(.*)/) {
             print_courses($yv_obj->get_courses_from_category($1));
-            return 1;
         }
         when (/^lec(?:tures)?=(.*)/) {
             print_videos($yv_obj->get_video_lectures_from_category($1));
-            return 1;
         }
         default {
             return;
         }
     }
+
+    return 1;
 }
 
 sub warn_no_results {
