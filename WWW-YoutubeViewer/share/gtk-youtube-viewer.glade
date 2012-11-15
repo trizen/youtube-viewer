@@ -950,7 +950,7 @@
                             <property name="can_focus">False</property>
                             <child>
                               <object class="GtkButton" id="button20">
-                                <property name="label" translatable="yes">Get videos from this user</property>
+                                <property name="label" translatable="yes">List videos from this user</property>
                                 <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -966,7 +966,7 @@
                             </child>
                             <child>
                               <object class="GtkButton" id="button13">
-                                <property name="label" translatable="yes">Get user's favorited videos</property>
+                                <property name="label" translatable="yes">List user's favorited videos</property>
                                 <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -1009,13 +1009,13 @@
                             </child>
                             <child>
                               <object class="GtkButton" id="button12">
-                                <property name="label" translatable="yes">Add author into the users list</property>
+                                <property name="label" translatable="yes">List the user's playlists</property>
                                 <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
                                 <property name="image">image71</property>
-                                <signal name="clicked" handler="add_user_to_favorites" swapped="no"/>
+                                <signal name="clicked" handler="show_playlists_from_username" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -1509,7 +1509,7 @@
   <object class="GtkImage" id="image71">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="icon_name">list-add</property>
+    <property name="icon_name">emblem-documents</property>
   </object>
   <object class="GtkImage" id="image72">
     <property name="visible">True</property>

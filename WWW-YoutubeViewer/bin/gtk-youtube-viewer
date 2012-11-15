@@ -42,7 +42,7 @@ use File::Spec::Functions qw(
   );
 
 my $appname  = 'GTK Youtube Viewer';
-my $version  = '3.0.3';
+my $version  = '3.0.4-dev';
 my $execname = 'gtk-youtube-viewer';
 
 # Developer key
@@ -348,12 +348,19 @@ $mainw->set_title("$appname $version");
 $mainw->set_icon($app_icon_pixbuf);
 
 #------------------------ REGEXP AREA ------------------------#
-my $playlist_id_re       = qr{(?:PL)?([a-zA-Z0-9_\-]{16,32})};
-my $valid_playlist_id_re = qr{^$playlist_id_re\z};
-my $valid_video_id_re    = qr{^[0-9A-Za-z_\-]{11}\z};
-my $get_video_id_re      = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)([0-9A-Za-z_\-]{11})};
-my $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)$playlist_id_re\b};
-my $valid_username_re    = qr{^(?:\w+(?:[-.]++\w++)*)\z};
+my $generic_name_re   = qr{[a-zA-Z0-9_\-]{16,34}};
+my $valid_username_re = qr{^(?:\w+(?:[-.]++\w++)*|$generic_name_re)\z};
+
+my $video_id_re       = qr{[0-9A-Za-z_\-]{11}};
+my $valid_video_id_re = qr{^$video_id_re\z};
+my $get_video_id_re   = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)(?<video_id>$video_id_re)};
+
+my $course_id_re       = qr{EC(?<course_id>$generic_name_re)|(?<course_id>$generic_name_re)};
+my $valid_course_id_re = qr{^$course_id_re\z};
+my $get_course_id_re   = qr{/course\?list=$course_id_re};
+
+my $valid_playlist_id_re = qr{^$generic_name_re\z};
+my $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)(?<playlist_id>$generic_name_re)\b};
 
 {
     my $i = length $key;
@@ -855,7 +862,8 @@ sub hide_login_to_youtube_window {
 # Details window
 sub show_details_window {
     my ($code, $iter) = get_selected_video_code() or return;
-    return unless $code =~ /$valid_video_id_re/;
+
+    #return unless $code =~ /$valid_video_id_re/;
     $details_window->show;
     set_video_details($code, $iter);
     return 1;
@@ -1111,7 +1119,7 @@ sub add_user_to_favorites {
     my $user = get_username_for_selected_video() or return;
     $gui->get_object('username_entry')->set_text($user);
     add_username();
-    $feeds_statusbar->push(0, "Successfully added '${user}' into the username list (see: File->Users)");
+    $feeds_statusbar->push(0, "Successfully added '${user}' into the username list (see: Menu->Users)");
 }
 
 sub remove_selected_user {
@@ -1178,16 +1186,20 @@ sub get_selected_video_code {
 sub check_keywords {
     given ($_[0]) {
         when (/$get_video_id_re/o) {
-            my $info = $yv_obj->get_video_info($1);
+            my $info = $yv_obj->get_video_info($+{video_id});
             play_videos($info->{results});
             return 1;
         }
         when (/$valid_playlist_id_re/o) {
-            list_playlist($1);
+            list_playlist($_);
             return 1;
         }
         when (/$get_playlist_id_re/o) {
-            list_playlist($1);
+            list_playlist($+{playlist_id});
+            return 1;
+        }
+        when (/$get_course_id_re/) {
+            print_videos($yv_obj->get_video_lectures_from_course($+{course_id}));
             return 1;
         }
     }
@@ -1323,10 +1335,8 @@ sub print_videos {
         die "No video results...\n";
     }
 
-    $search_for_combobox->set_active(0);
-
-    # Hide others windows
     hide_feeds_window();
+    $search_for_combobox->set_active(0);
 
     foreach my $video (@{$videos}) {
         my $iter = $liststore->append;
@@ -1352,7 +1362,7 @@ sub print_videos {
                           . "<b>Category\t:</b> "
                           . encode_entities($video->{category} // 'Unknown') . "\n"
                           . "<b>Publisher\t: </b>"
-                          . $video->{author} . "\n\n" . "<i>"
+                          . $video->{name} . "\n\n" . "<i>"
                           . encode_entities($row_description) . "</i>"
                        );
 
@@ -1442,6 +1452,7 @@ sub print_playlists {
         die "No playlist results...\n";
     }
 
+    hide_feeds_window();
     $search_for_combobox->set_active(2);
 
     foreach my $playlist (@{$playlists}) {
@@ -1463,7 +1474,7 @@ sub print_playlists {
                           . encode_entities($playlist->{'title'})
                           . "</b></big>\n\n"
                           . "<b>Author\t:</b> "
-                          . $playlist->{author} . "\n"
+                          . $playlist->{name} . "\n"
                           . "<b>Published\t:</b> "
                           . format_date($playlist->{published}) . "\n"
                           . "<b>Updated\t:</b> "
@@ -2100,6 +2111,10 @@ sub show_more_videos_from_username {
     videos_from_username(get_username_for_selected_video() or return);
 }
 
+sub show_playlists_from_username {
+    playlists_from_username(get_username_for_selected_video() or return);
+}
+
 # Setting details to details_window
 sub set_video_details {
     my ($code, $iter) = @_;
@@ -2117,7 +2132,11 @@ sub set_video_details {
     # Setting video details
     $main_details =~ s/^\s+//;
     $main_details =~ s{\s*<i>.+</i>\s*}{\n};
-    $main_details =~ s/\s+/$-[0] < 10 ? "\t\t" : "\t"/e;
+    $main_details =~ s/\s+/$-[0] <= 8 ? "\t\t" : "\t"/e;
+    if (not $CONFIG{search_channels}) {
+        $main_details .= sprintf("<b>AuthorID\t:</b> %s\n", $liststore->get($iter, 6));
+    }
+
     my $secondary_details = $liststore->get($iter, 2);
     $secondary_details =~ s/:(?!\d)/\t: /g;
     $secondary_details =~ s/\b$_\b\t/$labels{$_}/ for keys %labels;
@@ -2131,8 +2150,13 @@ sub set_video_details {
 
     # Getting thumbs
     foreach my $nr (qw(1 2 3)) {
-        my $pixbuf = _get_pixbuf_thumbnail(sprintf($CONFIG{thumb_url}, $code, $nr));
-        $gui->get_object("image$nr")->set_from_pixbuf($pixbuf);
+        if ($CONFIG{search_playlists} or $CONFIG{search_channels}) {
+            $gui->get_object("image$nr")->set_from_pixbuf($default_thumb);
+        }
+        else {
+            my $pixbuf = _get_pixbuf_thumbnail(sprintf($CONFIG{thumb_url}, $code, $nr));
+            $gui->get_object("image$nr")->set_from_pixbuf($pixbuf);
+        }
     }
 
     # Setting textview description
