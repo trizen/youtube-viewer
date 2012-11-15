@@ -158,7 +158,7 @@ my $range_num_re        = qr{^([0-9]{1,2}+)(?>-|\.\.)([0-9]{1,2}+)\z};
 my $digit_or_equal_re   = qr{(?(?=[1-9])|=)};
 my $non_digit_or_opt_re = qr{^(?!$range_num_re)(?>[0-9]{1,2}[^0-9]|[0-9]{3}|[^0-9$opt_begin_chars])};
 
-my $generic_name_re   = qr{[a-zA-Z0-9_\-]{16,34}};
+my $generic_name_re   = qr{[a-zA-Z0-9_.\-]{16,34}};
 my $valid_username_re = qr{^(?:\w+(?:[-.]++\w++)*|$generic_name_re)\z};
 
 my $video_id_re       = qr{[0-9A-Za-z_\-]{11}};

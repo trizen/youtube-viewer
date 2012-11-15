@@ -349,7 +349,7 @@ $mainw->set_title("$appname $version");
 $mainw->set_icon($app_icon_pixbuf);
 
 #------------------------ REGEXP AREA ------------------------#
-my $generic_name_re   = qr{[a-zA-Z0-9_\-]{16,34}};
+my $generic_name_re   = qr{[a-zA-Z0-9_.\-]{16,34}};
 my $valid_username_re = qr{^(?:\w+(?:[-.]++\w++)*|$generic_name_re)\z};
 
 my $video_id_re       = qr{[0-9A-Za-z_\-]{11}};

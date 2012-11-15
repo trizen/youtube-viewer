@@ -59,14 +59,14 @@ my %valid_options = (
     safe_search => {valid => [qw(strict moderate none)],                 default => undef},
 
     # Others
-    debug       => {valid => [0 .. 2],                        default => 0},
-    lwp_timeout => {valid => [qr/^\d+$/],                     default => 60},
-    auth_key    => {valid => [qr/^.{5}/],                     default => undef},
-    key         => {valid => [qr/^.{5}/],                     default => undef},
-    author      => {valid => [qr{^[\-\w]{2,64}\z}],           default => undef},
-    app_version => {valid => [qr/^\d/],                       default => $VERSION},
-    app_name    => {valid => [qr/^./],                        default => 'Youtube Viewer'},
-    config_dir  => {valid => [qr/^./],                        default => q{.}},
+    debug       => {valid => [0 .. 2],               default => 0},
+    lwp_timeout => {valid => [qr/^\d+$/],            default => 60},
+    auth_key    => {valid => [qr/^.{5}/],            default => undef},
+    key         => {valid => [qr/^.{5}/],            default => undef},
+    author      => {valid => [qr{^[\-\w.]{2,64}\z}], default => undef},
+    app_version => {valid => [qr/^\d/],              default => $VERSION},
+    app_name    => {valid => [qr/^./],               default => 'Youtube Viewer'},
+    config_dir  => {valid => [qr/^./],               default => q{.}},
 
     categories_language => {valid => [qr/^[a-z]++-\w/], default => 'en-US'},
 
