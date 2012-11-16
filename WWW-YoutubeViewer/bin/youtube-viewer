@@ -104,8 +104,7 @@ use utf8;
 use 5.016;
 use strict;
 
-use lib qw(../lib);    # devel only
-
+#use lib qw(../lib);    # devel only
 #use warnings;          # debug only
 
 require WWW::YoutubeViewer;
