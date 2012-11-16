@@ -50,7 +50,7 @@ my %valid_options = (
     page        => {valid => [qr/^(?!0+\z)\d+\z/],                       default => 1},
     results     => {valid => [1 .. 50],                                  default => 10},
     hd          => {valid => [qw(true)],                                 default => undef},
-    http_proxy	=> {valid => [qr/^/],			 default => undef},
+    http_proxy  => {valid => [qr/^./],                                   default => undef},
     caption     => {valid => [qw(true false)],                           default => undef},
     duration    => {valid => [qw(short medium long)],                    default => undef},
     category    => {valid => \@categories_IDs,                           default => undef},
@@ -716,7 +716,16 @@ sub _get_pairs_from_info_data {
 
     foreach my $hash_ref (@array) {
         if (exists $hash_ref->{url} and exists $hash_ref->{sig}) {
+
+            # Add signature
             $hash_ref->{url} .= "&signature=$hash_ref->{sig}";
+
+            # Add proxy (if defined http_proxy)
+            if (defined(my $proxy_url = $self->get_http_proxy)) {
+                $proxy_url =~ s{http://}{http_proxy://};
+                $hash_ref->{url} = $proxy_url . $hash_ref->{url};
+            }
+
         }
     }
 
@@ -736,7 +745,7 @@ sub get_streaming_urls {
         Data::Dump::pp(\@info);
     }
 
-    if (exists $info[0]{status} and $info[0]->{status} eq q{fail}) {
+    if (exists $info[0]->{status} and $info[0]->{status} eq q{fail}) {
         warn "\n[!] Error occurred on getting info for video ID: $videoID\n";
         my $reason = $info[0]->{reason};
         $reason =~ tr/+/ /s;
@@ -789,7 +798,6 @@ sub full_gdata_arguments {
                 'duration'    => $self->get_duration,
                 'author'      => $self->get_author,
                 'v'           => $self->get_v,
-		'http_proxy'  => $self->get_http_proxy,
                );
 
     if (ref $opts{ignore} eq 'ARRAY') {
@@ -1034,83 +1042,188 @@ Trizen, C<< <trizenx at gmail.com> >>
 
 =head1 SUBROUTINES/METHODS
 
-=over 2
+=head2 Main options
+
+=over 4
 
 =item new(%opts)
 
-Returns a blessed object.
+Return a blessed object.
+
+=item search(@keywords)
+
+Search and return the video results.
+
+=item search_channels(@keywords)
+
+Search and return the channel results.
+
+=item search_for_playlists(@keywords)
+
+Search and return the playlist results.
 
 =item back_page_is_available($url)
 
-Returns true if a previous page is available.
+Return true if a previous page is available.
 
 =item default_gdata_arguments()
 
-Returns a string with the default gdata arguments.
+Return a string with the default gdata arguments.
+
+=item list_to_gdata_arguments(%options)
+
+Return a valid string of arguments, with defined values.
 
 =item like_video($videoID)
 
-Like a video. Returns true on success.
+Like a video. Return true on success.
 
 =item dislike_video($videoID)
 
-Dislike a video. Returns true on success.
+Dislike a video. Return true on success.
+
+=item send_rating_to_video($videoID, $rating)
+
+Send rating to a video. $rating can be either 'like' or 'dislike'.
+
+=item send_comment_to_video($videoID, $comment)
+
+Send comment to a video. Return true on success.
 
 =item escape_string($string)
 
 Escapes a string with URI::Escape and returns it.
 
+=item login($email, $password)
+
+Return the authentication on success. undef otherwise.
+
+=item prepare_auth_key()
+
+Return a string used as header with the auth key.
+
+=item prepare_key()
+
+Return a string used as header with developer key.
+
+=item prepare_url($url)
+
+Accepts a URL without arguments, appends the
+I<default_arguments()> to it, and returns it.
+
+=item set_lwp_useragent()
+
+Intialize the LWP::UserAgent module.
+
 =item favorite_video($videoID)
 
-Favorite a video. Returns true on success.
+Favorite a video. Return true on success.
+
+=item subscribe_channel($username)
+
+Subscribe to a user's channel.
 
 =item full_gdata_arguments()
 
-Returns a string with all the GData arguments.
+Return a string with all the GData arguments.
 
-=item get_app_name()
+=item lwp_get($url)
 
-Returns the application name.
+Return the content for $url.
 
-=item get_app_version()
+=item lwp_mirror($url, $output_file)
 
-Returns the application version.
+Downloads the $url into $output_file. Return true on success.
 
-=item get_auth_key()
+=item get_content($url;%opts)
 
-Returns the authentication key.
+Return a hash reference containing the URL and RESULTS:
+    {url => '...', results => [...]}
 
-=item get_author()
+Valid %opts:
+    playlists => 1, comments => 1, videos => 1,
+    channels  => 1, courses  => 1,
 
-Returns the author value.
+=item next_page($url;%opts)
 
-=item get_caption()
+Return the next page of results.
+%opts are the same as for I<get_content()>.
 
-Returns caption value.
+=item previous_page($url;%opts)
+
+Return the previous page of results.
+%opts are the same as for I<get_content()>.
+
+=item get_streaming_urls($videoID)
+
+Return a list of streaming URLs for a videoID.
+({itag=>...}, {itag=>...}, {has_cc=>...})
+
+=item get_video_info($videoID)
+
+Return informations for a videoID.
+
+=item get_related_videos($videoID)
+
+Return the related videos for a videoID.
+
+=item get_favorites(;$user)
+
+Return the latest favorited videos for the current logged user.
+
+=item get_recommendations()
+
+Return a list of videos, recommended for you by Youtube.
+
+=item get_watch_history(;$user)
+
+Return the latest videos watched on Youtube.
+
+=item get_newsubscriptionvideos(;$user)
+
+Return the videos from the subscriptions for the current logged user.
+
+=item get_favorited_videos_from_username($username)
+
+Return the latest favorited videos for a given username.
+
+=item get_playlists_from_username($username)
+
+Return a list of playlists created by $username.
+
+=item get_videos_from_playlist($playlistID)
+
+Return a list of videos from playlistID.
+
+=item get_videos_from_username($username)
+
+Return the latest videos uploaded by a username.
+
+=item get_video_comments($videoID)
+
+Return a list of comments for a videoID.
+
+=item get_movies($movieID)
+
+Return the movie results.
+
+=item get_video_tops(%opts)
+
+Return the video tops for a specific feed_id.
+Valid %opts:
+    (feed_id=>'...',cat_id=>'...',region_id=>'...',time_id=>'...')
 
 =item get_categories()
 
-Returns the YouTube categories.
+Return the YouTube categories.
+
+=item get_videos_from_category($cat_id)
+
+Return a list of videos from a categoryID.
 
 =item get_educategories()
 
-Returns the EDU YouTube categories.
-
-=item get_categories_language()
-
-Returns the categories language value.
-
-=item get_categories_url()
-
-Returns the YouTube categories URL.
-
-=item get_educategories_url()
-
-Returns the EDU YouTube categories URL.
-
-=item get_category()
-
-Returns the category value.
+Return the EDU YouTube categories.
 
 =item get_video_lectures_from_category($cat_id)
 
@@ -1127,176 +1240,251 @@ $cat_id can be any valid category ID from the EDU categories.
 Get the video lectures from a specific course ID.
 $course_id can be any valid course ID from the EDU categories.
 
-=item get_content($url;%opts)
+=back
 
-Return a hash reference containing the URL and RESULTS:
-    {url => '...', results => [...]}
+=head2 set/get methods
 
-Valid %opts:
-    playlists => 1, comments => 1, videos => 1, channels => 1
+=over 4
 
-=item get_debug()
+=item set_app_name($appname)
 
-Returns the debug value.
+Set the application name.
 
-=item get_config_dir()
+=item get_app_name()
 
-Get the configuration directory.
+Return the application name.
+
+=item set_app_version($version)
+
+Set the application version.
+
+=item get_app_version()
+
+Return the application version.
+
+=item set_v()
+
+Can't be changed!
+
+=item get_v()
+
+Return the current version of GData implementation.
+
+=item set_key($dev_key)
+
+Set the developer key.
+
+=item get_key()
+
+Return the developer key.
+
+=item set_auth_key($auth_key)
+
+Set the authentication key.
+
+=item get_auth_key()
+
+Return the authentication key.
+
+=item set_author($username)
+
+Set the author value.
+
+=item get_author()
+
+Return the author value.
+
+=item set_duration($duration_id)
+
+Set duration value. (ex: 'long')
 
 =item get_duration()
 
-Returns the duration value.
+Return the duration value.
 
-=item get_escape_utf8()
+=item set_orderby()
 
-Returns true if escape_utf8 is used.
+Set the order-by value. (ex: published)
 
-=item get_favorited_videos_from_username($username)
+=item get_orderby()
 
-Returns the latest favorited videos by a username.
+Return the orderby value.
 
-=item get_favorites(;$user)
+=item set_hd($value)
 
-Returns the latest favorited videos for the current logged user.
-
-=item get_feeds_url()
-
-Returns the GData feeds URL.
-
-=item get_google_login_url()
-
-Returns the Google Client login URL.
+Set hd value. $value can be either 'true' or undef.
 
 =item get_hd()
 
 Return the hd value.
 
-=item get_http_proxy()
+=item set_caption($value)
 
-Return the http_proxy value.
+Set the caption value. ('true', 'false' or undef)
 
-=item get_key()
+=item get_caption()
 
-Returns the developer key.
+Return caption value.
 
-=item get_lwp_agent()
+=item set_category($cat_id)
 
-Returns the LWP user agent value.
+Set a category value. (ex: 'Music')
 
-=item get_lwp_env_proxy()
+=item get_category()
 
-Returns the env_proxy value.
+Return the category value.
 
-=item get_lwp_keep_alive()
+=item set_safe_search($value)
 
-Returns the keep_alive value.
+Set the safe search sensitivity. (ex: strict)
 
-=item get_lwp_timeout()
+=item get_safe_search()
 
-Returns the timeout value.
+Return the safe_search value.
 
-=item get_movies($movieID)
+=item set_region($region_ID)
 
-Returns the movie results.
-
-=item get_newsubscriptionvideos(;$user)
-
-Returns the latest videos from subscriptions.
-
-=item get_orderby()
-
-Returns the orderby value.
-
-=item get_page()
-
-Returns the page value.
-
-=item get_playlists_from_username($username)
-
-Returns a list of playlists created by $username.
-
-=item get_recommendations()
-
-Returns a list of videos, recommended for you by Youtube.
+Set the regionID value for video tops. (ex: JP)
 
 =item get_region()
 
 Return the region value.
 
-=item get_related_videos($videoID)
+=item set_time($time_id)
 
-Returns the related videos for a videoID.
+Set the time value. (ex: this_week)
+
+=item get_time()
+
+Return the time value.
+
+=item set_results([1-50])
+
+Set the number of results per page. (max 50)
 
 =item get_results()
 
-Returns the results value.
+Return the results value.
 
-=item get_safe_search()
+=item set_page($i)
 
-Returns the safe_search value.
+Set the page number value.
+
+=item get_page()
+
+Return the page value.
 
 =item get_start_index()
 
-Returns the start_index based on the page number and results.
+Return the start_index based on the page number and results.
 
 =item get_start_index_var($page, $results)
 
 Return the start_index value for the specific variables.
 
-=item get_streaming_urls($videoID)
+=item set_categories_language($cat_lang)
 
-Returns a list of streaming URLs for a videoID.
-({itag=>...}, {itag=>...}, {has_cc=>...})
+Set the categories language. (ex: en-US)
 
-=item get_time()
+=item get_categories_language()
 
-Returns the time value.
+Return the categories language value.
 
-=item get_v()
+=item set_categories_url()
 
-Returns the current version of GData.
+Can't be changed!
 
-=item get_video_comments($videoID)
+=item get_categories_url()
 
-Returns a list of comments for a videoID.
+Return the YouTube categories URL.
 
-=item get_video_info($videoID)
+=item set_educategories_url()
 
-Return informations for a videoID.
+Can't be changed!
 
-=item get_video_info_url()
+=item get_educategories_url()
 
-Return the video_info URL.
+Return the EDU YouTube categories URL.
 
-=item get_video_info_args()
+=item set_debug($level_num)
 
-Return the video_info arguments.
+Set the debug level. (valid: 0, 1, 2)
 
-=item get_video_tops(%opts)
+=item get_debug()
 
-Returns the video tops for a specific feed_id.
-Valid %opts:
-    (feed_id=>'...',cat_id=>'...',region_id=>'...',time_id=>'...')
+Return the debug value.
 
-=item get_videos_from_category($cat_id)
+=item set_config_dir($dir)
 
-Returns a list of videos from a categoryID.
+Set a configuration directory.
 
-=item get_videos_from_playlist($playlistID)
+=item get_config_dir()
 
-Returns a list of videos from playlistID.
+Get the configuration directory.
 
-=item get_videos_from_username($username)
+=item set_escape_utf8($bool)
 
-Returns the latest videos uploaded by a username.
+If true, it escapes the keywords using uri_escape_utf8.
 
-=item get_watch_history(;$user)
+=item get_escape_utf8()
 
-Returns the latest videos watched on Youtube.
+Return true if escape_utf8 is used.
 
-=item list_to_gdata_arguments(%options)
+=item set_feeds_url()
 
-Returns a valid string of arguments, with defined values.
+Can't be changed!
+
+=item get_feeds_url()
+
+Return the GData feeds URL.
+
+=item set_google_login_url()
+
+Can't be changed!
+
+=item get_google_login_url()
+
+Return the Google Client login URL.
+
+=item set_http_proxy($value)
+
+Set http_proxy value. $value must be a valid URL or undef.
+
+=item get_http_proxy()
+
+Return the http_proxy value.
+
+=item set_lwp_agent($agent)
+
+Set a user agent for the LWP module.
+
+=item get_lwp_agent()
+
+Return the user agent value.
+
+=item set_lwp_env_proxy($bool)
+
+Set the env_proxy value for LWP.
+
+=item get_lwp_env_proxy()
+
+Return the env_proxy value.
+
+=item set_lwp_keep_alive($bool)
+
+Set the keep_alive value for LWP.
+
+=item get_lwp_keep_alive()
+
+Return the keep_alive value.
+
+=item set_lwp_timeout($sec).
+
+Set the timeout value for LWP, in seconds. Default: 60
+
+=item get_lwp_timeout()
+
+Return the timeout value.
 
 =item set_prefer_https($bool)
 
@@ -1306,194 +1494,27 @@ Will use https:// protocol instead of http://.
 
 Will return the value of prefer_https.
 
-=item login($email, $password)
-
-Returns the authentication on success. undef otherwise.
-
-=item lwp_get($url)
-
-Returns the content for $url.
-
-=item lwp_mirror($url, $output_file)
-
-Downloads the $url into $output_file. Returns true on success.
-
-=item next_page($url;%opts)
-
-Returns the next page of results.
-%opts are the same as for I<get_content()>.
-
-=item previous_page($url;%opts)
-
-Returns the previous page of results.
-%opts are the same as for I<get_content()>.
-
-=item prepare_auth_key()
-
-Return a string used as header with the auth key.
-
-=item prepare_key()
-
-Returns a string used as header with developer key.
-
-=item prepare_url($url)
-
-Accepts a URL without arguments, appends the
-I<default_arguments()> to it, and returns it.
-
-=item search(@keywords)
-
-Search and return the video results.
-
-=item search_channels(@keywords)
-
-Search and return the channel results.
-
-=item search_for_playlists(@keywords)
-
-Search and return the playlist results.
-
-=item send_comment_to_video($videoID, $comment)
-
-Send comment to a video. Returns true on success.
-
-=item send_rating_to_video($videoID, $rating)
-
-Send rating to a video. $rating can be either 'like' or 'dislike'.
-
-=item set_app_name($appname)
-
-Set the application name.
-
-=item set_app_version($version)
-
-Set the application version.
-
-=item set_auth_key($auth_key)
-
-Set the authentication key.
-
-=item set_author($username)
-
-Set the author value.
-
-=item set_config_dir($dir)
-
-Set a configuration dir, where to save the cateogires files.
-
-=item set_caption($value)
-
-Set the caption value. ('true', 'false' or undef)
-
-=item set_categories_language($cat_lang)
-
-Set the categories language. (ex: en-US)
-
-=item set_categories_url()
-
-Can't be changed!
-
-=item set_feeds_url()
-
-Can't be changed!
-
-=item set_google_login_url()
-
-Can't be changed!
-
-=item set_v()
-
-Can't be changed!
-
 =item set_video_info_url()
 
 Can't be changed!
+
+=item get_video_info_url()
+
+Return the video_info URL.
 
 =item set_video_info_args()
 
 Can't be changed!
 
-=item set_educategories_url()
+=item get_video_info_args()
 
-Can't be changed!
-
-=item set_category($cat_id)
-
-Set a category value. (ex: 'Music')
-
-=item set_debug($bool)
-
-Set the debug level. (available: 0, 1, 2)
-
-=item set_duration($duration_id)
-
-Set duration value. (ex: 'long')
-
-=item set_escape_utf8($bool)
-
-If true, it escapes the keywords using uri_escape_utf8.
-
-=item set_hd($value)
-
-Set hd value. $value can be either 'true' or undef.
-
-=item set_http_proxy($value)
-
-Set http_proxy value. $value must be a valid url or undef.
-
-=item set_key($dev_key)
-
-Set the developer key.
-
-=item set_lwp_agent($agent)
-
-Set a user agent for the LWP module.
-
-=item set_lwp_env_proxy($bool)
-
-Set the env_proxy value for LWP.
-
-=item set_lwp_keep_alive($bool)
-
-Set the keep_alive value for LWP.
-
-=item set_lwp_timeout($sec).
-
-Set the timeout value for LWP, in seconds. Default: 60
-
-=item set_lwp_useragent()
-
-Intialize the LWP::UserAgent module.
-
-=item set_orderby()
-
-Set the order-by value. (ex: published)
-
-=item set_page($i)
-
-Set the page number value.
-
-=item set_region($region_ID)
-
-Set the regionID value for video tops. (ex: JP)
-
-=item set_results([1-50])
-
-Set the number of results per page. (max 50)
-
-=item set_safe_search($value)
-
-Set the safe search sensitivity. (ex: strict)
-
-=item set_time($time_id)
-
-Set the time value. (ex: this_week)
-
-=item subscribe_channel($username)
-
-Subscribe to a user's channel.
+Return the video_info arguments.
 
 =back
+
+=head1 SEE ALSO
+
+https://developers.google.com/youtube/2.0/developers_guide_protocol_api_query_parameters
 
 =head1 LICENSE AND COPYRIGHT
 
@@ -1504,7 +1525,6 @@ under the terms of either: the GNU General Public License as published
 by the Free Software Foundation; or the Artistic License.
 
 See http://dev.perl.org/licenses/ for more information.
-
 
 =cut
 

@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 15 November 2012
+#  Latest edit on: 16 November 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -151,7 +151,7 @@ my %CONFIG = (
     gcap          => $gcap,
 
     # Others
-    http_proxy	    => undef,
+    http_proxy      => undef,
     page            => 1,
     debug           => 0,
     fullscreen      => 0,
@@ -397,16 +397,16 @@ sub apply_configuration {
     $fullscreen_checkbutton->set_active($CONFIG{fullscreen});
 
     # Others
-    foreach my $method_name (
+    foreach my $option_name (
                              qw(
                              caption results duration
                              author orderby region category
                              categories_language safe_search
-                             page debug time prefer_https
+                             page debug time prefer_https http_proxy
                              )
       ) {
-        my $code = \&{"WWW::YoutubeViewer::set_$method_name"};
-        $yv_obj->$code($CONFIG{$method_name});
+        my $code = \&{"WWW::YoutubeViewer::set_$option_name"};
+        $yv_obj->$code($CONFIG{$option_name});
     }
 
     # Spin button results setting config value
@@ -429,13 +429,6 @@ sub apply_configuration {
     # Setup threads
     if ($CONFIG{use_threads}) {
         set_threads();
-    }
-
-    # Proxy
-    if (defined $CONFIG->{http_proxy})
-    {
-	my $code = \&{"WWW::YoutubeViewer::set_http_proxy"};
-	$yv_obj->$code(delete $CONFIG->{http_proxy});
     }
 
     # Set the "More options" expander
@@ -1715,9 +1708,6 @@ sub play_videos {
 
         say "@mplayer_line" if $yv_obj->get_debug;
 
-	my $proxy_url = $CONFIG{http_proxy};
-	$proxy_url =~ s/http:\/\//http_proxy:\/\//;
-	$streaming->{streaming}{url} = $proxy_url . $streaming->{streaming}{url};
         system join(q{ }, map { quotemeta } @mplayer_line, $streaming->{streaming}{url}) . q{ &};
         return if $?;
     }

@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 15 November 2012
+#  Latest edit on: 16 November 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -77,6 +77,7 @@
 # - gotbletu (for the great video review of youtube-viewer: http://www.youtube.com/watch?v=FnJ67oAxVQ4)
 # - Julian Ospald (for adding youtube-viewer in the gentoo portage tree: http://packages.gentoo.org/package/net-misc/youtube-viewer)
 # - 666philb (for packaging gtk-youtube-viewer for Puppy Linux: http://www.murga-linux.com/puppy/viewtopic.php?t=76835)
+# - Kevin Lemonnier (for adding support for proxy)
 
 =head1 NAME
 
@@ -209,7 +210,7 @@ my %CONFIG = (
     gcap          => $gcap,
 
     # Others
-    http_proxy		 => undef,
+    http_proxy           => undef,
     debug                => 0,
     colors               => $constant{win32} ^ 1,
     clobber              => 0,
@@ -505,7 +506,9 @@ Other options:
    --gdata-url=s        : print video results from a valid GData URL
    --get-term-width     : adjust the text for your terminal width
    --login              : will prompt you for login
-   --http_proxy		: HTTP proxy to use, format 'http://domain.tld:port/'. If authentication required, use 'http://user:pass\@domain.tld:port/'
+   --http_proxy=s       : HTTP proxy to use, format 'http://domain.tld:port/'.
+                          If authentication required,
+                          use 'http://user:pass\@domain.tld:port/'
    --clobber            : overwrite an existent video (with -d)
    --skip-if-exists!    : don't download videos which already exists (with -d)
    --prefer-https!      : use the HTTPS protocol instead of the HTTP protocol
@@ -799,17 +802,17 @@ sub apply_configuration {
     }
 
     # ... YOUTUBE OPTIONS ... #
-    foreach my $method_name (
+    foreach my $option_name (
                              qw(
                              caption results duration
                              author orderby region category
                              categories_language safe_search
-                             page debug time prefer_https
+                             page debug time prefer_https http_proxy
                              )
       ) {
-        if (defined $opt->{$method_name}) {
-            my $code = \&{"WWW::YoutubeViewer::set_$method_name"};
-            $yv_obj->$code(delete $opt->{$method_name});
+        if (defined $opt->{$option_name}) {
+            my $code = \&{"WWW::YoutubeViewer::set_$option_name"};
+            $yv_obj->$code(delete $opt->{$option_name});
         }
     }
 
@@ -836,12 +839,6 @@ sub apply_configuration {
     if (defined $opt->{shuffle_playlist}) {
         require List::Util;
         $opt{shuffle} = delete $opt->{shuffle_playlist};
-    }
-
-    if (defined $opt->{http_proxy})
-    {
-	my $code = \&{"WWW::YoutubeViewer::set_http_proxy"};
-	$yv_obj->$code(delete $opt->{http_proxy});
     }
 
     if (defined $opt->{colors}) {
@@ -1037,7 +1034,7 @@ sub parse_arguments {
         'user-playlists|up=s'    => \$opt{user_playlists},
         'user-favorited|uf=s'    => \$opt{user_favorited_videos},
         'related-videos|rl|rv=s' => \$opt{related_videos},
-	'http_proxy=s'	         => \$opt{http_proxy},
+        'http_proxy=s'           => \$opt{http_proxy},
 
         'catlang|cl|hl=s'              => \$opt{categories_language},
         'category|cat=s'               => \$opt{category},
@@ -2566,9 +2563,6 @@ sub play_videos {
 
             say "@mplayer_line" if $yv_obj->get_debug;
 
-	    my $proxy_url = $opt{http_proxy};
-	    $proxy_url =~ s/http:\/\//http_proxy:\/\//;
-	    $streaming->{streaming}{url} = $proxy_url . $streaming->{streaming}{url};
             system @mplayer_line, $streaming->{streaming}{url};
             return if $?;
         }
