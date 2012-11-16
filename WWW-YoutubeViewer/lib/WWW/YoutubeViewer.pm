@@ -50,7 +50,7 @@ my %valid_options = (
     page        => {valid => [qr/^(?!0+\z)\d+\z/],                       default => 1},
     results     => {valid => [1 .. 50],                                  default => 10},
     hd          => {valid => [qw(true)],                                 default => undef},
-    http_proxy  => {valid => [qr/^./],                                   default => undef},
+    http_proxy  => {valid => [qr{^http://}],                             default => undef},
     caption     => {valid => [qw(true false)],                           default => undef},
     duration    => {valid => [qw(short medium long)],                    default => undef},
     category    => {valid => \@categories_IDs,                           default => undef},
@@ -156,7 +156,7 @@ sub set_prefer_https {
         }
     }
 
-    return 1;
+    return $bool;
 }
 
 sub get_prefer_https {
@@ -1042,7 +1042,7 @@ Trizen, C<< <trizenx at gmail.com> >>
 
 =head1 SUBROUTINES/METHODS
 
-=head2 Main options
+=head2 Main methods
 
 =over 4
 

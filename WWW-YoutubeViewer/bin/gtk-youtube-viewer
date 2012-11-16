@@ -405,8 +405,15 @@ sub apply_configuration {
                              page debug time prefer_https http_proxy
                              )
       ) {
-        my $code = \&{"WWW::YoutubeViewer::set_$option_name"};
-        $yv_obj->$code($CONFIG{$option_name});
+        if (defined $CONFIG{$option_name}) {
+            my $code      = \&{"WWW::YoutubeViewer::set_$option_name"};
+            my $value     = $CONFIG{$option_name};
+            my $set_value = $yv_obj->$code($value);
+
+            if (not defined($set_value) or $set_value ne $value) {
+                warn "[!] Invalid value <$value> for option <$option_name>.\n";
+            }
+        }
     }
 
     # Spin button results setting config value

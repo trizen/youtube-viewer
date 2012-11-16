@@ -104,7 +104,8 @@ use utf8;
 use 5.016;
 use strict;
 
-#use lib qw(../lib);    # devel only
+use lib qw(../lib);    # devel only
+
 #use warnings;          # debug only
 
 require WWW::YoutubeViewer;
@@ -811,8 +812,13 @@ sub apply_configuration {
                              )
       ) {
         if (defined $opt->{$option_name}) {
-            my $code = \&{"WWW::YoutubeViewer::set_$option_name"};
-            $yv_obj->$code(delete $opt->{$option_name});
+            my $code      = \&{"WWW::YoutubeViewer::set_$option_name"};
+            my $value     = delete $opt->{$option_name};
+            my $set_value = $yv_obj->$code($value);
+
+            if (not defined($set_value) or $set_value ne $value) {
+                warn "\n[!] Invalid value <$value> for option <$option_name>.\n";
+            }
         }
     }
 
