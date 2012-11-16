@@ -77,7 +77,7 @@
 # - gotbletu (for the great video review of youtube-viewer: http://www.youtube.com/watch?v=FnJ67oAxVQ4)
 # - Julian Ospald (for adding youtube-viewer in the gentoo portage tree: http://packages.gentoo.org/package/net-misc/youtube-viewer)
 # - 666philb (for packaging gtk-youtube-viewer for Puppy Linux: http://www.murga-linux.com/puppy/viewtopic.php?t=76835)
-# - Kevin Lemonnier (for adding support for proxy)
+# - Kevin Lemonnier (for adding support for proxy - https://github.com/Ulrar)
 
 =head1 NAME
 

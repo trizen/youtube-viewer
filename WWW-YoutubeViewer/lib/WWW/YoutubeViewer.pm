@@ -722,7 +722,7 @@ sub _get_pairs_from_info_data {
 
             # Add proxy (if defined http_proxy)
             if (defined(my $proxy_url = $self->get_http_proxy)) {
-                $proxy_url =~ s{http://}{http_proxy://};
+                $proxy_url =~ s{^http://}{http_proxy://};
                 $hash_ref->{url} = $proxy_url . $hash_ref->{url};
             }
 
