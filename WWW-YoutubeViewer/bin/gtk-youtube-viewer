@@ -151,6 +151,7 @@ my %CONFIG = (
     gcap          => $gcap,
 
     # Others
+    http_proxy	    => undef,
     page            => 1,
     debug           => 0,
     fullscreen      => 0,
@@ -428,6 +429,13 @@ sub apply_configuration {
     # Setup threads
     if ($CONFIG{use_threads}) {
         set_threads();
+    }
+
+    # Proxy
+    if (defined $CONFIG->{http_proxy})
+    {
+	my $code = \&{"WWW::YoutubeViewer::set_http_proxy"};
+	$yv_obj->$code(delete $CONFIG->{http_proxy});
     }
 
     # Set the "More options" expander
@@ -1707,6 +1715,9 @@ sub play_videos {
 
         say "@mplayer_line" if $yv_obj->get_debug;
 
+	my $proxy_url = $CONFIG{http_proxy};
+	$proxy_url =~ s/http:\/\//http_proxy:\/\//;
+	$streaming->{streaming}{url} = $proxy_url . $streaming->{streaming}{url};
         system join(q{ }, map { quotemeta } @mplayer_line, $streaming->{streaming}{url}) . q{ &};
         return if $?;
     }

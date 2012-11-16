@@ -50,6 +50,7 @@ my %valid_options = (
     page        => {valid => [qr/^(?!0+\z)\d+\z/],                       default => 1},
     results     => {valid => [1 .. 50],                                  default => 10},
     hd          => {valid => [qw(true)],                                 default => undef},
+    http_proxy	=> {valid => [qr/^/],			 default => undef},
     caption     => {valid => [qw(true false)],                           default => undef},
     duration    => {valid => [qw(short medium long)],                    default => undef},
     category    => {valid => \@categories_IDs,                           default => undef},
@@ -217,11 +218,12 @@ sub set_lwp_useragent {
     require LWP::UserAgent;
     $self->{lwp} = 'LWP::UserAgent'->new(
                                          keep_alive    => $self->get_lwp_keep_alive,
-                                         env_proxy     => $self->get_lwp_env_proxy,
+                                         env_proxy     => (defined($self->get_http_proxy) ? 0 : $self->get_lwp_env_proxy),
                                          timeout       => $self->get_lwp_timeout,
                                          show_progress => $self->get_debug,
                                          agent         => $self->get_lwp_agent,
                                         );
+    $self->{lwp}->proxy('http', $self->get_http_proxy) if (defined($self->get_http_proxy));
     return 1;
 }
 
@@ -787,6 +789,7 @@ sub full_gdata_arguments {
                 'duration'    => $self->get_duration,
                 'author'      => $self->get_author,
                 'v'           => $self->get_v,
+		'http_proxy'  => $self->get_http_proxy,
                );
 
     if (ref $opts{ignore} eq 'ARRAY') {
@@ -1168,6 +1171,10 @@ Returns the Google Client login URL.
 
 Return the hd value.
 
+=item get_http_proxy()
+
+Return the http_proxy value.
+
 =item get_key()
 
 Returns the developer key.
@@ -1429,6 +1436,10 @@ If true, it escapes the keywords using uri_escape_utf8.
 =item set_hd($value)
 
 Set hd value. $value can be either 'true' or undef.
+
+=item set_http_proxy($value)
+
+Set http_proxy value. $value must be a valid url or undef.
 
 =item set_key($dev_key)
 
