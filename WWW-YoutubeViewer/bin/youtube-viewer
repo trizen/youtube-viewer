@@ -462,6 +462,7 @@ YouTube options:
    -R  --recommended    : show the recommended videos for you *
    -S  --subscriptions  : show the new subscription videos *
    -W  --watched        : show the latest watched videos on YouTube *
+   --channel-s          : show the suggested YouTube channels for you *
    --subscribe=USER     : subscribe to a user's channel *
    --favorite=ID/URL    : favorite a YouTube video by URL or ID *
    --like=ID/URL        : send a 'like' rating to one or more videos *
@@ -916,6 +917,14 @@ sub apply_configuration {
         print_channels($yv_obj->search_channels($value, @{$keywords}));
     }
 
+    if (delete $opt->{channel_suggestions}) {
+        my $results = $yv_obj->get_channel_suggestions();
+
+        if (defined $results) {
+            print_channels($results, 'channel_suggestions');
+        }
+    }
+
     if (delete $opt->{show_categories}) {
         print_categories(categories => $yv_obj->get_categories());
     }
@@ -1033,6 +1042,7 @@ sub parse_arguments {
         'watch_history|watched|W:s'               => \$opt{watch_history},
         'subscribe=s'                             => \$opt{subscribe_channel},
         'favorite=s'                              => \$opt{favorite_video},
+        'channel-suggestions'                     => \$opt{channel_suggestions},
 
         'login|authenticate'     => \$opt{authenticate},
         'user|username|u|uv=s'   => \$opt{user_videos},
@@ -1514,7 +1524,7 @@ sub get_and_print_comments {
     foreach my $id (@_) {
         my $videoID = get_valid_video_id($id) // next;
         my $comments = $yv_obj->get_video_comments($videoID);
-        print_comments($videoID, $comments);
+        print_comments($comments, $videoID);
     }
     return 1;
 }
@@ -1631,7 +1641,7 @@ sub general_options {
             if (not $url ~~ $opt{_last_page_urls}) {
                 my $request = $yv_obj->next_page($url, (defined($mode) ? ($mode => 1) : ()));
                 if (@{$request->{results}}) {
-                    $callback->(@{$callback_args}, $request);
+                    $callback->($request, @{$callback_args});
                 }
                 else {
                     push @{$opt{_last_page_urls}}, $url;
@@ -1645,7 +1655,7 @@ sub general_options {
         when ($_ ~~ ['b', 'back'] and defined $url) {
             if ($yv_obj->back_page_is_available($url)) {
                 my $request = $yv_obj->previous_page($url, (defined($mode) ? ($mode => 1) : ()));
-                $callback->(@{$callback_args}, $request);
+                $callback->($request, @{$callback_args});
             }
             else {
                 warn_first_page();
@@ -1781,7 +1791,7 @@ sub valid_num {
 
 # ... PRINT SUBROUTINES ... #
 sub print_channels {
-    my ($results) = @_;
+    my ($results, $type) = @_;
 
     if (not @{$results->{results}}) {
         warn colored("\n[!] No channels found...", 'bold red') . "\n";
@@ -1829,7 +1839,8 @@ sub print_channels {
                                       sub  => __SUB__,
                                       url  => $url,
                                       res  => $channels,
-                                      mode => 'channels',
+                                      mode => ($type // 'channels'),
+                                      args => [$type],
                                      )
                   ) {
                 }
@@ -1862,11 +1873,11 @@ sub print_channels {
         __SUB__->($yv_obj->search_channels(@for_search));
     }
 
-    __SUB__->($results);
+    __SUB__->(@_);
 }
 
 sub print_comments {
-    my ($videoID, $results) = @_;
+    my ($results, $videoID) = @_;
 
     if (not @{$results->{results}}) {
         warn colored("\n[!] No comments found...", 'bold red') . "\n";
@@ -2124,6 +2135,7 @@ sub print_categories {
 
 sub print_movies {
     my $i = 0;
+
     print "\n";
     foreach my $id (@{WWW::YoutubeViewer::movie_IDs}) {
         my $top_movie_name = uc $id;

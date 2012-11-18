@@ -22,8 +22,8 @@
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
-use strict;
 use 5.010;
+use strict;
 
 #use lib qw(../lib);    # devel only
 #use warnings;          # debug only
@@ -1455,8 +1455,7 @@ sub print_channels {
 
         $liststore->set($iter, 3, "username=$channel->{author}");
         $liststore->set(
-                        $iter,
-                        0,
+                        $iter, 0,
                         '<big><b>'
                           . encode_entities($channel->{title})
                           . "</b></big>\n\n"
@@ -1464,8 +1463,12 @@ sub print_channels {
                           . $channel->{name} . "\n"
                           . "<b>Subscr\t:</b> "
                           . set_thousands($channel->{subscribers}) . "\n"
-                          . "<b>Views\t:</b> "
-                          . set_thousands($channel->{views}) . "\n\n" . '<i>'
+                          . (
+                             exists($channel->{views})
+                             ? ("<b>Views\t:</b> " . set_thousands($channel->{views}))
+                             : ("<b>Videos\t:</b> " . set_thousands($channel->{videos}))
+                            )
+                          . "\n\n<i>"
                           . encode_entities($row_description) . '</i>'
                        );
 

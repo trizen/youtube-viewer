@@ -425,7 +425,7 @@ ERROR
              thumbnail   => $gdata->{'content'}{'entry'}{'media:thumbnail'}{'-url'},
              updated     => $gdata->{'content'}{'entry'}{'updated'},
              subscribers => $gdata->{'content'}{'entry'}{'yt:channelStatistics'}{'-subscriberCount'},
-             views       => $gdata->{'content'}{'entry'}{'yt:channelStatistics'}{'-viewCount'},
+             videos      => $gdata->{'content'}{'entry'}{'yt:channelStatistics'}{'-videoCount'},
             }
 
           : $opts{courses}
@@ -774,6 +774,11 @@ sub get_streaming_urls {
 
 sub get_channel_suggestions {
     my ($self) = @_;
+
+    if (not defined $self->get_auth_key) {
+        warn "\n[!] The method 'get_channel_suggestions' requires authentication!\n";
+        return;
+    }
 
     my $url = $self->_make_feed_url_with_args('/users/default/suggestion', (type => 'channel', inline => 'true'));
 
@@ -1170,7 +1175,8 @@ Return a hash reference containing the URL and RESULTS:
 
 Valid %opts:
     playlists => 1, comments => 1, videos => 1,
-    channels  => 1, courses  => 1,
+    channels  => 1, channel_suggestions => 1,
+    courses   => 1,
 
 =item next_page($url;%opts)
 
