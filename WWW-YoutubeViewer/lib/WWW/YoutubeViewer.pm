@@ -34,7 +34,7 @@ our @feeds_IDs = qw(top_rated top_favorites most_shared most_popular
 our @movie_IDs = qw(most_popular most_recent trending);
 
 our @categories_IDs = qw(Film Autos Music Animals Sports Travel Games
-  People Comedy Entertainment News Howto Education Tech Nonprofit);
+  People Comedy Entertainment News Howto Education Tech Nonprofit Movies Trailers);
 
 our @region_IDs = qw(
   AR AU BR CA CZ FR DE GB HK HU IN IE IL
@@ -414,6 +414,20 @@ ERROR
              views       => $gdata->{'yt:channelStatistics'}{'-viewCount'},
             }
 
+          : $opts{channel_suggestions}
+
+          # Channel suggestions
+          ? {
+             title       => $gdata->{'content'}{'entry'}{'title'},
+             name        => $gdata->{'content'}{'entry'}{'author'}{'name'},
+             author      => $gdata->{'content'}{'entry'}{'author'}{'yt:userId'},
+             summary     => $gdata->{'content'}{'entry'}{'summary'},
+             thumbnail   => $gdata->{'content'}{'entry'}{'media:thumbnail'}{'-url'},
+             updated     => $gdata->{'content'}{'entry'}{'updated'},
+             subscribers => $gdata->{'content'}{'entry'}{'yt:channelStatistics'}{'-subscriberCount'},
+             views       => $gdata->{'content'}{'entry'}{'yt:channelStatistics'}{'-viewCount'},
+            }
+
           : $opts{courses}
 
           # Courses
@@ -483,7 +497,10 @@ sub get_videos_from_category {
 
     unless ($cat_id ~~ \@categories_IDs) {
         warn "Invalid cat ID: $cat_id";
-        return;
+        return {
+                url     => undef,
+                results => [],
+               };
     }
 
     my $url = $self->_make_feed_url_with_args('/videos', ('category' => $cat_id));
@@ -624,10 +641,10 @@ sub get_video_tops {
 
 sub _populate_category_regions {
     my ($self) = @_;
-    my @categories = $self->get_categories;
+    my $categories = $self->get_categories;
 
     @categories_IDs = ();
-    foreach my $cat (@categories) {
+    foreach my $cat (@{$categories}) {
         $self->{_category_regions}{$cat->{term}} = $cat->{regions};
         push @categories_IDs, $cat->{term};
     }
@@ -753,6 +770,17 @@ sub get_streaming_urls {
         return;
     }
     return grep { (exists $_->{itag} and exists $_->{url} and exists $_->{type}) or exists $_->{has_cc} } @info;
+}
+
+sub get_channel_suggestions {
+    my ($self) = @_;
+
+    my $url = $self->_make_feed_url_with_args('/users/default/suggestion', (type => 'channel', inline => 'true'));
+
+    return {
+            url     => $url,
+            results => $self->get_content($url, channel_suggestions => 1),
+           };
 }
 
 sub search_channels {

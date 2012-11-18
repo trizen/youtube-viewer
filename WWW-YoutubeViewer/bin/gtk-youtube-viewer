@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 16 November 2012
+#  Latest edit on: 18 November 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -240,15 +240,15 @@ $gui->connect_signals(undef);
 
 # -------------  Get GUI objects ------------- #
 my (
-    $mainw,                 $users_list_window,   $help_window,          $prefernces_window,      $login_to_youtube,
-    $errors_window,         $details_window,      $about_window,         $treeview,               $liststore,
-    $config_view,           $statusbar,           $thumbs_column,        $textview_help,          $sort_combobox,
-    $sort_by_time_combobox, $resolution_combobox, $spin_results,         $users_treeview,         $users_liststore,
-    $thumbs_checkbutton,    $search_for_combobox, $spin_start_with_page, $fullscreen_checkbutton, $notebook,
-    $search_entry,          $from_author_entry,   $gif_spinner,          $hbox2,                  $feeds_window,
-    $feeds_treeview,        $feeds_liststore,     $feeds_statusbar,      $safesearch_combobox,    $hd_combobox,
-    $caption_combobox,      $duration_combobox,   $warnings_window,      $warnings_textview,      $errors_textview,
-    $category_id_entry,     $more_options_expander,
+    $mainw,                 $users_list_window,     $help_window,          $prefernces_window,      $login_to_youtube,
+    $errors_window,         $details_window,        $about_window,         $treeview,               $liststore,
+    $config_view,           $statusbar,             $thumbs_column,        $textview_help,          $sort_combobox,
+    $sort_by_time_combobox, $resolution_combobox,   $spin_results,         $users_treeview,         $users_liststore,
+    $thumbs_checkbutton,    $search_for_combobox,   $spin_start_with_page, $fullscreen_checkbutton, $notebook,
+    $search_entry,          $from_author_entry,     $gif_spinner,          $hbox2,                  $feeds_window,
+    $feeds_treeview,        $feeds_liststore,       $feeds_statusbar,      $safesearch_combobox,    $hd_combobox,
+    $caption_combobox,      $duration_combobox,     $warnings_window,      $warnings_textview,      $errors_textview,
+    $category_id_entry,     $more_options_expander, $cat_treeview,         $cats_liststore,
    );
 
 sub get_objects {
@@ -270,9 +270,11 @@ sub get_objects {
         'treeview1'              => \$users_treeview,
         'feeds_statusbar'        => \$feeds_statusbar,
         'treeview2'              => \$treeview,
+        'treeview3'              => \$cat_treeview,
         'feeds_treeview'         => \$feeds_treeview,
         'liststore1'             => \$liststore,
         'liststore2'             => \$users_liststore,
+        'liststore4'             => \$cats_liststore,
         'liststore11'            => \$feeds_liststore,
         'textview3'              => \$config_view,
         'warnings_textview'      => \$warnings_textview,
@@ -373,6 +375,7 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      key         => $key,
                                      app_name    => $appname,
                                      app_version => $version,
+                                     config_dir  => $config_dir,
                                      escape_utf8 => 1,
                                     );
 
@@ -598,17 +601,25 @@ sub get_text {
     return $object_buffer->get_text($start_iter, $end_iter, undef);
 }
 
+sub new_image_from_pixbuf {
+    my ($object_name, $pixbuf) = @_;
+    my $object = $gui->get_object($object_name) // return;
+    return scalar($object->new_from_pixbuf($pixbuf));
+}
+
 # Setting application icons
-my $user_icon = $gui->get_object('icon_from_pixbux')->new_from_pixbuf($user_icon_pixbuf);
-$gui->get_object('username_list')->set_image($user_icon);
-my $feed_icon_image = $gui->get_object('icon_from_pixbux')->new_from_pixbuf($feed_icon_pixbuf);
-$gui->get_object('button6')->set_image($feed_icon_image);
-my $subscribe_icon = $gui->get_object('icon_from_pixbux')->new_from_pixbuf($feed_icon_pixbuf);
-$gui->get_object('button23')->set_image($subscribe_icon);
+{
+    $gui->get_object('username_list')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
+    $gui->get_object('channels_button')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
+    $gui->get_object('button6')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
+    $gui->get_object('button23')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
+}
 
 # Treeview signals
-$treeview->signal_connect('button_press_event', \&menu_popup);
-$users_treeview->signal_connect('button_press_event', \&users_menu_popup);
+{
+    $treeview->signal_connect('button_press_event', \&menu_popup);
+    $users_treeview->signal_connect('button_press_event', \&users_menu_popup);
+}
 
 # Menu popup
 sub menu_popup {
@@ -1031,40 +1042,40 @@ sub get_main_window_size {
     $CONFIG{mainw_size} = join('x', $mainw->get_size);
 }
 
-my $cat_treeview   = $gui->get_object('treeview3');
-my $cats_liststore = $gui->get_object('liststore4');
-
-my $categories = [['Film &amp; Animation'      => 'Film'],
-                  ['Autos &amp; Vehicles'      => 'Autos'],
-                  ['Music'                     => 'Music'],
-                  ['Pets &amp; Animals'        => 'Animals'],
-                  ['Sports'                    => 'Sports'],
-                  ['Travel &amp; Events'       => 'Travel'],
-                  ['Gaming'                    => 'Games'],
-                  ['Comedy'                    => 'Comedy'],
-                  ['People &amp; Blogs'        => 'People'],
-                  ['News &amp; Politics'       => 'News'],
-                  ['Entertainment'             => 'Entertainment'],
-                  ['Education'                 => 'Education'],
-                  ['Howto &amp; Style'         => 'Howto'],
-                  ['Nonprofits &amp; Activism' => 'Nonprofit'],
-                  ['Science &amp; Technology'  => 'Tech'],
-                  ['Movies'                    => 'Movies'],
-                  ['Trailers'                  => 'Trailers'],
-                 ];
-
-{
+sub add_category_header {
+    my ($text) = @_;
     my $iter = $cats_liststore->append;
-    $cats_liststore->set($iter, 0, "<big><b>\tCategories</b></big>");
+    $cats_liststore->set($iter, 0, "<big><b>\t$text</b></big>");
+    return 1;
 }
 
-my $i = 0;
-while (defined $categories->[$i][0]) {
-    my ($key, $value) = @{$categories->[$i++]};
-    my $iter = $cats_liststore->append;
-    $cats_liststore->set($iter, 0, $key);
-    $cats_liststore->set($iter, 1, $value);
-    $cats_liststore->set($iter, 2, $feed_icon_pixbuf);
+sub append_categories {
+    my ($categories, $type) = @_;
+
+    foreach my $category (@{$categories}) {
+        my $label = $category->{label};
+        my $term  = $category->{term};
+
+        $label =~ s{&}{&amp;}g;
+
+        my $iter = $cats_liststore->append;
+        $cats_liststore->set($iter, 0, $label);
+        $cats_liststore->set($iter, 1, $term);
+        $cats_liststore->set($iter, 2, $feed_icon_pixbuf);
+        $cats_liststore->set($iter, 3, $type);
+    }
+    return 1;
+}
+
+{
+    # Standard categories:
+    add_category_header("Categories");
+    append_categories($yv_obj->get_categories(), 'cat');
+    append_categories([{label => 'Movies', term => 'Movies'}, {label => 'Trailers', term => 'Trailers'}], 'cat');
+
+    # EDU categories:
+    add_category_header("EDU Categories");
+    append_categories($yv_obj->get_educategories(), 'edu-cat');
 }
 
 my $tops_liststore = $gui->get_object('liststore6');
@@ -1250,6 +1261,7 @@ sub search {
 #---------------------- PRINT VIDEO RESULTS ----------------------#
 sub encode_entities {
     my ($text) = @_;
+    return q{} if not defined $text;
     $text =~ s/&/&amp;/g;
     $text =~ s/</&lt;/g;
     $text =~ s/>/&gt;/g;
@@ -1275,7 +1287,7 @@ sub get_code {
         my $search_type = $liststore->get($iter, 5);
 
         if ($yv_obj->get_debug) {
-            say $search_type if defined $search_type;
+            say "** SEARCH TYPE: $search_type" if defined $search_type;
         }
 
         my %args;
@@ -1300,11 +1312,12 @@ sub get_code {
             die "This is the last page!\n";
         }
 
-            $args{playlists} ? print_playlists($results)
-          : $args{channels}  ? print_channels($results)
-          :                    print_videos($results);
+            $args{playlists}           ? print_playlists($results)
+          : $args{channels}            ? print_channels($results)
+          : $args{channel_suggestions} ? print_channels($results)
+          :                              print_videos($results);
       }
-      : $code =~ /^username=(.+)/i    ? videos_from_username($1)
+      : $code =~ /^username=(.+)/     ? videos_from_username($1)
       : $code =~ /$valid_video_id_re/ ? play_videos([{videoID => $code}])
       :                                 return;
 }
@@ -1411,8 +1424,14 @@ sub print_videos {
     _append_next_page($url);
 }
 
+sub print_channel_suggestions {
+    my $results = $yv_obj->get_channel_suggestions();
+    $liststore->clear if $CONFIG{clear_list};
+    print_channels($results, 'channel_suggestions');
+}
+
 sub print_channels {
-    my ($results) = @_;
+    my ($results, $type) = @_;
 
     my $url      = $results->{url};
     my $channels = $results->{results};
@@ -1458,7 +1477,7 @@ sub print_channels {
         }
     }
 
-    _append_next_page($url, 'channels');
+    _append_next_page($url, $type // 'channels');
 }
 
 #---------------------- PRINT PLAYLISTS ----------------------#
@@ -1829,10 +1848,15 @@ sub download_caption {
 }
 
 sub list_category {
-    my $iter = $cat_treeview->get_selection->get_selected;
+    my $iter   = $cat_treeview->get_selection->get_selected;
     my $cat_id = $cats_liststore->get($iter, 1) // return;
+    my $type   = $cats_liststore->get($iter, 3);
 
-    my $videos = $yv_obj->get_videos_from_category($cat_id);
+    my $videos =
+        $type eq 'edu-cat'
+      ? $yv_obj->get_video_lectures_from_category($cat_id)
+      : $yv_obj->get_videos_from_category($cat_id);
+
     if (@{$videos->{results}}) {
         $liststore->clear if $CONFIG{clear_list};
         print_videos($videos);
