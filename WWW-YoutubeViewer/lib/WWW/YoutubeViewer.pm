@@ -1215,6 +1215,10 @@ Return the videos from the subscriptions for the current logged user.
 
 Return the latest favorited videos for a given username.
 
+=item get_channel_suggestions()
+
+Return a list of channel suggestions for the current logged user.
+
 =item get_playlists_from_username($username)
 
 Return a list of playlists created by $username.
