@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 16 November 2012
+#  Latest edit on: 18 November 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -1776,7 +1776,7 @@ sub get_input_for_categories {
 
 sub valid_num {
     my ($num, $array_ref) = @_;
-    return $num =~ /^[0-9]{1,2}\z/ and $num != 0 and $num <= @{$array_ref};
+    return $num =~ /^[0-9]{1,2}\z/ && $num != 0 && $num <= @{$array_ref};
 }
 
 # ... PRINT SUBROUTINES ... #
@@ -2921,7 +2921,7 @@ sub print_videos {
         else {
             given ($key) {
                 when (\&youtube_urls) { }    # do nothing
-                when (not $contains_keywords and (valid_num($_, $videos) or /$range_num_re/)) {
+                when (!$contains_keywords && (valid_num($_, $videos) || /$range_num_re/)) {
                     my @for_play;
                     if (defined $1) {
                         my @ids = get_valid_numbers($videos, "$1..$2");
