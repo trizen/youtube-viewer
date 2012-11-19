@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 18 November 2012
+#  Latest edit on: 19 November 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -111,7 +111,7 @@ require WWW::YoutubeViewer;
 use File::Spec::Functions qw(catdir catfile curdir path rel2abs tmpdir);
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.0.4-dev';
+my $version  = '3.0.4';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
