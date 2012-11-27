@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 19 November 2012
+#  Latest edit on: 27 November 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -124,6 +124,8 @@ my %CONFIG = (
     clear_list                  => 1,
     default_notebook_page       => 1,
     mainw_size                  => '700x400',
+    mainw_maximized             => 0,
+    mainw_fullscreen            => 0,
 
     # Youtube options
     prefer_webm         => 0,
@@ -457,6 +459,14 @@ sub apply_configuration {
     # Resize the main window
     $mainw->set_default_size(split(/x/i, $CONFIG{mainw_size}, 2));
     $mainw->reshow_with_initial_size;
+
+    if ($CONFIG{mainw_maximized}) {
+        $mainw->maximize();
+    }
+
+    if ($CONFIG{mainw_fullscreen}) {
+        maximize_unmaximize_mainw();
+    }
 
     # Set HPaned position
     $hbox2->set_position($CONFIG{hpaned_position});
@@ -1040,6 +1050,18 @@ sub activate_more_options_expander {
 # Get main window size
 sub get_main_window_size {
     $CONFIG{mainw_size} = join('x', $mainw->get_size);
+}
+
+sub main_window_state_events {
+    my (undef, $state) = @_;
+
+    my $windowstate = $state->new_window_state();
+    my @states = split(' ', $windowstate);
+
+    $CONFIG{mainw_maximized}  = 'maximized'  ~~ \@states ? 1 : 0;
+    $CONFIG{mainw_fullscreen} = 'fullscreen' ~~ \@states ? 1 : 0;
+
+    return 1;
 }
 
 sub add_category_header {

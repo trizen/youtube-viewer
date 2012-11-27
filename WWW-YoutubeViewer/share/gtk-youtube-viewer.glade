@@ -2,68 +2,13 @@
 <interface>
   <requires lib="gtk+" version="2.18"/>
   <!-- interface-naming-policy project-wide -->
-  <object class="GtkAboutDialog" id="aboutdialog1">
-    <property name="can_focus">False</property>
-    <property name="border_width">5</property>
-    <property name="window_position">center-on-parent</property>
-    <property name="type_hint">normal</property>
-    <property name="transient_for">__MAIN__</property>
-    <property name="program_name">Glade</property>
-    <property name="copyright" translatable="yes">Copyright © 2010-2012 by Trizen</property>
-    <property name="comments" translatable="yes">Written in Perl, Gtk2 and Glade under the GPLv3.</property>
-    <property name="website">http://trizen.googlecode.com</property>
-    <property name="website_label" translatable="yes">Developer's website</property>
-    <property name="authors">[+] Developer/Maintainer:
- =&gt;  Trizen (trizenx@gmail.com)
-    * Core
-    * GUI
-
-[+] Contributor:
-  =&gt; Ovidiu D. Nițan (nitanovidiu@gmail.com)
-    * Threads
-    * GUI fixes</property>
-    <signal name="destroy" handler="hide_about_window" swapped="no"/>
-    <signal name="delete-event" handler="hide_about_window" swapped="no"/>
-    <signal name="response" handler="hide_about_window" swapped="no"/>
-    <child internal-child="vbox">
-      <object class="GtkVBox" id="dialog-vbox3">
-        <property name="can_focus">False</property>
-        <child internal-child="action_area">
-          <object class="GtkHButtonBox" id="dialog-action_area3">
-            <property name="can_focus">False</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="pack_type">end</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <placeholder/>
-        </child>
-      </object>
-    </child>
-  </object>
-  <object class="GtkAdjustment" id="adjustment1">
-    <property name="lower">1</property>
-    <property name="upper">50</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment2">
-    <property name="lower">1</property>
-    <property name="upper">4096</property>
-    <property name="value">1</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
   <object class="GtkWindow" id="__MAIN__">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="window_position">mouse</property>
     <property name="default_width">640</property>
     <signal name="destroy" handler="on_mainw_destroy" swapped="no"/>
+    <signal name="window-state-event" handler="main_window_state_events" swapped="no"/>
     <signal name="delete-event" handler="on_mainw_destroy" swapped="no"/>
     <child>
       <object class="GtkVBox" id="vbox1">
@@ -1655,115 +1600,61 @@ When the specified resolution is not found, it falls down to a lower resolution.
       </object>
     </child>
   </object>
-  <object class="GtkMenu" id="detailsmenu">
-    <property name="visible">True</property>
+  <object class="GtkAboutDialog" id="aboutdialog1">
     <property name="can_focus">False</property>
-    <child>
-      <object class="GtkImageMenuItem" id="details">
-        <property name="label" translatable="yes">Show video details</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
+    <property name="border_width">5</property>
+    <property name="window_position">center-on-parent</property>
+    <property name="type_hint">normal</property>
+    <property name="transient_for">__MAIN__</property>
+    <property name="program_name">Glade</property>
+    <property name="copyright" translatable="yes">Copyright © 2010-2012 by Trizen</property>
+    <property name="comments" translatable="yes">Written in Perl, Gtk2 and Glade under the GPLv3.</property>
+    <property name="website">http://trizen.googlecode.com</property>
+    <property name="website_label" translatable="yes">Developer's website</property>
+    <property name="authors">[+] Developer/Maintainer:
+ =&gt;  Trizen (trizenx@gmail.com)
+    * Core
+    * GUI
+
+[+] Contributor:
+  =&gt; Ovidiu D. Nițan (nitanovidiu@gmail.com)
+    * Threads
+    * GUI fixes</property>
+    <signal name="destroy" handler="hide_about_window" swapped="no"/>
+    <signal name="delete-event" handler="hide_about_window" swapped="no"/>
+    <signal name="response" handler="hide_about_window" swapped="no"/>
+    <child internal-child="vbox">
+      <object class="GtkVBox" id="dialog-vbox3">
         <property name="can_focus">False</property>
-        <property name="tooltip_text" translatable="yes">(CTRL+D)</property>
-        <property name="image">image8</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="show_details_window" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="menuitem9">
-        <property name="label" translatable="yes">Comments / Ratings</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image30</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="show_feeds_window" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkSeparatorMenuItem" id="separator">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="queue_playback">
-        <property name="label" translatable="yes">Add to playback queue</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image9</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="queue_playback" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="menuitem1">
-        <property name="label" translatable="yes">Play videos from queue</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image10</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="play_videos_from_queue" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="play_all_videos">
-        <property name="label" translatable="yes">Play all video results</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image16</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="play_all_video_results" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkSeparatorMenuItem" id="menuitem2">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="play_in_new_term">
-        <property name="label" translatable="yes">Play it in a new terminal</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image5</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="play_selected_video_with_cli_youtube_viewer" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="download_video">
-        <property name="label" translatable="yes">Download Youtube video</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image15</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="download_video" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="open_youtube">
-        <property name="label" translatable="yes">Open the YouTube website</property>
-        <property name="use_action_appearance">False</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image7</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="open_youtube_url" swapped="no"/>
+        <child internal-child="action_area">
+          <object class="GtkHButtonBox" id="dialog-action_area3">
+            <property name="can_focus">False</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
       </object>
     </child>
   </object>
-  <object class="GtkImage" id="download_icon3">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-downloads</property>
+  <object class="GtkAdjustment" id="adjustment1">
+    <property name="lower">1</property>
+    <property name="upper">50</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment2">
+    <property name="lower">1</property>
+    <property name="upper">4096</property>
+    <property name="value">1</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
   </object>
   <object class="GtkWindow" id="details_window">
     <property name="can_focus">False</property>
@@ -2088,6 +1979,116 @@ When the specified resolution is not found, it falls down to a lower resolution.
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkMenu" id="detailsmenu">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <child>
+      <object class="GtkImageMenuItem" id="details">
+        <property name="label" translatable="yes">Show video details</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="tooltip_text" translatable="yes">(CTRL+D)</property>
+        <property name="image">image8</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="show_details_window" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="menuitem9">
+        <property name="label" translatable="yes">Comments / Ratings</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="image">image30</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="show_feeds_window" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="separator">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="queue_playback">
+        <property name="label" translatable="yes">Add to playback queue</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="image">image9</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="queue_playback" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="menuitem1">
+        <property name="label" translatable="yes">Play videos from queue</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="image">image10</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="play_videos_from_queue" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="play_all_videos">
+        <property name="label" translatable="yes">Play all video results</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="image">image16</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="play_all_video_results" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="menuitem2">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="play_in_new_term">
+        <property name="label" translatable="yes">Play it in a new terminal</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="image">image5</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="play_selected_video_with_cli_youtube_viewer" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="download_video">
+        <property name="label" translatable="yes">Download Youtube video</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="image">image15</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="download_video" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImageMenuItem" id="open_youtube">
+        <property name="label" translatable="yes">Open the YouTube website</property>
+        <property name="use_action_appearance">False</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="image">image7</property>
+        <property name="use_stock">False</property>
+        <signal name="activate" handler="open_youtube_url" swapped="no"/>
+      </object>
+    </child>
+  </object>
+  <object class="GtkImage" id="download_icon3">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">emblem-downloads</property>
   </object>
   <object class="GtkImage" id="download_icon1">
     <property name="visible">True</property>
@@ -3529,7 +3530,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
             </child>
             <child>
               <object class="GtkCheckButton" id="login_check_button">
-                <property name="label" translatable="yes">Log me in automatically</property>
+                <property name="label" translatable="yes">Remember me</property>
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
