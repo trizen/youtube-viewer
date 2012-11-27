@@ -65,11 +65,11 @@ my %valid_options = (
     auth_key    => {valid => [qr/^.{5}/],            default => undef},
     key         => {valid => [qr/^.{5}/],            default => undef},
     author      => {valid => [qr{^[\-\w.]{2,64}\z}], default => undef},
-    app_version => {valid => [qr/^\d/],              default => $VERSION},
+    app_version => {valid => [qr/^v?\d/],            default => $VERSION},
     app_name    => {valid => [qr/^./],               default => 'Youtube Viewer'},
     config_dir  => {valid => [qr/^./],               default => q{.}},
 
-    categories_language => {valid => [qr/^[a-z]++-\w/], default => 'en-US'},
+    categories_language => {valid => [qr/^[a-z]+-\w/], default => 'en-US'},
 
     # Booleans
     lwp_keep_alive => {valid => [1, 0], default => 1},
@@ -93,7 +93,7 @@ my %valid_options = (
 
     foreach my $key (keys %valid_options) {
 
-        # Set the 'set_*' subroutines
+        # Create the 'set_*' subroutines
         *{__PACKAGE__ . '::set_' . $key} = sub {
             my ($self, $value) = @_;
             $self->{$key} =
@@ -102,7 +102,7 @@ my %valid_options = (
               : $valid_options{$key}{default};
         };
 
-        # Set the 'get_*' subroutines
+        # Create the 'get_*' subroutines
         *{__PACKAGE__ . '::get_' . $key} = sub {
             my ($self) = @_;
             return $self->{$key};
