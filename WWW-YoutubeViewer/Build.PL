@@ -22,7 +22,7 @@ my $builder = Module::Build->new(
     build_requires    => {'Test::More' => 0,},
     script_files      => ['bin/youtube-viewer', ($gtk_youtube_viewer ? 'bin/gtk-youtube-viewer' : ()),],
     requires          => {
-        'perl'                  => '5.16',
+        'perl'                  => '5.016',
         'Data::Dump'            => 0,
         'File::Spec::Functions' => 0,
         'File::Path'            => 0,
