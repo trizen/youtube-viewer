@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 27 November 2012
+#  Latest edit on: 16 December 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -100,18 +100,16 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
-use utf8;
 use 5.016;
 use strict;
 
 #use lib qw(../lib);    # devel only
 #use warnings;          # debug only
 
-require WWW::YoutubeViewer;
 use File::Spec::Functions qw(catdir catfile curdir path rel2abs tmpdir);
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.0.4';
+my $version  = '3.0.5-dev';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
@@ -152,28 +150,8 @@ foreach my $path (path()) {
     }
 }
 
-my $opt_begin_chars = q{:;=};    # stdin option valid begin chars
-
 # Regular expressions
-my $range_num_re        = qr{^([0-9]{1,2}+)(?>-|\.\.)([0-9]{1,2}+)\z};
-my $digit_or_equal_re   = qr{(?(?=[1-9])|=)};
-my $non_digit_or_opt_re = qr{^(?!$range_num_re)(?>[0-9]{1,2}[^0-9]|[0-9]{3}|[^0-9$opt_begin_chars])};
-
-my $generic_name_re   = qr{[a-zA-Z0-9_.\-]{16,34}};
-my $valid_username_re = qr{^(?:\w+(?:[-.]++\w++)*|$generic_name_re)\z};
-
-my $video_id_re       = qr{[0-9A-Za-z_\-]{11}};
-my $valid_video_id_re = qr{^$video_id_re\z};
-my $get_video_id_re   = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)(?<video_id>$video_id_re)};
-
-my $course_id_re       = qr{EC(?<course_id>$generic_name_re)|(?<course_id>$generic_name_re)};
-my $valid_course_id_re = qr{^$course_id_re\z};
-my $get_course_id_re   = qr{/course\?list=$course_id_re};
-
-my $valid_playlist_id_re = qr{^$generic_name_re\z};
-my $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)(?<playlist_id>$generic_name_re)\b};
-
-my $valid_opt_re = qr{^[$opt_begin_chars]([A-Za-z]++(?:-[A-Za-z]++)?(?>${digit_or_equal_re}.*)?)$};
+use WWW::YoutubeViewer::RegularExpressions;
 
 # Main configuration
 my %CONFIG = (
@@ -188,7 +166,7 @@ my %CONFIG = (
     mplayer_arguments => '-prefer-ipv4 -really-quiet -cache %d -cache-min %d',
 
     # Youtube options
-    prefer_webm         => 0,
+    prefer_webm         => 1,
     prefer_https        => 0,
     results             => 20,
     resolution          => 'original',
@@ -272,6 +250,7 @@ my $other_options = <<'OTHER';
 # Others
 :r(eturn)         : return to the previous section
 :reset, :reload   : restart the application
+:dv=i             : print the key=>value informations
 -argv -argv2=v    : some arguments (e.g.: -u=google)
 :q, :quit, :exit  : close the application
 OTHER
@@ -290,9 +269,9 @@ $action_options
 $other_options
 $notes_options
 Examples:
-     4               : select the 4th result
-    -V funny cats    : search for videos
-    -p classic music : search for playlists of videos
+     4                 : select the 4th result
+    -V funny cats      : search for videos
+    -p classical music : search for playlists of videos
 HELP
 
 my $complete_help = <<"STDIN_HELP";
@@ -319,7 +298,6 @@ $action_options
 :q(ueue)=i,i,...  : add videos to queue and play them later
 :pq, :play-queue  : play the enqueued videos (if any)
 :anp :nnp         : auto-next-page, no-next-page
-:dv=i             : print the key=>value informations for a video
 :regex=my?[regex] : play videos matched by a regex (/i)
 :kregex=KEY,RE    : play videos if the value of KEY matches the RE
 
@@ -375,6 +353,7 @@ if (ref $CONFIG ne 'HASH' or not %CONFIG ~~ %{$CONFIG}) {
     $key =~ s/(.{$i})(.)/$2$1/g while $i--;
 }
 
+require WWW::YoutubeViewer;
 my $yv_obj = WWW::YoutubeViewer->new(
                                      key         => $key,
                                      auth_key    => $CONFIG{auth_key},
@@ -383,6 +362,9 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      config_dir  => $config_dir,
                                      escape_utf8 => 1,
                                     );
+
+require WWW::YoutubeViewer::Utils;
+my $yv_utils = WWW::YoutubeViewer::Utils->new(thousand_separator => $opt{thousand_separator},);
 
 {
     no strict 'refs';
@@ -698,16 +680,16 @@ Results: show latest videos favorited by a user.
 
 A STDIN option can begin with ':', ';' or '='.
 
-Command: <ENTER>, :n, :next
+Command: <ENTER>, :n, :next, CTRL+D
 Results: get the next page of results.
 
-Command: :b, :back
+Command: :b, :back (:r, :return)
 Results: get the previous page of results.
 
 Command: :i4..6, :i7-9, :i20-4, :i2, :i=4, :info=4
 Results: show video informations for the selected videos.
 
-Command: :d5,2, :d=3, :download=5
+Command: :d5,2, :d=3, :download=8
 Results: download the selected videos.
 
 Command: :c2, :comments=4
@@ -1125,37 +1107,6 @@ sub parse_arguments {
     apply_configuration(\%opt, $keywords);
 }
 
-# --- ITAGS ---
-
-# itag => resolution
-my %itags = (
-
-    $opt{prefer_webm}
-    ? (
-       45 => 720,    # webm
-       44 => 480,    # webm
-       43 => 360,    # webm
-      )
-    : (
-       22 => 720,
-       35 => 480,
-       34 => 360,
-      ),
-
-    38 => 'original',
-    37 => 1080,
-    36 => 180,
-    18 => 340,
-    5  => 240,
-    17 => 144,
-);
-
-# resolution => itag
-my %resolutions;
-@resolutions{values %itags} = keys %itags;
-
-# ---------
-
 # Parse the arguments
 if (@ARGV) {
     parse_arguments(\@ARGV);
@@ -1313,6 +1264,11 @@ HELP
     }
 }
 
+sub get_quotewords {
+    require Text::ParseWords;
+    return Text::ParseWords::quotewords(@_);
+}
+
 sub parse_options2 {
     my ($input) = @_;
 
@@ -1323,15 +1279,10 @@ sub parse_options2 {
 
     my @args =
         map $args->{$_} eq '0' ? "--no-$_"
-      : $args->{$_}     eq '1' ? "--$_"
+      : $args->{$_} eq '1'     ? "--$_"
       :                          "--$_=$args->{$_}" => keys %{$args};
 
     return wantarray ? (\@args, [split q{ }, $keywords]) : \@args;
-}
-
-sub get_quotewords {
-    require Text::ParseWords;
-    return Text::ParseWords::quotewords(@_);
 }
 
 sub parse_options {
@@ -1387,27 +1338,27 @@ sub authenticate {
 
     $email = $term->readline(colored(qq{\nEmail: }, 'bold'));
 
-    if ($constant{win32}) {
-        eval { require Term::ReadKey };
-        if ($@) {
+    eval { require Term::ReadKey };
+    if ($@) {
+        if ($constant{win32}) {
             warn <<'EOW';
 [!] Please install Term::ReadKey if you don't
     want your password to be visible while typing!
 EOW
-            $password = $term->readline(colored(q{Password: }, 'bold'));
+            $password = $term->readline(colored(q{Password: }, 'bold underline'));
         }
         else {
-            print colored(q{Password: }, 'bold');
-            Term::ReadKey::ReadMode('noecho');
-            chomp($password = Term::ReadKey::ReadLine());
-            Term::ReadKey::ReadMode('restore');
+            print colored(q{Password: }, 'bold underline');
+            system qw(stty -echo);
+            chomp($password = <STDIN>);
+            system qw(stty echo);
         }
     }
     else {
-        print colored(q{Password: }, 'bold');
-        system qw(stty -echo);
-        chomp($password = <STDIN>);
-        system qw(stty echo);
+        print colored(q{Password: }, 'bold underline');
+        Term::ReadKey::ReadMode('noecho');
+        chomp($password = Term::ReadKey::ReadLine());
+        Term::ReadKey::ReadMode('restore');
     }
 
     my $auth_key = $yv_obj->login($email, $password);
@@ -1682,7 +1633,8 @@ sub general_options {
                 print "\n";
                 foreach my $num (@nums) {
                     foreach my $key (sort keys %{$results->[$num]}) {
-                        printf "=>> %-12s: %s\n", $key, substr($results->[$num]{$key} // q{}, 0, 2**7);
+                        next if $key eq 'description';
+                        printf "=>> %-12s: %s\n", $key, $results->[$num]{$key} // q{};
                     }
                 }
                 press_enter_to_continue();
@@ -1814,7 +1766,7 @@ sub print_channels {
             printf(
                    "\n%s. %s\n    %s: %-13s %s: %-7s %s: %-12s\n%s\n",
                    colored(sprintf('%2d', ++$i), 'bold') => colored($channel->{title}, 'bold blue'),
-                   colored('Updated'     => 'bold') => format_date($channel->{updated}),
+                   colored('Updated'     => 'bold') => $yv_utils->format_date($channel->{updated}),
                    colored('Subscribers' => 'bold') => $channel->{subscribers},
                    colored('Author'      => 'bold') => $channel->{name},
                    wrap_text(
@@ -1908,7 +1860,7 @@ HELP
         printf(
                "\n%s on %s said:\n%s\n",
                colored($comment->{name}, 'bold'),
-               format_date($comment->{published}),
+               $yv_utils->format_date($comment->{published}),
                wrap_text(
                          i_tab => q{ } x 4,
                          s_tab => q{ } x 4,
@@ -2004,7 +1956,8 @@ sub print_courses {
         }
         else {
             print "\n" if $i == 0;
-            printf "%s. %s (%s)\n", colored(sprintf('%2d', ++$i), 'bold'), $course->{title}, format_date($course->{updated});
+            printf "%s. %s (%s)\n", colored(sprintf('%2d', ++$i), 'bold'), $course->{title},
+              $yv_utils->format_date($course->{updated});
         }
     }
 
@@ -2251,7 +2204,7 @@ FORMAT
             printf(
                    "\n%s. %s\n    %s: %-23s %s: %-7s %s: %s\n%s\n",
                    colored(sprintf('%2d', ++$num), 'bold') => colored($playlist->{title}, 'bold blue'),
-                   colored('Updated' => 'bold') => format_date($playlist->{updated}),
+                   colored('Updated' => 'bold') => $yv_utils->format_date($playlist->{updated}),
                    colored('Videos'  => 'bold') => $playlist->{count},
                    colored('Author'  => 'bold') => $playlist->{name},
                    wrap_text(
@@ -2400,27 +2353,6 @@ sub get_valid_numbers {
     return map $_ - 1, grep { $_ > 0 and $_ <= @{$videos} } @output;
 }
 
-sub find_streaming_url {
-    my ($urls_ref, $wanted_itag) = @_;
-
-    my $streaming;
-    foreach my $url_ref (@{$urls_ref}) {
-        if (exists $url_ref->{itag}) {
-
-            if (defined $wanted_itag) {
-                next unless $url_ref->{itag} == $wanted_itag;
-            }
-
-            next unless exists $url_ref->{url};
-            next unless exists $itags{$url_ref->{itag}};
-
-            $streaming = $url_ref;
-            last;
-        }
-    }
-    return $streaming;
-}
-
 sub get_streaming_url {
     my ($video_id) = @_;
     my @urls = $yv_obj->get_streaming_urls($video_id);
@@ -2437,21 +2369,31 @@ sub get_streaming_url {
 
     # Download the closed-captions
     if ($has_cc and $opt{get_captions} and defined $opt{gcap} and not $opt{novideo}) {
-        $srt_file = download_caption($video_id);
+        require WWW::YoutubeViewer::GetCaption;
+        my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
+                                                         captions_dir => $opt{captions_dir},
+                                                         gcap         => $opt{gcap},
+                                                         languages    => $CONFIG{srt_languages},
+                                                        );
+        $srt_file = $yv_cap->get_caption($video_id);
     }
 
-    my $streaming = find_streaming_url(\@urls, $resolutions{$opt{resolution}});
+    require WWW::YoutubeViewer::Itags;
+    state $yv_itags = WWW::YoutubeViewer::Itags->new();
 
-    if (not defined $streaming) {
-        $streaming = find_streaming_url(\@urls);
+    my ($streaming, $resolution) = $yv_itags->find_streaming_url(\@urls, $opt{prefer_webm}, $opt{resolution});
+
+    if (not defined $streaming) {    # get the highest resolution
+        ($streaming, $resolution) = $yv_itags->find_streaming_url(\@urls, $opt{prefer_webm});
     }
 
     my $info = @urls && ref $urls[-1] eq 'HASH' && exists $urls[-1]{status} ? $urls[-1] : {};
 
     return {
-            streaming => $streaming,
-            srt_file  => $srt_file,
-            info      => $info,
+            streaming  => $streaming,
+            srt_file   => $srt_file,
+            info       => $info,
+            resolution => $resolution,
            };
 }
 
@@ -2476,7 +2418,7 @@ sub download_video {
         $title =~ tr{/}{%};
     }
     else {
-        $title =~ tr{:"*/?\\|<>}{;'+%$%%«»};
+        $title =~ tr{:"*/?\\|}{;'+%$%%};
     }
 
     $title .=
@@ -2565,7 +2507,8 @@ sub play_videos {
             }
         }
         else {
-            update_mplayer_arguments($itags{$streaming->{streaming}{itag}});
+            update_mplayer_arguments($streaming->{resolution});
+
             my @mplayer_line =
               get_quotewords(
                              qr/\s+/, 1,
@@ -2646,15 +2589,15 @@ sub print_video_info {
       q{ } x ((length($constant{dash_line}) - $title_length) / 2 - 4) => (_bold_color("=>> $info->{title} <<=") . "\n\n"),
       map(sprintf(q{** } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]),
           (
-           ['Author'    => $info->{name}],
+           ['Author'    => $info->{author}],
            ['Category'  => $info->{category}],
-           ['Duration'  => format_time($info->{duration})],
+           ['Duration'  => $yv_utils->format_time($info->{duration})],
            ['Rating'    => sprintf('%.2f', $info->{rating})],
-           ['Likes'     => set_thousands($info->{likes})],
-           ['Dislikes'  => set_thousands($info->{dislikes})],
-           ['Favorited' => set_thousands($info->{favorited})],
-           ['Views'     => set_thousands($info->{views})],
-           $info->{published} ? ['Published' => format_date($info->{published})] : (),
+           ['Likes'     => $yv_utils->set_thousands($info->{likes})],
+           ['Dislikes'  => $yv_utils->set_thousands($info->{dislikes})],
+           ['Favorited' => $yv_utils->set_thousands($info->{favorited})],
+           ['Views'     => $yv_utils->set_thousands($info->{views})],
+           $info->{published} ? ['Published' => $yv_utils->format_date($info->{published})] : (),
             )),
       "$constant{dash_line}\n";
 
@@ -2677,12 +2620,12 @@ sub print_videos {
             printf(
                    "\n%s. %s\n" . "    %s: %-16s %s: %-12s %s: %s\n" . "    %s: %-12s %s: %-10s %s: %s\n%s\n",
                    colored(sprintf('%2d', ++$num), 'bold') => colored($video->{title}, 'bold blue'),
-                   colored('Views'     => 'bold') => set_thousands($video->{views}),
+                   colored('Views'     => 'bold') => $yv_utils->set_thousands($video->{views}),
                    colored('Rating'    => 'bold') => sprintf('%.2f', $video->{rating}),
                    colored('Category'  => 'bold') => $video->{category},
-                   colored('Published' => 'bold') => format_date($video->{published}),
-                   colored('Duration'  => 'bold') => format_time($video->{duration}),
-                   colored('Author'    => 'bold') => $video->{name},
+                   colored('Published' => 'bold') => $yv_utils->format_date($video->{published}),
+                   colored('Duration'  => 'bold') => $yv_utils->format_time($video->{duration}),
+                   colored('Author'    => 'bold') => $video->{author},
                    wrap_text(
                              i_tab => q{ } x 4,
                              s_tab => q{ } x 4,
@@ -2694,16 +2637,16 @@ sub print_videos {
             print "\n" if $num == 0;
             printf("%s. %s (%s) (%s)\n",
                    colored(sprintf('%2d', ++$num), 'bold'),
-                   colored($video->{title},                 'bold green'),
-                   colored("by $video->{name}",             'bold yellow'),
-                   colored(format_time($video->{duration}), 'bold bright_blue'),
+                   colored($video->{title},                            'bold green'),
+                   colored("by $video->{author}",                      'bold yellow'),
+                   colored($yv_utils->format_time($video->{duration}), 'bold bright_blue'),
                   );
         }
         else {
             print "\n" if $num == 0;
             printf("%s. %s (by %s) (%s)\n",
                    colored(sprintf('%2d', ++$num), 'bold'),
-                   $video->{title}, $video->{name}, format_time($video->{duration}));
+                   $video->{title}, $video->{author}, $yv_utils->format_time($video->{duration}));
         }
     }
 
@@ -3000,116 +2943,8 @@ sub print_videos {
     return 1;
 }
 
-# ------- OTHER STUFF ------- #
-
-# Thousand separator
-sub set_thousands {    # ugly, but fast
-    return 0 unless $_[0];
-    length($_[0]) > 3 or return $_[0];
-    my $n = shift;
-    my $l = length($n) - 3;
-    my $i = ($l - 1) % 3 + 1;
-    my $x = substr($n, 0, $i) . $opt{thousand_separator};
-    while ($i < $l) {
-        $x .= substr($n, $i, 3) . $opt{thousand_separator};
-        $i += 3;
-    }
-    $x . substr($n, $i);
-}
-
-sub format_date {
-    my ($date) = @_;
-
-    # 2010-05-04T00:25:55.000Z
-    # to: 04 May 2010
-
-    state $months = [
-        qw(
-          Jan Feb Mar
-          Apr May Jun
-          Jul Aug Sep
-          Oct Nov Dec
-          )
-    ];
-
-    $date =~ s{^
-    (?<year>\d{4})
-           -
-    (?<month>\d{2})
-           -
-    (?<day>\d{2})
-        .*
-    }
-    {$+{day} $months->[$+{month} - 1] $+{year}}x;
-
-    return $date;
-}
-
 sub press_enter_to_continue {
     scalar $term->readline(colored("\n=>> Press ENTER to continue...", 'bold'));
-}
-
-sub format_time {
-    my ($sec) = @_;
-    $sec >= 3600
-      ? join q{:}, map { sprintf '%02d', $_ } $sec / 3600 % 24, $sec / 60 % 60, $sec % 60
-      : join q{:}, map { sprintf '%02d', $_ } $sec / 60 % 60, $sec % 60;
-}
-
-# Getting YouTube closed captions with gcap
-sub download_caption {
-    my ($code) = @_;
-
-    my $main_cwd = rel2abs(curdir());
-
-    if (not -d $opt{captions_dir}) {
-        require File::Path;
-        File::Path::make_path($opt{captions_dir}) or do {
-            warn "[!] Can't create directory $opt{captions_dir}: $!\n";
-            return;
-        };
-    }
-    elsif (not -w _) {
-        warn "[!] Can't write into directory: $opt{captions_dir}\n";
-    }
-
-    chdir $opt{captions_dir};
-
-    my $i = 0;
-    my $srt_file;
-    {
-        foreach my $lang (@{$CONFIG{srt_languages}}) {
-            my $name = "${code}_${lang}.srt";
-            if (-e $name) {
-                $srt_file = rel2abs($name);
-                last;
-            }
-        }
-
-        if (not defined $srt_file) {
-            if (opendir(my $dir_h, curdir())) {
-                while (defined(my $file = readdir $dir_h)) {
-                    if ($file =~ /^\Q$code\E[\w-]*+[.](?i:srt)\z/) {
-                        $srt_file = rel2abs($file);
-                        last;
-                    }
-                }
-                closedir $dir_h;
-            }
-
-            if (not defined $srt_file) {
-                system $^X, $opt{gcap}, "http://youtube.com/v/$code";
-                if ($? == 0 and not $i++) {
-                    redo;
-                }
-            }
-        }
-    }
-
-    # Change directory back to the main working directory
-    chdir $main_cwd;
-
-    return $srt_file;
 }
 
 sub main_quit { exit $_[0] }

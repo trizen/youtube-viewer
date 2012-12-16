@@ -245,8 +245,7 @@ sub login {
                                  );
 
     if ($resp->{_content} =~ /^Auth=(.+)/m) {
-        my $auth = $1;
-        return $auth;
+        return $1;
     }
     else {
         warn "Unable to login: $resp->{_content}\n";
@@ -300,7 +299,7 @@ sub lwp_get {
     my $response = $self->{lwp}->get($url, %lwp_header);
 
     if ($response->is_success) {
-        return $response->content;
+        return $response->decoded_content;
     }
     else {
         warn '[' . $response->status_line() . "] Error occured on URL: $url\n";
@@ -369,9 +368,9 @@ ERROR
     my $index = 0;
     while (
            my $gdata =
-             ref $hash->{feed}{entry} eq 'ARRAY' ? $hash->{feed}{entry}[$index]
+             ref $hash->{feed}{entry} eq 'ARRAY' ? $hash->{feed}{entry}[$index++]
            : ref $hash->{feed}{entry} eq 'HASH'  ? $hash->{feed}{entry}
-           : $hash->{entry}
+           :                                       $hash->{entry}
       ) {
         last unless defined $gdata;
 
@@ -441,22 +440,26 @@ ERROR
 
           # Videos
           : {
-             videoID     => $gdata->{'media:group'}{'yt:videoid'},
-             title       => $gdata->{'media:group'}{'media:title'}{'#text'},
-             name        => $gdata->{'author'}{'name'},
-             author      => $gdata->{'author'}{'yt:userId'},
-             rating      => $gdata->{'gd:rating'}{'-average'} || 0,
-             likes       => $gdata->{'yt:rating'}{'-numLikes'} || 0,
-             dislikes    => $gdata->{'yt:rating'}{'-numDislikes'} || 0,
+             videoID => $gdata->{'media:group'}{'yt:videoid'},
+             title   => $gdata->{'media:group'}{'media:title'}{'#text'},
+             author  => (
+                      ref $gdata->{'media:group'}{'media:credit'} eq 'ARRAY' ? $gdata->{'media:group'}{'media:credit'}[0]{'#text'}
+                      : $gdata->{'media:group'}{'media:credit'}{'#text'}
+             ),
+             rating   => $gdata->{'gd:rating'}{'-average'}     || 0,
+             likes    => $gdata->{'yt:rating'}{'-numLikes'}    || 0,
+             dislikes => $gdata->{'yt:rating'}{'-numDislikes'} || 0,
              favorited   => $gdata->{'yt:statistics'}{'-favoriteCount'},
              duration    => $gdata->{'media:group'}{'yt:duration'}{'-seconds'} || 0,
              views       => $gdata->{'yt:statistics'}{'-viewCount'},
              published   => $gdata->{'media:group'}{'yt:uploaded'},
              description => $gdata->{'media:group'}{'media:description'}{'#text'},
-             category    => ref $gdata->{'category'} eq 'ARRAY' ? ($gdata->{'category'}[1]{'-label'} || 'Unknown')
-             : ($gdata->{'category'}{'-label'} || 'Unknown'),
+             category    => (
+                 ref $gdata->{'media:group'}{'media:category'} eq 'ARRAY' ? $gdata->{'media:group'}{'media:category'}[0]{'-label'}
+                 : $gdata->{'media:group'}{'media:category'}{'-label'}
+             ),
             };
-        ++$index;
+
         last unless ref $hash->{feed}{entry} eq 'ARRAY';
     }
 
@@ -1559,10 +1562,41 @@ https://developers.google.com/youtube/2.0/developers_guide_protocol_api_query_pa
 Copyright 2012 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
+under the terms of the the Artistic License (2.0). You may obtain a
+copy of the full license at:
 
-See http://dev.perl.org/licenses/ for more information.
+L<http://www.perlfoundation.org/artistic_license_2_0>
+
+Any use, modification, and distribution of the Standard or Modified
+Versions is governed by this Artistic License. By using, modifying or
+distributing the Package, you accept this license. Do not use, modify,
+or distribute the Package, if you do not accept this license.
+
+If your Modified Version has been derived from a Modified Version made
+by someone other than you, you are nevertheless required to ensure that
+your Modified Version complies with the requirements of this license.
+
+This license does not grant you the right to use any trademark, service
+mark, tradename, or logo of the Copyright Holder.
+
+This license includes the non-exclusive, worldwide, free-of-charge
+patent license to make, have made, use, offer to sell, sell, import and
+otherwise transfer the Package with respect to any patent claims
+licensable by the Copyright Holder that are necessarily infringed by the
+Package. If you institute patent litigation (including a cross-claim or
+counterclaim) against any party alleging that the Package constitutes
+direct or contributory patent infringement, then this Artistic License
+to you shall terminate on the date that such litigation is filed.
+
+Disclaimer of Warranty: THE PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER
+AND CONTRIBUTORS "AS IS' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
+THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE, OR NON-INFRINGEMENT ARE DISCLAIMED TO THE EXTENT PERMITTED BY
+YOUR LOCAL LAW. UNLESS REQUIRED BY LAW, NO COPYRIGHT HOLDER OR
+CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, OR
+CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF THE USE OF THE PACKAGE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 =cut
 

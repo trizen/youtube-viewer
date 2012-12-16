@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 27 November 2012
+#  Latest edit on: 16 December 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -29,7 +29,6 @@ use strict;
 #use warnings;          # debug only
 
 use Gtk2 qw(-init);
-require WWW::YoutubeViewer;
 use File::Basename qw(dirname);
 use File::Spec::Functions qw(
   rel2abs
@@ -39,7 +38,7 @@ use File::Spec::Functions qw(
   );
 
 my $appname  = 'GTK Youtube Viewer';
-my $version  = '3.0.4';
+my $version  = '3.0.5-dev';
 my $execname = 'gtk-youtube-viewer';
 
 # Developer key
@@ -128,7 +127,7 @@ my %CONFIG = (
     mainw_fullscreen            => 0,
 
     # Youtube options
-    prefer_webm         => 0,
+    prefer_webm         => 1,
     prefer_https        => 0,
     results             => 10,
     resolution          => 'original',
@@ -353,33 +352,13 @@ my $animation        = 'Gtk2::Gdk::PixbufAnimation'->new_from_file("$icons_path/
 $mainw->set_title("$appname $version");
 $mainw->set_icon($app_icon_pixbuf);
 
-#------------------------ REGEXP AREA ------------------------#
-my $generic_name_re   = qr{[a-zA-Z0-9_.\-]{16,34}};
-my $valid_username_re = qr{^(?:\w+(?:[-.]++\w++)*|$generic_name_re)\z};
-
-my $video_id_re       = qr{[0-9A-Za-z_\-]{11}};
-my $valid_video_id_re = qr{^$video_id_re\z};
-my $get_video_id_re   = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)(?<video_id>$video_id_re)};
-
-my $course_id_re       = qr{EC(?<course_id>$generic_name_re)|(?<course_id>$generic_name_re)};
-my $valid_course_id_re = qr{^$course_id_re\z};
-my $get_course_id_re   = qr{/course\?list=$course_id_re};
-
-my $valid_playlist_id_re = qr{^$generic_name_re\z};
-my $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)(?<playlist_id>$generic_name_re)\b};
+# Regular expressions
+use WWW::YoutubeViewer::RegularExpressions;
 
 {
     my $i = length $key;
     $key =~ s/(.{$i})(.)/$2$1/g while $i--;
 }
-
-my $yv_obj = WWW::YoutubeViewer->new(
-                                     key         => $key,
-                                     app_name    => $appname,
-                                     app_version => $version,
-                                     config_dir  => $config_dir,
-                                     escape_utf8 => 1,
-                                    );
 
 our $CONFIG;
 require $config_file;    # Load the configuration file
@@ -394,6 +373,18 @@ my @valid_keys = grep exists $CONFIG{$_}, keys %{$CONFIG};
 if (ref $CONFIG ne 'HASH' or not %CONFIG ~~ %{$CONFIG}) {
     dump_configuration();
 }
+
+require WWW::YoutubeViewer;
+my $yv_obj = WWW::YoutubeViewer->new(
+                                     key         => $key,
+                                     app_name    => $appname,
+                                     app_version => $version,
+                                     config_dir  => $config_dir,
+                                     escape_utf8 => 1,
+                                    );
+
+require WWW::YoutubeViewer::Utils;
+my $yv_utils = WWW::YoutubeViewer::Utils->new(thousand_separator => $CONFIG{thousand_separator},);
 
 # Set config file to $CONFIG hash ref
 sub apply_configuration {
@@ -478,35 +469,6 @@ sub apply_configuration {
 # Apply the configuration file
 apply_configuration();
 
-# --- ITAGS ---
-
-# itag => resolution
-my %itags = (
-
-    $CONFIG{prefer_webm}
-    ? (
-       45 => 720,    # webm
-       44 => 480,    # webm
-       43 => 360,    # webm
-      )
-    : (
-       22 => 720,
-       35 => 480,
-       34 => 360,
-      ),
-
-    38 => 'original',
-    37 => 1080,
-    36 => 180,
-    18 => 340,
-    5  => 240,
-    17 => 144,
-);
-
-# resolution => itag
-my %resolutions;
-@resolutions{values %itags} = keys %itags;
-
 # YouTube usernames
 my %users_table = map { lc($_) => $_ } (
                                         'AtGoogleTalks',  'AtheistsAreSkeptics', 'Best0fScience',        'DiscoveryTV',
@@ -525,14 +487,18 @@ sub lwp_get {
       unless defined $yv_obj->{lwp};
 
     my %lwp_header = $yv_obj->_get_lwp_header();
-
     my $response = $yv_obj->{lwp}->get($url, %lwp_header);
 
     if ($response->is_success) {
-        return $response->content;
+        return $response->decoded_content;
     }
     else {
-        warn '[' . $response->status_line() . "] Error occured on URL: $url\n";
+        my $status = $response->status_line();
+        if ($status =~ /Expired/ and $status =~ /Token/) {
+            log_out();
+        }
+
+        warn "[$status] Error occured on URL: $url\n";
     }
 
     return;
@@ -1240,22 +1206,18 @@ sub check_keywords {
         when (/$get_video_id_re/o) {
             my $info = $yv_obj->get_video_info($+{video_id});
             play_videos($info->{results});
-            return 1;
-        }
-        when (/$valid_playlist_id_re/o) {
-            list_playlist($_);
-            return 1;
         }
         when (/$get_playlist_id_re/o) {
             list_playlist($+{playlist_id});
-            return 1;
         }
         when (/$get_course_id_re/) {
             print_videos($yv_obj->get_video_lectures_from_course($+{course_id}));
-            return 1;
+        }
+        default {
+            return;
         }
     }
-    return;
+    return 1;
 }
 
 sub search {
@@ -1409,29 +1371,29 @@ sub print_videos {
                           . encode_entities($video->{title} // 'Unknown')
                           . "</b></big>\n\n"
                           . "<b>Likes\t:</b> "
-                          . set_thousands($video->{likes}) . "\n"
+                          . $yv_utils->set_thousands($video->{likes}) . "\n"
                           . "<b>Dislikes\t:</b> "
-                          . set_thousands($video->{dislikes}) . "\n"
+                          . $yv_utils->set_thousands($video->{dislikes}) . "\n"
                           . "<b>Favorited\t:</b> "
-                          . set_thousands($video->{favorited}) . "\n"
+                          . $yv_utils->set_thousands($video->{favorited}) . "\n"
                           . "<b>Category\t:</b> "
                           . encode_entities($video->{category} // 'Unknown') . "\n"
                           . "<b>Publisher\t: </b>"
-                          . $video->{name} . "\n\n" . "<i>"
+                          . $video->{author} . "\n\n" . "<i>"
                           . encode_entities($row_description) . "</i>"
                        );
 
         $liststore->set(
             $iter, 2,
             "<b>Length\t:</b> "
-              . format_time($video->{duration}) . "\n"
+              . $yv_utils->format_time($video->{duration}) . "\n"
               . "<b>Rating\t:</b> "
               . sprintf('%.2f', ($video->{rating} || 0)) . "\n"
               . "<b>Views\t:</b> "
-              . set_thousands($video->{views})
+              . $yv_utils->set_thousands($video->{views})
               . do {
                 defined $video->{published}
-                  ? "\n" . "<b>Added\t: </b>" . format_date($video->{published})
+                  ? "\n" . "<b>Added\t: </b>" . $yv_utils->format_date($video->{published})
                   : q{};
               }
         );
@@ -1484,17 +1446,17 @@ sub print_channels {
                           . "<b>Author\t:</b> "
                           . $channel->{name} . "\n"
                           . "<b>Subscr\t:</b> "
-                          . set_thousands($channel->{subscribers}) . "\n"
+                          . $yv_utils->set_thousands($channel->{subscribers}) . "\n"
                           . (
                              exists($channel->{views})
-                             ? ("<b>Views\t:</b> " . set_thousands($channel->{views}))
-                             : ("<b>Videos\t:</b> " . set_thousands($channel->{videos}))
+                             ? ("<b>Views\t:</b> " . $yv_utils->set_thousands($channel->{views}))
+                             : ("<b>Videos\t:</b> " . $yv_utils->set_thousands($channel->{videos}))
                             )
                           . "\n\n<i>"
                           . encode_entities($row_description) . '</i>'
                        );
 
-        $liststore->set($iter, 2, "<b>Updated:</b> " . format_date($channel->{updated}) . "\n\n");
+        $liststore->set($iter, 2, "<b>Updated:</b> " . $yv_utils->format_date($channel->{updated}) . "\n\n");
 
         if ($CONFIG{show_thumbs}) {
             my $pixbuf = _get_pixbuf_thumbnail($channel->{thumbnail});
@@ -1540,13 +1502,13 @@ sub print_playlists {
                           . "<b>Author\t:</b> "
                           . $playlist->{name} . "\n"
                           . "<b>Published\t:</b> "
-                          . format_date($playlist->{published}) . "\n"
+                          . $yv_utils->format_date($playlist->{published}) . "\n"
                           . "<b>Updated\t:</b> "
-                          . format_date($playlist->{updated}) . "\n\n" . '<i>'
+                          . $yv_utils->format_date($playlist->{updated}) . "\n\n" . '<i>'
                           . encode_entities($row_description) . '</i>'
                        );
 
-        $liststore->set($iter, 2, "<b>Videos:</b> " . set_thousands($playlist->{count}) . "\n\n");
+        $liststore->set($iter, 2, "<b>Videos:</b> " . $yv_utils->set_thousands($playlist->{count}) . "\n\n");
 
         if ($CONFIG{show_thumbs}) {
             my $pixbuf = _get_pixbuf_thumbnail($playlist->{thumbnail});
@@ -1645,27 +1607,6 @@ sub playlists_from_username {
     }
 }
 
-sub _find_streaming_url {
-    my ($urls_ref, $wanted_itag) = @_;
-
-    my $streaming;
-    foreach my $url_ref (@{$urls_ref}) {
-        if (exists $url_ref->{itag}) {
-
-            if (defined $wanted_itag) {
-                next unless $url_ref->{itag} == $wanted_itag;
-            }
-
-            next unless exists $url_ref->{url};
-            next unless exists $itags{$url_ref->{itag}};
-
-            $streaming = $url_ref;
-            last;
-        }
-    }
-    return $streaming;
-}
-
 sub _strip_edge_spaces {
     my ($text) = @_;
     $text =~ s/^\s+//;
@@ -1690,13 +1631,22 @@ sub get_streaming_url {
 
     # Download the closed-captions
     if ($has_cc and $CONFIG{get_captions} and defined $CONFIG{gcap}) {
-        $srt_file = download_caption($video_id);
+        require WWW::YoutubeViewer::GetCaption;
+        my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
+                                                         captions_dir => $CONFIG{captions_dir},
+                                                         gcap         => $CONFIG{gcap},
+                                                         languages    => $CONFIG{srt_languages},
+                                                        );
+        $srt_file = $yv_cap->get_caption($video_id);
     }
 
-    my $streaming = _find_streaming_url(\@urls, $resolutions{$CONFIG{resolution}});
+    require WWW::YoutubeViewer::Itags;
+    state $yv_itags = WWW::YoutubeViewer::Itags->new();
+
+    my $streaming = $yv_itags->find_streaming_url(\@urls, $CONFIG{prefer_webm}, $CONFIG{resolution});
 
     if (not defined $streaming) {
-        $streaming = _find_streaming_url(\@urls);
+        $streaming = $yv_itags->find_streaming_url(\@urls, $CONFIG{prefer_webm});
     }
 
     my $info = @urls && ref $urls[-1] eq 'HASH' && exists $urls[-1]{status} ? $urls[-1] : {};
@@ -1741,7 +1691,8 @@ sub play_videos {
             next;
         }
 
-        update_mplayer_arguments($itags{$streaming->{streaming}{itag}});
+        update_mplayer_arguments($streaming->{resolution});
+
         my @mplayer_line =
           get_quotewords(
                          qr/\s+/, 1,
@@ -1764,112 +1715,6 @@ sub play_videos {
     }
 
     return 1;
-}
-
-# Thousand separator
-sub set_thousands {    # ugly, but fast
-    return 0 unless $_[0];
-    length($_[0]) > 3 or return $_[0];
-    my $n = shift;
-    my $l = length($n) - 3;
-    my $i = ($l - 1) % 3 + 1;
-    my $x = substr($n, 0, $i) . $CONFIG{thousand_separator};
-    while ($i < $l) {
-        $x .= substr($n, $i, 3) . $CONFIG{thousand_separator};
-        $i += 3;
-    }
-    $x . substr($n, $i);
-}
-
-sub format_time {
-    my ($sec) = @_;
-    $sec >= 3600
-      ? join q{:}, map { sprintf '%02d', $_ } $sec / 3600 % 24, $sec / 60 % 60, $sec % 60
-      : join q{:}, map { sprintf '%02d', $_ } $sec / 60 % 60, $sec % 60;
-}
-
-sub format_date {
-    my ($date) = @_;
-
-    # 2010-05-04T00:25:55.000Z
-    # to: 04 May 2010
-
-    state $months = [
-        qw(
-          Jan Feb Mar
-          Apr May Jun
-          Jul Aug Sep
-          Oct Nov Dec
-          )
-    ];
-
-    $date =~ s{^
-    (?<year>\d{4})
-           -
-    (?<month>\d{2})
-           -
-    (?<day>\d{2})
-        .*
-    }
-    {$+{day} $months->[$+{month} - 1] $+{year}}x;
-
-    return $date;
-}
-
-# Getting YouTube closed captions with gcap
-sub download_caption {
-    my ($code) = @_;
-
-    my $main_cwd = rel2abs(curdir());
-
-    if (not -d $CONFIG{captions_dir}) {
-        require File::Path;
-        File::Path::make_path($CONFIG{captions_dir}) or do {
-            warn "[!] Can't create directory $CONFIG{captions_dir}: $!\n";
-            return;
-        };
-    }
-    elsif (not -w _) {
-        warn "[!] Can't write into directory: $CONFIG{captions_dir}\n";
-    }
-
-    chdir $CONFIG{captions_dir};
-
-    my $i = 0;
-    my $srt_file;
-    {
-        foreach my $lang (@{$CONFIG{srt_languages}}) {
-            my $name = "${code}_${lang}.srt";
-            if (-e $name) {
-                $srt_file = rel2abs($name);
-                last;
-            }
-        }
-
-        if (not defined $srt_file) {
-            if (opendir(my $dir_h, curdir())) {
-                while (defined(my $file = readdir $dir_h)) {
-                    if ($file =~ /^\Q$code\E[\w-]*+[.](?i:srt)\z/) {
-                        $srt_file = rel2abs($file);
-                        last;
-                    }
-                }
-                closedir $dir_h;
-            }
-
-            if (not defined $srt_file) {
-                system $^X, $CONFIG{gcap}, "http://youtube.com/v/$code";
-                if ($? == 0 and not $i++) {
-                    redo;
-                }
-            }
-        }
-    }
-
-    # Change directory back to the main working directory
-    chdir $main_cwd;
-
-    return $srt_file;
 }
 
 sub list_category {
@@ -2164,7 +2009,7 @@ sub print_comments {
                               $iter,
                               0,
                               "<big><b>$comment->{name}</b> ("
-                                . format_date($comment->{published})
+                                . $yv_utils->format_date($comment->{published})
                                 . ") said:</big>\n\t"
                                 . encode_entities($comment->{content})
                              );
