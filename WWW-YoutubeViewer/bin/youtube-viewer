@@ -1687,7 +1687,8 @@ sub warn_cant_do {
 
 sub warn_cant_get {
     my ($name, $videoID) = @_;
-    warn colored("\n[!] Can't get $name for video: " . sprintf($CONFIG{youtube_video_url}, $videoID), 'bold red') . "\n";
+    warn colored("\n[!] Can't get $name for video: " . sprintf($CONFIG{youtube_video_url}, $videoID), 'bold red')
+      . "\n";
 }
 
 sub warn_last_page {
@@ -1896,7 +1897,8 @@ HELP
                         my ($fh, $filename) = File::Temp::tempfile();
                         system $ENV{EDITOR} // 'nano', $filename;
                         if ($?) {
-                            warn colored("\n[!] Editor exited with a non-zero code. Unable to continue!", 'bold red') . "\n";
+                            warn colored("\n[!] Editor exited with a non-zero code. Unable to continue!", 'bold red')
+                              . "\n";
                         }
                         else {
                             my $comment = do { local (@ARGV, $/) = $filename; <> };
@@ -2258,7 +2260,8 @@ FORMAT
                   ) {
                 }
                 when (['h', 'help']) {
-                    print "\n$control_help", ":pp=i,i           : play videos from the selected playlists\n", $general_help;
+                    print "\n$control_help", ":pp=i,i           : play videos from the selected playlists\n",
+                      $general_help;
                     press_enter_to_continue();
                 }
                 when (['r', 'return']) {
@@ -2491,7 +2494,8 @@ sub play_videos {
         my $streaming = get_streaming_url($video->{videoID});
 
         if (defined $streaming->{info}{status} and not $streaming->{info}{status} =~ /^(?:ok|success)/i) {
-            warn colored("(x_x) Can't stream: " . sprintf($CONFIG{youtube_video_url}, $video->{videoID}), 'bold red') . "\n";
+            warn colored("(x_x) Can't stream: " . sprintf($CONFIG{youtube_video_url}, $video->{videoID}), 'bold red')
+              . "\n";
             warn colored("(x_x) Status: $streaming->{info}{status}", 'bold red') . "\n\n";
         }
 
@@ -2586,7 +2590,8 @@ sub print_video_info {
     my $title_length = length($info->{title});
 
     print "\n$constant{dash_line}\n",
-      q{ } x ((length($constant{dash_line}) - $title_length) / 2 - 4) => (_bold_color("=>> $info->{title} <<=") . "\n\n"),
+      q{ } x ((length($constant{dash_line}) - $title_length) / 2 - 4) =>
+      (_bold_color("=>> $info->{title} <<=") . "\n\n"),
       map(sprintf(q{** } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]),
           (
            ['Author'    => $info->{author}],
@@ -2635,7 +2640,8 @@ sub print_videos {
         }
         elsif ($opt{results_with_colors}) {
             print "\n" if $num == 0;
-            printf("%s. %s (%s) (%s)\n",
+            printf(
+                   "%s. %s (%s) (%s)\n",
                    colored(sprintf('%2d', ++$num), 'bold'),
                    colored($video->{title},                            'bold green'),
                    colored("by $video->{author}",                      'bold yellow'),
@@ -2669,7 +2675,8 @@ sub print_videos {
     if ($args{auto}) { }    # do nothing...
     else {
         @keywords = get_input_for_search();
-        if (scalar(@keywords) == 0) {
+
+        if (scalar(@keywords) == 0) {    # only arguments
             __SUB__->($results);
         }
     }
@@ -2881,7 +2888,7 @@ sub print_videos {
                 when (\&youtube_urls) { }    # do nothing
                 when (!$contains_keywords && (valid_num($_, $videos) || /$range_num_re/)) {
                     my @for_play;
-                    if (defined $1) {
+                    if (/$range_num_re/) {
                         my @ids = get_valid_numbers($videos, "$1..$2");
                         continue if not @ids;
                         push @for_play, @ids;
