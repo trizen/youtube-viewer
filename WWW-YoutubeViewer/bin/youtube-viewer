@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 16 December 2012
+#  Latest edit on: 20 December 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -771,7 +771,7 @@ sub apply_configuration {
     my ($opt, $keywords) = @_;
 
     if ($yv_obj->get_debug == 2
-        or (defined($opt->{debug}) and $opt->{debug} == 2)) {
+        or (defined($opt->{debug}) && $opt->{debug} == 2)) {
         require Data::Dump;
         say "=>> Options with keywords: <@{$keywords}>";
         Data::Dump::pp($opt);
@@ -2013,6 +2013,8 @@ sub print_categories {
     my $track      = $opts{pos} || 0;
     my $categories = $opts{categories};
     my $edu_mode   = $opts{edu};
+
+    return if ref $categories ne 'ARRAY';
 
     my $i = 0;
     print "\n" if @{$categories};

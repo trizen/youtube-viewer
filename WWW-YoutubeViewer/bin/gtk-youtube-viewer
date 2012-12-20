@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 16 December 2012
+#  Latest edit on: 20 December 2012
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -1039,6 +1039,8 @@ sub add_category_header {
 
 sub append_categories {
     my ($categories, $type) = @_;
+
+    return if ref $categories ne 'ARRAY';
 
     foreach my $category (@{$categories}) {
         my $label = $category->{label};
