@@ -881,7 +881,7 @@ sub apply_configuration {
 
     if (defined $opt->{disco}) {
         my $json = $yv_obj->lwp_get(
-                          "http://www.youtube.com/disco?action_search=1&query=" . $yv_obj->escape_string(@{$keywords}));
+                        "http://www.youtube.com/disco?action_search=1&query=" . $yv_obj->escape_string("@{$keywords}"));
         if ($json =~ /list=(?<playlist_id>[\w\-]+)/) {
             get_and_print_videos_from_playlist($+{playlist_id});
         }
