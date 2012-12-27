@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 20 December 2012
+#  Latest edit on: 27 December 2012
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -423,6 +423,7 @@ YouTube options:
    -id --videoids=ID,ID : play the YouTube videos by video IDs
    -rv --related=URL/ID : show related videos for a video ID/URL
    --channels           : search for Youtube channels
+   --disco              : YouTube discovery - search and list the playlist
    --author=s           : search in videos uploaded by a specific user
    --duration=s         : filter search results based on video length
                           valid values are: short, medium, long
@@ -878,6 +879,14 @@ sub apply_configuration {
         get_and_play_playlists(split(/[,\s]+/, delete $opt->{play_playlists}));
     }
 
+    if (defined $opt->{disco}) {
+        my $json = $yv_obj->lwp_get(
+                          "http://www.youtube.com/disco?action_search=1&query=" . $yv_obj->escape_string(@{$keywords}));
+        if ($json =~ /list=(?<playlist_id>[\w\-]+)/) {
+            get_and_print_videos_from_playlist($+{playlist_id});
+        }
+    }
+
     if (defined $opt->{search_playlists}) {
         my $value = delete($opt->{search_playlists});
         if ($value =~ /$valid_playlist_id_re/ and not @{$keywords}) {
@@ -1011,6 +1020,7 @@ sub parse_arguments {
         'res|resolution=s' => \$opt{resolution},
 
         'movies|M'                                   => \$opt{show_movies},
+        'disco'                                      => \$opt{disco},
         'get_title|get-title=s'                      => \$opt{get_title},
         'get-description|get_description=s'          => \$opt{get_description},
         'comments=s'                                 => \$opt{get_comments},
