@@ -38,7 +38,7 @@ use File::Spec::Functions qw(
   );
 
 my $appname  = 'GTK Youtube Viewer';
-my $version  = '3.0.5-dev';
+my $version  = '3.0.5';
 my $execname = 'gtk-youtube-viewer';
 
 # Developer key

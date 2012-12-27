@@ -109,7 +109,7 @@ use strict;
 use File::Spec::Functions qw(catdir catfile curdir path rel2abs tmpdir);
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.0.5-dev';
+my $version  = '3.0.5';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
