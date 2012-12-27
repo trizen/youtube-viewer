@@ -17,10 +17,6 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-Parse XML content and return an HASH ref structure.
-
-Usage:
-
     use WWW::YoutubeViewer::Itags;
 
     my $yv_itags = WWW::YoutubeViewer::Itags->new();
@@ -43,7 +39,7 @@ sub new {
 
 =head2 get_itags()
 
-Get a HASH ref with the YouTube itags. (resolution => {type => itag}).
+Get a HASH ref with the YouTube itags. {resolution => {type => itag}}.
 
 =cut
 

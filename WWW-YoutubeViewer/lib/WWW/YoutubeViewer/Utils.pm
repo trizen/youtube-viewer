@@ -36,7 +36,7 @@ Options:
 
 Character used as thousand separator.
 
-=item monts => []
+=item months => []
 
 Month names for I<format_date()>
 
