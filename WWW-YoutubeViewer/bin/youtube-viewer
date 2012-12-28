@@ -879,9 +879,9 @@ sub apply_configuration {
         get_and_play_playlists(split(/[,\s]+/, delete $opt->{play_playlists}));
     }
 
-    if (defined $opt->{disco}) {
-        my $json = $yv_obj->lwp_get(
-                        "http://www.youtube.com/disco?action_search=1&query=" . $yv_obj->escape_string("@{$keywords}"));
+    if (defined delete $opt->{disco}) {
+        my $url  = "http://www.youtube.com/disco?action_search=1&query=";
+        my $json = $yv_obj->lwp_get($url . $yv_obj->escape_string("@{$keywords}"));
         if ($json =~ /list=(?<playlist_id>[\w\-]+)/) {
             get_and_print_videos_from_playlist($+{playlist_id});
         }
@@ -1020,7 +1020,7 @@ sub parse_arguments {
         'res|resolution=s' => \$opt{resolution},
 
         'movies|M'                                   => \$opt{show_movies},
-        'disco'                                      => \$opt{disco},
+        'disco|discovery'                            => \$opt{disco},
         'get_title|get-title=s'                      => \$opt{get_title},
         'get-description|get_description=s'          => \$opt{get_description},
         'comments=s'                                 => \$opt{get_comments},
