@@ -494,7 +494,7 @@ sub lwp_get {
     }
     else {
         my $status = $response->status_line();
-        if ($status =~ /Expired/ and $status =~ /Token/) {
+        if ($status =~ /\b401 Token expired\b/) {
             log_out();
         }
 
