@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2010-2012 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
+# Copyright (C) 2010-2013 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 20 December 2012
+#  Latest edit on: 15 January 2013
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -29,7 +29,7 @@ use strict;
 #use warnings;          # debug only
 
 use Gtk2 qw(-init);
-use File::Basename qw(dirname);
+use autouse 'File::Basename' => qw(dirname);
 use File::Spec::Functions qw(
   rel2abs
   catdir catfile
@@ -161,10 +161,7 @@ my %CONFIG = (
         eval { require threads };
         $@ ? 0 : 1;
     },
-    use_threads_for_thumbs => do {
-        eval { require threads };
-        $@ ? 0 : 1;
-    },
+    use_threads_for_thumbs   => 0,
     show_comments_by_default => 0,
     hpaned_position          => 420,
     search_channels          => 0,
@@ -241,15 +238,17 @@ $gui->connect_signals(undef);
 
 # -------------  Get GUI objects ------------- #
 my (
-    $mainw,                 $users_list_window,     $help_window,          $prefernces_window,      $login_to_youtube,
-    $errors_window,         $details_window,        $about_window,         $treeview,               $liststore,
-    $config_view,           $statusbar,             $thumbs_column,        $textview_help,          $sort_combobox,
-    $sort_by_time_combobox, $resolution_combobox,   $spin_results,         $users_treeview,         $users_liststore,
-    $thumbs_checkbutton,    $search_for_combobox,   $spin_start_with_page, $fullscreen_checkbutton, $notebook,
-    $search_entry,          $from_author_entry,     $gif_spinner,          $hbox2,                  $feeds_window,
-    $feeds_treeview,        $feeds_liststore,       $feeds_statusbar,      $safesearch_combobox,    $hd_combobox,
-    $caption_combobox,      $duration_combobox,     $warnings_window,      $warnings_textview,      $errors_textview,
-    $category_id_entry,     $more_options_expander, $cat_treeview,         $cats_liststore,
+    $mainw,               $users_list_window,     $help_window,          $prefernces_window,
+    $login_to_youtube,    $errors_window,         $details_window,       $about_window,
+    $treeview,            $liststore,             $config_view,          $statusbar,
+    $thumbs_column,       $textview_help,         $sort_combobox,        $sort_by_time_combobox,
+    $resolution_combobox, $spin_results,          $users_treeview,       $users_liststore,
+    $thumbs_checkbutton,  $search_for_combobox,   $spin_start_with_page, $fullscreen_checkbutton,
+    $notebook,            $search_entry,          $from_author_entry,    $gif_spinner,
+    $hbox2,               $feeds_window,          $feeds_treeview,       $feeds_liststore,
+    $feeds_statusbar,     $safesearch_combobox,   $hd_combobox,          $caption_combobox,
+    $duration_combobox,   $warnings_window,       $warnings_textview,    $errors_textview,
+    $category_id_entry,   $more_options_expander, $cat_treeview,         $cats_liststore,
    );
 
 sub get_objects {
@@ -331,7 +330,7 @@ local $SIG{__DIE__} = sub {
             if ($error =~ m{^Can't locate (.+?)\.pm\b}) {
                 my $module = $1;
                 $module =~ s{[/\\]+}{::}g;
-                "\nThe module $module is required!\n\nTo install the module, just type in terminal:\n\tsudo cpan $module\n";
+"\nThe module $module is required!\n\nTo install the module, just type in terminal:\n\tsudo cpan $module\n";
             }
           }
           . "\n=>> Previous warnings:\n" . get_text($warnings_textview)
@@ -471,12 +470,12 @@ apply_configuration();
 
 # YouTube usernames
 my %users_table = map { lc($_) => $_ } (
-                                        'AtGoogleTalks',  'AtheistsAreSkeptics', 'Best0fScience',        'DiscoveryTV',
-                                        'Google',         'GoogleChrome',        'GoogleTechTalks',      'KhanAcademy',
-                                        'NASAtelevision', 'NatCen4ScienceEd',    'GoogleDevelopers',     'RichardDawkinsDotNet',
-                                        'ScienceChannel', 'SpaceRip',            'AnimalPlanetTV',       'TEDtalksDirector',
-                                        'MIT',            'SixtySymbols',        'SpitzerScienceCenter', 'EvolutionDocumentary',
-                                        'FOSDEMtalks'
+                                'AtGoogleTalks',  'AtheistsAreSkeptics', 'Best0fScience',        'DiscoveryTV',
+                                'Google',         'GoogleChrome',        'GoogleTechTalks',      'KhanAcademy',
+                                'NASAtelevision', 'NatCen4ScienceEd',    'GoogleDevelopers',     'RichardDawkinsDotNet',
+                                'ScienceChannel', 'SpaceRip',            'AnimalPlanetTV',       'TEDtalksDirector',
+                                'MIT',            'SixtySymbols',        'SpitzerScienceCenter', 'EvolutionDocumentary',
+                                'FOSDEMtalks'
                                        );
 set_usernames();
 
@@ -494,10 +493,6 @@ sub lwp_get {
     }
     else {
         my $status = $response->status_line();
-        if ($status =~ /\b401 Token expired\b/) {
-            log_out();
-        }
-
         warn "[$status] Error occured on URL: $url\n";
     }
 
@@ -1771,7 +1766,8 @@ sub clear_text {
 }
 
 sub run_cli_youtube_viewer {
-    execute_external_program($CONFIG{terminal}, '-e', q{'} . join(' ', $CONFIG{perl_bin}, $CONFIG{cli_youtube_viewer}), q{'});
+    execute_external_program($CONFIG{terminal}, '-e', q{'} . join(' ', $CONFIG{perl_bin}, $CONFIG{cli_youtube_viewer}),
+                             q{'});
 }
 
 sub find_terminal {
@@ -1884,7 +1880,9 @@ sub execute_cli_youtube_viewer {
                         map { chr ord eq q{'} ? $_ : quotemeta } $CONFIG{terminal},
                         '-e',
                         q{'}
-                          . join(q{ }, $CONFIG{perl_bin}, $CONFIG{cli_youtube_viewer}, get_options_as_arguments(), @arguments)
+                          . join(q{ },
+                                 $CONFIG{perl_bin},          $CONFIG{cli_youtube_viewer},
+                                 get_options_as_arguments(), @arguments)
                           . q{'}
                        )
                       )
@@ -1958,11 +1956,10 @@ sub favorite_video {
 
 sub subscribe_channel {
     my $user = get_username_for_selected_video();
-    $feeds_statusbar->push(
-                           0, $yv_obj->subscribe_channel($user)
+    $feeds_statusbar->push(0,
+                           $yv_obj->subscribe_channel($user)
                            ? "Successfully subscribed to channel: $user."
-                           : 'Error!'
-                          );
+                           : 'Error!');
 }
 
 sub like_selected_video {
@@ -1987,10 +1984,13 @@ sub send_comment_to_video {
     my $videoID = get_selected_video_code() or return;
     my $comment = get_text($gui->get_object('comment_textview'));
 
-    $feeds_statusbar->push(0,
-                           length($comment) && $yv_obj->send_comment_to_video($videoID, $comment)
+    $feeds_statusbar->push(
+                           0,
+                           length($comment)
+                             && $yv_obj->send_comment_to_video($videoID, $comment)
                            ? 'Video comment has been posted!'
-                           : 'Error!');
+                           : 'Error!'
+                          );
 }
 
 sub print_comments {

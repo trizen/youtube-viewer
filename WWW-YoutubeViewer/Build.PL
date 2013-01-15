@@ -34,12 +34,10 @@ my $builder = Module::Build->new(
         'Text::ParseWords'      => 0,
         'Text::Wrap'            => 0,
         'URI::Escape'           => 0,
-        'XML::Fast'             => 0,
 
         $gtk_youtube_viewer
         ? (
            'Gtk2'           => 0,
-           'File::Basename' => 0,
           )
         : (),
     },
@@ -48,8 +46,9 @@ my $builder = Module::Build->new(
         'HTML::Entities'          => 0,    # used when searching channels
         'File::Temp'              => 0,    # for posting comments
         'LWP::Protocol::https'    => 0,    # for HTTPS protocol and login support
-        'Term::ReadKey'           => 0,    # to get the terminal width
+        'Term::ReadKey'           => 0,    # to get the terminal width and for password input
         'Term::ReadLine::Gnu::XS' => 0,    # for a better user input support
+        'XML::Fast'               => 0,    # faster XML to HASH conversion.
 
         $gtk_youtube_viewer
         ? (

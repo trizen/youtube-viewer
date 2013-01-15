@@ -1,10 +1,9 @@
 package WWW::YoutubeViewer;
 
 use utf8;
-use 5.010;
 use strict;
 
-use autouse 'XML::Fast'   => qw{ xml2hash($;%) };
+use autouse 'XML::Fasdt'   => qw{ xml2hash($;%) };
 use autouse 'URI::Escape' => qw{ uri_escape uri_escape_utf8 uri_unescape };
 
 =head1 NAME
@@ -217,9 +216,9 @@ sub set_lwp_useragent {
 
     require LWP::UserAgent;
     $self->{lwp} = 'LWP::UserAgent'->new(
-                                         keep_alive    => $self->get_lwp_keep_alive,
-                                         env_proxy     => (defined($self->get_http_proxy) ? 0 : $self->get_lwp_env_proxy),
-                                         timeout       => $self->get_lwp_timeout,
+                                         keep_alive => $self->get_lwp_keep_alive,
+                                         env_proxy  => (defined($self->get_http_proxy) ? 0 : $self->get_lwp_env_proxy),
+                                         timeout    => $self->get_lwp_timeout,
                                          show_progress => $self->get_debug,
                                          agent         => $self->get_lwp_agent,
                                         );
@@ -330,39 +329,117 @@ sub lwp_mirror {
 sub _get_thumbnail_from_gdata {
     my ($self, $gdata) = @_;
     return (
-            ref($gdata->{'media:group'}) eq 'ARRAY'
+            ref($gdata->{'media:group'}) eq 'ARRAY' && exists $gdata->{'media:group'}[0]{'-url'}
             ? $gdata->{'media:group'}[0]{'-url'}
             : ref($gdata->{'media:group'}) eq 'HASH' ? ref($gdata->{'media:group'}{'media:thumbnail'}) eq 'ARRAY'
                   ? $gdata->{'media:group'}{'media:thumbnail'}[0]{'-url'}
                   : $gdata->{'media:group'}{'media:thumbnail'}{'-url'}
-              : q{}
+              : ref $gdata->{'media:group'} eq 'ARRAY' && ref $gdata->{'media:group'}[0]{'media:thumbnail'} eq 'ARRAY'
+            ? $gdata->{'media:group'}[0]{'media:thumbnail'}[0]{'-url'}
+            : q{}
            );
 }
 
-sub get_content {
-    my ($self, $url, %opts) = @_;
+sub _xml2hash_pp {
+    my ($self, $hash, %opts) = @_;
 
-    my $hash;
-    eval { $hash = xml2hash($self->lwp_get($url) // return []) // return [] };
+    my @results;
+    my $index = 0;
+    while (
+           defined(
+                   my $gdata =
+                     exists $hash->{feed}
+                   ? $hash->{feed}[0]{entry}[$index++]
+                   : $hash->{entry}[$index++]
+                  )
+      ) {
 
-    if ($@) {
-        if ($@ =~ /^Can't locate (\S+)\.pm\b/) {
-            (my $module = $1) =~ s{[\\/]+}{::}g;
-            warn <<"ERROR";
-Error: Module $module is required.
-To install it, just execute the following command:
-    cpan -i $module
-ERROR
-            return [];
-        }
-        warn "XML::Fast: Error occured while parsing the XML content of: $url\n";
-        return [];
+        push @results, $opts{playlists}
+
+          # Playlists
+          ? {
+             playlistID => $gdata->{'yt:playlistId'},
+             title      => $gdata->{'title'},
+             name       => $gdata->{'author'}[0]{'name'},
+             author     => $gdata->{'author'}[0]{'yt:userId'},
+             count      => $gdata->{'yt:countHint'},
+             summary    => $gdata->{'summary'},
+             published  => $gdata->{'published'},
+             updated    => $gdata->{'updated'},
+             thumbnail  => $self->_get_thumbnail_from_gdata($gdata),
+            }
+
+          : $opts{comments}
+
+          # Comments
+          ? {
+             name      => $gdata->{'author'}[0]{'name'},
+             author    => $gdata->{'author'}[0]{'yt:userId'},
+             content   => $gdata->{'content'},
+             published => $gdata->{'published'},
+            }
+
+          : $opts{channels}
+
+          # Channels
+          ? {
+             title       => $gdata->{'title'},
+             name        => $gdata->{'author'}[0]{'name'},
+             author      => $gdata->{'author'}[0]{'yt:userId'},
+             summary     => $gdata->{'summary'},
+             thumbnail   => $gdata->{'media:thumbnail'}[0]{'-url'},
+             updated     => $gdata->{'updated'},
+             subscribers => $gdata->{'yt:channelStatistics'}[0]{'-subscriberCount'},
+             views       => $gdata->{'yt:channelStatistics'}[0]{'-viewCount'},
+            }
+
+          : $opts{channel_suggestions}
+
+          # Channel suggestions
+          ? {
+             title       => $gdata->{'content'}[0]{'entry'}[0]{'title'},
+             name        => $gdata->{'content'}[0]{'entry'}[0]{'author'}[0]{'name'},
+             author      => $gdata->{'content'}[0]{'entry'}[0]{'author'}[0]{'yt:userId'},
+             summary     => $gdata->{'content'}[0]{'entry'}[0]{'summary'},
+             thumbnail   => $gdata->{'content'}[0]{'entry'}[0]{'media:thumbnail'}[0]{'-url'},
+             updated     => $gdata->{'content'}[0]{'entry'}[0]{'updated'},
+             subscribers => $gdata->{'content'}[0]{'entry'}[0]{'yt:channelStatistics'}[0]{'-subscriberCount'},
+             videos      => $gdata->{'content'}[0]{'entry'}[0]{'yt:channelStatistics'}[0]{'-videoCount'},
+            }
+
+          : $opts{courses}
+
+          # Courses
+          ? {
+             title     => $gdata->{'title'},
+             updated   => $gdata->{'updated'},
+             courseID  => $gdata->{'yt:playlistId'},
+             summary   => $gdata->{'summary'},
+             thumbnail => $self->_get_thumbnail_from_gdata($gdata),
+            }
+
+          # Videos
+          : {
+             videoID     => $gdata->{'media:group'}[0]{'yt:videoid'},
+             title       => $gdata->{'media:group'}[0]{'media:title'}[0]{'#text'},
+             author      => $gdata->{'media:group'}[0]{'media:credit'}[0]{'#text'},
+             rating      => $gdata->{'gd:rating'}[0]{'-average'} || 0,
+             likes       => $gdata->{'yt:rating'}[0]{'-numLikes'} || 0,
+             dislikes    => $gdata->{'yt:rating'}[0]{'-numDislikes'} || 0,
+             favorited   => $gdata->{'yt:statistics'}[0]{'-favoriteCount'},
+             duration    => $gdata->{'media:group'}[0]{'yt:duration'}[0]{'-seconds'} || 0,
+             views       => $gdata->{'yt:statistics'}[0]{'-viewCount'},
+             published   => $gdata->{'media:group'}[0]{'yt:uploaded'},
+             description => $gdata->{'media:group'}[0]{'media:description'}[0]{'#text'},
+             category    => $gdata->{'media:group'}[0]{'media:category'}[0]{'-label'},
+            };
     }
 
-    if ($self->get_debug == 2) {
-        require Data::Dump;
-        Data::Dump::pp($hash);
-    }
+    return \@results;
+}
+
+sub _xml2hash {
+    my ($self, $hash, %opts) = @_;
 
     my @results;
     my $index = 0;
@@ -417,11 +494,17 @@ ERROR
 
           # Channel suggestions
           ? {
-             title       => $gdata->{'content'}{'entry'}{'title'},
-             name        => $gdata->{'content'}{'entry'}{'author'}{'name'},
-             author      => $gdata->{'content'}{'entry'}{'author'}{'yt:userId'},
-             summary     => $gdata->{'content'}{'entry'}{'summary'},
-             thumbnail   => $gdata->{'content'}{'entry'}{'media:thumbnail'}{'-url'},
+             title     => $gdata->{'content'}{'entry'}{'title'},
+             name      => $gdata->{'content'}{'entry'}{'author'}{'name'},
+             author    => $gdata->{'content'}{'entry'}{'author'}{'yt:userId'},
+             summary   => $gdata->{'content'}{'entry'}{'summary'},
+             thumbnail => (
+                           ref $gdata->{'content'}{'entry'}{'media:thumbnail'} eq 'HASH'
+                           ? $gdata->{'content'}{'entry'}{'media:thumbnail'}{'-url'}
+                           : ref $gdata->{'content'}{'entry'}{'media:thumbnail'} eq 'ARRAY'
+                           ? $gdata->{'content'}{'entry'}{'media:thumbnail'}[0]{'-url'}
+                           : q{}
+                          ),
              updated     => $gdata->{'content'}{'entry'}{'updated'},
              subscribers => $gdata->{'content'}{'entry'}{'yt:channelStatistics'}{'-subscriberCount'},
              videos      => $gdata->{'content'}{'entry'}{'yt:channelStatistics'}{'-videoCount'},
@@ -443,9 +526,10 @@ ERROR
              videoID => $gdata->{'media:group'}{'yt:videoid'},
              title   => $gdata->{'media:group'}{'media:title'}{'#text'},
              author  => (
-                      ref $gdata->{'media:group'}{'media:credit'} eq 'ARRAY' ? $gdata->{'media:group'}{'media:credit'}[0]{'#text'}
-                      : $gdata->{'media:group'}{'media:credit'}{'#text'}
-             ),
+                        ref $gdata->{'media:group'}{'media:credit'} eq 'ARRAY'
+                        ? $gdata->{'media:group'}{'media:credit'}[0]{'#text'}
+                        : $gdata->{'media:group'}{'media:credit'}{'#text'}
+                       ),
              rating   => $gdata->{'gd:rating'}{'-average'}     || 0,
              likes    => $gdata->{'yt:rating'}{'-numLikes'}    || 0,
              dislikes => $gdata->{'yt:rating'}{'-numDislikes'} || 0,
@@ -455,15 +539,48 @@ ERROR
              published   => $gdata->{'media:group'}{'yt:uploaded'},
              description => $gdata->{'media:group'}{'media:description'}{'#text'},
              category    => (
-                 ref $gdata->{'media:group'}{'media:category'} eq 'ARRAY' ? $gdata->{'media:group'}{'media:category'}[0]{'-label'}
-                 : $gdata->{'media:group'}{'media:category'}{'-label'}
-             ),
+                          ref $gdata->{'media:group'}{'media:category'} eq 'ARRAY'
+                          ? $gdata->{'media:group'}{'media:category'}[0]{'-label'}
+                          : $gdata->{'media:group'}{'media:category'}{'-label'}
+                         ),
             };
 
         last unless ref $hash->{feed}{entry} eq 'ARRAY';
     }
 
     return \@results;
+}
+
+sub get_content {
+    my ($self, $url, %opts) = @_;
+
+    my $hash;
+    my $xml_fast = 1;
+    my $xml_content = $self->lwp_get($url) // return [];
+    eval { $hash = xml2hash($xml_content) // return [] };
+
+    if ($@) {
+        if ($@ =~ /^Can't locate (\S+)\.pm\b/) {
+            $xml_fast = 0;
+            if ($self->get_debug()) {
+                print STDERR "** Using WWW::YoutubeViewer::ParseXML to parse the GData XML.\n";
+            }
+
+            require WWW::YoutubeViewer::ParseXML;
+            $hash = WWW::YoutubeViewer::ParseXML::xml2hash($xml_content);
+        }
+        else {
+            warn "XML::Fast: Error occured while parsing the XML content of: $url\n";
+            return [];
+        }
+    }
+
+    if ($self->get_debug() == 2) {
+        require Data::Dump;
+        Data::Dump::pp($hash);
+    }
+
+    return $xml_fast ? $self->_xml2hash($hash, %opts) : $self->_xml2hash_pp($hash, %opts);
 }
 
 sub _url_doesnt_contain_arguments {
@@ -683,24 +800,28 @@ sub _get_categories {
         $self->lwp_mirror($url, $cat_file) or return;
     }
 
-    my $hash = xml2hash(
+    require WWW::YoutubeViewer::ParseXML;
+    my $hash = WWW::YoutubeViewer::ParseXML::xml2hash(
         do {
-            open my $fh, '<:encoding(UTF-8)', $cat_file or do { warn "Can't open file '$cat_file' for reading: $!"; return };
+            open my $fh, '<:encoding(UTF-8)', $cat_file
+              or do { warn "Can't open file '$cat_file' for reading: $!"; return };
             local $/;
             <$fh>;
           }
     );
 
     my @categories;
-    foreach my $cat (@{$hash->{'app:categories'}{'atom:category'}}) {
+    foreach my $cat (@{$hash->{'app:categories'}[0]{'atom:category'}}) {
         next if exists $cat->{'yt:deprecated'};
         push @categories,
           scalar {
                   label   => $cat->{'-label'},
                   term    => $cat->{'-term'},
                   regions => (
-                               exists($cat->{'yt:browsable'})
-                            && exists($cat->{'yt:browsable'}{'-regions'}) ? [split(q{ }, $cat->{'yt:browsable'}{'-regions'})] : []
+                             exists($cat->{'yt:browsable'})
+                               && ref $cat->{'yt:browsable'} eq 'ARRAY' && exists($cat->{'yt:browsable'}[0]{'-regions'})
+                             ? [split(q{ }, $cat->{'yt:browsable'}[0]{'-regions'})]
+                             : []
                   ),
                  };
     }
@@ -1559,7 +1680,7 @@ https://developers.google.com/youtube/2.0/developers_guide_protocol_api_query_pa
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012 Trizen.
+Copyright 2012-2013 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
