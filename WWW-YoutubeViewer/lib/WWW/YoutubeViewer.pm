@@ -3,7 +3,7 @@ package WWW::YoutubeViewer;
 use utf8;
 use strict;
 
-use autouse 'XML::Fasdt'   => qw{ xml2hash($;%) };
+use autouse 'XML::Fast'   => qw{ xml2hash($;%) };
 use autouse 'URI::Escape' => qw{ uri_escape uri_escape_utf8 uri_unescape };
 
 =head1 NAME
