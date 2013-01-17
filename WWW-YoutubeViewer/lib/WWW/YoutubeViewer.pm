@@ -12,11 +12,11 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -1122,6 +1122,23 @@ sub _next_or_back {
     return $url;
 }
 
+sub get_disco_videos {
+    my ($self, $keywords) = @_;
+
+    @{$keywords} || return;
+
+    my $url  = 'http://www.youtube.com/disco?action_search=1&query=';
+    my $json = $self->lwp_get($url . $self->escape_string("@{$keywords}"));
+
+    if ($json =~ /list=(?<playlist_id>[\w\-]+)/) {
+        my $hash_ref = $self->get_videos_from_playlist($+{playlist_id});
+        $hash_ref->{playlistID} = $+{playlist_id};
+        return $hash_ref;
+    }
+
+    return;
+}
+
 sub get_video_info {
     my ($self, $id) = @_;
 
@@ -1352,6 +1369,10 @@ Return a list of channel suggestions for the current logged user.
 =item get_playlists_from_username($username)
 
 Return a list of playlists created by $username.
+
+=item get_disco_videos(\@keywords)
+
+Search for a disco playlist and return its videos, if any. Undef otherwise.
 
 =item get_videos_from_playlist($playlistID)
 

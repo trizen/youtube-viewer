@@ -2085,17 +2085,17 @@ When the specified resolution is not found, it falls down to a lower resolution.
       </object>
     </child>
   </object>
-  <object class="GtkImage" id="download_icon3">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-downloads</property>
-  </object>
   <object class="GtkImage" id="download_icon1">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">emblem-downloads</property>
   </object>
   <object class="GtkImage" id="download_icon2">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">emblem-downloads</property>
+  </object>
+  <object class="GtkImage" id="download_icon3">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">emblem-downloads</property>
@@ -3171,6 +3171,9 @@ When the specified resolution is not found, it falls down to a lower resolution.
       </row>
       <row>
         <col id="0" translatable="yes">playlists</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">disco_videos</col>
       </row>
     </data>
   </object>

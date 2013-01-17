@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 15 January 2013
+#  Latest edit on: 17 January 2013
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -490,6 +490,7 @@ Other options:
    --gdata-url=s        : print video results from a valid GData URL
    --get-term-width     : adjust the text for your terminal width
    --login              : will prompt you for login
+   --logout             : will delete the authentication key
    --http_proxy=s       : HTTP proxy to use, format 'http://domain.tld:port/'.
                           If authentication required,
                           use 'http://user:pass\@domain.tld:port/'
@@ -823,6 +824,10 @@ sub apply_configuration {
         }
     }
 
+    if (delete $opt->{logout}) {
+        logout();
+    }
+
     if ($opt->{adj_for_term_width}) {
         adj_for_term_width();
     }
@@ -879,11 +884,12 @@ sub apply_configuration {
         get_and_play_playlists(split(/[,\s]+/, delete $opt->{play_playlists}));
     }
 
-    if (defined delete $opt->{disco}) {
-        my $url  = "http://www.youtube.com/disco?action_search=1&query=";
-        my $json = $yv_obj->lwp_get($url . $yv_obj->escape_string("@{$keywords}"));
-        if ($json =~ /list=(?<playlist_id>[\w\-]+)/) {
-            get_and_print_videos_from_playlist($+{playlist_id});
+    if (delete $opt->{disco}) {
+        if (defined(my $videos = $yv_obj->get_disco_videos($keywords))) {
+            print_videos($videos);
+        }
+        else {
+            warn_no_results("disco video");
         }
     }
 
@@ -950,7 +956,8 @@ sub apply_configuration {
             print_videos($yv_obj->get_favorited_videos_from_username($username));
         }
         else {
-            warn colored("[!] Invalid username: $username") . "\n\n";
+            warn_invalid("username", $username);
+            print STDERR "\n";
         }
     }
 
@@ -988,7 +995,7 @@ sub apply_configuration {
                         );
         }
         else {
-            warn colored("\n[!] Invalid GData url: $url", 'bold red') . "\n";
+            warn_invalid("GData url", $url);
         }
     }
 
@@ -1040,6 +1047,7 @@ sub parse_arguments {
         'channel-suggestions'                     => \$opt{channel_suggestions},
 
         'login|authenticate'     => \$opt{authenticate},
+        'logout'                 => \$opt{logout},
         'user|username|u|uv=s'   => \$opt{user_videos},
         'user-playlists|up=s'    => \$opt{user_playlists},
         'user-favorited|uf=s'    => \$opt{user_favorited_videos},
@@ -1687,7 +1695,7 @@ sub warn_no_results {
 
 sub warn_invalid {
     my ($name, $option) = @_;
-    warn colored("\n[!] Invalid $name <$option>", 'bold red') . "\n";
+    warn colored("\n[!] Invalid $name: <$option>", 'bold red') . "\n";
 }
 
 sub warn_cant_do {
@@ -2198,7 +2206,7 @@ sub print_playlists {
     my ($results, %args) = @_;
 
     if (not @{$results->{results}}) {
-        warn colored("\n[!] No playlist results!", 'bold red') . "\n";
+        warn_no_results('playlist');
     }
 
     my $url       = $results->{url};
@@ -2337,7 +2345,7 @@ sub compile_regex {
     my $re = eval { use re qw(eval); qr/$value/i };
 
     if ($@) {
-        warn colored("\n[!] Invalid regex: $@", 'bold red') . "\n";
+        warn_invalid("regex", $@);
         return;
     }
 
@@ -2625,7 +2633,7 @@ sub print_videos {
     my ($results, %args) = @_;
 
     if (not @{$results->{results}}) {
-        warn colored("\n[!] No video results!", 'bold red') . "\n";
+        warn_no_results("video");
     }
 
     my $url    = $results->{url};
@@ -2879,7 +2887,7 @@ sub print_videos {
                           or __SUB__->($results);
                     }
                     else {
-                        warn colored("\n[!] Invalid Special Regexp: <$value>.", 'bold red') . "\n";
+                        warn_invalid("Special Regexp", $value);
                     }
                 }
                 when (/^re(?:gex)?=(.*)/) {

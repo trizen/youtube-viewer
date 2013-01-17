@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 15 January 2013
+#  Latest edit on: 17 January 2013
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -38,7 +38,7 @@ use File::Spec::Functions qw(
   );
 
 my $appname  = 'GTK Youtube Viewer';
-my $version  = '3.0.5';
+my $version  = '3.0.6-dev';
 my $execname = 'gtk-youtube-viewer';
 
 # Developer key
@@ -954,7 +954,7 @@ sub combobox_resolution_changed {
 }
 
 sub combobox_search_for_changed {
-    state $labels = [qw(videos playlists channels)];
+    state $labels = [qw(videos playlists channels disco_videos)];
     $CONFIG{active_search_for} = $search_for_combobox->get_active;
     $CONFIG{"search_$_"} = 0 for @{$labels};
     $CONFIG{"search_" . $search_for_combobox->get_active_text} = 1;
@@ -1231,6 +1231,14 @@ sub search {
     }
     elsif ($CONFIG{search_channels}) {
         print_channels($yv_obj->search_channels($keywords));
+    }
+    elsif ($CONFIG{search_disco_videos}) {
+        if (defined(my $videos = $yv_obj->get_disco_videos([$keywords]))) {
+            print_videos($videos);
+        }
+        else {
+            die "[!] No disco video results!\n";
+        }
     }
     else {
         print_videos($yv_obj->search($keywords));
