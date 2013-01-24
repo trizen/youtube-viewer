@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 17 January 2013
+#  Latest edit on: 24 January 2013
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -90,7 +90,7 @@ See: youtube-viewer --help
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2012 Trizen.
+Copyright 2010-2013 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
@@ -109,7 +109,7 @@ use strict;
 use File::Spec::Functions qw(catdir catfile curdir path rel2abs tmpdir);
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.0.6-dev';
+my $version  = '3.0.6';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
@@ -629,7 +629,8 @@ NOTE: Categories and region IDs are case sensitive!
 
 ** Configuration file: $config_file
 
-** Please do *NOT* abuse of this awesome script!
+** Donations gladly accepted:
+    https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=75FUVBE6Q73T8
 
 TRICKS
     main_quit(0);

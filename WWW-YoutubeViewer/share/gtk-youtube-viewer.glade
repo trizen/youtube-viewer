@@ -143,6 +143,15 @@
                         <signal name="activate" handler="show_about_window" swapped="no"/>
                       </object>
                     </child>
+                    <child>
+                      <object class="GtkMenuItem" id="donate_menu_item">
+                        <property name="use_action_appearance">False</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Donate</property>
+                        <signal name="activate" handler="donate" swapped="no"/>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>
@@ -1106,6 +1115,39 @@ Unless the categoryID is valid, this field is ignored.</property>
                                       </packing>
                                     </child>
                                     <child>
+                                      <object class="GtkHButtonBox" id="hbuttonbox8">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="layout_style">end</property>
+                                        <child>
+                                          <placeholder/>
+                                        </child>
+                                        <child>
+                                          <object class="GtkButton" id="donate_button">
+                                            <property name="use_action_appearance">False</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="receives_default">True</property>
+                                            <property name="image">image78</property>
+                                            <property name="relief">none</property>
+                                            <property name="image_position">right</property>
+                                            <signal name="clicked" handler="donate" swapped="no"/>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">False</property>
+                                            <property name="position">1</property>
+                                          </packing>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">False</property>
+                                        <property name="pack_type">end</property>
+                                        <property name="position">8</property>
+                                      </packing>
+                                    </child>
+                                    <child>
                                       <object class="GtkFrame" id="frame10">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
@@ -1148,7 +1190,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
                                         <property name="expand">False</property>
                                         <property name="fill">False</property>
                                         <property name="pack_type">end</property>
-                                        <property name="position">8</property>
+                                        <property name="position">9</property>
                                       </packing>
                                     </child>
                                   </object>
@@ -2085,17 +2127,17 @@ When the specified resolution is not found, it falls down to a lower resolution.
       </object>
     </child>
   </object>
-  <object class="GtkImage" id="download_icon1">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-downloads</property>
-  </object>
   <object class="GtkImage" id="download_icon2">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">emblem-downloads</property>
   </object>
   <object class="GtkImage" id="download_icon3">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">emblem-downloads</property>
+  </object>
+  <object class="GtkImage" id="download_icon1">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">emblem-downloads</property>
@@ -3128,6 +3170,17 @@ When the specified resolution is not found, it falls down to a lower resolution.
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">emblem-important</property>
+  </object>
+  <object class="GtkImage" id="image77">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-missing-image</property>
+  </object>
+  <object class="GtkImage" id="image78">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-missing-image</property>
+    <property name="icon-size">5</property>
   </object>
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>

@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 17 January 2013
+#  Latest edit on: 24 January 2013
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -38,7 +38,7 @@ use File::Spec::Functions qw(
   );
 
 my $appname  = 'GTK Youtube Viewer';
-my $version  = '3.0.6-dev';
+my $version  = '3.0.6';
 my $execname = 'gtk-youtube-viewer';
 
 # Developer key
@@ -341,11 +341,12 @@ local $SIG{__DIE__} = sub {
 };
 
 #---------------------- LOAD IMAGES ----------------------#
-my $app_icon_pixbuf  = 'Gtk2::Gdk::Pixbuf'->new_from_file("$icons_path/$execname.png");
-my $user_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/user.png", 16, 16);
-my $feed_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/feed_icon.png", 16, 16);
-my $default_thumb    = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/default_thumb.jpg", 120, 90);
-my $animation        = 'Gtk2::Gdk::PixbufAnimation'->new_from_file("$icons_path/spinner.gif");
+my $app_icon_pixbuf    = 'Gtk2::Gdk::Pixbuf'->new_from_file("$icons_path/$execname.png");
+my $user_icon_pixbuf   = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/user.png", 16, 16);
+my $feed_icon_pixbuf   = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/feed_icon.png", 16, 16);
+my $default_thumb      = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/default_thumb.jpg", 120, 90);
+my $donate_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file("$icons_path/donate.png");
+my $animation          = 'Gtk2::Gdk::PixbufAnimation'->new_from_file("$icons_path/spinner.gif");
 
 # Setting application title and icon
 $mainw->set_title("$appname $version");
@@ -499,6 +500,11 @@ sub lwp_get {
     return;
 }
 
+sub donate {
+    my $url = 'https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=75FUVBE6Q73T8';
+    system "xdg-open \Q$url\E &";
+}
+
 # ---------------- Threads ---------------- #
 my ($queue, $jobs);
 
@@ -582,6 +588,7 @@ sub new_image_from_pixbuf {
 {
     $gui->get_object('username_list')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
     $gui->get_object('channels_button')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
+    $gui->get_object('donate_button')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $donate_icon_pixbuf));
     $gui->get_object('button6')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
     $gui->get_object('button23')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
 }
