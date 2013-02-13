@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 24 January 2013
+#  Latest edit on: 13 February 2013
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -101,7 +101,6 @@ See http://dev.perl.org/licenses/ for more information.
 =cut
 
 use 5.016;
-use strict;
 
 #use lib qw(../lib);    # devel only
 #use warnings;          # debug only
@@ -113,7 +112,7 @@ my $version  = '3.0.6';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
-use Term::UI;
+require Term::UI;
 my $term = Term::ReadLine->new("$appname $version");
 
 # Developer key
@@ -129,7 +128,14 @@ my %constant = (
                );
 
 my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
-  || catdir(($ENV{HOME} || $ENV{LOGDIR} || (getpwuid($<))[7] || `echo -n ~`), '.config');
+  || catdir(
+            (
+                  $ENV{HOME}
+               || $ENV{LOGDIR}
+               || ($constant{win32} ? '\Local Settings\Application Data' : ((getpwuid($<))[7] || `echo -n ~`))
+            ),
+            '.config'
+           );
 
 # Configuration dir/file
 my $config_dir = catdir($xdg_config_home, $execname);
@@ -497,6 +503,7 @@ Other options:
    --clobber            : overwrite an existent video (with -d)
    --skip-if-exists!    : don't download videos which already exists (with -d)
    --prefer-https!      : use the HTTPS protocol instead of the HTTP protocol
+   --prefer-webm!       : use the WebM format when it is available
    --downloads-dir=s    : downloads directory (set: '$opt{downloads_folder}')
 
 Help options:
@@ -1069,6 +1076,7 @@ sub parse_arguments {
         'all|A|play-all!'            => \$opt{play_all},
         'use-colors|colors|colored!' => \$opt{colors},
         'prefer-https|prefer_https!' => \$opt{prefer_https},
+        'prefer-webm|prefer_webm!'   => \$opt{prefer_webm},
 
         'noconfig|N'               => \$opt{noconfig},
         'playlists|p:s'            => \$opt{search_playlists},
@@ -2490,7 +2498,7 @@ sub download_video {
         $output =~ s/\.\w{2,5}$//;
 
         my $new_file = "$output.$opt{convert_to}";
-        my $ffmpeg = sprintf($opt{ffmpeg_command}, map { s/"/\\"/g; qq{"$_"} }
+        my $ffmpeg = sprintf($opt{ffmpeg_command}, map { qq{"\Q$_\E"} }
                                map { rel2abs($_) } $title, $new_file);
         say $ffmpeg if $yv_obj->get_debug;
         system $ffmpeg;
@@ -2534,20 +2542,21 @@ sub play_videos {
         else {
             update_mplayer_arguments($streaming->{resolution});
 
-            my @mplayer_line =
-              get_quotewords(
-                             qr/\s+/, 1,
-                             join(
-                                  q{ },
-                                  $opt{mplayer},
-                                  (
-                                   defined $streaming->{srt_file}
-                                   ? sprintf($opt{mplayer_srt_args}, $streaming->{srt_file})
-                                   : ()
-                                  ),
-                                  grep({defined and /\S/} values %MPLAYER),
-                                 )
-                            );
+            my @mplayer_line = (
+                                $opt{mplayer},
+                                get_quotewords(
+                                               qr/\s+/, 1,
+                                               join(
+                                                    q{ },
+                                                    (
+                                                     defined $streaming->{srt_file}
+                                                     ? sprintf($opt{mplayer_srt_args}, $streaming->{srt_file})
+                                                     : ()
+                                                    ),
+                                                    grep({defined and /\S/} values %MPLAYER),
+                                                   )
+                                              )
+                               );
 
             say "@mplayer_line" if $yv_obj->get_debug;
 

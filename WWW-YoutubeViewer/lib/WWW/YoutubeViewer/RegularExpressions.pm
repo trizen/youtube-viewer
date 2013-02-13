@@ -1,7 +1,9 @@
 package WWW::YoutubeViewer::RegularExpressions;
 
 use strict;
-use parent qw(Exporter);
+
+require Exporter;
+our @ISA = qw(Exporter);
 
 =head1 NAME
 

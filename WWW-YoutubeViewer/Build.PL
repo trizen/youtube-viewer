@@ -15,11 +15,14 @@ my ($gtk_youtube_viewer);
 }
 
 my $builder = Module::Build->new(
-    module_name       => 'WWW::YoutubeViewer',
-    license           => 'perl',
-    dist_author       => q{Trizen <trizenx@gmail.com>},
-    dist_version_from => 'lib/WWW/YoutubeViewer.pm',
-    build_requires    => {'Test::More' => 0,},
+    module_name         => 'WWW::YoutubeViewer',
+    license             => 'Artistic_2_0',
+    dist_author         => q{Trizen <trizenx@gmail.com>},
+    dist_version_from   => 'lib/WWW/YoutubeViewer.pm',
+    build_requires      => {'Test::More' => 0,},
+    configure_requires  => {
+        'Module::Build' => 0,
+    },
     script_files      => ['bin/youtube-viewer', ($gtk_youtube_viewer ? 'bin/gtk-youtube-viewer' : ()),],
     requires          => {
         'perl'                  => '5.016',

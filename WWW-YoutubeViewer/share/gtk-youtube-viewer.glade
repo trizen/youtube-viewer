@@ -1649,7 +1649,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
     <property name="type_hint">normal</property>
     <property name="transient_for">__MAIN__</property>
     <property name="program_name">Glade</property>
-    <property name="copyright" translatable="yes">Copyright © 2010-2012 by Trizen</property>
+    <property name="copyright" translatable="yes">Copyright © 2010-2013 by Trizen</property>
     <property name="comments" translatable="yes">Written in Perl, Gtk2 and Glade under the GPLv3.</property>
     <property name="website">http://trizen.googlecode.com</property>
     <property name="website_label" translatable="yes">Developer's website</property>
@@ -2127,17 +2127,17 @@ When the specified resolution is not found, it falls down to a lower resolution.
       </object>
     </child>
   </object>
+  <object class="GtkImage" id="download_icon1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">emblem-downloads</property>
+  </object>
   <object class="GtkImage" id="download_icon2">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">emblem-downloads</property>
   </object>
   <object class="GtkImage" id="download_icon3">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-downloads</property>
-  </object>
-  <object class="GtkImage" id="download_icon1">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">emblem-downloads</property>

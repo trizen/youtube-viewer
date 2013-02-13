@@ -9,11 +9,11 @@ WWW::YoutubeViewer::Itags - Get the YouTube itags.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -86,12 +86,13 @@ sub find_streaming_url {
 
     state $itags       = $self->get_itags();
     state $resolutions = $self->get_resolutions();
+    state $webm_itags  = [map { $_->{webm} } grep { exists $_->{webm} } values %{$itags}];
 
     my $wanted_itag = defined $resolution ? $itags->{$resolution} : undef;
 
     my $streaming;
     foreach my $url_ref (@{$urls_ref}) {
-        if (exists $url_ref->{itag}) {
+        if (exists $url_ref->{itag} && exists $url_ref->{url}) {
 
             if (defined $wanted_itag) {
                 (
@@ -107,10 +108,13 @@ sub find_streaming_url {
                   || next;
             }
 
-            next unless exists $url_ref->{url};
-            next unless exists $url_ref->{itag};
-            next unless exists $resolutions->{$url_ref->{itag}};
+            if (not $prefer_webm) {
+                if ($url_ref->{itag} ~~ $webm_itags) {
+                    next;
+                }
+            }
 
+            next unless exists $resolutions->{$url_ref->{itag}};
             $streaming = $url_ref;
             last;
         }

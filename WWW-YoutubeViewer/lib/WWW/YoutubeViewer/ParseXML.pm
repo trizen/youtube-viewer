@@ -1,7 +1,6 @@
 package WWW::YoutubeViewer::ParseXML;
 
-use 5.010;
-use strict;
+use 5.014;
 
 =head1 NAME
 
@@ -9,12 +8,11 @@ WWW::YoutubeViewer::ParseXML - Convert XML to a HASH ref structure.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
-
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -37,7 +35,7 @@ Parse XML and return an HASH ref.
 sub xml2hash {
     my $xml_ref = {};
 
-    given (shift // return) {
+    given ($_[0] // return) {
 
         my %args = (
                     attr  => '-',
@@ -47,31 +45,31 @@ sub xml2hash {
                    );
 
         my %ctags;
-        my $ref       = $xml_ref;
+        my $ref = $xml_ref;
         state $inv_chars = q{!"#$@%&'()*+,/;\\<=>?\]\[^`{|}~};
         state $valid_tag = qr{[^\-.\s0-9$inv_chars][^$inv_chars\s]*};
 
-      PARSE: {
+        {
             when (/\G<\?/gc) {
                 /\G.*?\?>\s*/gcs or die "Invalid XML!";
-                redo PARSE;
+                redo
             }
             when (/\G<!--/gc) {
                 /\G.*?-->\s*/gcs or die "Comment not closed!";
-                redo PARSE;
+                redo
             }
             when (/\G<!DOCTYPE\s+/gc) {
-                /\G(?>$valid_tag|\s+|".*?"|'.*?')*\[.*?\]>\s*/sgc
+                /\G(?>$valid_tag|\s+|".*?"|'.*?')*\[.*?\]>\s*/sgco
                   or /\G.*?>\s*/sgc
                   or die "DOCTYPE not closed!";
-                redo PARSE;
+                redo
             }
             when (
                 m{\G< \s*
                         (?<tag>$valid_tag)  \s*
                         (?<attrs> (?>$valid_tag\s*=\s*(?>".*?"|'.*?')|\s+)+ )? \s*
                         (?<closed>/)?\s*> \s*
-                    }gcsx
+                    }gcsxo
               ) {
 
                 my $tag    = $+{tag};
@@ -109,7 +107,7 @@ sub xml2hash {
                                    |
                             '(?<value>.*?)'
                         ) \s*
-                        }gsx
+                        }gsxo
                       ) {
                         my ($key, $value) = ($+{key}, $+{value});
                         $key = join(q{}, $args{attr}, $key);
@@ -130,8 +128,7 @@ sub xml2hash {
                     }
                     elsif (not m{\G(?=<)}gc and m{\G(?<text>.*?)(?=<)}gsc) {
                         if (ref $ref eq 'ARRAY') {
-                            my $text = $+{text};
-                            $ref->[-1]{$args{text}} .= _decode_entities($text);
+                            $ref->[-1]{$args{text}} .= _decode_entities($+{text});
                             $ref = pop @{$ctags{$tag}};
                         }
                         elsif (ref $ref eq 'HASH') {
@@ -176,7 +173,7 @@ sub xml2hash {
                           : [];
 
                         ++$#{$ref} if ref $ref eq 'ARRAY';
-                        redo PARSE;
+                        redo;
                     }
                     elsif (/\G<!\[CDATA\[(?<text>.*?)\]\]>\s*/gcs or /\G(?<text>.*?)(?=<)/gsc) {
                         my ($text) = $+{text};
@@ -242,13 +239,13 @@ sub xml2hash {
                     ## tag closed - ok
                 }
 
-                redo PARSE;
+                redo
             }
-            when (m{\G<\s*/\s*(?<tag>$valid_tag)\s*>\s*}gc) {
+            when (m{\G<\s*/\s*(?<tag>$valid_tag)\s*>\s*}gco) {
                 if (exists $ctags{$+{tag}} and @{$ctags{$+{tag}}}) {
                     $ref = pop @{$ctags{$+{tag}}};
                 }
-                redo PARSE;
+                redo
             }
             when (/\G<!\[CDATA\[(?<text>.*?)\]\]>\s*/gcs or m{\G(?<text>[^<]*)(?=<)}gsc) {
                 if (ref $ref eq 'ARRAY') {
@@ -257,13 +254,13 @@ sub xml2hash {
                 elsif (ref $ref eq 'HASH') {
                     $ref->{$args{text}} .= $+{text};
                 }
-                redo PARSE;
+                redo
             }
             when (/\G\z/gc) {
                 break;
             }
             when (/\G\s+/gc) {
-                redo PARSE;
+                redo
             }
             default {
                 die "Syntax error near: --> ", [split(/\n/, substr($_, pos(), 2**6))]->[0], " <--\n";
@@ -274,13 +271,8 @@ sub xml2hash {
     return $xml_ref;
 }
 
-sub _decode_entities{
-    $_[0] =~ s{&amp;}{&}g;
-    $_[0] =~ s{&quot;}{"}g;
-    $_[0] =~ s{&apos;}{'}g;
-    $_[0] =~ s{&gt;}{>}g;
-    $_[0] =~ s{&lt;}{<}g;
-    return $_[0];
+sub _decode_entities {
+    $_[0] =~ s{&amp;}{&}gr =~ s{&quot;}{"}gr =~ s{&apos;}{'}gr =~ s{&gt;}{>}gr =~ s{&lt;}{<}gr;
 }
 
 =head1 AUTHOR
@@ -338,4 +330,4 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =cut
 
-1; # End of WWW::YoutubeViewer::ParseXML
+1;    # End of WWW::YoutubeViewer::ParseXML
