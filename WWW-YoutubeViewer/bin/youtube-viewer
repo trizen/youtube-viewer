@@ -1633,7 +1633,7 @@ sub general_options {
                 warn_last_page();
             }
         }
-        when ($_ ~~ ['b', 'back'] and defined $url) {
+        when ($_ ~~ ['b', 'back', 'p', 'prev', 'previous'] and defined $url) {
             if ($yv_obj->back_page_is_available($url)) {
                 my $request = $yv_obj->previous_page($url, (defined($mode) ? ($mode => 1) : ()));
                 $callback->($request, @{$callback_args});
@@ -2065,7 +2065,7 @@ sub print_categories {
                     }
                     __SUB__->(pos => $track, categories => $categories, edu => $edu_mode);
                 }
-                when (['b', 'back']) {
+                when (['b', 'back', 'p', 'prev', 'previous']) {
                     if ($track >= $yv_obj->get_results()) {
                         $track -= $yv_obj->get_results();
                         __SUB__->(pos => $track, categories => $categories, edu => $edu_mode);
@@ -2758,7 +2758,7 @@ sub print_videos {
                         }
                     }
                 }
-                when (['b', 'back']) {
+                when (['b', 'back', 'p', 'prev', 'previous']) {
                     if ($yv_obj->back_page_is_available($url)) {
                         __SUB__->($yv_obj->previous_page($url), @keywords ? (auto => 1) : ());
                     }
