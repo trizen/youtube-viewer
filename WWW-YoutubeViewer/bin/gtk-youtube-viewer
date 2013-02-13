@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 24 January 2013
+#  Latest edit on: 13 February 2013
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -1705,20 +1705,21 @@ sub play_videos {
 
         update_mplayer_arguments($streaming->{resolution});
 
-        my @mplayer_line =
-          get_quotewords(
-                         qr/\s+/, 1,
-                         join(
-                              q{ },
-                              $CONFIG{mplayer},
-                              (
-                               defined $streaming->{srt_file}
-                               ? sprintf($CONFIG{mplayer_srt_args}, $streaming->{srt_file})
-                               : q{}
-                              ),
-                              grep { defined and /\S/ } values %MPLAYER
-                             )
-                        );
+        my @mplayer_line = (
+                            $CONFIG{mplayer},
+                            get_quotewords(
+                                           qr/\s+/, 1,
+                                           join(
+                                                q{ },
+                                                (
+                                                 defined $streaming->{srt_file}
+                                                 ? sprintf($CONFIG{mplayer_srt_args}, $streaming->{srt_file})
+                                                 : ()
+                                                ),
+                                                grep({defined and /\S/} values %MPLAYER),
+                                               )
+                                          )
+                           );
 
         say "@mplayer_line" if $yv_obj->get_debug;
 

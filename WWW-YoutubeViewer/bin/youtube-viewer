@@ -2498,7 +2498,7 @@ sub download_video {
         $output =~ s/\.\w{2,5}$//;
 
         my $new_file = "$output.$opt{convert_to}";
-        my $ffmpeg = sprintf($opt{ffmpeg_command}, map { qq{"\Q$_\E"} }
+        my $ffmpeg = sprintf($opt{ffmpeg_command}, map { q{"} . s{"}{\\"}gr . q{"} }
                                map { rel2abs($_) } $title, $new_file);
         say $ffmpeg if $yv_obj->get_debug;
         system $ffmpeg;
