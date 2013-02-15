@@ -2065,9 +2065,6 @@ sub set_video_details {
     $main_details =~ s/^\s+//;
     $main_details =~ s{\s*<i>.+</i>\s*}{\n};
     $main_details =~ s/\s+/$-[0] <= 8 ? "\t\t" : "\t"/e;
-    if (not $CONFIG{search_channels}) {
-        $main_details .= sprintf("<b>AuthorID\t:</b> %s\n", $liststore->get($iter, 6));
-    }
 
     my $secondary_details = $liststore->get($iter, 2);
     $secondary_details =~ s/:(?!\d)/\t: /g;

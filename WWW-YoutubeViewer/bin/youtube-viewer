@@ -446,7 +446,8 @@ YouTube options:
    --page=i             : get results starting with a specific page
    --results=[1-50]     : how many results to display per page
    -2  -3  -4  -7  -1   : resolutions: 240p, 360p, 480p, 720p or 1080p
-   --resolution=RES     : resolutions: 1080, 720, 480, 360, 340, 240, 144
+   --resolution=RES     : resolutions: original, 1080, 720, 480, 360, 340,
+                          240, 180, 144
    -F  --favorites      : show the latest favorited videos *
    -R  --recommended    : show the recommended videos for you *
    -S  --subscriptions  : show the new subscription videos *
@@ -578,7 +579,7 @@ NOTE: Categories and region IDs are case sensitive!
    example, but the mplayer arguments doesn't work for vlc.
    The full command should be: $execname -mplayer=vlc -mplayer-arg=-q
 
-2. Available resolutions: original, 1080, 720, 480, 360, 340, 240, 144
+2. Available resolutions: original, 1080, 720, 480, 360, 340, 240, 180, 144
    1080 = mp4
    720  = mp4 (unless webm is prefered)
    480  = flv (unless webm is prefered)
@@ -726,7 +727,7 @@ Results: list videos lectures from course ID.
 Command: :courses=285
 Results: list courses of lectures from EDU category ID.
 
-Command: :lecture=361
+Command: :lectures=361
 Results: list video lectures from EDU category ID.
 
 Command: :fav=4, :favorite=3..5
@@ -1660,7 +1661,7 @@ sub general_options {
                 print "\n";
                 foreach my $num (@nums) {
                     foreach my $key (sort keys %{$results->[$num]}) {
-                        next if $key eq 'description';
+                        next if $key ~~ ['description', 'summary'];
                         printf "=>> %-12s: %s\n", $key, $results->[$num]{$key} // q{};
                     }
                 }
@@ -2074,7 +2075,7 @@ sub print_categories {
                         warn_first_page();
                     }
                 }
-                when (general_options(opt => $_)) { }
+                when (general_options(opt => $_, res => $categories,)) { }
                 when (['h', 'help']) {
                     print $general_help;
                     press_enter_to_continue();
@@ -2289,8 +2290,9 @@ FORMAT
                   ) {
                 }
                 when (['h', 'help']) {
-                    print "\n$control_help", ":pp=i,i           : play videos from the selected playlists\n",
-                      $general_help;
+                    my $help = $control_help;
+                    $help .= ":pp=i,i           : play videos from the selected playlists\n";
+                    print "\n", $help, $general_help;
                     press_enter_to_continue();
                 }
                 when (['r', 'return']) {
