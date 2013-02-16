@@ -8,11 +8,11 @@ WWW::YoutubeViewer::ParseXML - Convert XML to a HASH ref structure.
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 SYNOPSIS
 
@@ -66,15 +66,13 @@ sub xml2hash {
             }
             when (
                 m{\G< \s*
-                        (?<tag>$valid_tag)  \s*
-                        (?<attrs> (?>$valid_tag\s*=\s*(?>".*?"|'.*?')|\s+)+ )? \s*
-                        (?<closed>/)?\s*> \s*
+                        ($valid_tag)  \s*
+                        ((?>$valid_tag\s*=\s*(?>".*?"|'.*?')|\s+)+)? \s*
+                        (/)?\s*> \s*
                     }gcsxo
               ) {
 
-                my $tag    = $+{tag};
-                my $closed = $+{closed};
-                my $attrs  = $+{attrs};
+                my ($tag, $attrs, $closed) = ($1, $2, $3);
 
                 if (defined $attrs) {
                     push @{$ctags{$tag}}, $ref;
@@ -101,15 +99,15 @@ sub xml2hash {
 
                     while (
                         $attrs =~ m{\G
-                        (?<key>$valid_tag) \s*=\s*
+                        ($valid_tag) \s*=\s*
                         (?>
-                            "(?<value>.*?)"
-                                   |
-                            '(?<value>.*?)'
+                            "(.*?)"
+                                    |
+                            '(.*?)'
                         ) \s*
                         }gsxo
                       ) {
-                        my ($key, $value) = ($+{key}, $+{value});
+                        my ($key, $value) = ($1, $+);
                         $key = join(q{}, $args{attr}, $key);
                         if (ref $ref eq 'ARRAY') {
                             $ref->[-1]{$key} = _decode_entities($value);
@@ -126,13 +124,13 @@ sub xml2hash {
                     if (m{\G<\s*/\s*\Q$tag\E\s*>\s*}gc) {
                         $ref = pop @{$ctags{$tag}};
                     }
-                    elsif (not m{\G(?=<)}gc and m{\G(?<text>.*?)(?=<)}gsc) {
+                    elsif (m{\G([^<]+)(?=<)}gsc) {
                         if (ref $ref eq 'ARRAY') {
-                            $ref->[-1]{$args{text}} .= _decode_entities($+{text});
+                            $ref->[-1]{$args{text}} .= _decode_entities($1);
                             $ref = pop @{$ctags{$tag}};
                         }
                         elsif (ref $ref eq 'HASH') {
-                            $ref->{$args{text}} .= $+{text};
+                            $ref->{$args{text}} .= $1;
                             $ref = pop @{$ctags{$tag}};
                         }
                     }
@@ -151,7 +149,7 @@ sub xml2hash {
                     }
                 }
                 else {
-                    if (/\G(?=<)/gc and not /\G(?=<!)/gc) {
+                    if (/\G(?=<(?!!))/) {
                         push @{$ctags{$tag}}, $ref;
 
                         $ref =
@@ -175,8 +173,8 @@ sub xml2hash {
                         ++$#{$ref} if ref $ref eq 'ARRAY';
                         redo;
                     }
-                    elsif (/\G<!\[CDATA\[(?<text>.*?)\]\]>\s*/gcs or /\G(?<text>.*?)(?=<)/gsc) {
-                        my ($text) = $+{text};
+                    elsif (/\G<!\[CDATA\[(.*?)\]\]>\s*/gcs or /\G([^<]+)(?=<)/gsc) {
+                        my ($text) = $1;
 
                         if (m{\G<\s*/\s*\Q$tag\E\s*>\s*}gc) {
                             if (ref $ref eq 'ARRAY') {
@@ -222,37 +220,37 @@ sub xml2hash {
                                     if (ref $ref->[-1]{$tag} ne 'ARRAY') {
                                         $ref->[-1] = [$ref->[-1]{$tag}];
                                     }
-                                    push @{$ref->[-1]}, {$args{text} => $+{text}};
+                                    push @{$ref->[-1]}, {$args{text} => $text};
                                 }
                                 else {
-                                    $ref->[-1]{$args{text}} .= $+{text};
+                                    $ref->[-1]{$args{text}} .= $text;
                                 }
                             }
                             elsif (ref $ref eq 'HASH') {
-                                $ref->{$tag} .= $+{text};
+                                $ref->{$tag} .= $text;
                             }
                         }
                     }
                 }
 
-                if (m{\G<\s*/\s*(?<tag>\Q$tag\E)\s*>\s*}gc) {
+                if (m{\G<\s*/\s*\Q$tag\E\s*>\s*}gc) {
                     ## tag closed - ok
                 }
 
                 redo
             }
-            when (m{\G<\s*/\s*(?<tag>$valid_tag)\s*>\s*}gco) {
-                if (exists $ctags{$+{tag}} and @{$ctags{$+{tag}}}) {
-                    $ref = pop @{$ctags{$+{tag}}};
+            when (m{\G<\s*/\s*($valid_tag)\s*>\s*}gco) {
+                if (exists $ctags{$1} and @{$ctags{$1}}) {
+                    $ref = pop @{$ctags{$1}};
                 }
                 redo
             }
-            when (/\G<!\[CDATA\[(?<text>.*?)\]\]>\s*/gcs or m{\G(?<text>[^<]*)(?=<)}gsc) {
+            when (/\G<!\[CDATA\[(.*?)\]\]>\s*/gcs or m{\G([^<]+)(?=<)}gsc) {
                 if (ref $ref eq 'ARRAY') {
-                    $ref->[-1]{$args{text}} .= $+{text};
+                    $ref->[-1]{$args{text}} .= $1;
                 }
                 elsif (ref $ref eq 'HASH') {
-                    $ref->{$args{text}} .= $+{text};
+                    $ref->{$args{text}} .= $1;
                 }
                 redo
             }
