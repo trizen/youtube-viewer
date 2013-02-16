@@ -35,7 +35,7 @@ Parse XML and return an HASH ref.
 sub xml2hash {
     my $xml_ref = {};
 
-    given ($_[0] // return) {
+    given (shift() // return) {
 
         my %args = (
                     attr  => '-',
