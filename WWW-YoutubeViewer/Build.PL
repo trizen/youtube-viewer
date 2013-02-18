@@ -17,7 +17,7 @@ my ($gtk_youtube_viewer);
 
 my $builder = Module::Build->new(
     module_name        => 'WWW::YoutubeViewer',
-    license            => 'Artistic_2_0',
+    license            => 'perl',
     dist_author        => q{Trizen <trizenx@gmail.com>},
     dist_version_from  => 'lib/WWW/YoutubeViewer.pm',
     build_requires     => {'Test::More' => 0,},

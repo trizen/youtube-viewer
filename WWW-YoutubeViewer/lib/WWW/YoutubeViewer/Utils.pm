@@ -84,7 +84,7 @@ sub format_time {
 
 =head2 basic_json_parser($json_string)
 
-Parse and get key/value pairs from basic a JSON string.
+Parse and get key/value pairs from a basic JSON string.
 
 =cut
 
