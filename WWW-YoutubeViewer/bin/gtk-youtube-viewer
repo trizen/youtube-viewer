@@ -1200,7 +1200,7 @@ sub change_subscription_page {
     no strict 'refs';
     foreach my $feed_name (@{WWW::YoutubeViewer::feed_methods}) {
         *{__PACKAGE__ . '::' . $feed_name} = sub {
-            my $user   = $gui->get_object('news_users')->get_text;
+            my $user   = @_ ? shift() : $gui->get_object('news_users')->get_text;
             my $code   = \&{"WWW::YoutubeViewer::get_$feed_name"};
             my $videos = $yv_obj->$code($user);
 
@@ -1614,6 +1614,12 @@ sub favorited_videos_from_username {
         die "No video favorited by username: <$username>\n";
     }
     return 1;
+}
+
+sub subscription_videos_from_username {
+    my $username = ref $_[0] ? $_[0]->get_text : $_[0];
+    is_valid_username($username) or return;
+    newsubscriptionvideos($username);
 }
 
 sub is_valid_username {
