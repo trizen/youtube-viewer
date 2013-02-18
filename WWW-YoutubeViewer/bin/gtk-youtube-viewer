@@ -1200,7 +1200,7 @@ sub change_subscription_page {
     no strict 'refs';
     foreach my $feed_name (@{WWW::YoutubeViewer::feed_methods}) {
         *{__PACKAGE__ . '::' . $feed_name} = sub {
-            my $user   = @_ ? shift() : $gui->get_object('news_users')->get_text;
+            my $user   = (!ref $_[0]) ? shift() : $gui->get_object('news_users')->get_text;
             my $code   = \&{"WWW::YoutubeViewer::get_$feed_name"};
             my $videos = $yv_obj->$code($user);
 
