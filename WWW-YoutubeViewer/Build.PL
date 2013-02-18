@@ -5,26 +5,27 @@ use strict;
 use warnings;
 use Module::Build;
 
-use Getopt::Long qw();
-
 # Get options
 my ($gtk_youtube_viewer);
 {
     local @ARGV = grep /^--?(?:no-?)?gtk-youtube-viewer\z/, @ARGV;
-    Getopt::Long::GetOptions('gtk-youtube-viewer!' => \$gtk_youtube_viewer,);
+    if (@ARGV) {
+        require Getopt::Long;
+        Getopt::Long::GetOptions('gtk-youtube-viewer!' => \$gtk_youtube_viewer,);
+    }
 }
 
 my $builder = Module::Build->new(
-    module_name         => 'WWW::YoutubeViewer',
-    license             => 'Artistic_2_0',
-    dist_author         => q{Trizen <trizenx@gmail.com>},
-    dist_version_from   => 'lib/WWW/YoutubeViewer.pm',
-    build_requires      => {'Test::More' => 0,},
-    configure_requires  => {
-        'Module::Build' => 0,
-    },
-    script_files      => ['bin/youtube-viewer', ($gtk_youtube_viewer ? 'bin/gtk-youtube-viewer' : ()),],
-    requires          => {
+    module_name        => 'WWW::YoutubeViewer',
+    license            => 'Artistic_2_0',
+    dist_author        => q{Trizen <trizenx@gmail.com>},
+    dist_version_from  => 'lib/WWW/YoutubeViewer.pm',
+    build_requires     => {'Test::More' => 0,},
+    configure_requires => {
+                           'Module::Build' => 0,
+                          },
+    script_files => ['bin/youtube-viewer', ($gtk_youtube_viewer ? 'bin/gtk-youtube-viewer' : ()),],
+    requires => {
         'perl'                  => '5.016',
         'Data::Dump'            => 0,
         'File::Spec::Functions' => 0,
@@ -39,9 +40,7 @@ my $builder = Module::Build->new(
         'URI::Escape'           => 0,
 
         $gtk_youtube_viewer
-        ? (
-           'Gtk2'           => 0,
-          )
+        ? ('Gtk2' => 0)
         : (),
     },
     recommends => {
@@ -69,10 +68,10 @@ $builder->create_build_script();
 # Intalling files for GTK YouTube Viewer
 if ($gtk_youtube_viewer) {
 
-    use File::Basename qw(dirname);
-    use File::Spec::Functions qw(rel2abs catfile catdir rootdir);
-    use File::Copy qw(copy);
-    use File::Path qw(make_path);
+    use autouse 'File::Basename'        => qw(dirname);
+    use autouse 'File::Spec::Functions' => qw(rel2abs catfile catdir rootdir);
+    use autouse 'File::Copy'            => qw(copy);
+    use autouse 'File::Path'            => qw(make_path);
 
     my $dest_dir       = $builder->destdir // rootdir();
     my $main_dir       = dirname(rel2abs($0));
@@ -101,8 +100,8 @@ if ($gtk_youtube_viewer) {
     copy(catfile($main_dir, qw(bin youtube-viewer)) => catfile($gtk_youtube_viewer_dir, qw(youtube-viewer)))
       or die "Copy failed: $!";
 
-    copy(catfile($main_share_dir, $desktop_file) => catfile($applications_dir,       $desktop_file)) or die "Copy failed: $!";
-    copy(catfile($main_share_dir, $glade_file)   => catfile($gtk_youtube_viewer_dir, $glade_file))   or die "Copy failed: $!";
+    copy(catfile($main_share_dir, $desktop_file) => catfile($applications_dir, $desktop_file))     or die "Copy failed: $!";
+    copy(catfile($main_share_dir, $glade_file)   => catfile($gtk_youtube_viewer_dir, $glade_file)) or die "Copy failed: $!";
 
     foreach my $copy_instructions (
                                    {

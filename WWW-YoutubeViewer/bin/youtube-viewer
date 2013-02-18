@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 13 February 2013
+#  Latest edit on: 18 February 2013
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -108,7 +108,7 @@ use 5.016;
 use File::Spec::Functions qw(catdir catfile curdir path rel2abs tmpdir);
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.0.6';
+my $version  = '3.0.7';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
@@ -207,7 +207,8 @@ my %CONFIG = (
     non_interactive      => 0,
     adj_for_term_width   => $constant{win32} ^ 1,
     download_with_wget   => $constant{win32} ^ 1,
-    auth_key             => undef,
+    access_token         => undef,
+    refresh_token        => undef,
     thousand_separator   => q{,},
     downloads_folder     => curdir(),
     keep_original_video  => 0,
@@ -361,13 +362,24 @@ if (ref $CONFIG ne 'HASH' or not %CONFIG ~~ %{$CONFIG}) {
 
 require WWW::YoutubeViewer;
 my $yv_obj = WWW::YoutubeViewer->new(
-                                     key         => $key,
-                                     auth_key    => $CONFIG{auth_key},
-                                     app_name    => $appname,
-                                     app_version => $version,
-                                     config_dir  => $config_dir,
-                                     escape_utf8 => 1,
+                                     key           => $key,
+                                     access_token  => $CONFIG{access_token},
+                                     refresh_token => $CONFIG{refresh_token},
+                                     app_name      => $appname,
+                                     app_version   => $version,
+                                     config_dir    => $config_dir,
+                                     escape_utf8   => 1,
                                     );
+
+{
+    my $client_id     = '991455593101.apps.googleusercontent.com';
+    my $client_secret = 'YcxxWCCbBwIr-IhUDCanrp41';
+    my $redirect_uri  = 'urn:ietf:wg:oauth:2.0:oob';
+
+    $yv_obj->set_client_id($client_id);
+    $yv_obj->set_client_secret($client_secret);
+    $yv_obj->set_redirect_uri($redirect_uri);
+}
 
 require WWW::YoutubeViewer::Utils;
 my $yv_utils = WWW::YoutubeViewer::Utils->new(thousand_separator => $opt{thousand_separator},);
@@ -448,10 +460,10 @@ YouTube options:
    -2  -3  -4  -7  -1   : resolutions: 240p, 360p, 480p, 720p or 1080p
    --resolution=RES     : resolutions: original, 1080, 720, 480, 360, 340,
                           240, 180, 144
-   -F  --favorites      : show the latest favorited videos *
-   -R  --recommended    : show the recommended videos for you *
-   -S  --subscriptions  : show the new subscription videos *
-   -W  --watched        : show the latest watched videos on YouTube *
+   -F --favorites:s     : show the latest favorited videos *
+   -R --recommended     : show the recommended videos for you *
+   -S --subscriptions:s : show the new subscription videos *
+   -W --watched         : show the latest watched videos on YouTube *
    --channel-s          : show the suggested YouTube channels for you *
    --subscribe=USER     : subscribe to a user's channel *
    --favorite=ID/URL    : favorite a YouTube video by URL or ID *
@@ -516,8 +528,10 @@ Help options:
        --debug:1,2      : see behind the scenes
 
 NOTE:
-    * == requires authentication
-    --no-[argv] will negate the value of the argument (e.g.: --no-fullscreen)
+    *  -> requires authentication
+    !  -> the argument can be negated with '--no'
+    =s -> requires an argument
+    :s -> can take an optional argument
 
 HELP
     main_quit(0);
@@ -667,6 +681,9 @@ Results: set 5 results,
 Command: $execname -author=UCBerkeley atom
 Results: search only in videos uploaded by a specific author
 
+Command: $execname -S=vsauce
+Results: get the video subscriptions for a username
+
 Command: $execname --page=2 -u=Google
 Results: show latest videos uploaded by Google,
          starting with the page number 2.
@@ -676,6 +693,9 @@ Results: show today tops for Music category.
 
 Command: $execname --tops=all --region=JP
 Results: show all time tops for the Japan country.
+
+Command: $execname --tops --region=RU --category=Music
+Results: show today tops of RUssian Music
 
 Command: $execname cats -order-by=viewCount -duration=short
 Results: search for 'cats' videos, ordered by ViewCount and short length.
@@ -827,10 +847,7 @@ sub apply_configuration {
     }
 
     if (delete $opt->{authenticate}) {
-        my $auth_key = authenticate();
-        if (defined $auth_key) {
-            $yv_obj->set_auth_key($auth_key);
-        }
+        authenticate();
     }
 
     if (delete $opt->{logout}) {
@@ -1355,56 +1372,58 @@ sub get_user_input {
 }
 
 sub logout {
-    undef $CONFIG{auth_key};
+
+    undef $CONFIG{access_token};
+    undef $CONFIG{refresh_token};
+
     dump_configuration();
-    $yv_obj->set_auth_key();
+
+    $yv_obj->set_access_token();
+    $yv_obj->set_refresh_token();
+
     return 1;
 }
 
 sub authenticate {
-    my ($email, $password);
+    my $get_code_url = $yv_obj->get_accounts_oauth_url() // return;
 
-    $email = $term->readline(colored(qq{\nEmail: }, 'bold'));
+    print <<"INFO";
 
-    eval { require Term::ReadKey };
-    if ($@) {
-        if ($constant{win32}) {
-            warn <<'EOW';
-[!] Please install Term::ReadKey if you don't
-    want your password to be visible while typing!
-EOW
-            $password = $term->readline(colored(q{Password: }, 'bold underline'));
-        }
-        else {
-            print colored(q{Password: }, 'bold underline');
-            system qw(stty -echo);
-            chomp($password = <STDIN>);
-            system qw(stty echo);
-        }
-    }
-    else {
-        print colored(q{Password: }, 'bold underline');
-        Term::ReadKey::ReadMode('noecho');
-        chomp($password = Term::ReadKey::ReadLine());
-        Term::ReadKey::ReadMode('restore');
-    }
+** Get the authentication code: $get_code_url
 
-    my $auth_key = $yv_obj->login($email, $password);
+                            |
+... and paste it below.    \\|/
+                            `
+INFO
 
-    if (defined $auth_key) {
+    my $code = $term->readline(colored(q{Code: }, 'bold')) || return;
+
+    my $json_data = $yv_obj->oauth_login($code) // return;
+
+    say $json_data if $yv_obj->get_debug;
+    my $info = $yv_utils->basic_json_parser($json_data);
+
+    if (defined $info->{access_token}) {
+
+        $yv_obj->set_access_token($info->{access_token})   // return;
+        $yv_obj->set_refresh_token($info->{refresh_token}) // return;
+
         my $remember_me = $term->ask_yn(prompt  => colored("\nRemember me", 'bold'),
-                                        default => 'n',);
+                                        default => 'y',);
         if ($remember_me) {
-            $CONFIG{auth_key} = $auth_key;
+            $CONFIG{access_token}  = $yv_obj->get_access_token;
+            $CONFIG{refresh_token} = $yv_obj->get_refresh_token;
             dump_configuration();
         }
-        return $auth_key;
+
+        return 1;
     }
+
     return;
 }
 
 sub authenticated {
-    if (not defined $yv_obj->get_auth_key) {
+    if (not defined $yv_obj->get_access_token) {
         warn_needs_auth();
         return;
     }
@@ -1644,10 +1663,7 @@ sub general_options {
             }
         }
         when ('login') {
-            my $auth_key = authenticate();
-            if (defined $auth_key) {
-                $yv_obj->set_auth_key($auth_key);
-            }
+            authenticate();
         }
         when ('logout') {
             logout();

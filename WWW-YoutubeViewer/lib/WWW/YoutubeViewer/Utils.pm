@@ -8,11 +8,11 @@ WWW::YoutubeViewer::Utils - Various utils.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -80,6 +80,23 @@ sub format_time {
     $sec >= 3600
       ? join q{:}, map { sprintf '%02d', $_ } $sec / 3600 % 24, $sec / 60 % 60, $sec % 60
       : join q{:}, map { sprintf '%02d', $_ } $sec / 60 % 60, $sec % 60;
+}
+
+=head2 basic_json_parser($json_string)
+
+Parse and get key/value pairs from basic a JSON string.
+
+=cut
+
+sub basic_json_parser {
+    my ($self, $json) = @_;
+
+    my %pairs;
+    while ($json =~ /^\h*"(.*?)"\h*:\h*(?>"(.*?)"|(\d+))\h*,?\h*$/mg) {
+        $pairs{$1} = $+;
+    }
+
+    return \%pairs;
 }
 
 =head2 format_date($date)

@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 13 February 2013
+#  Latest edit on: 18 February 2013
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -38,7 +38,7 @@ use File::Spec::Functions qw(
   );
 
 my $appname  = 'GTK Youtube Viewer';
-my $version  = '3.0.6';
+my $version  = '3.0.7';
 my $execname = 'gtk-youtube-viewer';
 
 # Developer key
@@ -166,7 +166,8 @@ my %CONFIG = (
     hpaned_position          => 420,
     search_channels          => 0,
     search_playlists         => 0,
-    auth_key                 => undef,
+    access_token             => undef,
+    refresh_token            => undef,
     thousand_separator       => q{,},
     perl_bin                 => $^X,
     default_thumb            => 'default',
@@ -383,6 +384,16 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      escape_utf8 => 1,
                                     );
 
+{
+    my $client_id     = '991455593101.apps.googleusercontent.com';
+    my $client_secret = 'YcxxWCCbBwIr-IhUDCanrp41';
+    my $redirect_uri  = 'urn:ietf:wg:oauth:2.0:oob';
+
+    $yv_obj->set_client_id($client_id);
+    $yv_obj->set_client_secret($client_secret);
+    $yv_obj->set_redirect_uri($redirect_uri);
+}
+
 require WWW::YoutubeViewer::Utils;
 my $yv_utils = WWW::YoutubeViewer::Utils->new(thousand_separator => $CONFIG{thousand_separator},);
 
@@ -422,8 +433,14 @@ sub apply_configuration {
     $thumbs_checkbutton->set_active($CONFIG{show_thumbs});
 
     # Auto-login
-    if (exists $CONFIG{auth_key} and $CONFIG{auth_key}) {
-        set_auth_key($CONFIG{auth_key});
+    if (length $CONFIG{access_token}) {
+        if ($yv_obj->set_access_token($CONFIG{access_token})) {
+            $yv_obj->set_refresh_token($CONFIG{refresh_token});
+            show_user_panel();
+        }
+        else {
+            warn "[!] Invalid access token!\n";
+        }
     }
     else {
         $statusbar->push(1, 'Not logged');
@@ -480,26 +497,6 @@ my %users_table = map { lc($_) => $_ } (
                                        );
 set_usernames();
 
-sub lwp_get {
-    my ($url) = @_;
-
-    $yv_obj->set_lwp_useragent()
-      unless defined $yv_obj->{lwp};
-
-    my %lwp_header = $yv_obj->_get_lwp_header();
-    my $response = $yv_obj->{lwp}->get($url, %lwp_header);
-
-    if ($response->is_success) {
-        return $response->decoded_content;
-    }
-    else {
-        my $status = $response->status_line();
-        warn "[$status] Error occured on URL: $url\n";
-    }
-
-    return;
-}
-
 sub donate {
     my $url = 'https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=75FUVBE6Q73T8';
     system "xdg-open \Q$url\E &";
@@ -518,6 +515,7 @@ sub set_threads {
     require Thread::Queue;
 
     no warnings 'redefine';
+    state $lwp_get = \&{WWW::YoutubeViewer::lwp_get};
     *{WWW::YoutubeViewer::lwp_get} = \&threads_lwp_get;
 
     $queue = 'Thread::Queue'->new;
@@ -525,7 +523,7 @@ sub set_threads {
     threads->create(
         sub {
             while (defined(my $url = $jobs->dequeue)) {
-                $queue->enqueue(lwp_get($url) || q{});
+                $queue->enqueue($yv_obj->$lwp_get($url) || q{});
             }
         }
     )->detach();
@@ -549,6 +547,7 @@ sub threads_lwp_get {
             return $lwp_result;
         }
     }
+
     undef $queue;
     undef $jobs;
 }
@@ -760,31 +759,44 @@ $details_window->add_accel_group($accel);
 
 # ------------------ Authentication ------------------ #
 
-sub set_auth_key {
-    my ($auth_key) = @_;
-    $yv_obj->set_auth_key($auth_key) or return;
+sub show_user_panel {
     change_subscription_page(1);
     $statusbar->push(1, "Logged.");
     return 1;
 }
 
-sub authenticate {
-    my $email    = $gui->get_object('email')->get_text;
-    my $password = $gui->get_object('password')->get_text;
+{
+    my $get_code_url = $yv_obj->get_accounts_oauth_url();
 
-    my $auth_key = $yv_obj->login($email, $password);
+    # Setting the URL to get the authentication key
+    $gui->get_object('get_auth_link_button')->set_uri($get_code_url);
 
-    hide_login_to_youtube_window();
+    sub authenticate {
+        my $code = $gui->get_object('auth_token_entry')->get_text;
 
-    if (defined $auth_key) {
-        if ($gui->get_object('login_check_button')->get_active) {
-            $CONFIG{auth_key} = $auth_key;
-            dump_configuration();
+        hide_login_to_youtube_window();
+
+        if ($code ne q{}) {
+
+            my $json_data = $yv_obj->oauth_login($code) // return;
+
+            say $json_data if $yv_obj->get_debug;
+            my $info = $yv_utils->basic_json_parser($json_data);
+
+            if ($gui->get_object('login_check_button')->get_active) {
+                $CONFIG{access_token}  = $info->{access_token}  // return;
+                $CONFIG{refresh_token} = $info->{refresh_token} // return;
+                dump_configuration();
+            }
+
+            $yv_obj->set_access_token($info->{access_token})   // return;
+            $yv_obj->set_refresh_token($info->{refresh_token}) // return;
+
+            show_user_panel();
+            return 1;
         }
-        set_auth_key($auth_key);
-        return 1;
+        return;
     }
-    return;
 }
 
 # ------------------ Showing/Hidding windows ------------------ #
@@ -1161,10 +1173,16 @@ sub save_usernames_to_file {
 # ----- My panel settings ----- #
 sub log_out {
     change_subscription_page(0);
-    undef $CONFIG{auth_key};
+
+    undef $CONFIG{access_token};
+    undef $CONFIG{refresh_token};
+
     dump_configuration();
-    $yv_obj->set_auth_key();
+
+    $yv_obj->set_access_token();
+    $yv_obj->set_refresh_token();
     $statusbar->push(1, "Not logged.");
+
     return 1;
 }
 

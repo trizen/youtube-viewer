@@ -12,11 +12,11 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 SYNOPSIS
 
@@ -24,6 +24,8 @@ our $VERSION = '0.04';
 
     my $yv_obj = WWW::YoutubeViewer->new();
     ...
+
+=head1 SUBROUTINES/METHODS
 
 =cut
 
@@ -45,7 +47,7 @@ our @feed_methods = qw(newsubscriptionvideos recommendations favorites watch_his
 my %valid_options = (
 
     # Main options
-    v           => {valid => [],                                         default => 2},
+    v           => {valid => q[],                                        default => 2},
     page        => {valid => [qr/^(?!0+\z)\d+\z/],                       default => 1},
     results     => {valid => [1 .. 50],                                  default => 10},
     hd          => {valid => [qw(true)],                                 default => undef},
@@ -59,14 +61,14 @@ my %valid_options = (
     safe_search => {valid => [qw(strict moderate none)],                 default => undef},
 
     # Others
-    debug       => {valid => [0 .. 2],               default => 0},
-    lwp_timeout => {valid => [qr/^\d+$/],            default => 60},
-    auth_key    => {valid => [qr/^.{5}/],            default => undef},
-    key         => {valid => [qr/^.{5}/],            default => undef},
-    author      => {valid => [qr{^[\-\w.]{2,64}\z}], default => undef},
-    app_version => {valid => [qr/^v?\d/],            default => $VERSION},
-    app_name    => {valid => [qr/^./],               default => 'Youtube Viewer'},
-    config_dir  => {valid => [qr/^./],               default => q{.}},
+    debug        => {valid => [0 .. 2],               default => 0},
+    lwp_timeout  => {valid => [qr/^\d+$/],            default => 30},
+    access_token => {valid => [qr/^.{5}/],            default => undef},
+    key          => {valid => [qr/^.{5}/],            default => undef},
+    author       => {valid => [qr{^[\-\w.]{2,64}\z}], default => undef},
+    app_version  => {valid => [qr/^v?\d/],            default => $VERSION},
+    app_name     => {valid => [qr/^./],               default => 'Youtube Viewer'},
+    config_dir   => {valid => [qr/^./],               default => q{.}},
 
     categories_language => {valid => [qr/^[a-z]+-\w/], default => 'en-US'},
 
@@ -75,13 +77,20 @@ my %valid_options = (
     lwp_env_proxy  => {valid => [1, 0], default => 1},
     escape_utf8    => {valid => [1, 0], default => 0},
 
+    # OAuth stuff
+    client_id     => {valid => [qr/^.{5}/], default => undef},
+    client_secret => {valid => [qr/^.{5}/], default => undef},
+    redirect_uri  => {valid => [qr/^.{5}/], default => undef},
+    refresh_token => {valid => [qr/^.{5}/], default => undef},
+
     # No input value alowed
-    categories_url    => {valid => [], default => 'http://gdata.youtube.com/schemas/2007/categories.cat'},
-    educategories_url => {valid => [], default => 'http://gdata.youtube.com/schemas/2007/educategories.cat'},
-    feeds_url         => {valid => [], default => 'http://gdata.youtube.com/feeds/api'},
-    google_login_url  => {valid => [], default => 'https://www.google.com/accounts/ClientLogin'},
-    video_info_url    => {valid => [], default => 'http://www.youtube.com/get_video_info'},
-    video_info_args   => {valid => [], default => '?video_id=%s&el=detailpage&ps=default&eurl=&gl=US&hl=en'},
+    categories_url    => {valid => q[], default => 'http://gdata.youtube.com/schemas/2007/categories.cat'},
+    educategories_url => {valid => q[], default => 'http://gdata.youtube.com/schemas/2007/educategories.cat'},
+    feeds_url         => {valid => q[], default => 'http://gdata.youtube.com/feeds/api'},
+    video_info_url    => {valid => q[], default => 'http://www.youtube.com/get_video_info'},
+    oauth_url         => {valid => q[], default => 'https://accounts.google.com/o/oauth2/'},
+    video_info_args   => {valid => q[], default => '?video_id=%s&el=detailpage&ps=default&eurl=&gl=US&hl=en'},
+    www_content_type  => {valid => q[], default => 'application/x-www-form-urlencoded'},
 
     # LWP user agent
     lwp_agent => {valid => [qr/^.{5}/], default => 'Mozilla/5.0 (X11; U; Linux i686; en-US) Chrome/10.0.648.45'},
@@ -92,22 +101,30 @@ my %valid_options = (
 
     foreach my $key (keys %valid_options) {
 
-        # Create the 'set_*' subroutines
-        *{__PACKAGE__ . '::set_' . $key} = sub {
-            my ($self, $value) = @_;
-            $self->{$key} =
-                $value ~~ $valid_options{$key}{valid}
-              ? $value
-              : $valid_options{$key}{default};
-        };
+        if (ref $valid_options{$key}{valid} eq 'ARRAY') {
+
+            # Create the 'set_*' subroutines
+            *{__PACKAGE__ . '::set_' . $key} = sub {
+                my ($self, $value) = @_;
+                $self->{$key} =
+                    $value ~~ $valid_options{$key}{valid}
+                  ? $value
+                  : $valid_options{$key}{default};
+            };
+        }
 
         # Create the 'get_*' subroutines
         *{__PACKAGE__ . '::get_' . $key} = sub {
-            my ($self) = @_;
-            return $self->{$key};
+            return $_[0]->{$key};
         };
     }
 }
+
+=head2 new(%opts)
+
+Returns a blessed object.
+
+=cut
 
 sub new {
     my ($class, %opts) = @_;
@@ -115,8 +132,13 @@ sub new {
     my $self = bless {}, $class;
 
     foreach my $key (keys %valid_options) {
-        my $code = \&{"set_$key"};
-        $self->$code(delete $opts{$key});
+        if (ref $valid_options{$key}{valid} ne 'ARRAY') {
+            $self->{$key} = $valid_options{$key}{default};
+        }
+        else {
+            my $code = \&{"set_$key"};
+            $self->$code(delete $opts{$key});
+        }
     }
 
     $self->{start_index} =
@@ -131,53 +153,76 @@ sub new {
     return $self;
 }
 
+=head2 set_prefer_https($bool)
+
+Will use https:// protocol instead of http://.
+
+=cut
+
 sub set_prefer_https {
     my ($self, $bool) = @_;
     $self->{prefer_https} = $bool;
 
-    if ($self->{prefer_https}) {
-        eval { require LWP::Protocol::https };
-        if ($@) {
-            warn "[!] LWP::Protocol::https is not installed!\n";
-        }
-        foreach my $key (grep /_url\z/, keys %valid_options) {
-            my $url = $valid_options{$key}{default};
-            $url =~ s{^http://}{https://};
-            $self->{$key} = $url;
-        }
-    }
-    else {
-        foreach my $key (grep /_url\z/, keys %valid_options) {
-            next if $key eq 'google_login_url';
-            my $url = $valid_options{$key}{default};
-            $url =~ s{^https://}{http://};
-            $self->{$key} = $url;
-        }
+    foreach my $key (grep /_url\z/, keys %valid_options) {
+        next if $key ~~ [qw(oauth_url)];
+        my $url = $valid_options{$key}{default};
+        $self->{prefer_https} ? ($url =~ s{^http://}{https://}) : ($url =~ s{^https://}{http://});
+        $self->{$key} = $url;
     }
 
     return $bool;
 }
+
+=head2 get_prefer_https()
+
+Will return the value of prefer_https.
+
+=cut
 
 sub get_prefer_https {
     my ($self) = @_;
     return $self->{prefer_https};
 }
 
+=head2 get_start_index_var($page, $results)
+
+Returns the start_index value for the specific variables.
+
+=cut
+
 sub get_start_index_var {
     my ($self, $page, $results) = @_;
     return $results * $page - $results + 1;
 }
+
+=head2 get_start_index()
+
+Returns the start_index based on the page number and results.
+
+=cut
 
 sub get_start_index {
     my ($self) = @_;
     return $self->get_results() * $self->get_page() - $self->get_results() + 1;
 }
 
+=head2 back_page_is_available($url)
+
+Returns true if a previous page is available.
+
+=cut
+
 sub back_page_is_available {
     my ($self, $url) = @_;
     $url =~ /[&?]start-index=(\d+)\b/ or return;
     return $1 > $self->get_results();
 }
+
+=head2 escape_string($string)
+
+Escapes a string with URI::Escape and returns it.
+
+=cut
 
 sub escape_string {
     my ($self, $string) = @_;
@@ -194,11 +239,23 @@ sub escape_string {
     return $escaped;
 }
 
+=head2 list_to_gdata_arguments(%options)
+
+Returns a valid string of arguments, with defined values.
+
+=cut
+
 sub list_to_gdata_arguments {
     my ($self, %opts) = @_;
 
     return join(q{&} => map "$_=$opts{$_}", grep defined $opts{$_}, keys %opts);
 }
+
+=head2 default_gdata_arguments()
+
+Returns a string with the default gdata arguments.
+
+=cut
 
 sub default_gdata_arguments {
     my ($self) = @_;
@@ -208,6 +265,12 @@ sub default_gdata_arguments {
                                    'v'           => $self->get_v,
                                   );
 }
+
+=head2 set_lwp_useragent()
+
+Intializes the LWP::UserAgent module and returns it.
+
+=cut
 
 sub set_lwp_useragent {
     my ($self) = @_;
@@ -222,35 +285,89 @@ sub set_lwp_useragent {
                                          show_progress => $self->get_debug,
                                          agent         => $self->get_lwp_agent,
                                         );
+
+    push @{$self->{lwp}->requests_redirectable}, 'POST';
     $self->{lwp}->proxy('http', $self->get_http_proxy) if (defined($self->get_http_proxy));
-    return 1;
+    return $self->{lwp};
 }
 
-sub login {
-    my ($self, $email, $password) = @_;
+sub _get_token_oauth_url {
+    my ($self) = @_;
+    return $self->get_oauth_url() . 'token';
+}
 
-    $self->set_lwp_useragent()
-      unless defined $self->{lwp};
+=head2 get_accounts_oauth_url()
 
-    my $source = join(q{ }, $self->get_app_name(), $self->get_app_version());
-    my $resp = $self->{lwp}->post(
-                                  $self->get_google_login_url(),
-                                  [Content => 'application/x-www-form-urlencoded',
-                                   Email   => $email,
-                                   Passwd  => $password,
-                                   service => 'youtube',
-                                   source  => $source,
-                                  ],
+Creates an OAuth URL with the 'code' response type. (Google's authorization server)
+
+=cut
+
+sub get_accounts_oauth_url {
+    my ($self) = @_;
+
+    my $url = $self->_concat_args(
+                                  ($self->get_oauth_url() . 'auth'),
+                                  response_type => 'code',
+                                  client_id     => $self->get_client_id() // return,
+                                  redirect_uri  => $self->get_redirect_uri() // return,
+                                  scope         => 'https://gdata.youtube.com',
                                  );
 
-    if ($resp->{_content} =~ /^Auth=(.+)/m) {
-        return $1;
-    }
-    else {
-        warn "Unable to login: $resp->{_content}\n";
-    }
-    return;
+    return $url;
 }
+
+=head2 oauth_refresh_token()
+
+Refresh the access_token using the refresh_token. Returns a JSON string or undef.
+
+=cut
+
+sub oauth_refresh_token {
+    my ($self) = @_;
+
+    return
+      $self->lwp_post(
+                      $self->_get_token_oauth_url(),
+                      [Content       => $self->get_www_content_type,
+                       client_id     => $self->get_client_id() // return,
+                       client_secret => $self->get_client_secret() // return,
+                       refresh_token => $self->get_refresh_token() // return,
+                       grant_type    => 'refresh_token',
+                      ]
+                     );
+}
+
+=head2 oauth_login($code)
+
+Returns a JSON string with the access_token, refresh_token and some other info.
+
+The $code can be obtained by going to the URL returned by the C<get_accounts_oauth_url()> method.
+
+=cut
+
+sub oauth_login {
+    my ($self, $code) = @_;
+
+    length($code) < 20 and return;
+
+    return
+      $self->lwp_post(
+                      $self->_get_token_oauth_url(),
+                      [Content       => $self->get_www_content_type,
+                       client_id     => $self->get_client_id() // return,
+                       client_secret => $self->get_client_secret() // return,
+                       redirect_uri  => $self->get_redirect_uri() // return,
+                       grant_type    => 'authorization_code',
+                       code          => $code,
+                      ]
+                     );
+}
+
+=head2 prepare_key()
+
+Returns a string, used as header, with the developer's key.
+
+=cut
 
 sub prepare_key {
     my ($self) = @_;
@@ -262,11 +379,17 @@ sub prepare_key {
     return;
 }
 
-sub prepare_auth_key {
+=head2 prepare_access_token()
+
+Returns a string. used as header, with the access token.
+
+=cut
+
+sub prepare_access_token {
     my ($self) = @_;
 
-    if (defined(my $auth = $self->get_auth_key)) {
-        return "GoogleLogin auth=$auth";
+    if (defined(my $auth = $self->get_access_token)) {
+        return "Bearer $auth";
     }
 
     return;
@@ -280,38 +403,106 @@ sub _get_lwp_header {
         $lwp_header{'X-GData-Key'} = $self->prepare_key;
     }
 
-    if (defined $self->get_auth_key) {
-        $lwp_header{'Authorization'} = $self->prepare_auth_key;
+    if (defined $self->get_access_token) {
+        $lwp_header{'Authorization'} = $self->prepare_access_token;
     }
 
     return %lwp_header;
 }
 
+=head2 lwp_get($url)
+
+Get and return the content for $url.
+
+=cut
+
 sub lwp_get {
     my ($self, $url) = @_;
 
-    $self->set_lwp_useragent()
-      unless defined $self->{lwp};
+    $self->{lwp} // $self->set_lwp_useragent();
 
     my %lwp_header = $self->_get_lwp_header();
-
     my $response = $self->{lwp}->get($url, %lwp_header);
 
     if ($response->is_success) {
         return $response->decoded_content;
     }
     else {
-        warn '[' . $response->status_line() . "] Error occured on URL: $url\n";
+        my $status = $response->status_line;
+
+        if ($status eq '401 Token invalid' and defined($self->get_refresh_token)) {
+            if (defined(my $json = $self->oauth_refresh_token())) {
+                if ($json =~ m{^\h*"access_token"\h*:\h*"(.{10,}?)"}m) {
+
+                    $self->set_access_token($1);
+
+                    # Don't be tempted to use recursion here, because bad things will happen!
+                    my $new_resp = $self->{lwp}->get($url, $self->_get_lwp_header);
+
+                    if ($new_resp->is_success) {
+                        return $new_resp->decoded_content;
+                    }
+                    elsif ($new_resp->status_line() eq '401 Token invalid') {
+                        $self->set_refresh_token();    # refresh token was invalid
+                        $self->set_access_token();     # access token is also broken
+                        warn "[!] Can't refresh the access token! Logging out...\n";
+                    }
+                    else {
+                        warn '[' . $new_resp->status_line . "] Error occured on URL: $url\n";
+                    }
+                }
+                else {
+                    warn "[!] Can't get the access_token! Logging out...\n";
+                    $self->set_refresh_token();
+                    $self->set_access_token();
+                }
+            }
+            else {
+                warn "[!] Invalid refresh_token! Logging out...\n";
+                $self->set_refresh_token();
+                $self->set_access_token();
+            }
+        }
+
+        warn '[' . $response->status_line . "] Error occured on URL: $url\n";
     }
 
     return;
 }
 
+=head2 lwp_post($url, [@args])
+
+Post and return the content for $url.
+
+=cut
+
+sub lwp_post {
+    my ($self, $url, @args) = @_;
+
+    $self->{lwp} // $self->set_lwp_useragent();
+
+    my $response = $self->{lwp}->post($url, @args);
+
+    if ($response->is_success) {
+        return $response->decoded_content;
+    }
+    else {
+        warn '[' . $response->status_line() . "] Error occurred on URL: $url\n";
+    }
+
+    return;
+}
+
+=head2 lwp_mirror($url, $output_file)
+
+Downloads the $url into $output_file. Returns true on success.
+
+=cut
+
 sub lwp_mirror {
     my ($self, $url, $name) = @_;
 
-    $self->set_lwp_useragent()
-      unless defined $self->{lwp};
+    $self->{lwp} // $self->set_lwp_useragent();
 
     my %lwp_header = $self->_get_lwp_header();
     my $response = $self->{lwp}->mirror($url, $name);
@@ -449,7 +640,7 @@ sub _xml2hash {
            : ref $hash->{feed}{entry} eq 'HASH'  ? $hash->{feed}{entry}
            :                                       $hash->{entry}
       ) {
-        last unless defined $gdata;
+        $gdata // last;
 
         push @results, $opts{playlists}
 
@@ -551,6 +742,18 @@ sub _xml2hash {
     return \@results;
 }
 
+=head2 get_content($url;%opts)
+
+Returns a hash reference containing the URL and RESULTS:
+    {url => '...', results => [...]}
+
+Valid %opts:
+    playlists => 1, comments => 1, videos => 1,
+    channels  => 1, channel_suggestions => 1,
+    courses   => 1,
+
+=cut
+
 sub get_content {
     my ($self, $url, %opts) = @_;
 
@@ -589,6 +792,13 @@ sub _url_doesnt_contain_arguments {
     return;
 }
 
+=head2 prepare_url($url)
+
+Accepts a URL without arguments, appends the
+C<default_arguments()> to it, and returns it.
+
+=cut
+
 sub prepare_url {
     my ($self, $url) = @_;
 
@@ -609,6 +819,12 @@ sub _make_feed_url_with_args {
     my $url = $self->prepare_url($self->get_feeds_url() . $suburl);
     return $self->_concat_args($url, @args);
 }
+
+=head2 get_videos_from_category($cat_id)
+
+Returns a list of videos from a categoryID.
+
+=cut
 
 sub get_videos_from_category {
     my ($self, $cat_id) = @_;
@@ -631,6 +847,13 @@ sub get_videos_from_category {
            };
 }
 
+=head2 get_courses_from_category($cat_id)
+
+Get the courses from a specific category ID.
+$cat_id can be any valid category ID from the EDU categories.
+
+=cut
+
 sub get_courses_from_category {
     my ($self, $cat_id) = @_;
 
@@ -643,6 +866,13 @@ sub get_courses_from_category {
             results => $self->get_content($url, courses => 1),
            };
 }
+
+=head2 get_video_lectures_from_course($course_id)
+
+Get the video lectures from a specific course ID.
+$course_id can be any valid course ID from the EDU categories.
+
+=cut
 
 sub get_video_lectures_from_course {
     my ($self, $course_id) = @_;
@@ -657,6 +887,13 @@ sub get_video_lectures_from_course {
            };
 }
 
+=head2 get_video_lectures_from_category($cat_id)
+
+Get the video lectures from a specific category ID.
+$cat_id can be any valid category ID from the EDU categories.
+
+=cut
+
 sub get_video_lectures_from_category {
     my ($self, $cat_id) = @_;
 
@@ -669,6 +906,12 @@ sub get_video_lectures_from_category {
             results => $self->get_content($url),
            };
 }
+
+=head2 get_movies($movieID)
+
+Get movie results for C<$movieID>.
+
+=cut
 
 sub get_movies {
     my ($self, $movie_id) = @_;
@@ -687,6 +930,14 @@ sub get_movies {
             results => $self->get_content($url),
            };
 }
+
+=head2 get_video_tops(%opts)
+
+Returns the video tops for a specific feed_id.
+Valid %opts:
+    (feed_id=>'...',cat_id=>'...',region_id=>'...',time_id=>'...')
+
+=cut
 
 sub get_video_tops {
     my ($self, %opts) = @_;
@@ -829,10 +1080,22 @@ sub _get_categories {
     return \@categories;
 }
 
+=head2 get_categories()
+
+Returns the YouTube categories.
+
+=cut
+
 sub get_categories {
     my ($self) = @_;
     return $self->_get_categories($self->get_categories_url());
 }
+
+=head2 get_educategories()
+
+Returns the EDU YouTube categories.
+
+=cut
 
 sub get_educategories {
     my ($self) = @_;
@@ -849,7 +1112,7 @@ sub _get_pairs_from_info_data {
         foreach my $pair (split(/&/, $block)) {
             $pair =~ s{^url_encoded_fmt_stream_map=(?=\w+=)}{}im;
             my ($key, $value) = split(/=/, $pair);
-            next unless defined $key;
+            $key // next;
             $array[$i]->{$key} = uri_unescape($value);
         }
         ++$i;
@@ -872,6 +1135,13 @@ sub _get_pairs_from_info_data {
 
     return @array;
 }
+
+=head2 get_streaming_urls($videoID)
+
+Returns a list of streaming URLs for a videoID.
+({itag=>...}, {itag=>...}, {has_cc=>...})
+
+=cut
 
 sub get_streaming_urls {
     my ($self, $videoID) = @_;
@@ -896,10 +1166,16 @@ sub get_streaming_urls {
     return grep { (exists $_->{itag} and exists $_->{url} and exists $_->{type}) or exists $_->{has_cc} } @info;
 }
 
+=head2 get_channel_suggestions()
+
+Returns a list of channel suggestions for the current logged user.
+
+=cut
+
 sub get_channel_suggestions {
     my ($self) = @_;
 
-    if (not defined $self->get_auth_key) {
+    if (not defined $self->get_access_token) {
         warn "\n[!] The method 'get_channel_suggestions' requires authentication!\n";
         return;
     }
@@ -911,6 +1187,30 @@ sub get_channel_suggestions {
             results => $self->get_content($url, channel_suggestions => 1),
            };
 }
+
+=head2 search(@keywords)
+
+Search and return the video results.
+
+=cut
+
+sub search {
+    my ($self, @keywords) = @_;
+
+    my $keywords = $self->escape_string("@keywords");
+    my $url = $self->get_feeds_url() . '/videos?' . $self->full_gdata_arguments('keywords' => $keywords);
+
+    return {
+            url     => $url,
+            results => $self->get_content($url),
+           };
+}
+
+=head2 search_channels(@keywords)
+
+Search and return the channel results.
+
+=cut
 
 sub search_channels {
     my ($self, @keywords) = @_;
@@ -926,6 +1226,12 @@ sub search_channels {
            };
 }
 
+=head2 search_for_playlists(@keywords)
+
+Search and return the playlist results.
+
+=cut
+
 sub search_for_playlists {
     my ($self, @keywords) = @_;
 
@@ -938,6 +1244,15 @@ sub search_for_playlists {
             results => $self->get_content($url, playlists => 1),
            };
 }
+
+=head2 full_gdata_arguments(;%opts)
+
+Returns a string with all the GData arguments.
+
+Optional, you can specify in C<$opts{ignore}>
+an ARRAY_REF with the keys that should be ignored.
+
+=cut
 
 sub full_gdata_arguments {
     my ($self, %opts) = @_;
@@ -964,55 +1279,56 @@ sub full_gdata_arguments {
     return $self->list_to_gdata_arguments(%hash);
 }
 
-sub search {
-    my ($self, @keywords) = @_;
+=head2 send_rating_to_video($videoID, $rating)
 
-    my $keywords = $self->escape_string("@keywords");
-    my $url = $self->get_feeds_url() . '/videos?' . $self->full_gdata_arguments('keywords' => $keywords);
+Send rating to a video. $rating can be either 'like' or 'dislike'.
 
-    return {
-            url     => $url,
-            results => $self->get_content($url),
-           };
-}
+=cut
 
 sub send_rating_to_video {
     my ($self, $code, $rating) = @_;
     my $uri = $self->get_feeds_url() . "/videos/$code/ratings";
 
-    return $self->_save(
-        'POST', $uri, <<"XML_HEADER"
+    return $self->_save('POST', $uri, <<"XML_HEADER");
 <?xml version="1.0" encoding="UTF-8"?>
 <entry xmlns="http://www.w3.org/2005/Atom"
        xmlns:yt="http://gdata.youtube.com/schemas/2007">
 <yt:rating value="$rating"/>
 </entry>
 XML_HEADER
-                       );
 }
+
+=head2 send_comment_to_video($videoID, $comment)
+
+Send comment to a video. Returns true on success.
+
+=cut
 
 sub send_comment_to_video {
     my ($self, $code, $comment) = @_;
 
     my $uri = $self->get_feeds_url() . "/videos/$code/comments";
 
-    return $self->_save(
-        'POST', $uri, <<"XML_HEADER"
+    return $self->_save('POST', $uri, <<"XML_HEADER");
 <?xml version="1.0" encoding="UTF-8"?>
 <entry xmlns="http://www.w3.org/2005/Atom"
     xmlns:yt="http://gdata.youtube.com/schemas/2007">
   <content>$comment</content>
 </entry>
 XML_HEADER
-                       );
 }
+
+=head2 subscribe_channel($username)
+
+Subscribe to a user's channel.
+
+=cut
 
 sub subscribe_channel {
     my ($self, $user) = @_;
     my $uri = $self->get_feeds_url() . '/users/default/subscriptions';
 
-    return $self->_save(
-        'POST', $uri, <<"XML_HEADER"
+    return $self->_save('POST', $uri, <<"XML_HEADER");
 <?xml version="1.0" encoding="UTF-8"?>
 <entry xmlns="http://www.w3.org/2005/Atom"
   xmlns:yt="http://gdata.youtube.com/schemas/2007">
@@ -1021,28 +1337,30 @@ sub subscribe_channel {
     <yt:username>$user</yt:username>
 </entry>
 XML_HEADER
-                       );
 }
+
+=head2 favorite_video($videoID)
+
+Favorite a video. Returns true on success.
+
+=cut
 
 sub favorite_video {
     my ($self, $code) = @_;
     my $uri = $self->get_feeds_url() . '/users/default/favorites';
 
-    return $self->_save(
-        'POST', $uri, <<"XML_HEADER"
+    return $self->_save('POST', $uri, <<"XML_HEADER");
 <?xml version="1.0" encoding="UTF-8"?>
 <entry xmlns="http://www.w3.org/2005/Atom">
   <id>$code</id>
 </entry>
 XML_HEADER
-                       );
 }
 
 sub _request {
     my ($self, $req) = @_;
 
-    $self->set_lwp_useragent()
-      unless defined $self->{lwp};
+    $self->{lwp} // $self->set_lwp_useragent();
 
     my $res = $self->{lwp}->request($req);
 
@@ -1062,8 +1380,8 @@ sub _prepare_request {
     $req->header('GData-Version' => $self->get_v);
     $req->header('Content-Length' => $length) if ($length);
 
-    if (defined $self->get_auth_key) {
-        $req->header('Authorization' => $self->prepare_auth_key);
+    if (defined $self->get_access_token) {
+        $req->header('Authorization' => $self->prepare_access_token);
     }
     if (defined $self->get_key) {
         $req->header('X-GData-Key' => $self->prepare_key);
@@ -1084,15 +1402,33 @@ sub _save {
     return $self->_request($req);
 }
 
+=head2 like_video($videoID)
+
+Like a video. Returns true on success.
+
+=cut
+
 sub like_video {
     my ($self, $code) = @_;
     return $self->send_rating_to_video($code, 'like');
 }
 
+=head2 dislike_video($videoID)
+
+Dislike a video. Returns true on success.
+
+=cut
+
 sub dislike_video {
     my ($self, $code) = @_;
     return $self->send_rating_to_video($code, 'dislike');
 }
+
+=head2 get_video_comments($videoID)
+
+Returns a list of comments for a videoID.
+
+=cut
 
 sub get_video_comments {
     my ($self, $code) = @_;
@@ -1122,6 +1458,12 @@ sub _next_or_back {
     return $url;
 }
 
+=head2 get_disco_videos(\@keywords)
+
+Search for a disco playlist and return its videos, if any. Undef otherwise.
+
+=cut
+
 sub get_disco_videos {
     my ($self, $keywords) = @_;
 
@@ -1138,6 +1480,12 @@ sub get_disco_videos {
 
     return;
 }
+
+=head2 get_video_info($videoID)
+
+Returns informations for a videoID.
+
+=cut
 
 sub get_video_info {
     my ($self, $id) = @_;
@@ -1196,9 +1544,14 @@ sub get_video_info {
             my ($self, $user) = @_;
             $user ||= 'default';
 
-            if (not defined $self->get_auth_key) {
-                warn "\n[!] The method 'get_$method' requires authentication!\n";
-                return;
+            if (not defined $self->get_access_token) {
+                if ($user ne 'default' and $method ~~ [qw(newsubscriptionvideos favorites)]) {
+                    ## ok
+                }
+                else {
+                    warn "\n[!] The method 'get_$method' requires authentication!\n";
+                    return;
+                }
             }
 
             my $url = $self->prepare_url($self->get_feeds_url() . "/users/$user/$method");
@@ -1210,490 +1563,312 @@ sub get_video_info {
     }
 }
 
-=head1 AUTHOR
+=head2 next_page($url;%opts)
 
-Trizen, C<< <trizenx at gmail.com> >>
-
-=head1 SUBROUTINES/METHODS
-
-=head2 Main methods
-
-=over 4
-
-=item new(%opts)
-
-Return a blessed object.
-
-=item search(@keywords)
-
-Search and return the video results.
-
-=item search_channels(@keywords)
-
-Search and return the channel results.
-
-=item search_for_playlists(@keywords)
-
-Search and return the playlist results.
-
-=item back_page_is_available($url)
-
-Return true if a previous page is available.
-
-=item default_gdata_arguments()
-
-Return a string with the default gdata arguments.
-
-=item list_to_gdata_arguments(%options)
-
-Return a valid string of arguments, with defined values.
-
-=item like_video($videoID)
-
-Like a video. Return true on success.
-
-=item dislike_video($videoID)
-
-Dislike a video. Return true on success.
-
-=item send_rating_to_video($videoID, $rating)
-
-Send rating to a video. $rating can be either 'like' or 'dislike'.
-
-=item send_comment_to_video($videoID, $comment)
-
-Send comment to a video. Return true on success.
-
-=item escape_string($string)
-
-Escapes a string with URI::Escape and returns it.
-
-=item login($email, $password)
-
-Return the authentication on success. undef otherwise.
-
-=item prepare_auth_key()
-
-Return a string used as header with the auth key.
-
-=item prepare_key()
-
-Return a string used as header with developer key.
-
-=item prepare_url($url)
-
-Accepts a URL without arguments, appends the
-I<default_arguments()> to it, and returns it.
-
-=item set_lwp_useragent()
-
-Intialize the LWP::UserAgent module.
-
-=item favorite_video($videoID)
-
-Favorite a video. Return true on success.
-
-=item subscribe_channel($username)
-
-Subscribe to a user's channel.
-
-=item full_gdata_arguments()
-
-Return a string with all the GData arguments.
-
-=item lwp_get($url)
-
-Return the content for $url.
-
-=item lwp_mirror($url, $output_file)
-
-Downloads the $url into $output_file. Return true on success.
-
-=item get_content($url;%opts)
-
-Return a hash reference containing the URL and RESULTS:
-    {url => '...', results => [...]}
-
-Valid %opts:
-    playlists => 1, comments => 1, videos => 1,
-    channels  => 1, channel_suggestions => 1,
-    courses   => 1,
-
-=item next_page($url;%opts)
-
-Return the next page of results.
+Returns the next page of results.
 %opts are the same as for I<get_content()>.
 
-=item previous_page($url;%opts)
+=head2 previous_page($url;%opts)
 
-Return the previous page of results.
+Returns the previous page of results.
 %opts are the same as for I<get_content()>.
 
-=item get_streaming_urls($videoID)
+=head2 get_related_videos($videoID)
 
-Return a list of streaming URLs for a videoID.
-({itag=>...}, {itag=>...}, {has_cc=>...})
+Returns the related videos for a videoID.
 
-=item get_video_info($videoID)
+=head2 get_favorites(;$user)
 
-Return informations for a videoID.
+Returns the latest favorited videos for the current logged user.
 
-=item get_related_videos($videoID)
+=head2 get_recommendations()
 
-Return the related videos for a videoID.
+Returns a list of videos, recommended for you by Youtube.
 
-=item get_favorites(;$user)
+=head2 get_watch_history(;$user)
 
-Return the latest favorited videos for the current logged user.
+Returns the latest videos watched on Youtube.
 
-=item get_recommendations()
+=head2 get_newsubscriptionvideos(;$user)
 
-Return a list of videos, recommended for you by Youtube.
+Returns the videos from the subscriptions for the current logged user.
 
-=item get_watch_history(;$user)
+=head2 get_favorited_videos_from_username($username)
 
-Return the latest videos watched on Youtube.
+Returns the latest favorited videos for a given username.
 
-=item get_newsubscriptionvideos(;$user)
+=head2 get_playlists_from_username($username)
 
-Return the videos from the subscriptions for the current logged user.
+Returns a list of playlists created by $username.
 
-=item get_favorited_videos_from_username($username)
+=head2 get_videos_from_playlist($playlistID)
 
-Return the latest favorited videos for a given username.
+Returns a list of videos from playlistID.
 
-=item get_channel_suggestions()
+=head2 get_videos_from_username($username)
 
-Return a list of channel suggestions for the current logged user.
+Returns the latest videos uploaded by a username.
 
-=item get_playlists_from_username($username)
-
-Return a list of playlists created by $username.
-
-=item get_disco_videos(\@keywords)
-
-Search for a disco playlist and return its videos, if any. Undef otherwise.
-
-=item get_videos_from_playlist($playlistID)
-
-Return a list of videos from playlistID.
-
-=item get_videos_from_username($username)
-
-Return the latest videos uploaded by a username.
-
-=item get_video_comments($videoID)
-
-Return a list of comments for a videoID.
-
-=item get_movies($movieID)
-
-Return the movie results.
-
-=item get_video_tops(%opts)
-
-Return the video tops for a specific feed_id.
-Valid %opts:
-    (feed_id=>'...',cat_id=>'...',region_id=>'...',time_id=>'...')
-
-=item get_categories()
-
-Return the YouTube categories.
-
-=item get_videos_from_category($cat_id)
-
-Return a list of videos from a categoryID.
-
-=item get_educategories()
-
-Return the EDU YouTube categories.
-
-=item get_video_lectures_from_category($cat_id)
-
-Get the video lectures from a specific category ID.
-$cat_id can be any valid category ID from the EDU categories.
-
-=item get_courses_from_category($cat_id)
-
-Get the courses from a specific category ID.
-$cat_id can be any valid category ID from the EDU categories.
-
-=item get_video_lectures_from_course($course_id)
-
-Get the video lectures from a specific course ID.
-$course_id can be any valid course ID from the EDU categories.
-
-=back
-
-=head2 set/get methods
-
-=over 4
-
-=item set_app_name($appname)
+=head2 set_app_name($appname)
 
 Set the application name.
 
-=item get_app_name()
+=head2 get_app_name()
 
-Return the application name.
+Returns the application name.
 
-=item set_app_version($version)
+=head2 set_app_version($version)
 
 Set the application version.
 
-=item get_app_version()
+=head2 get_app_version()
 
-Return the application version.
+Returns the application version.
 
-=item set_v()
+=head2 get_v()
 
-Can't be changed!
+Returns the current version of GData implementation.
 
-=item get_v()
-
-Return the current version of GData implementation.
-
-=item set_key($dev_key)
+=head2 set_key($dev_key)
 
 Set the developer key.
 
-=item get_key()
+=head2 get_key()
 
-Return the developer key.
+Returns the developer key.
 
-=item set_auth_key($auth_key)
+=head2 set_client_id($client_id)
 
-Set the authentication key.
+Set the OAuth 2.0 client ID for your application.
 
-=item get_auth_key()
+=head2 get_client_id()
 
-Return the authentication key.
+Returns the I<client_id>.
 
-=item set_author($username)
+=head2 set_client_secret($client_secret)
+
+Set the client secret associated with your I<client_id>.
+
+=head2 get_client_secret()
+
+Returns the I<client_secret>.
+
+=head2 set_redirect_uri($redirect_uri)
+
+A registered I<redirect_uri> for your client ID.
+
+=head2 get_redirect_uri()
+
+Returns the I<redirect_uri>.
+
+=head2 set_access_token($token)
+
+Set the 'Bearer' token type key.
+
+=head2 get_access_token()
+
+Get the 'Bearer' access token.
+
+=head2 set_refresh_token($refresh_token)
+
+Set the I<refresh_token>. This value is used to
+refresh the I<access_token> after it expires.
+
+=head2 get_refresh_token()
+
+Returns the I<refresh_token>
+
+=head2 get_www_content_type()
+
+Returns the B<Content-Type> header value used for GData.
+
+=head2 set_author($username)
 
 Set the author value.
 
-=item get_author()
+=head2 get_author()
 
-Return the author value.
+Returns the author value.
 
-=item set_duration($duration_id)
+=head2 set_duration($duration_id)
 
-Set duration value. (ex: 'long')
+Set duration value. (ex: long)
 
-=item get_duration()
+=head2 get_duration()
 
-Return the duration value.
+Returns the duration value.
 
-=item set_orderby()
+=head2 set_orderby()
 
 Set the order-by value. (ex: published)
 
-=item get_orderby()
+=head2 get_orderby()
 
-Return the orderby value.
+Returns the orderby value.
 
-=item set_hd($value)
+=head2 set_hd($value)
 
 Set hd value. $value can be either 'true' or undef.
 
-=item get_hd()
+=head2 get_hd()
 
-Return the hd value.
+Returns the hd value.
 
-=item set_caption($value)
+=head2 set_caption($value)
 
 Set the caption value. ('true', 'false' or undef)
 
-=item get_caption()
+=head2 get_caption()
 
-Return caption value.
+Returns caption value.
 
-=item set_category($cat_id)
+=head2 set_category($cat_id)
 
 Set a category value. (ex: 'Music')
 
-=item get_category()
+=head2 get_category()
 
-Return the category value.
+Returns the category value.
 
-=item set_safe_search($value)
+=head2 set_safe_search($value)
 
 Set the safe search sensitivity. (ex: strict)
 
-=item get_safe_search()
+=head2 get_safe_search()
 
-Return the safe_search value.
+Returns the safe_search value.
 
-=item set_region($region_ID)
+=head2 set_region($region_ID)
 
 Set the regionID value for video tops. (ex: JP)
 
-=item get_region()
+=head2 get_region()
 
-Return the region value.
+Returns the region value.
 
-=item set_time($time_id)
+=head2 set_time($time_id)
 
 Set the time value. (ex: this_week)
 
-=item get_time()
+=head2 get_time()
 
-Return the time value.
+Returns the time value.
 
-=item set_results([1-50])
+=head2 set_results([1-50])
 
 Set the number of results per page. (max 50)
 
-=item get_results()
+=head2 get_results()
 
-Return the results value.
+Returns the results value.
 
-=item set_page($i)
+=head2 set_page($i)
 
 Set the page number value.
 
-=item get_page()
+=head2 get_page()
 
-Return the page value.
+Returns the page value.
 
-=item get_start_index()
-
-Return the start_index based on the page number and results.
-
-=item get_start_index_var($page, $results)
-
-Return the start_index value for the specific variables.
-
-=item set_categories_language($cat_lang)
+=head2 set_categories_language($cat_lang)
 
 Set the categories language. (ex: en-US)
 
-=item get_categories_language()
+=head2 get_categories_language()
 
-Return the categories language value.
+Returns the categories language value.
 
-=item set_categories_url()
+=head2 get_categories_url()
 
-Can't be changed!
+Returns the YouTube categories URL.
 
-=item get_categories_url()
+=head2 get_educategories_url()
 
-Return the YouTube categories URL.
+Returns the EDU YouTube categories URL.
 
-=item set_educategories_url()
-
-Can't be changed!
-
-=item get_educategories_url()
-
-Return the EDU YouTube categories URL.
-
-=item set_debug($level_num)
+=head2 set_debug($level_num)
 
 Set the debug level. (valid: 0, 1, 2)
 
-=item get_debug()
+=head2 get_debug()
 
-Return the debug value.
+Returns the debug value.
 
-=item set_config_dir($dir)
+=head2 set_config_dir($dir)
 
 Set a configuration directory.
 
-=item get_config_dir()
+=head2 get_config_dir()
 
 Get the configuration directory.
 
-=item set_escape_utf8($bool)
+=head2 set_escape_utf8($bool)
 
 If true, it escapes the keywords using uri_escape_utf8.
 
-=item get_escape_utf8()
+=head2 get_escape_utf8()
 
-Return true if escape_utf8 is used.
+Returns true if escape_utf8 is used.
 
-=item set_feeds_url()
+=head2 get_feeds_url()
 
-Can't be changed!
+Returns the GData feeds URL.
 
-=item get_feeds_url()
-
-Return the GData feeds URL.
-
-=item set_google_login_url()
-
-Can't be changed!
-
-=item get_google_login_url()
-
-Return the Google Client login URL.
-
-=item set_http_proxy($value)
+=head2 set_http_proxy($value)
 
 Set http_proxy value. $value must be a valid URL or undef.
 
-=item get_http_proxy()
+=head2 get_http_proxy()
 
-Return the http_proxy value.
+Returns the http_proxy value.
 
-=item set_lwp_agent($agent)
+=head2 set_lwp_agent($agent)
 
 Set a user agent for the LWP module.
 
-=item get_lwp_agent()
+=head2 get_lwp_agent()
 
-Return the user agent value.
+Returns the user agent value.
 
-=item set_lwp_env_proxy($bool)
+=head2 set_lwp_env_proxy($bool)
 
 Set the env_proxy value for LWP.
 
-=item get_lwp_env_proxy()
+=head2 get_lwp_env_proxy()
 
-Return the env_proxy value.
+Returns the env_proxy value.
 
-=item set_lwp_keep_alive($bool)
+=head2 set_lwp_keep_alive($bool)
 
 Set the keep_alive value for LWP.
 
-=item get_lwp_keep_alive()
+=head2 get_lwp_keep_alive()
 
-Return the keep_alive value.
+Returns the keep_alive value.
 
-=item set_lwp_timeout($sec).
+=head2 set_lwp_timeout($sec).
 
 Set the timeout value for LWP, in seconds. Default: 60
 
-=item get_lwp_timeout()
+=head2 get_lwp_timeout()
 
-Return the timeout value.
+Returns the timeout value.
 
-=item set_prefer_https($bool)
+=head2 get_oauth_url()
 
-Will use https:// protocol instead of http://.
+Returns the OAuth URL.
 
-=item get_prefer_https()
+=head2 get_video_info_url()
 
-Will return the value of prefer_https.
+Returns the video_info URL.
 
-=item set_video_info_url()
+=head2 get_video_info_args()
 
-Can't be changed!
+Returns the video_info arguments.
 
-=item get_video_info_url()
+=head1 AUTHOR
 
-Return the video_info URL.
-
-=item set_video_info_args()
-
-Can't be changed!
-
-=item get_video_info_args()
-
-Return the video_info arguments.
-
-=back
+Trizen, C<< <trizenx at gmail.com> >>
 
 =head1 SEE ALSO
 
