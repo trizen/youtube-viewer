@@ -2534,12 +2534,17 @@ sub download_video {
         }
     }
     elsif ($opt{download_and_play}) {
-        system $opt{mplayer}, $title;
 
+        update_mplayer_arguments();
+        my @mplayer_line =
+          ($opt{mplayer}, get_quotewords(qr/\s+/, 1, join(" ", grep { defined && /\S/ } values %MPLAYER)));
+
+        say "@mplayer_line" if $yv_obj->get_debug;
+
+        system @mplayer_line, $title;
         if ($? == 0 and $opt{remove_played_file}) {
             unlink $title;
         }
-
     }
 
     return 1;
