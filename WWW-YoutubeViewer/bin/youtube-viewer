@@ -212,6 +212,8 @@ my %CONFIG = (
     thousand_separator   => q{,},
     downloads_folder     => curdir(),
     keep_original_video  => 0,
+    download_and_play    => 0,
+    remove_played_file   => 0,
     ffmpeg_command       => 'ffmpeg -i %s %s',
     convert_to           => undef,
 );
@@ -495,6 +497,8 @@ Other options:
    -N  --noconfig       : start the $appname with the default config
    -I  --non-interactive: do not prompt for the first user input
    -q  --quiet          : do not display any warning
+   -dp --downl-play     : play the video after download (with -d)
+   -rp --rem-played     : delete a local video after played (with -dp)
    --really-quiet       : do not display any warning or output
    --use-colors!        : use ANSI colors for text
    --convert-to=FORMAT  : convert video to a specific format (with -d)
@@ -1126,17 +1130,19 @@ sub parse_arguments {
         'caption=s'        => \$opt{caption},
         'fullscreen|fs|f!' => \$opt{fullscreen},
 
-        'lwp-download|L!'    => \$opt{lwp_downloading},
-        'clobber!'           => \$opt{clobber},
-        'info|i|show-info=s' => \$opt{show_video_info},
-        'get-term-width'     => \$opt{adj_for_term_width},
-        'page=i'             => \$opt{page},
-        'novideo|n!'         => \$opt{novideo},
-        'results=i'          => \$opt{results},
-        'shuffle|s!'         => \$opt{shuffle_playlist},
-        'more|m!'            => \$opt{more_results},
-        'gdata-url=s'        => \$opt{get_gdata_url},
-        'gcap=s'             => \$opt{gcap},
+        'lwp-download|L!'                   => \$opt{lwp_downloading},
+        'dp|downl-play|download_and_play!'  => \$opt{download_and_play},
+        'rp|rem-played|remove_played_file!' => \$opt{remove_played_file},
+        'clobber!'                          => \$opt{clobber},
+        'info|i|show-info=s'                => \$opt{show_video_info},
+        'get-term-width'                    => \$opt{adj_for_term_width},
+        'page=i'                            => \$opt{page},
+        'novideo|n!'                        => \$opt{novideo},
+        'results=i'                         => \$opt{results},
+        'shuffle|s!'                        => \$opt{shuffle_playlist},
+        'more|m!'                           => \$opt{more_results},
+        'gdata-url=s'                       => \$opt{get_gdata_url},
+        'gcap=s'                            => \$opt{gcap},
 
         'quiet|q!'      => \$opt{quiet},
         'really-quiet!' => \$opt{really_quiet},
@@ -2478,17 +2484,6 @@ sub download_video {
       : $streaming->{streaming}{type} =~ /\b3gpp?\b/i ? q{.3gp}
       :                                                 q{.mp4};
 
-    if ($opt{skip_if_exists} and -e $title) {
-        say "** Video '$title' already exists. Skipping...";
-        return 1;
-    }
-
-    my $i = 0;
-    while (-e $title and not $opt{clobber} and ++$i) {
-        my $last_i = $i > 1 ? $i - 1 : q{/};
-        $title =~ s{(?:_$last_i)?(\.\w{3,4})$}{_$i$1};
-    }
-
     if (not -d $opt{downloads_folder}) {
         require File::Path;
         unless (File::Path::make_path($opt{downloads_folder})) {
@@ -2503,12 +2498,23 @@ sub download_video {
 
     $title = catfile($opt{downloads_folder}, $title);
 
-    if ($opt{download_with_wget} and not $opt{lwp_downloading}) {
-        system "wget", ($opt{clobber} ? () : q{-nc}), $streaming->{streaming}{url}, q{-O}, $title;
-        return if $?;
+    if ($opt{skip_if_exists} and -e $title) {
+        print STDERR "** Video '$title' already exists. Skipping...\n";
     }
     else {
-        $yv_obj->lwp_mirror($streaming->{streaming}{url}, $title);
+        my $i = 0;
+        while (-e $title and not $opt{clobber} and ++$i) {
+            my $last_i = $i > 1 ? $i - 1 : q{/};
+            $title =~ s{(?:_$last_i)?(\.\w{3,4})$}{_$i$1};
+        }
+
+        if ($opt{download_with_wget} and not $opt{lwp_downloading}) {
+            system "wget", ($opt{clobber} ? () : q{-nc}), $streaming->{streaming}{url}, q{-O}, $title;
+            return if $?;
+        }
+        else {
+            $yv_obj->lwp_mirror($streaming->{streaming}{url}, $title);
+        }
     }
 
     if (defined $opt{convert_to}) {
@@ -2525,6 +2531,19 @@ sub download_video {
         if (not $? and not $opt{keep_original_video}) {
             unlink $title
               or warn colored("\n[!] Can't unlink file '$title': $!", 'bold red') . "\n\n";
+        }
+    }
+    elsif ($opt{download_and_play}) {
+
+        update_mplayer_arguments();
+        my @mplayer_line =
+          ($opt{mplayer}, get_quotewords(qr/\s+/, 1, join(" ", grep { defined && /\S/ } values %MPLAYER)));
+
+        say "@mplayer_line" if $yv_obj->get_debug;
+
+        system @mplayer_line, $title;
+        if ($? == 0 and $opt{remove_played_file}) {
+            unlink $title;
         }
     }
 
