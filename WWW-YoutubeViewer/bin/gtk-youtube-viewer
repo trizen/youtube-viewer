@@ -1830,7 +1830,7 @@ sub find_terminal {
 sub get_options_as_arguments {
     my @args;
     my %options = (
-                   'non-interactive' => q{},
+                   'no-interactive' => q{},
                    'orderby'         => $CONFIG{orderby},
                    'time'            => $CONFIG{time_sort},
                    'resolution'      => $CONFIG{resolution},
