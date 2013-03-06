@@ -204,7 +204,7 @@ my %CONFIG = (
     use_lower_cache      => 0,
     results_with_details => 0,
     results_with_colors  => 0,
-    non_interactive      => 0,
+    interactive          => 1,
     adj_for_term_width   => $constant{win32} ^ 1,
     download_with_wget   => $constant{win32} ^ 1,
     access_token         => undef,
@@ -495,7 +495,7 @@ Other options:
    -L  --lwp-download!  : download the videos with LWP (default: wget)
    -U  --update-config  : update the configuration file before exit
    -N  --noconfig       : start the $appname with the default config
-   -I  --non-interactive: do not prompt for the first user input
+   -I  --interactive    : prompt for the first user input
    -q  --quiet          : do not display any warning
    -dp --downl-play     : play the video after download (with -d)
    -rp --rem-played     : delete a local video after played (with -dp)
@@ -1108,7 +1108,7 @@ sub parse_arguments {
         'download|d!'              => \$opt{download_video},
         'safe-search|safeSearch=s' => \$opt{safe_search},
         'hd|high-definition!'      => \$opt{hd},
-        'I|non-interactive'        => \$opt{non_interactive},
+        'I|interactive!'           => \$opt{interactive},
         'convert-to|convert_to=s'  => \$opt{convert_to},
         'ffmpeg-command=s'         => \$opt{ffmpeg_command},
         'keep-original-video!'     => \$opt{keep_original_video},
@@ -1176,7 +1176,7 @@ for (my $i = 0 ; $i <= $#ARGV ; $i++) {
 if (my @keywords = grep chr ord ne q{-}, @ARGV) {
     print_videos($yv_obj->search(@keywords));
 }
-elsif (-t and not $opt{non_interactive}) {
+elsif (-t and $opt{interactive}) {
     first_user_input();
 }
 else {
