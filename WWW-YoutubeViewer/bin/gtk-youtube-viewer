@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 18 February 2013
+#  Latest edit on: 03 March 2013
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -161,21 +161,20 @@ my %CONFIG = (
         eval { require threads };
         $@ ? 0 : 1;
     },
-    use_threads_for_thumbs   => 0,
-    show_comments_by_default => 0,
-    hpaned_position          => 420,
-    search_channels          => 0,
-    search_playlists         => 0,
-    access_token             => undef,
-    refresh_token            => undef,
-    thousand_separator       => q{,},
-    perl_bin                 => $^X,
-    default_thumb            => 'default',
-    downloads_folder         => $ENV{'HOME'},
-    browser                  => undef,
-    terminal                 => find_terminal(),
-    cli_youtube_viewer       => $cli_youtube_viewer,
-    users_list               => catfile($config_dir, 'youtube_users.txt'),
+    use_threads_for_thumbs => 0,                                           # not very stable
+    hpaned_position        => 420,
+    search_channels        => 0,
+    search_playlists       => 0,
+    access_token           => undef,
+    refresh_token          => undef,
+    thousand_separator     => q{,},
+    perl_bin               => $^X,
+    default_thumb          => 'default',
+    downloads_folder       => $ENV{'HOME'},
+    browser                => undef,
+    terminal               => find_terminal(),
+    cli_youtube_viewer     => $cli_youtube_viewer,
+    users_list             => catfile($config_dir, 'youtube_users.txt'),
 );
 
 my %MPLAYER;
@@ -208,7 +207,7 @@ EOD
 }
 
 # Creating config unless it exists
-unless (-e $config_file) {
+if (not -e $config_file or -z _) {
     dump_configuration();
 }
 
@@ -488,12 +487,13 @@ apply_configuration();
 
 # YouTube usernames
 my %users_table = map { lc($_) => $_ } (
-                                'AtGoogleTalks',  'AtheistsAreSkeptics', 'Best0fScience',        'DiscoveryTV',
-                                'Google',         'GoogleChrome',        'GoogleTechTalks',      'KhanAcademy',
-                                'NASAtelevision', 'NatCen4ScienceEd',    'GoogleDevelopers',     'RichardDawkinsDotNet',
-                                'ScienceChannel', 'SpaceRip',            'AnimalPlanetTV',       'TEDtalksDirector',
-                                'MIT',            'SixtySymbols',        'SpitzerScienceCenter', 'EvolutionDocumentary',
-                                'FOSDEMtalks'
+                                    'AtGoogleTalks',    'AtheistsAreSkeptics', 'Best0fScience',        'Google',
+                                    'GoogleChrome',     'GoogleTechTalks',     'KhanAcademy',          'NASAtelevision',
+                                    'NatCen4ScienceEd', 'GoogleDevelopers',    'VSauce',               'Gotbletu',
+                                    'ScienceChannel',   'SpaceRip',            'TEDtalksDirector',     'ThunderF00t',
+                                    'MIT',              'SixtySymbols',        'SpitzerScienceCenter', 'SciShow',
+                                    'UCBerkeley',       'UCTelevision',        'FOSDEMtalks',          'BigThink',
+                                    'ProfessorFink',    'StanfordUniversity',  'UCTVSeminars',         '1Veritasium',
                                        );
 set_usernames();
 
