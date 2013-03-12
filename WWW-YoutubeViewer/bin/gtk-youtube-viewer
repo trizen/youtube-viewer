@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 03 March 2013
+#  Latest edit on: 12 March 2013
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -114,7 +114,7 @@ my %CONFIG = (
     lower_cache       => 1000,
     lower_cache_min   => 3,
     mplayer           => get_mplayer(),
-    mplayer_srt_args  => '-unicode -utf8 -sub %s',
+    mplayer_srt_args  => '-sub %s',
     mplayer_arguments => '-prefer-ipv4 -really-quiet -cache %d -cache-min %d',
 
     # GUI options
@@ -1745,10 +1745,14 @@ sub play_videos {
                                           )
                            );
 
-        say "@mplayer_line" if $yv_obj->get_debug;
+        if ($yv_obj->get_debug) {
+            print STDERR "@mplayer_line\n";
+            print STDERR "$streaming->{streaming}{url}\n" if $yv_obj->get_debug() == 2;
+            @mplayer_line = grep { !/^--?really-quiet\z/ } @mplayer_line;
+        }
 
+        # Execute mplayer:
         system join(q{ }, map { quotemeta } @mplayer_line, $streaming->{streaming}{url}) . q{ &};
-        return if $?;
     }
 
     return 1;
@@ -1831,11 +1835,11 @@ sub get_options_as_arguments {
     my @args;
     my %options = (
                    'no-interactive' => q{},
-                   'orderby'         => $CONFIG{orderby},
-                   'time'            => $CONFIG{time_sort},
-                   'resolution'      => $CONFIG{resolution},
-                   'download-dir'    => rel2abs($CONFIG{downloads_folder}),
-                   'fullscreen'      => $CONFIG{fullscreen} ? q{} : undef,
+                   'orderby'        => $CONFIG{orderby},
+                   'time'           => $CONFIG{time_sort},
+                   'resolution'     => $CONFIG{resolution},
+                   'download-dir'   => rel2abs($CONFIG{downloads_folder}),
+                   'fullscreen'     => $CONFIG{fullscreen} ? q{} : undef,
                   );
 
     while (my ($argv, $value) = each %options) {

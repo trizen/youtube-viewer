@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 18 February 2013
+#  Latest edit on: 12 March 2013
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -168,7 +168,7 @@ my %CONFIG = (
     lower_cache       => 2000,
     lower_cache_min   => 3,
     mplayer           => get_mplayer(),
-    mplayer_srt_args  => '-unicode -utf8 -sub %s',
+    mplayer_srt_args  => '-sub %s',
     mplayer_arguments => '-prefer-ipv4 -really-quiet -cache %d -cache-min %d',
 
     # Youtube options
@@ -495,7 +495,7 @@ Other options:
    -L  --lwp-download!  : download the videos with LWP (default: wget)
    -U  --update-config  : update the configuration file before exit
    -N  --noconfig       : start the $appname with the default config
-   -I  --interactive    : prompt for the first user input
+   -I  --interactive!   : prompt for the first user input
    -q  --quiet          : do not display any warning
    -dp --downl-play     : play the video after download (with -d)
    -rp --rem-played     : delete a local video after played (with -dp)
