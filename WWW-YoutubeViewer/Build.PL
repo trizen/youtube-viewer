@@ -5,64 +5,62 @@ use strict;
 use warnings;
 use Module::Build;
 
-# Get options
-my ($gtk_youtube_viewer);
-{
-    local @ARGV = grep /^--?(?:no-?)?gtk-youtube-viewer\z/, @ARGV;
-    if (@ARGV) {
-        require Getopt::Long;
-        Getopt::Long::GetOptions('gtk-youtube-viewer!' => \$gtk_youtube_viewer,);
-    }
-}
+my $gtk_youtube_viewer = 0;
 
 my $builder = Module::Build->new(
-    module_name        => 'WWW::YoutubeViewer',
-    license            => 'perl',
-    dist_author        => q{Trizen <trizenx@gmail.com>},
-    dist_version_from  => 'lib/WWW/YoutubeViewer.pm',
-    build_requires     => {'Test::More' => 0,},
-    configure_requires => {
-                           'Module::Build' => 0,
-                          },
-    script_files => ['bin/youtube-viewer', ($gtk_youtube_viewer ? 'bin/gtk-youtube-viewer' : ()),],
-    requires => {
-        'perl'                  => '5.016',
-        'Data::Dump'            => 0,
-        'File::Spec::Functions' => 0,
-        'File::Path'            => 0,
-        'Getopt::Long'          => 0,
-        'HTTP::Request'         => 0,
-        'LWP::UserAgent'        => 0,
-        'Term::ANSIColor'       => 0,
-        'Term::UI'              => 0,
-        'Text::ParseWords'      => 0,
-        'Text::Wrap'            => 0,
-        'URI::Escape'           => 0,
+                                 module_name        => 'WWW::YoutubeViewer',
+                                 license            => 'perl',
+                                 dist_author        => q{Șuteu "Trizen" Daniel <trizenx@gmail.com>},
+                                 dist_version_from  => 'lib/WWW/YoutubeViewer.pm',
+                                 build_requires     => {'Test::More' => 0},
+                                 configure_requires => {'Module::Build' => 0},
+                                 get_options        => {
+                                                 'gtk-youtube-viewer' => {
+                                                                          type  => '!',
+                                                                          store => \$gtk_youtube_viewer,
+                                                                         },
+                                                },
+                                 add_to_cleanup     => ['WWW-YoutubeViewer-*'],
+                                 create_makefile_pl => 'traditional',
+                                );
 
-        $gtk_youtube_viewer
-        ? ('Gtk2' => 0)
-        : (),
-    },
-    recommends => {
-        'List::Util'              => 0,    # to shuffle the playlists (--shuffle)
-        'HTML::Entities'          => 0,    # used when searching channels
-        'File::Temp'              => 0,    # for posting comments
-        'LWP::Protocol::https'    => 0,    # for HTTPS protocol and login support
-        'Term::ReadKey'           => 0,    # to get the terminal width and for password input
-        'Term::ReadLine::Gnu::XS' => 0,    # for a better user input support
-        'XML::Fast'               => 0,    # faster XML to HASH conversion.
+$builder->recommends(
+    'List::Util'              => 0,    # to shuffle the playlists (--shuffle)
+    'HTML::Entities'          => 0,    # used when searching channels
+    'File::Temp'              => 0,    # for posting comments
+    'LWP::Protocol::https'    => 0,    # for HTTPS protocol and login support
+    'Term::ReadKey'           => 0,    # to get the terminal width and for password input
+    'Term::ReadLine::Gnu::XS' => 0,    # for a better user input support
+    'XML::Fast'               => 0,    # faster XML to HASH conversion.
 
-        $gtk_youtube_viewer
-        ? (
-           'threads'       => 0,           # threads support
-           'Thread::Queue' => 0,           # threads support
-          )
-        : (),
-    },
-    add_to_cleanup     => ['WWW-YoutubeViewer-*'],
-    create_makefile_pl => 'traditional',
+    $gtk_youtube_viewer
+    ? (
+       'threads'       => 0,           # threads support
+       'Thread::Queue' => 0,           # threads support
+      )
+    : (),
 );
 
+$builder->requires(
+    'perl'                  => '5.016',
+    'Data::Dump'            => 0,
+    'File::Spec::Functions' => 0,
+    'File::Path'            => 0,
+    'Getopt::Long'          => 0,
+    'HTTP::Request'         => 0,
+    'LWP::UserAgent'        => 0,
+    'Term::ANSIColor'       => 0,
+    'Term::UI'              => 0,
+    'Text::ParseWords'      => 0,
+    'Text::Wrap'            => 0,
+    'URI::Escape'           => 0,
+
+    $gtk_youtube_viewer
+    ? ('Gtk2' => 0)
+    : (),
+);
+
+$builder->script_files(['bin/youtube-viewer', ($gtk_youtube_viewer ? 'bin/gtk-youtube-viewer' : ())]);
 $builder->create_build_script();
 
 # Intalling files for GTK YouTube Viewer
@@ -97,11 +95,13 @@ if ($gtk_youtube_viewer) {
     my $desktop_file = q(gtk-youtube-viewer.desktop);
     my $glade_file   = q(gtk-youtube-viewer.glade);
 
-    copy(catfile($main_dir, qw(bin youtube-viewer)) => catfile($gtk_youtube_viewer_dir, qw(youtube-viewer)))
-      or die "Copy failed: $!";
-
-    copy(catfile($main_share_dir, $desktop_file) => catfile($applications_dir, $desktop_file))     or die "Copy failed: $!";
-    copy(catfile($main_share_dir, $glade_file)   => catfile($gtk_youtube_viewer_dir, $glade_file)) or die "Copy failed: $!";
+    foreach my $dest (
+                      [catfile($main_share_dir, $desktop_file)          => catfile($applications_dir,       $desktop_file)],
+                      [catfile($main_dir,       qw(bin youtube-viewer)) => catfile($gtk_youtube_viewer_dir, qw(youtube-viewer))],
+                      [catfile($main_share_dir, $glade_file)            => catfile($gtk_youtube_viewer_dir, $glade_file)],
+      ) {
+        copy($dest->[0], $dest->[1]) or die "Can't copy `$dest->[0]' to `$dest->[1]': $!";
+    }
 
     foreach my $copy_instructions (
                                    {
