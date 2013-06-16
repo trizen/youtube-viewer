@@ -25,13 +25,14 @@ my $builder = Module::Build->new(
                                 );
 
 $builder->recommends(
-    'List::Util'              => 0,    # to shuffle the playlists (--shuffle)
+    'List::Util'              => 0,    # to shuffle the playlists (--shuffle, -s)
     'HTML::Entities'          => 0,    # used when searching channels
     'File::Temp'              => 0,    # for posting comments
     'LWP::Protocol::https'    => 0,    # for HTTPS protocol and login support
-    'Term::ReadKey'           => 0,    # to get the terminal width and for password input
+    'Term::ReadKey'           => 0,    # to get the terminal width
     'Term::ReadLine::Gnu::XS' => 0,    # for a better user input support
     'XML::Fast'               => 0,    # faster XML to HASH conversion.
+    'Text::CharWidth'         => 0,    # to print the results in a fixed-with format (--fixed-width, -W)
 
     $gtk_youtube_viewer
     ? (

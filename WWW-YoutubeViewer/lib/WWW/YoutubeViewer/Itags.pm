@@ -3,6 +3,8 @@ package WWW::YoutubeViewer::Itags;
 use 5.010;
 use strict;
 
+no if $] >= 5.018, warnings => 'experimental::smartmatch';
+
 =head1 NAME
 
 WWW::YoutubeViewer::Itags - Get the YouTube itags.

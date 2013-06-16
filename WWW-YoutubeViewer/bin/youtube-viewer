@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 12 March 2013
+#  Latest edit on: 16 June 2013
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -106,6 +106,9 @@ use 5.016;
 #use warnings;          # debug only
 
 use File::Spec::Functions qw(catdir catfile curdir path rel2abs tmpdir);
+
+no if $] >= 5.018, warnings => 'experimental::smartmatch';
+no if $] >= 5.018, warnings => 'deprecated';
 
 my $appname  = 'Youtube Viewer';
 my $version  = '3.0.7';
@@ -204,6 +207,7 @@ my %CONFIG = (
     use_lower_cache      => 0,
     results_with_details => 0,
     results_with_colors  => 0,
+    results_fixed_width  => 0,
     interactive          => 1,
     adj_for_term_width   => $constant{win32} ^ 1,
     download_with_wget   => $constant{win32} ^ 1,
@@ -492,6 +496,7 @@ Other options:
    -s  --shuffle!       : shuffle the playlist before playing (with -A)
    -C  --colorful!      : use colors to delimit the video results
    -D  --details!       : a new look for the results, with more details
+   -W  --fixed-width!   : adjust the results to fit inside the term width
    -L  --lwp-download!  : download the videos with LWP (default: wget)
    -U  --update-config  : update the configuration file before exit
    -N  --noconfig       : start the $appname with the default config
@@ -1125,10 +1130,11 @@ sub parse_arguments {
         'mplayer_srt_args|mplayer-srt-arguments|mplayer-srt-args=s' => \$opt{mplayer_srt_args},
 
         # Others
-        'colorful|C!'      => \$opt{results_with_colors},
-        'details|D!'       => \$opt{results_with_details},
-        'caption=s'        => \$opt{caption},
-        'fullscreen|fs|f!' => \$opt{fullscreen},
+        'colorful|C!'       => \$opt{results_with_colors},
+        'details|D!'        => \$opt{results_with_details},
+        'fixed-width|W|fw!' => \$opt{results_fixed_width},
+        'caption=s'         => \$opt{caption},
+        'fullscreen|fs|f!'  => \$opt{fullscreen},
 
         'lwp-download|L!'                   => \$opt{lwp_downloading},
         'dp|downl-play|download_and_play!'  => \$opt{download_and_play},
@@ -2687,6 +2693,12 @@ sub print_videos {
     my $url    = $results->{url};
     my $videos = $results->{results};
 
+    state $term_width = 80;
+    if ($opt{adj_for_term_width} and $opt{results_fixed_width}) {
+        adj_for_term_width();
+        $term_width = length($constant{dash_line});
+    }
+
     my $num = 0;
     foreach my $video (@{$videos}) {
         if ($opt{results_with_details}) {
@@ -2715,6 +2727,35 @@ sub print_videos {
                    colored("by $video->{author}",                      'bold yellow'),
                    colored($yv_utils->format_time($video->{duration}), 'bold bright_blue'),
                   );
+        }
+        elsif ($opt{results_fixed_width}) {
+
+            require List::Util;
+            require Text::CharWidth;
+
+            my $max_author_len = List::Util::max(map { length($_->{author}) } @{$videos});
+            my $time_width = List::Util::first(sub { $_->{duration} >= 3600 }, @{$videos}) ? 8 : 6;
+            my $title_length = $term_width - ($max_author_len + $time_width + 2 + 3 + 1);
+
+            print "\n" if $num == 0;
+            foreach my $vid (@{$videos}) {
+
+                my $cp_title = $vid->{title};
+
+                my $title_width_len = Text::CharWidth::mbswidth($cp_title);
+                if ($title_width_len != $title_length) {
+                    while (Text::CharWidth::mbswidth($cp_title) >= $title_length) {
+                        chop $cp_title;
+                    }
+
+                    $cp_title .= ' ' x ($title_length - Text::CharWidth::mbswidth($cp_title));
+                }
+
+                printf "%s. %s %*s %*s\n", colored(sprintf('%2d', ++$num), 'bold'),
+                  $cp_title,
+                  $max_author_len, $vid->{author}, $time_width, $yv_utils->format_time($vid->{duration});
+            }
+            last;
         }
         else {
             print "\n" if $num == 0;

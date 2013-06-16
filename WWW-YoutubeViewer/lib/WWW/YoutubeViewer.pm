@@ -1,10 +1,13 @@
 package WWW::YoutubeViewer;
 
+no if $] >= 5.018, warnings => 'experimental::smartmatch';
+
 use utf8;
 use strict;
 
 use autouse 'XML::Fast'   => qw{ xml2hash($;%) };
 use autouse 'URI::Escape' => qw{ uri_escape uri_escape_utf8 uri_unescape };
+
 
 =head1 NAME
 

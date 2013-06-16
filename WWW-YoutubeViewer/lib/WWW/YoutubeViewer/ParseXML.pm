@@ -2,6 +2,8 @@ package WWW::YoutubeViewer::ParseXML;
 
 use 5.014;
 
+no if $] >= 5.018, warnings => 'experimental::smartmatch';
+
 =head1 NAME
 
 WWW::YoutubeViewer::ParseXML - Convert XML to a HASH ref structure.

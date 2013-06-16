@@ -25,6 +25,8 @@
 use 5.010;
 use strict;
 
+no if $] >= 5.018, warnings => 'experimental::smartmatch';
+
 #use lib qw(../lib);    # devel only
 #use warnings;          # debug only
 
