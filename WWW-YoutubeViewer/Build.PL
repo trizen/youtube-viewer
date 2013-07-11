@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 
+use utf8;
 use 5.010;
 use strict;
 use warnings;
@@ -8,31 +9,60 @@ use Module::Build;
 my $gtk_youtube_viewer = 0;
 
 my $builder = Module::Build->new(
-                                 module_name        => 'WWW::YoutubeViewer',
-                                 license            => 'perl',
-                                 dist_author        => q{Șuteu "Trizen" Daniel <trizenx@gmail.com>},
-                                 dist_version_from  => 'lib/WWW/YoutubeViewer.pm',
-                                 build_requires     => {'Test::More' => 0},
-                                 configure_requires => {'Module::Build' => 0},
-                                 get_options        => {
-                                                 'gtk-youtube-viewer' => {
-                                                                          type  => '!',
-                                                                          store => \$gtk_youtube_viewer,
-                                                                         },
-                                                },
-                                 add_to_cleanup     => ['WWW-YoutubeViewer-*'],
-                                 create_makefile_pl => 'traditional',
+    module_name        => 'WWW::YoutubeViewer',
+    license            => 'perl',
+    dist_author        => q{Șuteu "Trizen" Daniel <trizenx@gmail.com>},
+    dist_version_from  => 'lib/WWW/YoutubeViewer.pm',
+    build_requires     => {'Test::More' => 0},
+    configure_requires => {'Module::Build' => 0},
+    get_options        => {
+                    'gtk-youtube-viewer' => {
+                                             type  => '!',
+                                             store => \$gtk_youtube_viewer,
+                                            },
+                   },
+    auto_features => {
+        shuffle_playlists_support => {
+                                      description => "Shuffle the playlists before playing (--shuffle, -s)",
+                                      requires    => {
+                                                   'List::Util' => 0,
+                                                  },
+                                     },
+        https_support => {
+                          description => "HTTPS protocol support and authentication support",
+                          requires    => {
+                                       'LWP::Protocol::https' => 0,
+                                      },
+                         },
+        post_comments_support => {
+                                  description => "Post YouTube comments to videos",
+                                  requires    => {
+                                               'File::Temp'           => 0,
+                                               'LWP::Protocol::https' => 0,
+                                              },
+                                 },
+        channels_support => {
+                             description => "Search for YouTube channels",
+                             requires    => {
+                                          'HTML::Entities' => 0,
+                                         },
+                            },
+        fixed_width_support => {
+                                description => "Print the results in a fixed-width format (--fixed-width, -W)",
+                                requires    => {
+                                             'Text::CharWidth' => 0,
+                                            },
+                               },
+
+                     },
+    add_to_cleanup     => ['WWW-YoutubeViewer-*'],
+    create_makefile_pl => 'traditional',
                                 );
 
 $builder->recommends(
-    'List::Util'              => 0,    # to shuffle the playlists (--shuffle, -s)
-    'HTML::Entities'          => 0,    # used when searching channels
-    'File::Temp'              => 0,    # for posting comments
-    'LWP::Protocol::https'    => 0,    # for HTTPS protocol and login support
     'Term::ReadKey'           => 0,    # to get the terminal width
     'Term::ReadLine::Gnu::XS' => 0,    # for a better user input support
     'XML::Fast'               => 0,    # faster XML to HASH conversion.
-    'Text::CharWidth'         => 0,    # to print the results in a fixed-with format (--fixed-width, -W)
 
     $gtk_youtube_viewer
     ? (
@@ -97,9 +127,11 @@ if ($gtk_youtube_viewer) {
     my $glade_file   = q(gtk-youtube-viewer.glade);
 
     foreach my $dest (
-                      [catfile($main_share_dir, $desktop_file)          => catfile($applications_dir,       $desktop_file)],
-                      [catfile($main_dir,       qw(bin youtube-viewer)) => catfile($gtk_youtube_viewer_dir, qw(youtube-viewer))],
-                      [catfile($main_share_dir, $glade_file)            => catfile($gtk_youtube_viewer_dir, $glade_file)],
+                      [catfile($main_share_dir, $desktop_file) => catfile($applications_dir, $desktop_file)],
+                      [catfile($main_dir, qw(bin youtube-viewer)) =>
+                         catfile($gtk_youtube_viewer_dir, qw(youtube-viewer))
+                      ],
+                      [catfile($main_share_dir, $glade_file) => catfile($gtk_youtube_viewer_dir, $glade_file)],
       ) {
         copy($dest->[0], $dest->[1]) or die "Can't copy `$dest->[0]' to `$dest->[1]': $!";
     }
