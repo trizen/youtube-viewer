@@ -1106,7 +1106,7 @@ sub parse_arguments {
         'prefer-webm|prefer_webm!'   => \$opt{prefer_webm},
 
         'noconfig|N'               => \$opt{noconfig},
-        'playlists|p:s'            => \$opt{search_playlists},
+        'playlists|p|pl:s'         => \$opt{search_playlists},
         'course|course-id=s'       => \$opt{course_id},
         'play-playlists|pp=s'      => \$opt{play_playlists},
         'debug:1'                  => \$opt{debug},
