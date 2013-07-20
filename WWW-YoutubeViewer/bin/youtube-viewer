@@ -1185,6 +1185,9 @@ if (my @keywords = grep chr ord ne q{-}, @ARGV) {
 elsif (-t and $opt{interactive}) {
     first_user_input();
 }
+elsif (-t STDOUT and not -t STDIN) {
+    print_videos($yv_obj->search(<>));
+}
 else {
     main_quit($opt{_error});
 }
