@@ -70,6 +70,12 @@ if (not -e $cli_youtube_viewer) {
     $cli_youtube_viewer = rel2abs('./youtube-viewer');
 }
 
+if (not -e $cli_youtube_viewer) {
+    require File::Basename;
+    my $dir = File::Basename::dirname(rel2abs($0));
+    $cli_youtube_viewer = catfile($dir, 'youtube-viewer');
+}
+
 # Locating gcap
 my $gcap;
 foreach my $path (path()) {
