@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 12 March 2013
+#  Latest edit on: 18 August 2013
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -40,7 +40,7 @@ use File::Spec::Functions qw(
   );
 
 my $appname  = 'GTK Youtube Viewer';
-my $version  = '3.0.7';
+my $version  = '3.0.7_01';
 my $execname = 'gtk-youtube-viewer';
 
 # Developer key

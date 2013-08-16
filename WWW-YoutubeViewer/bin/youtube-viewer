@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 16 June 2013
+#  Latest edit on: 18 August 2013
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -111,7 +111,7 @@ no if $] >= 5.018, warnings => 'experimental::smartmatch';
 no if $] >= 5.018, warnings => 'deprecated';
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.0.7';
+my $version  = '3.0.7_01';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
