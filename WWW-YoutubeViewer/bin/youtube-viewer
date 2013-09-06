@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 18 August 2013
+#  Latest edit on: 06 September 2013
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -111,7 +111,7 @@ no if $] >= 5.018, warnings => 'experimental::smartmatch';
 no if $] >= 5.018, warnings => 'deprecated';
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.0.7_01';
+my $version  = '3.0.8';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
@@ -470,7 +470,7 @@ YouTube options:
    -R --recommended     : show the recommended videos for you *
    -S --subscriptions:s : show the new subscription videos *
    -W --watched         : show the latest watched videos on YouTube *
-   --channel-s          : show the suggested YouTube channels for you *
+   --channel-sugg       : show the suggested YouTube channels for you *
    --subscribe=USER     : subscribe to a user's channel *
    --favorite=ID/URL    : favorite a YouTube video by URL or ID *
    --like=ID/URL        : send a 'like' rating to one or more videos *
@@ -1076,7 +1076,7 @@ sub parse_arguments {
         'subscriptions|newsubscriptionvideos|S:s' => \$opt{newsubscriptionvideos},
         'favorites|favorited-videos|F:s'          => \$opt{favorites},
         'recommended|recommendations|R:s'         => \$opt{recommendations},
-        'watch_history|watched|W:s'               => \$opt{watch_history},
+        'watch_history|watched|w:s'               => \$opt{watch_history},
         'subscribe=s'                             => \$opt{subscribe_channel},
         'favorite=s'                              => \$opt{favorite_video},
         'channel-suggestions'                     => \$opt{channel_suggestions},
