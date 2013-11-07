@@ -10,7 +10,7 @@ lib/WWW/YoutubeViewer/ParseXML.pm
 lib/WWW/YoutubeViewer/RegularExpressions.pm
 lib/WWW/YoutubeViewer/Utils.pm
 Makefile.PL
-MANIFEST
+MANIFEST			This list of files
 META.json
 META.yml
 README

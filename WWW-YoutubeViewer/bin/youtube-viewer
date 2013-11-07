@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 06 September 2013
+#  Latest edit on: 07 November 2013
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -463,9 +463,9 @@ YouTube options:
    --hd                 : search only for videos available in at least 720p
    --page=i             : get results starting with a specific page
    --results=[1-50]     : how many results to display per page
-   -2  -3  -4  -7  -1   : resolutions: 240p, 360p, 480p, 720p or 1080p
-   --resolution=RES     : resolutions: original, 1080, 720, 480, 360, 340,
-                          240, 180, 144
+   -2  -3  -4  -7  -1   : resolutions: 240p, 360p, 480p, 720p and 1080p
+   --resolution=RES     : available resolutions: original, 1080p, 720p,
+                          480p, 360p, 240p, 180p, 144p, audio
    -F --favorites:s     : show the latest favorited videos *
    -R --recommended     : show the recommended videos for you *
    -S --subscriptions:s : show the new subscription videos *
@@ -480,6 +480,7 @@ MPlayer options:
    -f  --fullscreen!    : set the fullscreen mode for mplayer (-fs)
    -n  --novideo!       : play the music only without a video in the foreground
    -l  --use-lc         : use a lower cache for MPlayer (for slow connections)
+   --nocache            : use no cache while streaming videos (for fast connections)
    --cache=i            : set the cache for MPlayer (set: $opt{cache})
    --cache-min=i        : set the cache-min for MPlayer (set: $opt{cache_min})
    --lcache=i           : set the lower-cache for MPlayer (set: $opt{lower_cache})
@@ -516,7 +517,7 @@ Other options:
    --get-captions!      : download the closed captions (with gcap)
    --captions-dir=s     : the directory where to download the .srt files
    --gdata-url=s        : print video results from a valid GData URL
-   --get-term-width     : adjust the text for your terminal width
+   --get-term-width!    : adjust the text for your terminal width
    --login              : will prompt you for login
    --logout             : will delete the authentication key
    --http_proxy=s       : HTTP proxy to use, format 'http://domain.tld:port/'.
@@ -602,17 +603,7 @@ NOTE: Categories and region IDs are case sensitive!
    example, but the mplayer arguments doesn't work for vlc.
    The full command should be: $execname -mplayer=vlc -mplayer-arg=-q
 
-2. Available resolutions: original, 1080, 720, 480, 360, 340, 240, 180, 144
-   1080 = mp4
-   720  = mp4 (unless webm is prefered)
-   480  = flv (unless webm is prefered)
-   360  = flv (unless webm is prefered)
-   340  = mp4 (actually is 360p)
-   240  = flv
-   180  = 3gpp (mp4v, mp4a)
-   144  = 3gpp (mp4v, mp4a)
-
-3. lower_cache and lower_cache_min values are used when -l (--use-lower-cache)
+2. lower_cache and lower_cache_min values are used when -l (--use-lower-cache)
    is specified as argument, or if the resolution of a video is lower than 720p.
 
 ** Arguments
@@ -1120,6 +1111,7 @@ sub parse_arguments {
 
         # MPlayer
         'mplayer=s'                                                 => \$opt{mplayer},
+        'nocache!'                                                  => \$opt{nocache},
         'cache=i'                                                   => \$opt{cache},
         'cache-min|cache_min=i'                                     => \$opt{cache_min},
         'lcache|lower-cache|lower_cache=i'                          => \$opt{lower_cache},
@@ -1141,7 +1133,7 @@ sub parse_arguments {
         'rp|rem-played|remove_played_file!' => \$opt{remove_played_file},
         'clobber!'                          => \$opt{clobber},
         'info|i|show-info=s'                => \$opt{show_video_info},
-        'get-term-width'                    => \$opt{adj_for_term_width},
+        'get-term-width!'                   => \$opt{adj_for_term_width},
         'page=i'                            => \$opt{page},
         'novideo|n!'                        => \$opt{novideo},
         'results=i'                         => \$opt{results},
@@ -2467,10 +2459,10 @@ sub update_mplayer_arguments {
 
     if ($opt{use_lower_cache}
         or not $resolution ~~ [qw(original 1080 720)]) {
-        set_mplayer_arguments($opt{lower_cache}, $opt{lower_cache_min});
+        set_mplayer_arguments($opt{nocache} ? (32, 0) : ($opt{lower_cache}, $opt{lower_cache_min}));
     }
     else {
-        set_mplayer_arguments($opt{cache}, $opt{cache_min});
+        set_mplayer_arguments($opt{nocache} ? (32, 0) : ($opt{cache}, $opt{cache_min}));
     }
 }
 

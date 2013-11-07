@@ -8,7 +8,6 @@ use strict;
 use autouse 'XML::Fast'   => qw{ xml2hash($;%) };
 use autouse 'URI::Escape' => qw{ uri_escape uri_escape_utf8 uri_unescape };
 
-
 =head1 NAME
 
 WWW::YoutubeViewer - A very easy interface to YouTube.
@@ -1122,10 +1121,12 @@ sub _get_pairs_from_info_data {
     }
 
     foreach my $hash_ref (@array) {
-        if (exists $hash_ref->{url} and exists $hash_ref->{sig}) {
+        if (exists $hash_ref->{url}) {
 
             # Add signature
-            $hash_ref->{url} .= "&signature=$hash_ref->{sig}";
+            if (exists $hash_ref->{sig}) {
+                $hash_ref->{url} .= "&signature=$hash_ref->{sig}";
+            }
 
             # Add proxy (if defined http_proxy)
             if (defined(my $proxy_url = $self->get_http_proxy)) {

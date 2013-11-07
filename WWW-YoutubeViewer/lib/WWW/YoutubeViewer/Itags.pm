@@ -46,18 +46,17 @@ Get a HASH ref with the YouTube itags. {resolution => {type => itag}}.
 =cut
 
 sub get_itags {
-    return
-      scalar {
-              'original' => {normal => 38},
-              '1080'     => {normal => 37, webm => 46},
-              '720'      => {normal => 22, webm => 45},
-              '480'      => {normal => 35, webm => 44},
-              '360'      => {normal => 34, webm => 43},
-              '340'      => {normal => 18},
-              '240'      => {normal => 5},
-              '180'      => {normal => 36},
-              '144'      => {normal => 17},
-             };
+    return scalar {
+                   'original' => [38],
+                   '1080'     => [37, 46],                    # 137 -- no audio
+                   '720'      => [22, 45],                    # 136 -- no audio
+                   '480'      => [35, 44],                    # 135 -- no audio
+                   '360'      => [34, 18, 43],                # 134 -- no audio
+                   '240'      => [5],                         # 133 -- no audio
+                   '180'      => [36],
+                   '144'      => [17],                        # 160 -- no audio
+                   'audio'    => [139, 140, 141, 171, 172],
+                  };
 }
 
 =head2 get_resolutions()
@@ -68,11 +67,12 @@ Get a HASH ref with the itags as keys and resolutions as values.
 
 sub get_resolutions {
     my ($self) = @_;
+
     state $itags = $self->get_itags();
     return scalar {
         map {
             my $res = $_;
-            map { $itags->{$res}{$_} => $res } keys %{$itags->{$_}}
+            map { $itags->{$res}[$_] => $res } 0 .. $#{$itags->{$_}}
           } keys %{$itags}
     };
 }
@@ -87,8 +87,11 @@ sub find_streaming_url {
     my ($self, $urls_ref, $prefer_webm, $resolution) = @_;
 
     state $itags       = $self->get_itags();
-    state $resolutions = $self->get_resolutions();
-    state $webm_itags  = [map { $_->{webm} } grep { exists $_->{webm} } values %{$itags}];
+    state $resolutions = $self->get_resolutions($itags);
+
+    if (defined($resolution) and $resolution =~ /^([0-9]+)/) {
+        $resolution = $1;
+    }
 
     my $wanted_itag = defined $resolution ? $itags->{$resolution} : undef;
 
@@ -97,21 +100,10 @@ sub find_streaming_url {
         if (exists $url_ref->{itag} && exists $url_ref->{url}) {
 
             if (defined $wanted_itag) {
-                (
-                 (
-                  $url_ref->{itag} == (
-                                         $prefer_webm && exists $wanted_itag->{webm}
-                                       ? $wanted_itag->{webm}
-                                       : $wanted_itag->{normal}
-                                      )
-                 )
-                   || ($url_ref->{itag} == $wanted_itag->{normal})
-                )
-                  || next;
-            }
-
-            if (not $prefer_webm) {
-                if ($url_ref->{itag} ~~ $webm_itags) {
+                if (($prefer_webm and $url_ref->{itag} == $wanted_itag->[-1]) or ($url_ref->{itag} ~~ $wanted_itag)) {
+                    ## ok
+                }
+                else {
                     next;
                 }
             }
@@ -122,7 +114,24 @@ sub find_streaming_url {
         }
     }
 
-    return unless defined $streaming;
+    if (not defined $streaming) {
+
+        foreach my $res (qw(original 1080 720 480 360 240 180 144)) {
+
+            foreach my $url (@{$urls_ref}) {
+                if (exists $url->{itag} and exists $url->{url}) {
+
+                    if ($url->{itag} ~~ $itags->{$res}) {
+                        $streaming = $url;
+                        last;
+                    }
+
+                }
+            }
+            last if defined($streaming);
+        }
+    }
+
     return wantarray ? ($streaming, $resolutions->{$streaming->{itag}}) : $streaming;
 }
 
