@@ -96,16 +96,16 @@ sub find_streaming_url {
     my $wanted_itag = defined $resolution ? $itags->{$resolution} : undef;
 
     my $streaming;
-    foreach my $url_ref (@{$urls_ref}) {
+    foreach my $url_ref (
+                         $prefer_webm
+                         ? ((grep { exists($_->{type}) && $_->{type} =~ m{video/webm} } @{$urls_ref}), @{$urls_ref})
+                         : (@{$urls_ref})
+      ) {
+
         if (exists $url_ref->{itag} && exists $url_ref->{url}) {
 
             if (defined $wanted_itag) {
-                if (($prefer_webm and $url_ref->{itag} == $wanted_itag->[-1]) or ($url_ref->{itag} ~~ $wanted_itag)) {
-                    ## ok
-                }
-                else {
-                    next;
-                }
+                $url_ref->{itag} ~~ $wanted_itag or next;
             }
 
             next unless exists $resolutions->{$url_ref->{itag}};
@@ -116,8 +116,7 @@ sub find_streaming_url {
 
     if (not defined $streaming) {
 
-        foreach my $res (qw(original 1080 720 480 360 240 180 144)) {
-
+        foreach my $res (qw(original 1080 720 480 360 240 180 144 audio)) {
             foreach my $url (@{$urls_ref}) {
                 if (exists $url->{itag} and exists $url->{url}) {
 
