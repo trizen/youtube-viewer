@@ -165,10 +165,8 @@ my %CONFIG = (
     debug           => 0,
     fullscreen      => 0,
     use_lower_cache => 0,
-    use_threads     => do {
-        eval { require threads };
-        $@ ? 0 : 1;
-    },
+    use_threads     => 0,
+
     use_threads_for_thumbs => 0,                                           # not very stable
     hpaned_position        => 420,
     search_channels        => 0,
