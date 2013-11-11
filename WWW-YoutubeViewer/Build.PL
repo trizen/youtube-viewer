@@ -117,5 +117,5 @@ $builder->requires(
 );
 
 $builder->script_files(['bin/youtube-viewer', ($gtk_youtube_viewer ? 'bin/gtk-youtube-viewer' : ())]);
-$builder->dist_dir('share') if $gtk_youtube_viewer;
+$builder->share_dir('share') if $gtk_youtube_viewer;
 $builder->create_build_script();
