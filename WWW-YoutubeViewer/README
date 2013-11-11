@@ -20,21 +20,19 @@ To package this application, run the following commands:
 
 GTK-YOUTUBE-VIEWER
 
-To install the gtk-youtube-viewer, run Build.PL with the '--gtk-youtube-viewer' argument.
+To install GTK Youtube Viewer, run Build.PL with the '--gtk-youtube-viewer' argument.
 
-    sudo perl Build.PL --gtk-youtube-viewer
+    perl Build.PL --gtk-youtube-viewer
 or:
     perl Build.PL --destdir "/my/path" --gtk-youtube-viewer
 
-# NOTE: If you're installing gtk-youtube-viewer, the 'Build.PL' script must be executed with root
-# permissions because it creates the directories and installs the files needed for gtk-youtube-viewer.
 
 SUPPORT AND DOCUMENTATION
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! If you're using a version of perl < 5.16.0, youtube-viewer (CLI) will need some changes;
-!! Please, see: https://code.google.com/p/trizen/downloads/detail?name=yv_5.16_to_5.10.pl
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Please, consider: https://code.google.com/p/trizen/downloads/detail?name=yv_5.16_to_5.10.pl
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 After installing, you can find documentation for this module with the
 perldoc command.

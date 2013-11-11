@@ -7,7 +7,6 @@ WriteMakefile
   'VERSION_FROM' => 'lib/WWW/YoutubeViewer.pm',
   'PREREQ_PM' => {
                    'Data::Dump' => 0,
-                   'File::Basename' => 0,
                    'File::Path' => 0,
                    'File::Spec::Functions' => 0,
                    'Getopt::Long' => 0,

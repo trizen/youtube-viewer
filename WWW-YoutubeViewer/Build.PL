@@ -98,7 +98,6 @@ $builder->requires(
     'perl'                  => '5.016',
     'Data::Dump'            => 0,
     'File::Spec::Functions' => 0,
-    'File::Basename'        => 0,
     'File::Path'            => 0,
     'Getopt::Long'          => 0,
     'HTTP::Request'         => 0,
@@ -110,76 +109,13 @@ $builder->requires(
     'URI::Escape'           => 0,
 
     $gtk_youtube_viewer
-    ? ('Gtk2' => 0)
+    ? (
+       'Gtk2'           => 0,
+       'File::ShareDir' => 0,
+      )
     : (),
 );
 
 $builder->script_files(['bin/youtube-viewer', ($gtk_youtube_viewer ? 'bin/gtk-youtube-viewer' : ())]);
+$builder->dist_dir('share') if $gtk_youtube_viewer;
 $builder->create_build_script();
-
-# Intalling the files for GTK YouTube Viewer
-if ($gtk_youtube_viewer) {
-
-    use autouse 'File::Basename'        => qw(dirname);
-    use autouse 'File::Spec::Functions' => qw(rel2abs catfile catdir rootdir);
-    use autouse 'File::Copy'            => qw(copy);
-    use autouse 'File::Path'            => qw(make_path);
-
-    my $dest_dir       = $builder->destdir // rootdir();
-    my $main_dir       = dirname(rel2abs($0));
-    my $main_share_dir = catdir($main_dir, qw(share));
-
-    my $share_dir                = catdir($dest_dir,               qw(usr share));
-    my $pixmaps_dir              = catdir($share_dir,              qw(pixmaps));
-    my $applications_dir         = catdir($share_dir,              qw(applications));
-    my $gtk_youtube_viewer_dir   = catdir($share_dir,              qw(gtk-youtube-viewer));
-    my $gtk_youtube_viewer_icons = catdir($gtk_youtube_viewer_dir, qw(icons));
-
-    if (my @dirs_to_create = grep({not -d} $gtk_youtube_viewer_icons, $applications_dir, $pixmaps_dir)) {
-        make_path(
-                  @dirs_to_create,
-                  {
-                   verbose => 1,
-                   mode    => 0755,
-                  }
-                 )
-          or die "Creating path failed: $!";
-    }
-
-    my $desktop_file = q(gtk-youtube-viewer.desktop);
-    my $glade_file   = q(gtk-youtube-viewer.glade);
-
-    foreach my $dest (
-                      [catfile($main_share_dir, $desktop_file) => catfile($applications_dir, $desktop_file)],
-                      [catfile($main_dir, qw(bin youtube-viewer)) => catfile($gtk_youtube_viewer_dir, qw(youtube-viewer))],
-                      [catfile($main_share_dir, $glade_file) => catfile($gtk_youtube_viewer_dir, $glade_file)],
-      ) {
-        copy($dest->[0], $dest->[1]) or die "Can't copy `$dest->[0]' to `$dest->[1]': $!";
-    }
-
-    foreach my $copy_instructions (
-                                   {
-                                    icon_dir => 'icons',
-                                    dest_dir => $pixmaps_dir,
-                                   },
-                                   {
-                                    icon_dir => 'gtk-youtube-viewer-icons',
-                                    dest_dir => $gtk_youtube_viewer_icons,
-                                   }
-      ) {
-        my $main_icons_dir = catdir($main_share_dir, $copy_instructions->{icon_dir});
-        opendir(my $dir_h, $main_icons_dir) or die "Can't open dir '$main_icons_dir': $!";
-
-        while (defined(my $file = readdir($dir_h))) {
-
-            my $full_file_path = catfile($main_icons_dir, $file);
-            $full_file_path =~ /\.(?:png|jpg|gif)\z/i or next;
-
-            my $destination = catfile($copy_instructions->{dest_dir}, $file);
-            print STDERR "cp '$full_file_path' '$destination'\n";
-
-            copy($full_file_path => $destination) or die "Copy failed: $!";
-        }
-        closedir $dir_h;
-    }
-}

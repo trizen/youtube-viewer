@@ -149,13 +149,14 @@ if (not -d $config_dir) {
       or warn "[!] Can't create dir '$config_dir': $!";
 }
 
-# Locating gcap
-my $gcap;
-foreach my $path (path()) {
-    if (-e (my $gcap_path = catfile($path, 'gcap'))) {
-        $gcap = $gcap_path;
-        last;
+sub which_command {
+    my ($cmd) = @_;
+    foreach my $path (path()) {
+        if (-e (my $cmd_path = catfile($path, $cmd))) {
+            return $cmd_path;
+        }
     }
+    return;
 }
 
 # Regular expressions
@@ -192,7 +193,7 @@ my %CONFIG = (
     srt_languages => ['en', 'jp'],
     captions_dir  => tmpdir(),
     get_captions  => 1,
-    gcap          => $gcap,
+    gcap          => undef,
 
     # Others
     http_proxy           => undef,
@@ -379,6 +380,14 @@ if (ref $CONFIG ne 'HASH') {
 }
 elsif (not \%CONFIG ~~ $CONFIG) {
     dump_configuration();
+}
+
+# Locating gcap
+if (not defined $CONFIG{gcap}) {
+    if (defined(my $gcap = which_command('gcap'))) {
+        $CONFIG{gcap} = $gcap;
+        dump_configuration();
+    }
 }
 
 @opt{keys %CONFIG} = values(%CONFIG);

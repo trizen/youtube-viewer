@@ -31,6 +31,7 @@ use strict;
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
 use Gtk2 qw(-init);
+use File::ShareDir qw(dist_dir);
 use File::Spec::Functions qw(
   rel2abs
   catdir
@@ -70,26 +71,17 @@ foreach my $dir ($config_dir, $yv_config_dir) {
 # Unchangeable variables goes here
 my %constant = (win32 => ($^O =~ /^mswin\d/i || 0));
 
-# CLI Youtube Viewer
-my $cli_youtube_viewer = '/usr/share/gtk-youtube-viewer/youtube-viewer';
+# Share directory
+my $share_dir = dist_dir('WWW-YoutubeViewer');
 
-if (not -e $cli_youtube_viewer) {
-    $cli_youtube_viewer = rel2abs('./youtube-viewer');
-}
-
-if (not -e $cli_youtube_viewer) {
-    require File::Basename;
-    my $dir = File::Basename::dirname(rel2abs($0));
-    $cli_youtube_viewer = catfile($dir, 'youtube-viewer');
-}
-
-# Locating gcap
-my $gcap;
-foreach my $path (path()) {
-    if (-e (my $gcap_path = catfile($path, 'gcap'))) {
-        $gcap = $gcap_path;
-        last;
+sub which_command {
+    my ($cmd) = @_;
+    foreach my $path (path()) {
+        if (-e (my $cmd_path = catfile($path, $cmd))) {
+            return $cmd_path;
+        }
     }
+    return;
 }
 
 # Get mplayer
@@ -163,7 +155,7 @@ my %CONFIG = (
     srt_languages => ['en', 'jp'],
     captions_dir  => tmpdir(),
     get_captions  => 1,
-    gcap          => $gcap,
+    gcap          => undef,
 
     # Others
     http_proxy      => undef,
@@ -178,12 +170,11 @@ my %CONFIG = (
     search_channels        => 0,
     search_playlists       => 0,
     thousand_separator     => q{,},
-    perl_bin               => $^X,
     default_thumb          => 'default',
     downloads_folder       => $ENV{'HOME'},
     browser                => undef,
     terminal               => find_terminal(),
-    cli_youtube_viewer     => $cli_youtube_viewer,
+    youtube_viewer         => undef,
     users_list             => catfile($config_dir, 'youtube_users.txt'),
 );
 
@@ -227,24 +218,12 @@ foreach my $sig (qw(HUP TERM INT KILL)) {
 }
 
 # Locating the .glade interface file and icons dir
-my ($interface_path, $icons_path);
-if (-f (my $glade_file = catfile(updir(), 'share', "$execname.glade"))) {
-    require File::Basename;
-    $interface_path = rel2abs($glade_file);
-    $icons_path = catdir(File::Basename::dirname($interface_path), 'gtk-youtube-viewer-icons');
-}
-else {
-    foreach my $usr_dir (qw(/usr /usr/local . ..)) {
-        if (-e ($interface_path = catfile($usr_dir, 'share', $execname, "$execname.glade"))) {
-            $icons_path = catdir($usr_dir, 'share', $execname, 'icons');
-            last;
-        }
-    }
-}
+my $glade_file = catfile($share_dir, "$execname.glade");
+my $icons_path = catdir($share_dir, "$execname-icons");
 
 # Defining GUI
 my $gui = 'Gtk2::Builder'->new;
-$gui->add_from_file($interface_path);
+$gui->add_from_file($glade_file);
 $gui->connect_signals(undef);
 
 # -------------  Get GUI objects ------------- #
@@ -350,11 +329,11 @@ local $SIG{__DIE__} = sub {
 };
 
 #---------------------- LOAD IMAGES ----------------------#
-my $app_icon_pixbuf  = 'Gtk2::Gdk::Pixbuf'->new_from_file("$icons_path/$execname.png");
-my $user_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/user.png", 16, 16);
-my $feed_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/feed_icon.png", 16, 16);
-my $default_thumb    = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/default_thumb.jpg", 120, 90);
-my $animation        = 'Gtk2::Gdk::PixbufAnimation'->new_from_file("$icons_path/spinner.gif");
+my $app_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file(catfile($icons_path, "$execname.png"));
+my $user_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "user.png"),          16,  16);
+my $feed_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "feed_icon.png"),     16,  16);
+my $default_thumb    = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "default_thumb.jpg"), 120, 90);
+my $animation = 'Gtk2::Gdk::PixbufAnimation'->new_from_file(catfile($icons_path, "spinner.gif"));
 
 # Setting application title and icon
 $mainw->set_title("$appname $version");
@@ -400,6 +379,16 @@ if (ref $CONFIG ne 'HASH') {
 elsif (not \%CONFIG ~~ $CONFIG) {
     dump_configuration();
 }
+
+# Locating gcap
+if (not defined $CONFIG{gcap}) {
+    if (defined(my $gcap = which_command('gcap'))) {
+        $CONFIG{gcap} = $gcap;
+    }
+}
+
+# Locating youtube-viewer
+$CONFIG{youtube_viewer} //= which_command('youtube-viewer') // 'youtube-viewer';
 
 require WWW::YoutubeViewer;
 my $yv_obj = WWW::YoutubeViewer->new(
@@ -703,7 +692,7 @@ use_threads
     1 to use threads when getting the XML content
 
 use_threads_for_thumbs
-    1 to use threads when getting the thumbnails
+    1 to use threads when getting the thumbnails (not recommended!)
 
 cache & cache_min
     this cache values are used for resolutions higher than 480p
@@ -721,13 +710,13 @@ clear_list
     1 to clean the treeview list before each search
 
 gcap
-    path to gcap application ( see http://gcap.googlecode.com )
+    full path to the gcap application ( see http://gcap.googlecode.com )
 
 srt_languages
-    default subtitle languages (when gcap is available)
+    default subtitle languages (requires: gcap)
 
 captions_dir
-    is used to store the closed captions from YouTube (.srt files)
+    the directory where to store the closed captions from YouTube (.srt files)
 
 * Knowledge:
     http://code.google.com/intl/ro/apis/youtube/2.0/developers_guide_protocol_api_query_parameters.html
@@ -1825,7 +1814,7 @@ sub clear_text {
 }
 
 sub run_cli_youtube_viewer {
-    execute_external_program($CONFIG{terminal}, '-e', q{'} . join(' ', $CONFIG{perl_bin}, $CONFIG{cli_youtube_viewer}), q{'});
+    execute_external_program($CONFIG{terminal}, '-e', q{'} . join(' ', $CONFIG{youtube_viewer}), q{'});
 }
 
 sub find_terminal {
@@ -1936,10 +1925,7 @@ sub execute_cli_youtube_viewer {
                        q{ },
                        (
                         map { chr ord eq q{'} ? $_ : quotemeta } $CONFIG{terminal},
-                        '-e',
-                        q{'}
-                          . join(q{ }, $CONFIG{perl_bin}, $CONFIG{cli_youtube_viewer}, get_options_as_arguments(), @arguments)
-                          . q{'}
+                        '-e', q{'} . join(q{ }, $CONFIG{youtube_viewer}, get_options_as_arguments(), @arguments) . q{'}
                        )
                       )
       . ' &';
