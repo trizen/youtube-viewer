@@ -2,55 +2,6 @@
 <interface>
   <requires lib="gtk+" version="2.18"/>
   <!-- interface-naming-policy project-wide -->
-  <object class="GtkAboutDialog" id="aboutdialog1">
-    <property name="can_focus">False</property>
-    <property name="border_width">5</property>
-    <property name="window_position">center-on-parent</property>
-    <property name="type_hint">normal</property>
-    <property name="transient_for">__MAIN__</property>
-    <property name="program_name">Glade</property>
-    <property name="copyright" translatable="yes">Copyright © 2010-2013 by Trizen</property>
-    <property name="comments" translatable="yes">Written in Perl, Gtk2 and Glade under the GPLv3.</property>
-    <property name="website">http://trizen.googlecode.com</property>
-    <property name="website_label" translatable="yes">Developer's website</property>
-    <property name="authors">[+] Developer/Maintainer:
- =&gt;  Trizen (trizenx@gmail.com)
-    * Core
-    * GUI
-
-[+] Contributor:
-  =&gt; Ovidiu D. Nițan (nitanovidiu@gmail.com)
-    * Threads
-    * GUI fixes</property>
-    <signal name="destroy" handler="hide_about_window" swapped="no"/>
-    <signal name="delete-event" handler="hide_about_window" swapped="no"/>
-    <signal name="response" handler="hide_about_window" swapped="no"/>
-    <child internal-child="vbox">
-      <object class="GtkVBox" id="dialog-vbox3">
-        <property name="can_focus">False</property>
-        <child internal-child="action_area">
-          <object class="GtkHButtonBox" id="dialog-action_area3">
-            <property name="can_focus">False</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="pack_type">end</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <placeholder/>
-        </child>
-      </object>
-    </child>
-  </object>
-  <object class="GtkAdjustment" id="adjustment1">
-    <property name="lower">1</property>
-    <property name="upper">50</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
   <object class="GtkAdjustment" id="adjustment2">
     <property name="lower">1</property>
     <property name="upper">4096</property>
@@ -76,7 +27,6 @@
             <property name="can_focus">False</property>
             <child>
               <object class="GtkMenuItem" id="file">
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Menu</property>
@@ -87,7 +37,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="username_list">
                         <property name="label" translatable="yes">Users (CTRL+U)</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Youtube usernames list</property>
@@ -98,7 +47,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="cli_version">
                         <property name="label" translatable="yes">Youtube Viewer</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Search and play videos in command line interface (CTRL+Y)</property>
@@ -110,7 +58,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="menuitem3">
                         <property name="label" translatable="yes">Login to YouTube</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Login to Youtube using email and password. (CTRL+L)</property>
@@ -122,7 +69,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="warnings_console">
                         <property name="label" translatable="yes">Warnings console</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Show the warnings window</property>
@@ -134,7 +80,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="options">
                         <property name="label">gtk-preferences</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Adjust application settings. (CTRL+P)</property>
@@ -145,7 +90,6 @@
                     </child>
                     <child>
                       <object class="GtkSeparatorMenuItem" id="menuitem6">
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                       </object>
@@ -153,7 +97,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="exit">
                         <property name="label">gtk-quit</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Quit the application. (CTRL+Q)</property>
@@ -168,7 +111,6 @@
             </child>
             <child>
               <object class="GtkMenuItem" id="menuitem4">
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Help</property>
@@ -179,7 +121,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="help">
                         <property name="label">gtk-help</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Show a help window. (CTRL+H)</property>
@@ -189,23 +130,21 @@
                       </object>
                     </child>
                     <child>
+                      <object class="GtkMenuItem" id="donate_menu_item">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Donate</property>
+                        <signal name="activate" handler="donate" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkImageMenuItem" id="about1">
                         <property name="label">gtk-about</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="show_about_window" swapped="no"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkMenuItem" id="donate_menu_item">
-                        <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Donate</property>
-                        <signal name="activate" handler="donate" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -431,7 +370,6 @@ default = standard results</property>
                                                 <child>
                                                   <object class="GtkButton" id="button6">
                                                     <property name="label">Subscriptions</property>
-                                                    <property name="use_action_appearance">False</property>
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">True</property>
@@ -447,7 +385,6 @@ default = standard results</property>
                                                 <child>
                                                   <object class="GtkButton" id="button22">
                                                     <property name="label" translatable="yes">Favorited videos</property>
-                                                    <property name="use_action_appearance">False</property>
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">True</property>
@@ -463,7 +400,6 @@ default = standard results</property>
                                                 <child>
                                                   <object class="GtkButton" id="button9">
                                                     <property name="label" translatable="yes">Recommended</property>
-                                                    <property name="use_action_appearance">False</property>
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">True</property>
@@ -479,7 +415,6 @@ default = standard results</property>
                                                 <child>
                                                   <object class="GtkButton" id="button25">
                                                     <property name="label" translatable="yes">Watch History</property>
-                                                    <property name="use_action_appearance">False</property>
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">True</property>
@@ -495,7 +430,6 @@ default = standard results</property>
                                                 <child>
                                                   <object class="GtkButton" id="channels_button">
                                                     <property name="label" translatable="yes">Channels</property>
-                                                    <property name="use_action_appearance">False</property>
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">True</property>
@@ -511,7 +445,6 @@ default = standard results</property>
                                                 <child>
                                                   <object class="GtkButton" id="button7">
                                                     <property name="label" translatable="yes">Log out</property>
-                                                    <property name="use_action_appearance">False</property>
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">True</property>
@@ -1076,7 +1009,6 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                         <child>
                                                           <object class="GtkCheckButton" id="thumbs_checkbutton">
                                                             <property name="label" translatable="yes">Show thumbnails</property>
-                                                            <property name="use_action_appearance">False</property>
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="receives_default">False</property>
@@ -1092,7 +1024,6 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                         <child>
                                                           <object class="GtkCheckButton" id="fullscreen_checkbutton">
                                                             <property name="label" translatable="yes">Fullscreen mode</property>
-                                                            <property name="use_action_appearance">False</property>
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="receives_default">False</property>
@@ -1149,7 +1080,6 @@ Unless the categoryID is valid, this field is ignored.</property>
                                         <child>
                                           <object class="GtkButton" id="button8">
                                             <property name="label">gtk-find</property>
-                                            <property name="use_action_appearance">False</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
@@ -1168,39 +1098,6 @@ Unless the categoryID is valid, this field is ignored.</property>
                                         <property name="fill">False</property>
                                         <property name="padding">14</property>
                                         <property name="position">7</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkHButtonBox" id="hbuttonbox8">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">False</property>
-                                        <property name="layout_style">end</property>
-                                        <child>
-                                          <placeholder/>
-                                        </child>
-                                        <child>
-                                          <object class="GtkButton" id="donate_button">
-                                            <property name="use_action_appearance">False</property>
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">True</property>
-                                            <property name="receives_default">True</property>
-                                            <property name="image">image78</property>
-                                            <property name="relief">none</property>
-                                            <property name="image_position">right</property>
-                                            <signal name="clicked" handler="donate" swapped="no"/>
-                                          </object>
-                                          <packing>
-                                            <property name="expand">False</property>
-                                            <property name="fill">False</property>
-                                            <property name="position">1</property>
-                                          </packing>
-                                        </child>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="pack_type">end</property>
-                                        <property name="position">8</property>
                                       </packing>
                                     </child>
                                     <child>
@@ -1246,7 +1143,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
                                         <property name="expand">False</property>
                                         <property name="fill">False</property>
                                         <property name="pack_type">end</property>
-                                        <property name="position">9</property>
+                                        <property name="position">8</property>
                                       </packing>
                                     </child>
                                   </object>
@@ -1738,6 +1635,55 @@ When the specified resolution is not found, it falls down to a lower resolution.
       </object>
     </child>
   </object>
+  <object class="GtkAboutDialog" id="aboutdialog1">
+    <property name="can_focus">False</property>
+    <property name="border_width">5</property>
+    <property name="window_position">center-on-parent</property>
+    <property name="type_hint">normal</property>
+    <property name="transient_for">__MAIN__</property>
+    <property name="program_name">Glade</property>
+    <property name="copyright" translatable="yes">Copyright © 2010-2013 by Trizen</property>
+    <property name="comments" translatable="yes">Written in Perl, Gtk2 and Glade under the GPLv3.</property>
+    <property name="website">http://trizen.googlecode.com</property>
+    <property name="website_label" translatable="yes">Developer's website</property>
+    <property name="authors">[+] Developer/Maintainer:
+ =&gt;  Trizen (trizenx@gmail.com)
+    * Core
+    * GUI
+
+[+] Contributor:
+  =&gt; Ovidiu D. Nițan (nitanovidiu@gmail.com)
+    * Threads
+    * GUI fixes</property>
+    <signal name="destroy" handler="hide_about_window" swapped="no"/>
+    <signal name="delete-event" handler="hide_about_window" swapped="no"/>
+    <signal name="response" handler="hide_about_window" swapped="no"/>
+    <child internal-child="vbox">
+      <object class="GtkVBox" id="dialog-vbox3">
+        <property name="can_focus">False</property>
+        <child internal-child="action_area">
+          <object class="GtkHButtonBox" id="dialog-action_area3">
+            <property name="can_focus">False</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkAdjustment" id="adjustment1">
+    <property name="lower">1</property>
+    <property name="upper">50</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
   <object class="GtkWindow" id="details_window">
     <property name="can_focus">False</property>
     <property name="border_width">2</property>
@@ -1952,7 +1898,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                 <property name="layout_style">center</property>
                 <child>
                   <object class="GtkLinkButton" id="linkbutton1">
-                    <property name="use_action_appearance">False</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -1988,7 +1933,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
             <child>
               <object class="GtkButton" id="play">
                 <property name="label">gtk-media-play</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="has_focus">True</property>
@@ -2005,7 +1949,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
             <child>
               <object class="GtkButton" id="download">
                 <property name="label">Download</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -2021,7 +1964,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
             <child>
               <object class="GtkButton" id="close">
                 <property name="label">gtk-close</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -2050,7 +1992,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
     <child>
       <object class="GtkImageMenuItem" id="details">
         <property name="label" translatable="yes">Show video details</property>
-        <property name="use_action_appearance">False</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="tooltip_text" translatable="yes">(CTRL+D)</property>
@@ -2062,7 +2003,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
     <child>
       <object class="GtkImageMenuItem" id="menuitem9">
         <property name="label" translatable="yes">Comments / Ratings</property>
-        <property name="use_action_appearance">False</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="image">image30</property>
@@ -2079,7 +2019,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
     <child>
       <object class="GtkImageMenuItem" id="queue_playback">
         <property name="label" translatable="yes">Add to playback queue</property>
-        <property name="use_action_appearance">False</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="image">image9</property>
@@ -2089,8 +2028,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
     </child>
     <child>
       <object class="GtkImageMenuItem" id="menuitem1">
-        <property name="label" translatable="yes">Play videos from queue</property>
-        <property name="use_action_appearance">False</property>
+        <property name="label" translatable="yes">Play the enqued videos</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="image">image10</property>
@@ -2100,8 +2038,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
     </child>
     <child>
       <object class="GtkImageMenuItem" id="play_all_videos">
-        <property name="label" translatable="yes">Play all video results</property>
-        <property name="use_action_appearance">False</property>
+        <property name="label" translatable="yes">Play all the video results</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="image">image16</property>
@@ -2117,8 +2054,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
     </child>
     <child>
       <object class="GtkImageMenuItem" id="play_in_new_term">
-        <property name="label" translatable="yes">Play it in a new terminal</property>
-        <property name="use_action_appearance">False</property>
+        <property name="label" translatable="yes">Play this video in a terminal</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="image">image5</property>
@@ -2128,8 +2064,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
     </child>
     <child>
       <object class="GtkImageMenuItem" id="download_video">
-        <property name="label" translatable="yes">Download Youtube video</property>
-        <property name="use_action_appearance">False</property>
+        <property name="label" translatable="yes">Download the selected video</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="image">image15</property>
@@ -2139,8 +2074,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
     </child>
     <child>
       <object class="GtkImageMenuItem" id="open_youtube">
-        <property name="label" translatable="yes">Open the YouTube website</property>
-        <property name="use_action_appearance">False</property>
+        <property name="label" translatable="yes">Open the YouTube video page</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="image">image7</property>
@@ -2232,7 +2166,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
             <child>
               <object class="GtkButton" id="button3">
                 <property name="label">gtk-ok</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="has_focus">True</property>
@@ -2356,7 +2289,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                 <child type="label">
                   <object class="GtkButton" id="button18">
                     <property name="label">gtk-refresh</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -2431,7 +2363,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                         <child>
                           <object class="GtkButton" id="button17">
                             <property name="label">Send</property>
-                            <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -2498,7 +2429,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                         <child>
                           <object class="GtkButton" id="button10">
                             <property name="label" translatable="yes">Like</property>
-                            <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -2514,7 +2444,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                         <child>
                           <object class="GtkButton" id="button11">
                             <property name="label" translatable="yes">Dislike</property>
-                            <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -2570,7 +2499,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                             <child>
                               <object class="GtkButton" id="button24">
                                 <property name="label" translatable="yes">Add video to favorites</property>
-                                <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -2586,7 +2514,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                             <child>
                               <object class="GtkButton" id="button23">
                                 <property name="label" translatable="yes">Subscribe user's channel</property>
-                                <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -2613,7 +2540,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                             <child>
                               <object class="GtkButton" id="button20">
                                 <property name="label" translatable="yes">List videos from this user</property>
-                                <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -2629,7 +2555,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                             <child>
                               <object class="GtkButton" id="button13">
                                 <property name="label" translatable="yes">List user's favorited videos</property>
-                                <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -2656,7 +2581,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                             <child>
                               <object class="GtkButton" id="button15">
                                 <property name="label" translatable="yes">Show related videos</property>
-                                <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -2672,7 +2596,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                             <child>
                               <object class="GtkButton" id="button12">
                                 <property name="label" translatable="yes">List the user's playlists</property>
-                                <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -2721,7 +2644,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                 <child>
                   <object class="GtkButton" id="button16">
                     <property name="label">gtk-close</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="has_focus">True</property>
@@ -2809,7 +2731,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
             <child>
               <object class="GtkButton" id="button19">
                 <property name="label">gtk-about</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -2825,7 +2746,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
             <child>
               <object class="GtkButton" id="button28">
                 <property name="label">gtk-close</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -3470,7 +3390,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
             <child>
               <object class="GtkButton" id="button5">
                 <property name="label">gtk-ok</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -3486,7 +3405,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
             <child>
               <object class="GtkButton" id="button4">
                 <property name="label">gtk-cancel</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -3541,7 +3459,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                     <child>
                       <object class="GtkLinkButton" id="get_auth_link_button">
                         <property name="label" translatable="yes">Click here to get the authentication code!</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -3616,7 +3533,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
             <child>
               <object class="GtkCheckButton" id="login_check_button">
                 <property name="label" translatable="yes">Remember me</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
@@ -3689,7 +3605,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
             <child>
               <object class="GtkButton" id="button1">
                 <property name="label">gtk-apply</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -3705,7 +3620,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
             <child>
               <object class="GtkButton" id="button2">
                 <property name="label">gtk-close</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -3745,7 +3659,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
     <child>
       <object class="GtkImageMenuItem" id="menuitem8">
         <property name="label" translatable="yes">User's videos</property>
-        <property name="use_action_appearance">False</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="image">image17</property>
@@ -3756,7 +3669,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
     <child>
       <object class="GtkImageMenuItem" id="menuitem7">
         <property name="label" translatable="yes">User's playlists</property>
-        <property name="use_action_appearance">False</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="image">image14</property>
@@ -3767,7 +3679,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
     <child>
       <object class="GtkImageMenuItem" id="menuitem5">
         <property name="label">gtk-remove</property>
-        <property name="use_action_appearance">False</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="tooltip_text" translatable="yes">Remove the selected user from list...</property>
@@ -3843,7 +3754,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                 <child>
                   <object class="GtkButton" id="add_username">
                     <property name="label">gtk-add</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -3944,7 +3854,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
             <child>
               <object class="GtkButton" id="button14">
                 <property name="label">gtk-ok</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -3960,7 +3869,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
             <child>
               <object class="GtkButton" id="button21">
                 <property name="label">gtk-close</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -4005,7 +3913,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
             <child>
               <object class="GtkButton" id="button26">
                 <property name="label">gtk-close</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="has_focus">True</property>

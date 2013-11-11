@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 07 November 2013
+#  Latest edit on: 11 November 2013
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -111,7 +111,7 @@ no if $] >= 5.018, warnings => 'experimental::smartmatch';
 no if $] >= 5.018, warnings => 'deprecated';
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.0.8';
+my $version  = '3.0.9';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
@@ -122,13 +122,11 @@ my $term = Term::ReadLine->new("$appname $version");
 my $key = 'eTj9NtCyOsGMliTTwz-T85muGT-ARAwVREslfB_giHP3X339Jkpn5Xf71pQXY96xWtFY1oFHt530ct5uZZJk5YTghbNm2IrwZ4';
 
 # Options (key=>value) goes here
-my %opt = ();
+my %opt        = ();
+my $term_width = 80;
 
 # Unchangeable data goes here
-my %constant = (
-                dash_line => q{-} x 80,
-                win32     => $^O =~ /^mswin\d/i || 0,
-               );
+my %constant = (win32 => ($^O =~ /^mswin\d/i || 0));
 
 my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
   || catdir(
@@ -142,7 +140,8 @@ my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
 
 # Configuration dir/file
 my $config_dir = catdir($xdg_config_home, $execname);
-my $config_file = catfile($config_dir, "$execname.conf");
+my $config_file      = catfile($config_dir, "$execname.conf");
+my $auth_tokens_file = catfile($config_dir, 'reg.dat');
 
 if (not -d $config_dir) {
     require File::Path;
@@ -175,7 +174,6 @@ my %CONFIG = (
     mplayer_arguments => '-prefer-ipv4 -really-quiet -cache %d -cache-min %d',
 
     # Youtube options
-    prefer_webm         => 1,
     prefer_https        => 0,
     results             => 20,
     resolution          => 'original',
@@ -209,10 +207,8 @@ my %CONFIG = (
     results_with_colors  => 0,
     results_fixed_width  => 0,
     interactive          => 1,
-    adj_for_term_width   => $constant{win32} ^ 1,
+    get_term_width       => $constant{win32} ^ 1,
     download_with_wget   => $constant{win32} ^ 1,
-    access_token         => undef,
-    refresh_token        => undef,
     thousand_separator   => q{,},
     downloads_folder     => curdir(),
     keep_original_video  => 0,
@@ -325,20 +321,22 @@ $notes_options
                   page, go to the next page and play the 9th video.
 STDIN_HELP
 
-my $config_documentation = <<"EOD";
+{
+    my $config_documentation = <<"EOD";
 #!/usr/bin/perl
 
-# $appname - configuration file
+# $appname $version - configuration file
 
 EOD
 
-sub dump_configuration {
-    require Data::Dump;
-    open my $config_fh, '>', $config_file
-      or do { warn "[!] Can't open '${config_file}' for write: $!"; return };
-    my $dumped_config = q{our $CONFIG = } . Data::Dump::dump(\%CONFIG);
-    print $config_fh $config_documentation, $dumped_config;
-    close $config_fh;
+    sub dump_configuration {
+        require Data::Dump;
+        open my $config_fh, '>', $config_file
+          or do { warn "[!] Can't open '${config_file}' for write: $!"; return };
+        my $dumped_config = q{our $CONFIG = } . Data::Dump::pp(\%CONFIG) . "\n";
+        print $config_fh $config_documentation, $dumped_config;
+        close $config_fh;
+    }
 }
 
 if (not -e $config_file or $opt{reconfigure}) {
@@ -348,29 +346,48 @@ if (not -e $config_file or $opt{reconfigure}) {
 our $CONFIG;
 require $config_file;    # Load the configuration file
 
-if (ref $CONFIG ne 'HASH') {
-    $CONFIG = do($config_file) || warn "Can't load the configuration file: $!";
-}
-
-my @valid_keys = grep exists $CONFIG{$_}, keys %{$CONFIG};
-@CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
-
-if (ref $CONFIG ne 'HASH' or not %CONFIG ~~ %{$CONFIG}) {
-    dump_configuration();
-}
-
-@opt{keys %CONFIG} = values(%CONFIG);
-
 {
     my $i = length $key;
     $key =~ s/(.{$i})(.)/$2$1/g while $i--;
 }
 
+if (ref $CONFIG ne 'HASH') {
+    $CONFIG = do($config_file) || warn "Can't load the configuration file: $!";
+}
+
+require WWW::YoutubeViewer::AuthToken;
+my $yv_token = WWW::YoutubeViewer::AuthToken->new(key => $key);
+
+my ($access_token, $refresh_token);
+if (defined $CONFIG->{access_token} and defined $CONFIG->{refresh_token}) {
+
+    $access_token  = $CONFIG->{access_token};
+    $refresh_token = $CONFIG->{refresh_token};
+
+    $yv_token->to_file($access_token, $refresh_token, $auth_tokens_file);
+}
+elsif (-e $auth_tokens_file) {
+    ($access_token, $refresh_token) = $yv_token->from_file($auth_tokens_file);
+}
+
+my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
+@CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
+
+if (ref $CONFIG ne 'HASH') {
+    rename($config_file, $config_file . '.bak');
+    dump_configuration();
+}
+elsif (not \%CONFIG ~~ $CONFIG) {
+    dump_configuration();
+}
+
+@opt{keys %CONFIG} = values(%CONFIG);
+
 require WWW::YoutubeViewer;
 my $yv_obj = WWW::YoutubeViewer->new(
                                      key           => $key,
-                                     access_token  => $CONFIG{access_token},
-                                     refresh_token => $CONFIG{refresh_token},
+                                     access_token  => $access_token,
+                                     refresh_token => $refresh_token,
                                      app_name      => $appname,
                                      app_version   => $version,
                                      config_dir    => $config_dir,
@@ -526,7 +543,6 @@ Other options:
    --clobber            : overwrite an existent video (with -d)
    --skip-if-exists!    : don't download videos which already exists (with -d)
    --prefer-https!      : use the HTTPS protocol instead of the HTTP protocol
-   --prefer-webm!       : use the WebM format when it is available
    --downloads-dir=s    : downloads directory (set: '$opt{downloads_folder}')
 
 Help options:
@@ -551,7 +567,7 @@ sub wrap_text {
     my (%args) = @_;
 
     require Text::Wrap;
-    ${Text::Wrap::columns} = $args{columns} || length($constant{dash_line});
+    ${Text::Wrap::columns} = $args{columns} || $term_width;
 
     my $text = "@{$args{text}}";
     $text =~ tr{\r}{}d;
@@ -854,10 +870,6 @@ sub apply_configuration {
         logout();
     }
 
-    if ($opt->{adj_for_term_width}) {
-        adj_for_term_width();
-    }
-
     # ... OTHER OPTIONS ... #
     if (defined $opt->{shuffle_playlist}) {
         require List::Util;
@@ -1094,7 +1106,6 @@ sub parse_arguments {
         'all|A|play-all!'            => \$opt{play_all},
         'use-colors|colors|colored!' => \$opt{colors},
         'prefer-https|prefer_https!' => \$opt{prefer_https},
-        'prefer-webm|prefer_webm!'   => \$opt{prefer_webm},
 
         'noconfig|N'               => \$opt{noconfig},
         'playlists|p|pl:s'         => \$opt{search_playlists},
@@ -1133,7 +1144,7 @@ sub parse_arguments {
         'rp|rem-played|remove_played_file!' => \$opt{remove_played_file},
         'clobber!'                          => \$opt{clobber},
         'info|i|show-info=s'                => \$opt{show_video_info},
-        'get-term-width!'                   => \$opt{adj_for_term_width},
+        'get-term-width!'                   => \$opt{get_term_width},
         'page=i'                            => \$opt{page},
         'novideo|n!'                        => \$opt{novideo},
         'results=i'                         => \$opt{results},
@@ -1251,14 +1262,9 @@ sub get_mplayer {
 }
 
 # Get term width
-sub adj_for_term_width {
-    eval { require Term::ReadKey };
-    $constant{dash_line} = q{-} x (
-                                   $@
-                                   ? ((split(q{ }, `stty size`))[1] || 80)
-                                   : (Term::ReadKey::GetTerminalSize())[0]
-                                  );
-    return 1;
+sub get_term_width {
+    return $term_width if $constant{win32};
+    $term_width = (-t STDOUT) ? ((split(q{ }, `stty size`))[1] || $term_width) : $term_width;
 }
 
 sub first_user_input {
@@ -1380,10 +1386,8 @@ sub get_user_input {
 
 sub logout {
 
-    undef $CONFIG{access_token};
-    undef $CONFIG{refresh_token};
-
-    dump_configuration();
+    unlink $auth_tokens_file
+      or warn "Can't unlink: `$auth_tokens_file' -> $!";
 
     $yv_obj->set_access_token();
     $yv_obj->set_refresh_token();
@@ -1417,10 +1421,10 @@ INFO
 
         my $remember_me = $term->ask_yn(prompt  => colored("\nRemember me", 'bold'),
                                         default => 'y',);
+
         if ($remember_me) {
-            $CONFIG{access_token}  = $yv_obj->get_access_token;
-            $CONFIG{refresh_token} = $yv_obj->get_refresh_token;
-            dump_configuration();
+            $yv_token->to_file($yv_obj->get_access_token, $yv_obj->get_refresh_token, $auth_tokens_file)
+              or warn "Can't store the authentication tokens: $!";
         }
 
         return 1;
@@ -1636,8 +1640,6 @@ sub general_options {
     my $mode          = $args{mode};
     my $callback_args = ref $args{args} eq 'ARRAY' ? $args{args} : [];
 
-    adj_for_term_width() if $opt{adj_for_term_width};
-
     given ($option) {
         when (\&quit_required) {
             main_quit(0);
@@ -1738,8 +1740,7 @@ sub warn_cant_do {
 
 sub warn_cant_get {
     my ($name, $videoID) = @_;
-    warn colored("\n[!] Can't get $name for video: " . sprintf($CONFIG{youtube_video_url}, $videoID), 'bold red')
-      . "\n";
+    warn colored("\n[!] Can't get $name for video: " . sprintf($CONFIG{youtube_video_url}, $videoID), 'bold red') . "\n";
 }
 
 sub warn_last_page {
@@ -1948,8 +1949,7 @@ HELP
                         my ($fh, $filename) = File::Temp::tempfile();
                         system $ENV{EDITOR} // 'nano', $filename;
                         if ($?) {
-                            warn colored("\n[!] Editor exited with a non-zero code. Unable to continue!", 'bold red')
-                              . "\n";
+                            warn colored("\n[!] Editor exited with a non-zero code. Unable to continue!", 'bold red') . "\n";
                         }
                         else {
                             my $comment = do { local (@ARGV, $/) = $filename; <> };
@@ -2438,12 +2438,7 @@ sub get_streaming_url {
     require WWW::YoutubeViewer::Itags;
     state $yv_itags = WWW::YoutubeViewer::Itags->new();
 
-    my ($streaming, $resolution) = $yv_itags->find_streaming_url(\@urls, $opt{prefer_webm}, $opt{resolution});
-
-    if (not defined $streaming) {    # get the highest resolution
-        ($streaming, $resolution) = $yv_itags->find_streaming_url(\@urls, $opt{prefer_webm});
-    }
-
+    my ($streaming, $resolution) = $yv_itags->find_streaming_url(\@urls, $opt{resolution});
     my $info = @urls && ref $urls[-1] eq 'HASH' && exists $urls[-1]{status} ? $urls[-1] : {};
 
     return {
@@ -2523,9 +2518,8 @@ sub download_video {
         $output =~ s/\.\w{2,5}$//;
 
         my $new_file = "$output.$opt{convert_to}";
-        my $ffmpeg   = sprintf($opt{ffmpeg_command},
-                             map { q{"} . s{(["\\`\$])}{\\$1}gr . q{"} }
-                             map { rel2abs($_) } $title, $new_file);
+        my $ffmpeg = sprintf($opt{ffmpeg_command}, map { q{"} . s{(["\\`\$])}{\\$1}gr . q{"} }
+                               map { rel2abs($_) } $title, $new_file);
         say $ffmpeg if $yv_obj->get_debug;
         system $ffmpeg;
 
@@ -2554,16 +2548,11 @@ sub download_video {
 sub play_videos {
     my ($videos) = @_;
 
-    if ($opt{adj_for_term_width}) {
-        adj_for_term_width();
-    }
-
     foreach my $video (@{$videos}) {
         my $streaming = get_streaming_url($video->{videoID});
 
         if (defined $streaming->{info}{status} and not $streaming->{info}{status} =~ /^(?:ok|success)/i) {
-            warn colored("(x_x) Can't stream: " . sprintf($CONFIG{youtube_video_url}, $video->{videoID}), 'bold red')
-              . "\n";
+            warn colored("(x_x) Can't stream: " . sprintf($CONFIG{youtube_video_url}, $video->{videoID}), 'bold red') . "\n";
             warn colored("(x_x) Status: $streaming->{info}{status}", 'bold red') . "\n\n";
         }
 
@@ -2640,17 +2629,19 @@ sub play_videos_matched_by_regex {
 sub print_video_info {
     my ($info) = @_;
 
+    my $hr = '-' x ($opt{get_term_width} ? get_term_width() : $term_width);
+
     printf(
            "\n%s %s\n%s\n%s\n%s\n%s",
            _bold_color('=>>'),
            'Description',
-           $constant{dash_line},
+           $hr,
            wrap_text(
                      i_tab => q{},
                      s_tab => q{},
                      text  => [$info->{description} || 'No description available...']
                     ),
-           $constant{dash_line},
+           $hr,
            _bold_color('* URL: ')
           );
 
@@ -2658,9 +2649,7 @@ sub print_video_info {
 
     my $title_length = length($info->{title});
 
-    print "\n$constant{dash_line}\n",
-      q{ } x ((length($constant{dash_line}) - $title_length) / 2 - 4) =>
-      (_bold_color("=>> $info->{title} <<=") . "\n\n"),
+    print "\n$hr\n", q{ } x (($term_width - $title_length) / 2 - 4) => (_bold_color("=>> $info->{title} <<=") . "\n\n"),
       map(sprintf(q{** } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]),
           (
            ['Author'    => $info->{author}],
@@ -2673,7 +2662,7 @@ sub print_video_info {
            ['Views'     => $yv_utils->set_thousands($info->{views})],
            $info->{published} ? ['Published' => $yv_utils->format_date($info->{published})] : (),
             )),
-      "$constant{dash_line}\n";
+      "$hr\n";
 
     return 1;
 }
@@ -2688,10 +2677,8 @@ sub print_videos {
     my $url    = $results->{url};
     my $videos = $results->{results};
 
-    state $term_width = 80;
-    if ($opt{adj_for_term_width} and $opt{results_fixed_width}) {
-        adj_for_term_width();
-        $term_width = length($constant{dash_line});
+    if ($opt{get_term_width} and $opt{results_fixed_width}) {
+        get_term_width();
     }
 
     my $num = 0;
@@ -2715,8 +2702,7 @@ sub print_videos {
         }
         elsif ($opt{results_with_colors}) {
             print "\n" if $num == 0;
-            printf(
-                   "%s. %s (%s) (%s)\n",
+            printf("%s. %s (%s) (%s)\n",
                    colored(sprintf('%2d', ++$num), 'bold'),
                    colored($video->{title},                            'bold green'),
                    colored("by $video->{author}",                      'bold yellow'),

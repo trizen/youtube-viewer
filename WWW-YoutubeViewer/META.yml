@@ -1,7 +1,7 @@
 ---
 abstract: 'A very easy interface to YouTube.'
 author:
-  - "Șuteu \"Trizen\" Daniel <trizenx@gmail.com>"
+  - "Daniel \"Trizen\" Șuteu <trizenx@gmail.com>"
 build_requires:
   Test::More: 0
 configure_requires:
@@ -22,7 +22,7 @@ provides:
     version: 0.01
   WWW::YoutubeViewer::Itags:
     file: lib/WWW/YoutubeViewer/Itags.pm
-    version: 0.02
+    version: 0.03
   WWW::YoutubeViewer::ParseXML:
     file: lib/WWW/YoutubeViewer/ParseXML.pm
     version: 0.03
@@ -33,11 +33,11 @@ provides:
     file: lib/WWW/YoutubeViewer/Utils.pm
     version: 0.02
 recommends:
-  Term::ReadKey: 0
   Term::ReadLine::Gnu::XS: 0
   XML::Fast: 0
 requires:
   Data::Dump: 0
+  File::Basename: 0
   File::Path: 0
   File::Spec::Functions: 0
   Getopt::Long: 0

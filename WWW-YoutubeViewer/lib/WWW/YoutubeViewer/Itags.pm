@@ -2,8 +2,7 @@ package WWW::YoutubeViewer::Itags;
 
 use 5.010;
 use strict;
-
-no if $] >= 5.018, warnings => 'experimental::smartmatch';
+use warnings;
 
 =head1 NAME
 
@@ -11,11 +10,11 @@ WWW::YoutubeViewer::Itags - Get the YouTube itags.
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 SYNOPSIS
 
@@ -47,16 +46,18 @@ Get a HASH ref with the YouTube itags. {resolution => {type => itag}}.
 
 sub get_itags {
     return scalar {
-                   'original' => [38],
-                   '1080'     => [37, 46],                    # 137 -- no audio
-                   '720'      => [22, 45],                    # 136 -- no audio
-                   '480'      => [35, 44],                    # 135 -- no audio
-                   '360'      => [34, 18, 43],                # 134 -- no audio
-                   '240'      => [5],                         # 133 -- no audio
-                   '180'      => [36],
-                   '144'      => [17],                        # 160 -- no audio
-                   'audio'    => [139, 140, 141, 171, 172],
-                  };
+
+        # WebM formats first
+        'original' => [38],
+        '1080'     => [46, 37],                    # 137 -- no audio
+        '720'      => [45, 22],                    # 136 -- no audio
+        '480'      => [44, 35],                    # 135 -- no audio
+        '360'      => [43, 34, 18],                # 134 -- no audio
+        '240'      => [5],                         # 133 -- no audio
+        '180'      => [36],
+        '144'      => [17],                        # 160 -- no audio
+        'audio'    => [139, 140, 141, 171, 172],
+    };
 }
 
 =head2 get_resolutions()
@@ -77,14 +78,14 @@ sub get_resolutions {
     };
 }
 
-=head2 find_streaming_url($urls_ref, $prefer_webm, $resolution)
+=head2 find_streaming_url($urls_ref, $resolution)
 
-Return the streaming URL based on $resolution and $prefer_webm.
+Return the streaming URL which corresponds with the $resolution.
 
 =cut
 
 sub find_streaming_url {
-    my ($self, $urls_ref, $prefer_webm, $resolution) = @_;
+    my ($self, $urls_ref, $resolution) = @_;
 
     state $itags       = $self->get_itags();
     state $resolutions = $self->get_resolutions($itags);
@@ -95,39 +96,32 @@ sub find_streaming_url {
 
     my $wanted_itag = defined $resolution ? $itags->{$resolution} : undef;
 
+    my %stream;
+    foreach my $info_ref (@{$urls_ref}) {
+        if (exists $info_ref->{itag} and exists $info_ref->{url}) {
+            $stream{$info_ref->{itag}} = $info_ref;
+        }
+    }
+
     my $streaming;
-    foreach my $url_ref (
-                         $prefer_webm
-                         ? ((grep { exists($_->{type}) && $_->{type} =~ m{video/webm} } @{$urls_ref}), @{$urls_ref})
-                         : (@{$urls_ref})
-      ) {
-
-        if (exists $url_ref->{itag} && exists $url_ref->{url}) {
-
-            if (defined $wanted_itag) {
-                $url_ref->{itag} ~~ $wanted_itag or next;
+    if (defined $wanted_itag) {
+        foreach my $itag (@{$wanted_itag}) {
+            if (exists $stream{$itag}) {
+                $streaming = $stream{$itag};
+                last;
             }
-
-            next unless exists $resolutions->{$url_ref->{itag}};
-            $streaming = $url_ref;
-            last;
         }
     }
 
     if (not defined $streaming) {
-
         foreach my $res (qw(original 1080 720 480 360 240 180 144 audio)) {
-            foreach my $url (@{$urls_ref}) {
-                if (exists $url->{itag} and exists $url->{url}) {
-
-                    if ($url->{itag} ~~ $itags->{$res}) {
-                        $streaming = $url;
-                        last;
-                    }
-
+            foreach my $itag (@{$itags->{$res}}) {
+                if (exists $stream{$itag}) {
+                    $streaming = $stream{$itag};
+                    last;
                 }
             }
-            last if defined($streaming);
+            last if defined $streaming;
         }
     }
 

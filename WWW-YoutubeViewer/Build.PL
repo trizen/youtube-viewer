@@ -9,44 +9,59 @@ use Module::Build;
 my $gtk_youtube_viewer = 0;
 
 my $builder = Module::Build->new(
-    module_name        => 'WWW::YoutubeViewer',
-    license            => 'perl',
-    dist_author        => q{Șuteu "Trizen" Daniel <trizenx@gmail.com>},
-    dist_version_from  => 'lib/WWW/YoutubeViewer.pm',
-    build_requires     => {'Test::More' => 0},
-    configure_requires => {'Module::Build' => 0},
-    get_options        => {
+    module_name       => 'WWW::YoutubeViewer',
+    license           => 'perl',
+    dist_author       => q{Daniel "Trizen" Șuteu <trizenx@gmail.com>},
+    dist_version_from => 'lib/WWW/YoutubeViewer.pm',
+    release_status    => 'stable',
+
+    build_requires => {
+                       'Test::More' => 0,
+                      },
+
+    configure_requires => {
+                           'Module::Build' => 0,
+                          },
+
+    get_options => {
                     'gtk-youtube-viewer' => {
                                              type  => '!',
                                              store => \$gtk_youtube_viewer,
                                             },
                    },
+
     auto_features => {
+
         shuffle_playlists_support => {
-                                      description => "Shuffle the playlists before playing (--shuffle, -s)",
+                                      description => "To shuffle the playlists (--shuffle, -s)",
                                       requires    => {
                                                    'List::Util' => 0,
                                                   },
                                      },
+
         https_support => {
                           description => "HTTPS protocol support and authentication support",
                           requires    => {
+                                       'MIME::Base64'         => 0,
                                        'LWP::Protocol::https' => 0,
                                       },
                          },
+
         post_comments_support => {
-                                  description => "Post YouTube comments to videos",
+                                  description => "For posting comments to videos",
                                   requires    => {
                                                'File::Temp'           => 0,
                                                'LWP::Protocol::https' => 0,
                                               },
                                  },
+
         channels_support => {
                              description => "Search for YouTube channels",
                              requires    => {
                                           'HTML::Entities' => 0,
                                          },
                             },
+
         fixed_width_support => {
                                 description => "Print the results in a fixed-width format (--fixed-width, -W)",
                                 requires    => {
@@ -54,28 +69,36 @@ my $builder = Module::Build->new(
                                             },
                                },
 
-                     },
+        (
+         $gtk_youtube_viewer
+         ? (
+            threads_support => {
+                                description => "Threads support for gtk-youtube-viewer. (with use_threads => 1)",
+                                requires    => {
+                                             'threads'       => 0,
+                                             'Thread::Queue' => 0,
+                                            },
+                               },
+           )
+         : ()
+        ),
+
+    },
+
     add_to_cleanup     => ['WWW-YoutubeViewer-*'],
     create_makefile_pl => 'traditional',
                                 );
 
 $builder->recommends(
-    'Term::ReadKey'           => 0,    # to get the terminal width
-    'Term::ReadLine::Gnu::XS' => 0,    # for a better user input support
-    'XML::Fast'               => 0,    # faster XML to HASH conversion.
-
-    $gtk_youtube_viewer
-    ? (
-       'threads'       => 0,           # threads support
-       'Thread::Queue' => 0,           # threads support
-      )
-    : (),
-);
+                     'Term::ReadLine::Gnu::XS' => 0,    # for a better user input support
+                     'XML::Fast'               => 0,    # faster XML to HASH conversion.
+                    );
 
 $builder->requires(
     'perl'                  => '5.016',
     'Data::Dump'            => 0,
     'File::Spec::Functions' => 0,
+    'File::Basename'        => 0,
     'File::Path'            => 0,
     'Getopt::Long'          => 0,
     'HTTP::Request'         => 0,
@@ -94,7 +117,7 @@ $builder->requires(
 $builder->script_files(['bin/youtube-viewer', ($gtk_youtube_viewer ? 'bin/gtk-youtube-viewer' : ())]);
 $builder->create_build_script();
 
-# Intalling files for GTK YouTube Viewer
+# Intalling the files for GTK YouTube Viewer
 if ($gtk_youtube_viewer) {
 
     use autouse 'File::Basename'        => qw(dirname);
@@ -128,9 +151,7 @@ if ($gtk_youtube_viewer) {
 
     foreach my $dest (
                       [catfile($main_share_dir, $desktop_file) => catfile($applications_dir, $desktop_file)],
-                      [catfile($main_dir, qw(bin youtube-viewer)) =>
-                         catfile($gtk_youtube_viewer_dir, qw(youtube-viewer))
-                      ],
+                      [catfile($main_dir, qw(bin youtube-viewer)) => catfile($gtk_youtube_viewer_dir, qw(youtube-viewer))],
                       [catfile($main_share_dir, $glade_file) => catfile($gtk_youtube_viewer_dir, $glade_file)],
       ) {
         copy($dest->[0], $dest->[1]) or die "Can't copy `$dest->[0]' to `$dest->[1]': $!";

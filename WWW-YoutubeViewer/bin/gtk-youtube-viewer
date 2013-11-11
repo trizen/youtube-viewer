@@ -18,29 +18,31 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 06 September 2013
+#  Latest edit on: 11 November 2013
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
 use 5.010;
 use strict;
 
-no if $] >= 5.018, warnings => 'experimental::smartmatch';
-
 #use lib qw(../lib);    # devel only
 #use warnings;          # debug only
 
+no if $] >= 5.018, warnings => 'experimental::smartmatch';
+
 use Gtk2 qw(-init);
-use autouse 'File::Basename' => qw(dirname);
 use File::Spec::Functions qw(
   rel2abs
-  catdir catfile
-  curdir updir
-  path tmpdir
+  catdir
+  catfile
+  curdir
+  updir
+  path
+  tmpdir
   );
 
 my $appname  = 'GTK Youtube Viewer';
-my $version  = '3.0.8';
+my $version  = '3.0.9';
 my $execname = 'gtk-youtube-viewer';
 
 # Developer key
@@ -54,14 +56,19 @@ my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
 my $config_dir = catdir($xdg_config_home, $execname);
 my $config_file = catfile($config_dir, "$execname.conf");
 
-if (not -d $config_dir) {
-    require File::Path;
-    File::Path::make_path($config_dir)
-      or warn "[!] Can't create dir '$config_dir': $!";
+my $yv_config_dir = catdir($xdg_config_home, 'youtube-viewer');
+my $auth_tokens_file = catfile($yv_config_dir, 'reg.dat');
+
+foreach my $dir ($config_dir, $yv_config_dir) {
+    if (not -d $dir) {
+        require File::Path;
+        File::Path::make_path($dir)
+          or warn "[!] Can't create dir '$dir': $!";
+    }
 }
 
 # Unchangeable variables goes here
-my %constant = (win32 => $^O =~ /^mswin\d/i || 0,);
+my %constant = (win32 => ($^O =~ /^mswin\d/i || 0));
 
 # CLI Youtube Viewer
 my $cli_youtube_viewer = '/usr/share/gtk-youtube-viewer/youtube-viewer';
@@ -135,7 +142,6 @@ my %CONFIG = (
     mainw_fullscreen            => 0,
 
     # Youtube options
-    prefer_webm         => 1,
     prefer_https        => 0,
     results             => 10,
     resolution          => 'original',
@@ -171,8 +177,6 @@ my %CONFIG = (
     hpaned_position        => 420,
     search_channels        => 0,
     search_playlists       => 0,
-    access_token           => undef,
-    refresh_token          => undef,
     thousand_separator     => q{,},
     perl_bin               => $^X,
     default_thumb          => 'default',
@@ -197,7 +201,7 @@ sub set_mplayer_arguments {
     my $config_documentation = <<"EOD";
 #!/usr/bin/perl
 
-# $appname - configuration file
+# $appname $version - configuration file
 
 EOD
 
@@ -206,7 +210,7 @@ EOD
         require Data::Dump;
         open my $config_fh, '>', $config_file
           or do { warn "[!] Can't open '${config_file}' for write: $!"; return };
-        my $dumped_config = q{our $CONFIG = } . Data::Dump::dump(\%CONFIG);
+        my $dumped_config = q{our $CONFIG = } . Data::Dump::pp(\%CONFIG) . "\n";
         print $config_fh $config_documentation, $dumped_config;
         close $config_fh;
     }
@@ -225,8 +229,9 @@ foreach my $sig (qw(HUP TERM INT KILL)) {
 # Locating the .glade interface file and icons dir
 my ($interface_path, $icons_path);
 if (-f (my $glade_file = catfile(updir(), 'share', "$execname.glade"))) {
+    require File::Basename;
     $interface_path = rel2abs($glade_file);
-    $icons_path = catdir(dirname($interface_path), 'gtk-youtube-viewer-icons');
+    $icons_path = catdir(File::Basename::dirname($interface_path), 'gtk-youtube-viewer-icons');
 }
 else {
     foreach my $usr_dir (qw(/usr /usr/local . ..)) {
@@ -244,17 +249,15 @@ $gui->connect_signals(undef);
 
 # -------------  Get GUI objects ------------- #
 my (
-    $mainw,               $users_list_window,     $help_window,          $prefernces_window,
-    $login_to_youtube,    $errors_window,         $details_window,       $about_window,
-    $treeview,            $liststore,             $config_view,          $statusbar,
-    $thumbs_column,       $textview_help,         $sort_combobox,        $sort_by_time_combobox,
-    $resolution_combobox, $spin_results,          $users_treeview,       $users_liststore,
-    $thumbs_checkbutton,  $search_for_combobox,   $spin_start_with_page, $fullscreen_checkbutton,
-    $notebook,            $search_entry,          $from_author_entry,    $gif_spinner,
-    $hbox2,               $feeds_window,          $feeds_treeview,       $feeds_liststore,
-    $feeds_statusbar,     $safesearch_combobox,   $hd_combobox,          $caption_combobox,
-    $duration_combobox,   $warnings_window,       $warnings_textview,    $errors_textview,
-    $category_id_entry,   $more_options_expander, $cat_treeview,         $cats_liststore,
+    $mainw,                 $users_list_window,     $help_window,          $prefernces_window,      $login_to_youtube,
+    $errors_window,         $details_window,        $about_window,         $treeview,               $liststore,
+    $config_view,           $statusbar,             $thumbs_column,        $textview_help,          $sort_combobox,
+    $sort_by_time_combobox, $resolution_combobox,   $spin_results,         $users_treeview,         $users_liststore,
+    $thumbs_checkbutton,    $search_for_combobox,   $spin_start_with_page, $fullscreen_checkbutton, $notebook,
+    $search_entry,          $from_author_entry,     $gif_spinner,          $hbox2,                  $feeds_window,
+    $feeds_treeview,        $feeds_liststore,       $feeds_statusbar,      $safesearch_combobox,    $hd_combobox,
+    $caption_combobox,      $duration_combobox,     $warnings_window,      $warnings_textview,      $errors_textview,
+    $category_id_entry,     $more_options_expander, $cat_treeview,         $cats_liststore,
    );
 
 sub get_objects {
@@ -336,7 +339,7 @@ local $SIG{__DIE__} = sub {
             if ($error =~ m{^Can't locate (.+?)\.pm\b}) {
                 my $module = $1;
                 $module =~ s{[/\\]+}{::}g;
-"\nThe module $module is required!\n\nTo install the module, just type in terminal:\n\tsudo cpan $module\n";
+                "\nThe module $module is required!\n\nTo install the module, just type in terminal:\n\tsudo cpan $module\n";
             }
           }
           . "\n=>> Previous warnings:\n" . get_text($warnings_textview)
@@ -347,12 +350,11 @@ local $SIG{__DIE__} = sub {
 };
 
 #---------------------- LOAD IMAGES ----------------------#
-my $app_icon_pixbuf    = 'Gtk2::Gdk::Pixbuf'->new_from_file("$icons_path/$execname.png");
-my $user_icon_pixbuf   = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/user.png", 16, 16);
-my $feed_icon_pixbuf   = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/feed_icon.png", 16, 16);
-my $default_thumb      = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/default_thumb.jpg", 120, 90);
-my $donate_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file("$icons_path/donate.png");
-my $animation          = 'Gtk2::Gdk::PixbufAnimation'->new_from_file("$icons_path/spinner.gif");
+my $app_icon_pixbuf  = 'Gtk2::Gdk::Pixbuf'->new_from_file("$icons_path/$execname.png");
+my $user_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/user.png", 16, 16);
+my $feed_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/feed_icon.png", 16, 16);
+my $default_thumb    = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size("$icons_path/default_thumb.jpg", 120, 90);
+my $animation        = 'Gtk2::Gdk::PixbufAnimation'->new_from_file("$icons_path/spinner.gif");
 
 # Setting application title and icon
 $mainw->set_title("$appname $version");
@@ -361,33 +363,61 @@ $mainw->set_icon($app_icon_pixbuf);
 # Regular expressions
 use WWW::YoutubeViewer::RegularExpressions;
 
+our $CONFIG;
+require $config_file;    # Load the configuration file
+
 {
     my $i = length $key;
     $key =~ s/(.{$i})(.)/$2$1/g while $i--;
 }
 
-our $CONFIG;
-require $config_file;    # Load the configuration file
-
 if (ref $CONFIG ne 'HASH') {
     $CONFIG = do($config_file) || warn "Can't load the configuration file: $!";
 }
 
-my @valid_keys = grep exists $CONFIG{$_}, keys %{$CONFIG};
+require WWW::YoutubeViewer::AuthToken;
+my $yv_token = WWW::YoutubeViewer::AuthToken->new(key => $key);
+
+my ($access_token, $refresh_token);
+if (defined $CONFIG->{access_token} and defined $CONFIG->{refresh_token}) {
+
+    $access_token  = $CONFIG->{access_token};
+    $refresh_token = $CONFIG->{refresh_token};
+
+    $yv_token->to_file($access_token, $refresh_token, $auth_tokens_file);
+}
+elsif (-e $auth_tokens_file) {
+    ($access_token, $refresh_token) = $yv_token->from_file($auth_tokens_file);
+}
+
+my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
 
-if (ref $CONFIG ne 'HASH' or not %CONFIG ~~ %{$CONFIG}) {
+if (ref $CONFIG ne 'HASH') {
+    rename($config_file, $config_file . '.bak');
+    dump_configuration();
+}
+elsif (not \%CONFIG ~~ $CONFIG) {
     dump_configuration();
 }
 
 require WWW::YoutubeViewer;
 my $yv_obj = WWW::YoutubeViewer->new(
-                                     key         => $key,
-                                     app_name    => $appname,
-                                     app_version => $version,
-                                     config_dir  => $config_dir,
-                                     escape_utf8 => 1,
+                                     key           => $key,
+                                     app_name      => $appname,
+                                     app_version   => $version,
+                                     access_token  => $access_token,
+                                     refresh_token => $refresh_token,
+                                     config_dir    => $yv_config_dir,
+                                     escape_utf8   => 1,
                                     );
+
+if (defined $yv_obj->get_access_token()) {
+    show_user_panel();
+}
+else {
+    $statusbar->push(1, 'Not logged');
+}
 
 {
     my $client_id     = '991455593101.apps.googleusercontent.com';
@@ -437,20 +467,6 @@ sub apply_configuration {
     # Checking thumbs button
     $thumbs_checkbutton->set_active($CONFIG{show_thumbs});
 
-    # Auto-login
-    if (length $CONFIG{access_token}) {
-        if ($yv_obj->set_access_token($CONFIG{access_token})) {
-            $yv_obj->set_refresh_token($CONFIG{refresh_token});
-            show_user_panel();
-        }
-        else {
-            warn "[!] Invalid access token!\n";
-        }
-    }
-    else {
-        $statusbar->push(1, 'Not logged');
-    }
-
     # Setup threads
     if ($CONFIG{use_threads}) {
         set_threads();
@@ -493,13 +509,13 @@ apply_configuration();
 
 # YouTube usernames
 my %users_table = map { lc($_) => $_ } (
-                                    'AtGoogleTalks',    'AtheistsAreSkeptics', 'Best0fScience',        'Google',
-                                    'GoogleChrome',     'GoogleTechTalks',     'KhanAcademy',          'NASAtelevision',
-                                    'NatCen4ScienceEd', 'GoogleDevelopers',    'VSauce',               'Gotbletu',
-                                    'ScienceChannel',   'SpaceRip',            'TEDtalksDirector',     'ThunderF00t',
-                                    'MIT',              'SixtySymbols',        'SpitzerScienceCenter', 'SciShow',
-                                    'UCBerkeley',       'UCTelevision',        'FOSDEMtalks',          'BigThink',
-                                    'ProfessorFink',    'StanfordUniversity',  'UCTVSeminars',         '1Veritasium',
+                                        'AtGoogleTalks',    'AtheistsAreSkeptics', 'Best0fScience',        'Google',
+                                        'GoogleChrome',     'GoogleTechTalks',     'KhanAcademy',          'NASAtelevision',
+                                        'NatCen4ScienceEd', 'GoogleDevelopers',    'VSauce',               'Gotbletu',
+                                        'ScienceChannel',   'SpaceRip',            'TEDtalksDirector',     'ThunderF00t',
+                                        'MIT',              'SixtySymbols',        'SpitzerScienceCenter', 'SciShow',
+                                        'UCBerkeley',       'UCTelevision',        'FOSDEMtalks',          'BigThink',
+                                        'ProfessorFink',    'StanfordUniversity',  'UCTVSeminars',         '1Veritasium',
                                        );
 set_usernames();
 
@@ -593,7 +609,6 @@ sub new_image_from_pixbuf {
 {
     $gui->get_object('username_list')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
     $gui->get_object('channels_button')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
-    $gui->get_object('donate_button')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $donate_icon_pixbuf));
     $gui->get_object('button6')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
     $gui->get_object('button23')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
 }
@@ -783,23 +798,24 @@ sub show_user_panel {
         hide_login_to_youtube_window();
 
         if ($code ne q{}) {
-
             my $json_data = $yv_obj->oauth_login($code) // return;
 
             say $json_data if $yv_obj->get_debug;
             my $info = $yv_utils->basic_json_parser($json_data);
 
-            if ($gui->get_object('login_check_button')->get_active) {
-                $CONFIG{access_token}  = $info->{access_token}  // return;
-                $CONFIG{refresh_token} = $info->{refresh_token} // return;
-                dump_configuration();
+            if (defined $info->{access_token}) {
+
+                $yv_obj->set_access_token($info->{access_token})   // return;
+                $yv_obj->set_refresh_token($info->{refresh_token}) // return;
+
+                if ($gui->get_object('login_check_button')->get_active) {
+                    $yv_token->to_file($yv_obj->get_access_token, $yv_obj->get_refresh_token, $auth_tokens_file)
+                      or warn "Can't store the authentication tokens: $!";
+                }
+
+                show_user_panel();
+                return 1;
             }
-
-            $yv_obj->set_access_token($info->{access_token})   // return;
-            $yv_obj->set_refresh_token($info->{refresh_token}) // return;
-
-            show_user_panel();
-            return 1;
         }
         return;
     }
@@ -1180,15 +1196,13 @@ sub save_usernames_to_file {
 sub log_out {
     change_subscription_page(0);
 
-    undef $CONFIG{access_token};
-    undef $CONFIG{refresh_token};
-
-    dump_configuration();
+    unlink $auth_tokens_file
+      or warn "Can't unlink: `$auth_tokens_file' -> $!";
 
     $yv_obj->set_access_token();
     $yv_obj->set_refresh_token();
-    $statusbar->push(1, "Not logged.");
 
+    $statusbar->push(1, "Not logged.");
     return 1;
 }
 
@@ -1685,12 +1699,7 @@ sub get_streaming_url {
     require WWW::YoutubeViewer::Itags;
     state $yv_itags = WWW::YoutubeViewer::Itags->new();
 
-    my $streaming = $yv_itags->find_streaming_url(\@urls, $CONFIG{prefer_webm}, $CONFIG{resolution});
-
-    if (not defined $streaming) {
-        $streaming = $yv_itags->find_streaming_url(\@urls, $CONFIG{prefer_webm});
-    }
-
+    my $streaming = $yv_itags->find_streaming_url(\@urls, $CONFIG{resolution});
     my $info = @urls && ref $urls[-1] eq 'HASH' && exists $urls[-1]{status} ? $urls[-1] : {};
 
     return {
@@ -1816,8 +1825,7 @@ sub clear_text {
 }
 
 sub run_cli_youtube_viewer {
-    execute_external_program($CONFIG{terminal}, '-e', q{'} . join(' ', $CONFIG{perl_bin}, $CONFIG{cli_youtube_viewer}),
-                             q{'});
+    execute_external_program($CONFIG{terminal}, '-e', q{'} . join(' ', $CONFIG{perl_bin}, $CONFIG{cli_youtube_viewer}), q{'});
 }
 
 sub find_terminal {
@@ -1930,9 +1938,7 @@ sub execute_cli_youtube_viewer {
                         map { chr ord eq q{'} ? $_ : quotemeta } $CONFIG{terminal},
                         '-e',
                         q{'}
-                          . join(q{ },
-                                 $CONFIG{perl_bin},          $CONFIG{cli_youtube_viewer},
-                                 get_options_as_arguments(), @arguments)
+                          . join(q{ }, $CONFIG{perl_bin}, $CONFIG{cli_youtube_viewer}, get_options_as_arguments(), @arguments)
                           . q{'}
                        )
                       )
@@ -1941,8 +1947,7 @@ sub execute_cli_youtube_viewer {
     say $command if $yv_obj->get_debug;
     system $command;
 
-    warn "youtube-viewer - code exit: $?\n" if $?;
-
+    warn "youtube-viewer - exit code: $?\n" if $?;
     return 1;
 }
 
@@ -2006,10 +2011,11 @@ sub favorite_video {
 
 sub subscribe_channel {
     my $user = get_username_for_selected_video();
-    $feeds_statusbar->push(0,
-                           $yv_obj->subscribe_channel($user)
+    $feeds_statusbar->push(
+                           0, $yv_obj->subscribe_channel($user)
                            ? "Successfully subscribed to channel: $user."
-                           : 'Error!');
+                           : 'Error!'
+                          );
 }
 
 sub like_selected_video {
@@ -2034,13 +2040,10 @@ sub send_comment_to_video {
     my $videoID = get_selected_video_code() or return;
     my $comment = get_text($gui->get_object('comment_textview'));
 
-    $feeds_statusbar->push(
-                           0,
-                           length($comment)
-                             && $yv_obj->send_comment_to_video($videoID, $comment)
+    $feeds_statusbar->push(0,
+                           length($comment) && $yv_obj->send_comment_to_video($videoID, $comment)
                            ? 'Video comment has been posted!'
-                           : 'Error!'
-                          );
+                           : 'Error!');
 }
 
 sub print_comments {

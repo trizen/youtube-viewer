@@ -4,6 +4,7 @@ Build.PL
 Changes
 ignore.txt
 lib/WWW/YoutubeViewer.pm
+lib/WWW/YoutubeViewer/AuthToken.pm
 lib/WWW/YoutubeViewer/GetCaption.pm
 lib/WWW/YoutubeViewer/Itags.pm
 lib/WWW/YoutubeViewer/ParseXML.pm
