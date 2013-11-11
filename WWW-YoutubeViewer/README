@@ -13,7 +13,7 @@ PACKAGING
 
 To package this application, run the following commands:
 
-    perl Build.PL --destdir "/my/package/path"
+    perl Build.PL --destdir "/my/package/path" --installdirs vendor
     ./Build
     ./Build test
     ./Build install --install_path script=/usr/bin
@@ -24,7 +24,7 @@ To install GTK Youtube Viewer, run Build.PL with the '--gtk-youtube-viewer' argu
 
     perl Build.PL --gtk-youtube-viewer
 or:
-    perl Build.PL --destdir "/my/path" --gtk-youtube-viewer
+    perl Build.PL --destdir "/my/path" --installdirs vendor --gtk-youtube-viewer
 
 
 SUPPORT AND DOCUMENTATION

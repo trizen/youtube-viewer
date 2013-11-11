@@ -219,7 +219,7 @@ foreach my $sig (qw(HUP TERM INT KILL)) {
 
 # Locating the .glade interface file and icons dir
 my $glade_file = catfile($share_dir, "$execname.glade");
-my $icons_path = catdir($share_dir, "$execname-icons");
+my $icons_path = catdir($share_dir, 'icons');
 
 # Defining GUI
 my $gui = 'Gtk2::Builder'->new;
