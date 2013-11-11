@@ -2135,6 +2135,13 @@ sub on_mainw_destroy {
     # Save hpaned position
     $CONFIG{hpaned_position} = $hbox2->get_position;
 
+    my $new_token = $yv_obj->get_access_token();
+
+    if (defined($new_token) && (!defined($access_token) || (defined($access_token) && $new_token ne $access_token))) {
+        say "** Updating the access token...\n";
+        $yv_token->to_file($new_token, $yv_obj->get_refresh_token(), $auth_tokens_file);
+    }
+
     get_main_window_size();
     dump_configuration();
     save_usernames_to_file();

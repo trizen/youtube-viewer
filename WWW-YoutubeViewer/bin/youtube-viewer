@@ -659,6 +659,10 @@ NOTE: Categories and region IDs are case sensitive!
    But, what if we'd want to play the videos from the next pages too?
    In this case, ':anp' is your friend. Use it wisely!
 
+8. It is recommended to close the application with the ':q' keyword.
+   This option will update the access token (if needed) and closes
+   the application with an appropriate exit-code.
+
 ** Closed-Captions
     To get the closed-captions (subtitles) for videos, you need to install
     the 'gcap' program. See: http://gcap.googlecode.com
@@ -3044,4 +3048,15 @@ sub press_enter_to_continue {
     scalar $term->readline(colored("\n=>> Press ENTER to continue...", 'bold'));
 }
 
-sub main_quit { exit $_[0] }
+sub main_quit {
+    my $new_token = $yv_obj->get_access_token();
+
+    if (defined($new_token) && (!defined($access_token) || (defined($access_token) && $new_token ne $access_token))) {
+        say "** Updating the access token...\n";
+        $yv_token->to_file($new_token, $yv_obj->get_refresh_token(), $auth_tokens_file);
+    }
+
+    exit $_[0];
+}
+
+main_quit(0);

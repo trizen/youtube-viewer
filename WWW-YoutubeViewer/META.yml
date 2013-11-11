@@ -17,6 +17,9 @@ provides:
   WWW::YoutubeViewer:
     file: lib/WWW/YoutubeViewer.pm
     version: 0.05
+  WWW::YoutubeViewer::AuthToken:
+    file: lib/WWW/YoutubeViewer/AuthToken.pm
+    version: 0.01
   WWW::YoutubeViewer::GetCaption:
     file: lib/WWW/YoutubeViewer/GetCaption.pm
     version: 0.01
