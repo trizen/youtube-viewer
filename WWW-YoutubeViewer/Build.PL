@@ -39,13 +39,13 @@ my $builder = Module::Build->new(
                                                   },
                                      },
 
-        https_support => {
-                          description => "HTTPS protocol support and authentication support",
-                          requires    => {
-                                       'MIME::Base64'         => 0,
-                                       'LWP::Protocol::https' => 0,
-                                      },
-                         },
+        authentication_support => {
+                                   description => "HTTPS protocol support and authentication support",
+                                   requires    => {
+                                                'MIME::Base64'         => 0,
+                                                'LWP::Protocol::https' => 0,
+                                               },
+                                  },
 
         post_comments_support => {
                                   description => "For posting comments to videos",
@@ -55,12 +55,12 @@ my $builder = Module::Build->new(
                                               },
                                  },
 
-        channels_support => {
-                             description => "Search for YouTube channels",
-                             requires    => {
-                                          'HTML::Entities' => 0,
-                                         },
-                            },
+        channel_search_support => {
+                                   description => "Search for YouTube channels",
+                                   requires    => {
+                                                'HTML::Entities' => 0,
+                                               },
+                                  },
 
         fixed_width_support => {
                                 description => "Print the results in a fixed-width format (--fixed-width, -W)",
