@@ -42,6 +42,8 @@ sub new {
 
 Get a HASH ref with the YouTube itags. {resolution => {type => itag}}.
 
+Reference: http://en.wikipedia.org/wiki/YouTube#Quality_and_codecs
+
 =cut
 
 sub get_itags {
@@ -50,13 +52,12 @@ sub get_itags {
         # WebM formats first
         'original' => [38],
         '1080'     => [46, 37],                    # 137 -- no audio
-        '720'      => [45, 22],                    # 136 -- no audio
+        '720'      => [45, 22, 120],               # 136 -- no audio
         '480'      => [44, 35],                    # 135 -- no audio
         '360'      => [43, 34, 18],                # 134 -- no audio
-        '240'      => [5],                         # 133 -- no audio
-        '180'      => [36],
+        '240'      => [5, 36],                     # 133 -- no audio
         '144'      => [17],                        # 160 -- no audio
-        'audio'    => [139, 140, 141, 171, 172],
+        'audio'    => [141, 140, 172, 171, 139],
     };
 }
 
