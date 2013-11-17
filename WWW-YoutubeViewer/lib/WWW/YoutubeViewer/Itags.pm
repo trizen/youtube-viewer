@@ -115,7 +115,7 @@ sub find_streaming_url {
     }
 
     if (not defined $streaming) {
-        foreach my $res (qw(original 1080 720 480 360 240 180 144 audio)) {
+        foreach my $res (qw(original 1080 720 480 360 240 144 audio)) {
             foreach my $itag (@{$itags->{$res}}) {
                 if (exists $stream{$itag}) {
                     $streaming = $stream{$itag};
