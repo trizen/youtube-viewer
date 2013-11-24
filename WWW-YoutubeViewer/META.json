@@ -4,7 +4,7 @@
       "Daniel \"Trizen\" Șuteu <trizenx@gmail.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4008, CPAN::Meta::Converter version 2.132830",
+   "generated_by" : "Module::Build version 0.42",
    "license" : [
       "perl_5"
    ],
@@ -15,6 +15,10 @@
    "name" : "WWW-YoutubeViewer",
    "prereqs" : {
       "build" : {
+         "recommends" : {
+            "Term::ReadLine::Gnu::XS" : "0",
+            "XML::Fast" : "0"
+         },
          "requires" : {
             "Test::More" : "0"
          }
@@ -25,10 +29,6 @@
          }
       },
       "runtime" : {
-         "recommends" : {
-            "Term::ReadLine::Gnu::XS" : "0",
-            "XML::Fast" : "0"
-         },
          "requires" : {
             "Data::Dump" : "0",
             "File::Path" : "0",
@@ -49,10 +49,6 @@
       "WWW::YoutubeViewer" : {
          "file" : "lib/WWW/YoutubeViewer.pm",
          "version" : "0.05"
-      },
-      "WWW::YoutubeViewer::AuthToken" : {
-         "file" : "lib/WWW/YoutubeViewer/AuthToken.pm",
-         "version" : "0.01"
       },
       "WWW::YoutubeViewer::GetCaption" : {
          "file" : "lib/WWW/YoutubeViewer/GetCaption.pm",

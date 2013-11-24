@@ -56,9 +56,8 @@ my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
 # Configuration dir/file
 my $config_dir = catdir($xdg_config_home, $execname);
 my $config_file = catfile($config_dir, "$execname.conf");
-
 my $yv_config_dir = catdir($xdg_config_home, 'youtube-viewer');
-my $auth_tokens_file = catfile($yv_config_dir, 'reg.dat');
+my $authentication_file = catfile($yv_config_dir, 'reg.dat');
 
 foreach my $dir ($config_dir, $yv_config_dir) {
     if (not -d $dir) {
@@ -345,38 +344,14 @@ use WWW::YoutubeViewer::RegularExpressions;
 our $CONFIG;
 require $config_file;    # Load the configuration file
 
-{
-    my $i = length $key;
-    $key =~ s/(.{$i})(.)/$2$1/g while $i--;
-}
-
 if (ref $CONFIG ne 'HASH') {
-    $CONFIG = do($config_file) || warn "Can't load the configuration file: $!";
-}
-
-require WWW::YoutubeViewer::AuthToken;
-my $yv_token = WWW::YoutubeViewer::AuthToken->new(key => $key);
-
-my ($access_token, $refresh_token);
-if (defined $CONFIG->{access_token} and defined $CONFIG->{refresh_token}) {
-
-    $access_token  = $CONFIG->{access_token};
-    $refresh_token = $CONFIG->{refresh_token};
-
-    $yv_token->to_file($access_token, $refresh_token, $auth_tokens_file);
-}
-elsif (-e $auth_tokens_file) {
-    ($access_token, $refresh_token) = $yv_token->from_file($auth_tokens_file);
+    die "ERROR: Invalid configuration file!\n\t\$CONFIG is not an HASH ref!";
 }
 
 my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
 
-if (ref $CONFIG ne 'HASH') {
-    rename($config_file, $config_file . '.bak');
-    dump_configuration();
-}
-elsif (not \%CONFIG ~~ $CONFIG) {
+if (not \%CONFIG ~~ $CONFIG) {
     dump_configuration();
 }
 
@@ -387,18 +362,22 @@ if (not defined $CONFIG{gcap}) {
     }
 }
 
+{
+    my $i = length $key;
+    $key =~ s/(.{$i})(.)/$2$1/g while $i--;
+}
+
 # Locating youtube-viewer
 $CONFIG{youtube_viewer} //= which_command('youtube-viewer') // 'youtube-viewer';
 
 require WWW::YoutubeViewer;
 my $yv_obj = WWW::YoutubeViewer->new(
-                                     key           => $key,
-                                     app_name      => $appname,
-                                     app_version   => $version,
-                                     access_token  => $access_token,
-                                     refresh_token => $refresh_token,
-                                     config_dir    => $yv_config_dir,
-                                     escape_utf8   => 1,
+                                     escape_utf8         => 1,
+                                     key                 => $key,
+                                     app_name            => $appname,
+                                     app_version         => $version,
+                                     config_dir          => $yv_config_dir,
+                                     authentication_file => $authentication_file,
                                     );
 
 if (defined $yv_obj->get_access_token()) {
@@ -798,7 +777,7 @@ sub show_user_panel {
                 $yv_obj->set_refresh_token($info->{refresh_token}) // return;
 
                 if ($gui->get_object('login_check_button')->get_active) {
-                    $yv_token->to_file($yv_obj->get_access_token, $yv_obj->get_refresh_token, $auth_tokens_file)
+                    $yv_obj->save_authentication_tokens()
                       or warn "Can't store the authentication tokens: $!";
                 }
 
@@ -1185,8 +1164,8 @@ sub save_usernames_to_file {
 sub log_out {
     change_subscription_page(0);
 
-    unlink $auth_tokens_file
-      or warn "Can't unlink: `$auth_tokens_file' -> $!";
+    unlink $authentication_file
+      or warn "Can't unlink: `$authentication_file' -> $!";
 
     $yv_obj->set_access_token();
     $yv_obj->set_refresh_token();
@@ -2120,13 +2099,6 @@ sub on_mainw_destroy {
 
     # Save hpaned position
     $CONFIG{hpaned_position} = $hbox2->get_position;
-
-    my $new_token = $yv_obj->get_access_token();
-
-    if (defined($new_token) && (!defined($access_token) || (defined($access_token) && $new_token ne $access_token))) {
-        say "** Updating the access token...\n";
-        $yv_token->to_file($new_token, $yv_obj->get_refresh_token(), $auth_tokens_file);
-    }
 
     get_main_window_size();
     dump_configuration();

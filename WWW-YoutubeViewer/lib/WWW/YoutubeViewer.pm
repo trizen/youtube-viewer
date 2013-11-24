@@ -63,26 +63,26 @@ my %valid_options = (
     safe_search => {valid => [qw(strict moderate none)],                 default => undef},
 
     # Others
-    debug        => {valid => [0 .. 2],               default => 0},
-    lwp_timeout  => {valid => [qr/^\d+$/],            default => 30},
-    access_token => {valid => [qr/^.{5}/],            default => undef},
-    key          => {valid => [qr/^.{5}/],            default => undef},
-    author       => {valid => [qr{^[\-\w.]{2,64}\z}], default => undef},
-    app_version  => {valid => [qr/^v?\d/],            default => $VERSION},
-    app_name     => {valid => [qr/^./],               default => 'Youtube Viewer'},
-    config_dir   => {valid => [qr/^./],               default => q{.}},
+    debug       => {valid => [0 .. 2],               default => 0},
+    lwp_timeout => {valid => [qr/^\d+$/],            default => 30},
+    key         => {valid => [qr/^.{5}/],            default => undef},
+    author      => {valid => [qr{^[\-\w.]{2,64}\z}], default => undef},
+    app_version => {valid => [qr/^v?\d/],            default => $VERSION},
+    app_name    => {valid => [qr/^./],               default => 'Youtube Viewer'},
+    config_dir  => {valid => [qr/^./],               default => q{.}},
 
+    authentication_file => {valid => [qr/^./],         default => undef},
     categories_language => {valid => [qr/^[a-z]+-\w/], default => 'en-US'},
 
     # Booleans
-    lwp_keep_alive => {valid => [1, 0], default => 1},
-    lwp_env_proxy  => {valid => [1, 0], default => 1},
-    escape_utf8    => {valid => [1, 0], default => 0},
+    lwp_env_proxy => {valid => [1, 0], default => 1},
+    escape_utf8   => {valid => [1, 0], default => 0},
 
     # OAuth stuff
     client_id     => {valid => [qr/^.{5}/], default => undef},
     client_secret => {valid => [qr/^.{5}/], default => undef},
     redirect_uri  => {valid => [qr/^.{5}/], default => undef},
+    access_token  => {valid => [qr/^.{5}/], default => undef},
     refresh_token => {valid => [qr/^.{5}/], default => undef},
 
     # No input value alowed
@@ -148,6 +148,8 @@ sub new {
       || $self->get_start_index()
       || 1;
 
+    $self->load_authentication_tokens();
+
     foreach my $invalid_key (keys %opts) {
         warn "Invalid key: '${invalid_key}'";
     }
@@ -173,6 +175,104 @@ sub set_prefer_https {
     }
 
     return $bool;
+}
+
+sub __AUTH_EOL__() { "\0\0\0" }
+
+=head2 load_authentication_tokens()
+
+Will try to load the access and refresh tokens from I<authentication_file>.
+
+=cut
+
+sub load_authentication_tokens {
+    my ($self) = @_;
+
+    if (defined $self->get_access_token and defined $self->get_refresh_token) {
+        return 1;
+    }
+
+    if (defined(my $file = $self->get_authentication_file) and defined(my $key = $self->get_key)) {
+        if (-f $file) {
+            local $/ = __AUTH_EOL__;
+            open my $fh, '<:raw', $file or return;
+
+            my @tokens;
+            foreach my $i (0 .. 1) {
+                chomp(my $token = <$fh>);
+                $token =~ /\S/ || last;
+                push @tokens, $self->decode_token($token);
+            }
+
+            $self->set_access_token($tokens[0])  // return;
+            $self->set_refresh_token($tokens[1]) // return;
+
+            close $fh;
+            return 1;
+        }
+
+    }
+
+    return;
+}
+
+=head2 encode_token($token)
+
+Encode the token with the I<key> and return it.
+
+=cut
+
+sub encode_token {
+    my ($self, $token) = @_;
+
+    if (defined(my $key = $self->get_key)) {
+        require MIME::Base64;
+        return MIME::Base64::encode_base64($token ^ substr($key, -length($token)));
+    }
+
+    return;
+}
+
+=head2 decode_token($token)
+
+Decode the token with the I<key> and return it.
+
+=cut
+
+sub decode_token {
+    my ($self, $token) = @_;
+
+    if (defined(my $key = $self->get_key)) {
+        require MIME::Base64;
+        my $bin = MIME::Base64::decode_base64($token);
+        return $bin ^ substr($key, -length($bin));
+    }
+
+    return;
+}
+
+=head2 save_authentication_tokens()
+
+Encode and save the access and refresh into the I<authentication_file>.
+
+=cut
+
+sub save_authentication_tokens {
+    my ($self) = @_;
+
+    my $file          = $self->get_authentication_file() // return;
+    my $access_token  = $self->get_access_token()        // return;
+    my $refresh_token = $self->get_refresh_token()       // return;
+
+    if (open my $fh, '>:raw', $file) {
+        foreach my $token ($access_token, $refresh_token) {
+            print {$fh} $self->encode_token($token) . __AUTH_EOL__;
+        }
+        close $fh;
+        return 1;
+    }
+
+    return;
 }
 
 =head2 get_prefer_https()
@@ -281,9 +381,8 @@ sub set_lwp_useragent {
 
     require LWP::UserAgent;
     $self->{lwp} = 'LWP::UserAgent'->new(
-                                         keep_alive => $self->get_lwp_keep_alive,
-                                         env_proxy  => (defined($self->get_http_proxy) ? 0 : $self->get_lwp_env_proxy),
-                                         timeout    => $self->get_lwp_timeout,
+                                         env_proxy => (defined($self->get_http_proxy) ? 0 : $self->get_lwp_env_proxy),
+                                         timeout => $self->get_lwp_timeout,
                                          show_progress => $self->get_debug,
                                          agent         => $self->get_lwp_agent,
                                         );
@@ -442,12 +541,13 @@ sub lwp_get {
                     my $new_resp = $self->{lwp}->get($url, $self->_get_lwp_header);
 
                     if ($new_resp->is_success) {
+                        $self->save_authentication_tokens();
                         return $new_resp->decoded_content;
                     }
                     elsif ($new_resp->status_line() eq '401 Token invalid') {
                         $self->set_refresh_token();    # refresh token was invalid
                         $self->set_access_token();     # access token is also broken
-                        warn "[!] Can't refresh the access token! Logging out...\n";
+                        warn "[!] Can't refresh the access token!\n";
                     }
                     else {
                         warn '[' . $new_resp->status_line . "] Error occured on URL: $url\n";
@@ -719,10 +819,9 @@ sub _xml2hash {
              videoID => $gdata->{'media:group'}{'yt:videoid'},
              title   => $gdata->{'media:group'}{'media:title'}{'#text'},
              author  => (
-                        ref $gdata->{'media:group'}{'media:credit'} eq 'ARRAY'
-                        ? $gdata->{'media:group'}{'media:credit'}[0]{'#text'}
-                        : $gdata->{'media:group'}{'media:credit'}{'#text'}
-                       ),
+                   ref $gdata->{'media:group'}{'media:credit'} eq 'ARRAY' ? $gdata->{'media:group'}{'media:credit'}[0]{'#text'}
+                   : $gdata->{'media:group'}{'media:credit'}{'#text'}
+             ),
              rating   => $gdata->{'gd:rating'}{'-average'}     || 0,
              likes    => $gdata->{'yt:rating'}{'-numLikes'}    || 0,
              dislikes => $gdata->{'yt:rating'}{'-numDislikes'} || 0,
@@ -1071,11 +1170,11 @@ sub _get_categories {
                   label   => $cat->{'-label'},
                   term    => $cat->{'-term'},
                   regions => (
-                             exists($cat->{'yt:browsable'})
-                               && ref $cat->{'yt:browsable'} eq 'ARRAY' && exists($cat->{'yt:browsable'}[0]{'-regions'})
-                             ? [split(q{ }, $cat->{'yt:browsable'}[0]{'-regions'})]
-                             : []
-                  ),
+                              exists($cat->{'yt:browsable'})
+                                && ref $cat->{'yt:browsable'} eq 'ARRAY' && exists($cat->{'yt:browsable'}[0]{'-regions'})
+                              ? [split(q{ }, $cat->{'yt:browsable'}[0]{'-regions'})]
+                              : []
+                             ),
                  };
     }
 
@@ -1806,6 +1905,18 @@ Set a configuration directory.
 
 Get the configuration directory.
 
+=head2 set_authentication_file($filename)
+
+File from where to get and save the encoded authentication token everytime when is needed.
+
+=cut
+
+=head2 get_authentication_file()
+
+Returns the authentication file's name.
+
+=cut
+
 =head2 set_escape_utf8($bool)
 
 If true, it escapes the keywords using uri_escape_utf8.
@@ -1841,14 +1952,6 @@ Set the env_proxy value for LWP.
 =head2 get_lwp_env_proxy()
 
 Returns the env_proxy value.
-
-=head2 set_lwp_keep_alive($bool)
-
-Set the keep_alive value for LWP.
-
-=head2 get_lwp_keep_alive()
-
-Returns the keep_alive value.
 
 =head2 set_lwp_timeout($sec).
 

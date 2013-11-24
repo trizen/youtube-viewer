@@ -7,7 +7,7 @@ build_requires:
 configure_requires:
   Module::Build: 0
 dynamic_config: 1
-generated_by: 'Module::Build version 0.4008, CPAN::Meta::Converter version 2.132830'
+generated_by: 'Module::Build version 0.42, CPAN::Meta::Converter version 2.132830'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -17,9 +17,6 @@ provides:
   WWW::YoutubeViewer:
     file: lib/WWW/YoutubeViewer.pm
     version: 0.05
-  WWW::YoutubeViewer::AuthToken:
-    file: lib/WWW/YoutubeViewer/AuthToken.pm
-    version: 0.01
   WWW::YoutubeViewer::GetCaption:
     file: lib/WWW/YoutubeViewer/GetCaption.pm
     version: 0.01
@@ -35,9 +32,6 @@ provides:
   WWW::YoutubeViewer::Utils:
     file: lib/WWW/YoutubeViewer/Utils.pm
     version: 0.02
-recommends:
-  Term::ReadLine::Gnu::XS: 0
-  XML::Fast: 0
 requires:
   Data::Dump: 0
   File::Path: 0

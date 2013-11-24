@@ -4,7 +4,6 @@ Build.PL
 Changes
 ignore.txt
 lib/WWW/YoutubeViewer.pm
-lib/WWW/YoutubeViewer/AuthToken.pm
 lib/WWW/YoutubeViewer/GetCaption.pm
 lib/WWW/YoutubeViewer/Itags.pm
 lib/WWW/YoutubeViewer/ParseXML.pm
@@ -17,7 +16,6 @@ META.yml
 README
 share/gtk-youtube-viewer.desktop
 share/gtk-youtube-viewer.glade
-share/gtk-youtube-viewer.png
 share/icons/default_thumb.jpg
 share/icons/feed_icon.png
 share/icons/gtk-youtube-viewer.png

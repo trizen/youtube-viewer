@@ -1641,20 +1641,37 @@ When the specified resolution is not found, it falls down to a lower resolution.
     <property name="window_position">center-on-parent</property>
     <property name="type_hint">normal</property>
     <property name="transient_for">__MAIN__</property>
-    <property name="program_name">Glade</property>
+    <property name="program_name">GTK Youtube Viewer</property>
     <property name="copyright" translatable="yes">Copyright © 2010-2013 by Trizen</property>
     <property name="comments" translatable="yes">Written in Perl, Gtk2 and Glade under the GPLv3.</property>
     <property name="website">http://trizen.googlecode.com</property>
-    <property name="website_label" translatable="yes">Developer's website</property>
+    <property name="website_label" translatable="yes">Application's website</property>
+    <property name="license" translatable="yes">
+Copyright (C) 2010-2013 Trizen &lt;trizenx@gmail.com&gt;.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+</property>
     <property name="authors">[+] Developer/Maintainer:
  =&gt;  Trizen (trizenx@gmail.com)
     * Core
     * GUI
 
-[+] Contributor:
+[+] Contributors:
   =&gt; Ovidiu D. Nițan (nitanovidiu@gmail.com)
     * Threads
     * GUI fixes</property>
+    <property name="artists">PosixRU (main icon - http://zenway.ru/page/gtk-youtube-viewer)</property>
     <signal name="destroy" handler="hide_about_window" swapped="no"/>
     <signal name="delete-event" handler="hide_about_window" swapped="no"/>
     <signal name="response" handler="hide_about_window" swapped="no"/>
@@ -1664,6 +1681,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
         <child internal-child="action_area">
           <object class="GtkHButtonBox" id="dialog-action_area3">
             <property name="can_focus">False</property>
+            <property name="layout_style">end</property>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -2388,7 +2406,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
                   <object class="GtkLabel" id="label24">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">&lt;b&gt;Add a comment to video:&lt;/b&gt;</property>
+                    <property name="label" translatable="yes">&lt;b&gt;Add a comment to this video:&lt;/b&gt;</property>
                     <property name="use_markup">True</property>
                   </object>
                 </child>
@@ -2513,7 +2531,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
                             </child>
                             <child>
                               <object class="GtkButton" id="button23">
-                                <property name="label" translatable="yes">Subscribe user's channel</property>
+                                <property name="label" translatable="yes">Subscribe to author's channel</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -2539,7 +2557,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
                             <property name="can_focus">False</property>
                             <child>
                               <object class="GtkButton" id="button20">
-                                <property name="label" translatable="yes">List videos from this user</property>
+                                <property name="label" translatable="yes">More videos from this author</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -2554,7 +2572,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
                             </child>
                             <child>
                               <object class="GtkButton" id="button13">
-                                <property name="label" translatable="yes">List user's favorited videos</property>
+                                <property name="label" translatable="yes">Show author's favorited videos</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -2595,7 +2613,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
                             </child>
                             <child>
                               <object class="GtkButton" id="button12">
-                                <property name="label" translatable="yes">List the user's playlists</property>
+                                <property name="label" translatable="yes">Show author's plalyists</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>

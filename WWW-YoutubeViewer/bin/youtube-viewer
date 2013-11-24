@@ -140,8 +140,8 @@ my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
 
 # Configuration dir/file
 my $config_dir = catdir($xdg_config_home, $execname);
-my $config_file      = catfile($config_dir, "$execname.conf");
-my $auth_tokens_file = catfile($config_dir, 'reg.dat');
+my $config_file         = catfile($config_dir, "$execname.conf");
+my $authentication_file = catfile($config_dir, 'reg.dat');
 
 if (not -d $config_dir) {
     require File::Path;
@@ -340,45 +340,21 @@ EOD
     }
 }
 
-if (not -e $config_file or $opt{reconfigure}) {
+if (not -e $config_file or -z _ or $opt{reconfigure}) {
     dump_configuration();
 }
 
 our $CONFIG;
 require $config_file;    # Load the configuration file
 
-{
-    my $i = length $key;
-    $key =~ s/(.{$i})(.)/$2$1/g while $i--;
-}
-
 if (ref $CONFIG ne 'HASH') {
-    $CONFIG = do($config_file) || warn "Can't load the configuration file: $!";
-}
-
-require WWW::YoutubeViewer::AuthToken;
-my $yv_token = WWW::YoutubeViewer::AuthToken->new(key => $key);
-
-my ($access_token, $refresh_token);
-if (defined $CONFIG->{access_token} and defined $CONFIG->{refresh_token}) {
-
-    $access_token  = $CONFIG->{access_token};
-    $refresh_token = $CONFIG->{refresh_token};
-
-    $yv_token->to_file($access_token, $refresh_token, $auth_tokens_file);
-}
-elsif (-e $auth_tokens_file) {
-    ($access_token, $refresh_token) = $yv_token->from_file($auth_tokens_file);
+    die "ERROR: Invalid configuration file!\n\t\$CONFIG is not an HASH ref!";
 }
 
 my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
 
-if (ref $CONFIG ne 'HASH') {
-    rename($config_file, $config_file . '.bak');
-    dump_configuration();
-}
-elsif (not \%CONFIG ~~ $CONFIG) {
+if (not \%CONFIG ~~ $CONFIG) {
     dump_configuration();
 }
 
@@ -392,15 +368,19 @@ if (not defined $CONFIG{gcap}) {
 
 @opt{keys %CONFIG} = values(%CONFIG);
 
+{
+    my $i = length $key;
+    $key =~ s/(.{$i})(.)/$2$1/g while $i--;
+}
+
 require WWW::YoutubeViewer;
 my $yv_obj = WWW::YoutubeViewer->new(
-                                     key           => $key,
-                                     access_token  => $access_token,
-                                     refresh_token => $refresh_token,
-                                     app_name      => $appname,
-                                     app_version   => $version,
-                                     config_dir    => $config_dir,
-                                     escape_utf8   => 1,
+                                     key                 => $key,
+                                     app_name            => $appname,
+                                     app_version         => $version,
+                                     config_dir          => $config_dir,
+                                     escape_utf8         => 1,
+                                     authentication_file => $authentication_file,
                                     );
 
 {
@@ -667,10 +647,6 @@ NOTE: Categories and region IDs are case sensitive!
    only the videos matched by a regex, we'd say :re="REGEX".
    But, what if we'd want to play the videos from the next pages too?
    In this case, ':anp' is your friend. Use it wisely!
-
-8. It is recommended to close the application with the ':q' keyword.
-   This option will update the access token (if needed) and closes
-   the application with an appropriate exit-code.
 
 ** Closed-Captions
     To get the closed-captions (subtitles) for videos, you need to install
@@ -1399,8 +1375,8 @@ sub get_user_input {
 
 sub logout {
 
-    unlink $auth_tokens_file
-      or warn "Can't unlink: `$auth_tokens_file' -> $!";
+    unlink $authentication_file
+      or warn "Can't unlink: `$authentication_file' -> $!";
 
     $yv_obj->set_access_token();
     $yv_obj->set_refresh_token();
@@ -1436,7 +1412,7 @@ INFO
                                         default => 'y',);
 
         if ($remember_me) {
-            $yv_token->to_file($yv_obj->get_access_token, $yv_obj->get_refresh_token, $auth_tokens_file)
+            $yv_obj->save_authentication_tokens()
               or warn "Can't store the authentication tokens: $!";
         }
 
@@ -3058,13 +3034,6 @@ sub press_enter_to_continue {
 }
 
 sub main_quit {
-    my $new_token = $yv_obj->get_access_token();
-
-    if (defined($new_token) && (!defined($access_token) || (defined($access_token) && $new_token ne $access_token))) {
-        say "** Updating the access token...\n";
-        $yv_token->to_file($new_token, $yv_obj->get_refresh_token(), $auth_tokens_file);
-    }
-
     exit $_[0];
 }
 
