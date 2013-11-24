@@ -2,13 +2,6 @@
 <interface>
   <requires lib="gtk+" version="2.18"/>
   <!-- interface-naming-policy project-wide -->
-  <object class="GtkAdjustment" id="adjustment2">
-    <property name="lower">1</property>
-    <property name="upper">4096</property>
-    <property name="value">1</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
   <object class="GtkWindow" id="__MAIN__">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -1663,15 +1656,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
 </property>
     <property name="authors">[+] Developer/Maintainer:
- =&gt;  Trizen (trizenx@gmail.com)
+ =&gt;  Trizen (&lt;trizenx@gmail.com&gt;)
     * Core
     * GUI
 
 [+] Contributors:
-  =&gt; Ovidiu D. Nițan (nitanovidiu@gmail.com)
+  =&gt; Ovidiu D. Nițan (&lt;nitanovidiu@gmail.com&gt;)
     * Threads
     * GUI fixes</property>
-    <property name="artists">PosixRU (main icon - http://zenway.ru/page/gtk-youtube-viewer)</property>
+    <property name="artists">PosixRU (main icon: &lt;http://zenway.ru/page/gtk-youtube-viewer&gt;)</property>
     <signal name="destroy" handler="hide_about_window" swapped="no"/>
     <signal name="delete-event" handler="hide_about_window" swapped="no"/>
     <signal name="response" handler="hide_about_window" swapped="no"/>
@@ -1701,6 +1694,18 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
     <property name="upper">50</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment2">
+    <property name="lower">1</property>
+    <property name="upper">4096</property>
+    <property name="value">1</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkImage" id="download_icon3">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">emblem-downloads</property>
   </object>
   <object class="GtkWindow" id="details_window">
     <property name="can_focus">False</property>
@@ -2107,11 +2112,6 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
     <property name="icon_name">emblem-downloads</property>
   </object>
   <object class="GtkImage" id="download_icon2">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-downloads</property>
-  </object>
-  <object class="GtkImage" id="download_icon3">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">emblem-downloads</property>
