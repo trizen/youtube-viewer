@@ -777,8 +777,12 @@ sub show_user_panel {
                 $yv_obj->set_refresh_token($info->{refresh_token}) // return;
 
                 if ($gui->get_object('login_check_button')->get_active) {
+                    $yv_obj->set_authentication_file($authentication_file);
                     $yv_obj->save_authentication_tokens()
                       or warn "Can't store the authentication tokens: $!";
+                }
+                else {
+                    $yv_obj->set_authentication_file();
                 }
 
                 show_user_panel();

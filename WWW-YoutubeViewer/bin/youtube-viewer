@@ -1412,8 +1412,12 @@ INFO
                                         default => 'y',);
 
         if ($remember_me) {
+            $yv_obj->set_authentication_file($authentication_file);
             $yv_obj->save_authentication_tokens()
               or warn "Can't store the authentication tokens: $!";
+        }
+        else {
+            $yv_obj->set_authentication_file();
         }
 
         return 1;
