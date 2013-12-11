@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 11 November 2013
+#  Latest edit on: 11 December 2013
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -111,7 +111,7 @@ no if $] >= 5.018, warnings => 'experimental::smartmatch';
 no if $] >= 5.018, warnings => 'deprecated';
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.0.9';
+my $version  = '3.1.0';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
@@ -166,13 +166,35 @@ use WWW::YoutubeViewer::RegularExpressions;
 my %CONFIG = (
 
     # MPlayer options
-    cache             => 30000,
-    cache_min         => 5,
-    lower_cache       => 2000,
-    lower_cache_min   => 3,
-    mplayer           => get_mplayer(),
-    mplayer_srt_args  => '-sub %s',
-    mplayer_arguments => '-prefer-ipv4 -really-quiet -cache %d -cache-min %d',
+    cache           => 30000,
+    cache_min       => 5,
+    lower_cache     => 1000,
+    lower_cache_min => 3,
+
+    video_players => {
+                      mplayer => {
+                                  cmd     => get_mplayer(),
+                                  srt     => q{-sub '%s'},
+                                  fs      => q{-fs},
+                                  arg     => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d},
+                                  novideo => q{--novideo},
+                                 },
+                      vlc => {
+                              cmd     => q{vlc},
+                              srt     => q{--sub-file '%s'},
+                              fs      => q{--fullscreen},
+                              arg     => q{--quiet --play-and-exit},
+                              novideo => q{--intf dummy --novideo},
+                             },
+                      mpv => {
+                              cmd     => q{mpv},
+                              srt     => q{--sub '%s'},
+                              fs      => q{--fullscreen},
+                              arg     => q{--really-quiet},
+                              novideo => q{--no-video},
+                             },
+                     },
+    video_player_selected => 'mplayer',    # maybe: detect_video_player()?
 
     # Youtube options
     prefer_https        => 0,
@@ -226,9 +248,9 @@ my %MPLAYER;
 # MPlayer variable arguments
 sub set_mplayer_arguments {
     my ($cache, $cache_min) = @_;
-    $MPLAYER{mplayer_arguments} = sprintf $opt{mplayer_arguments}, $cache, $cache_min;
-    $MPLAYER{fullscreen} = $opt{fullscreen} ? q{-fs}      : q{};
-    $MPLAYER{novideo}    = $opt{novideo}    ? q{-novideo} : q{};
+    $MPLAYER{mplayer_arguments} = sprintf($opt{video_players}{$opt{video_player_selected}}{arg}, $cache, $cache_min);
+    $MPLAYER{fullscreen} = $opt{fullscreen} ? $opt{video_players}{$opt{video_player_selected}}{fs}      : q{};
+    $MPLAYER{novideo}    = $opt{novideo}    ? $opt{video_players}{$opt{video_player_selected}}{novideo} : q{};
     return 1;
 }
 
@@ -354,6 +376,19 @@ if (ref $CONFIG ne 'HASH') {
 my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
 
+# Backwards compatibility (likely to go away in the future)
+if (not exists $CONFIG{video_players}{'custom'}) {
+    if (exists $CONFIG->{mplayer}) {
+        my $hash_ref = $CONFIG{video_players}{'custom'} = {};
+        $hash_ref->{cmd}               = $CONFIG->{mplayer} // q{mplayer};
+        $hash_ref->{fs}                = '-fs';
+        $hash_ref->{novideo}           = '-novideo';
+        $hash_ref->{srt}               = $CONFIG->{mplayer_srt_args} // q{-sub '%s'};
+        $hash_ref->{arg}               = $CONFIG->{mplayer_arguments} // q{};
+        $CONFIG{video_player_selected} = 'custom';
+    }
+}
+
 if (not \%CONFIG ~~ $CONFIG) {
     dump_configuration();
 }
@@ -423,6 +458,8 @@ unless (qr/^--?(?>N|noconfig)\z/ ~~ \@ARGV) {
 #---------------------- YOUTUBE-VIEWER USAGE ----------------------#
 sub help {
     my $eqs = q{=} x 30;
+
+    local $" = ', ';
     print <<"HELP";
 \n  $eqs \U$appname\E $eqs
 \t\t\t\t\t\t by Trizen (trizenx\@gmail.com)
@@ -483,18 +520,16 @@ YouTube options:
    --dislike=ID/URL     : send a 'dislike' rating to one or more videos *
 
 MPlayer options:
-   -f  --fullscreen!    : set the fullscreen mode for mplayer (-fs)
+   -f  --fullscreen!    : set the fullscreen mode for video player
    -n  --novideo!       : play the music only without a video in the foreground
    -l  --use-lc         : use a lower cache for MPlayer (for slow connections)
-   --nocache            : use no cache while streaming videos (for fast connections)
+   --nocache            : use no cache while streaming videos (with MPlayer)
    --cache=i            : set the cache for MPlayer (set: $opt{cache})
    --cache-min=i        : set the cache-min for MPlayer (set: $opt{cache_min})
    --lcache=i           : set the lower-cache for MPlayer (set: $opt{lower_cache})
    --lcache-min=i       : set the lower-cache-min for MPlayer (set: $opt{lower_cache_min})
-   --mplayer=s          : set a media player (set: $opt{mplayer})
-   --mplayer-args=s     : replace the arguments for the media player
-   --mplayer-srt-args=s : replace the subtitle arguments for the media player
-   --append-mplayer=s   : add some arguments for the media player
+   --video-player=s     : select a video player to stream videos
+                          avaiable: @{[keys %{$CONFIG->{video_players}}]}
 
 Other options:
    -d  --download!      : download the video(s)
@@ -604,9 +639,8 @@ NOTE: Categories and region IDs are case sensitive!
 
 ** Playing videos
 1. To stream the videos in other players, you need to change the
-   configuration file. You can execute '$execname -mplayer=vlc' for
-   example, but the mplayer arguments doesn't work for vlc.
-   The full command should be: $execname -mplayer=vlc -mplayer-arg=-q
+   configuration file. Where it says 'video_player_selected', change it
+   to to any defined player inside the 'video_players' tree.
 
 2. lower_cache and lower_cache_min values are used when -l (--use-lower-cache)
    is specified as argument, or if the resolution of a video is lower than 720p.
@@ -1110,16 +1144,13 @@ sub parse_arguments {
         'keep-original-video!'     => \$opt{keep_original_video},
 
         # MPlayer
-        'mplayer=s'                                                 => \$opt{mplayer},
-        'nocache!'                                                  => \$opt{nocache},
-        'cache=i'                                                   => \$opt{cache},
-        'cache-min|cache_min=i'                                     => \$opt{cache_min},
-        'lcache|lower-cache|lower_cache=i'                          => \$opt{lower_cache},
-        'lcache-minlower-cache-min|lower_cache_min=i'               => \$opt{lower_cache_min},
-        'use-lower-cache|l|use_lower_cache|use-lc!'                 => \$opt{use_lower_cache},
-        'append_mplayer|append-mplayer=s'                           => \$MPLAYER{other_args},
-        'mplayer_arguments|mplayer-args|mplayer-arguments=s'        => \$opt{mplayer_arguments},
-        'mplayer_srt_args|mplayer-srt-arguments|mplayer-srt-args=s' => \$opt{mplayer_srt_args},
+        'player|vplayer|video-player|video_player=s'  => \$opt{video_player_selected},
+        'nocache!'                                    => \$opt{nocache},
+        'cache=i'                                     => \$opt{cache},
+        'cache-min|cache_min=i'                       => \$opt{cache_min},
+        'lcache|lower-cache|lower_cache=i'            => \$opt{lower_cache},
+        'lcache-minlower-cache-min|lower_cache_min=i' => \$opt{lower_cache_min},
+        'use-lower-cache|l|use_lower_cache|use-lc!'   => \$opt{use_lower_cache},
 
         # Others
         'colorful|C!'       => \$opt{results_with_colors},
@@ -2563,25 +2594,22 @@ sub play_videos {
         else {
             update_mplayer_arguments($streaming->{resolution});
 
-            my @mplayer_line = (
-                                $opt{mplayer},
-                                get_quotewords(
-                                               qr/\s+/, 1,
-                                               join(
-                                                    q{ },
-                                                    (
-                                                     defined $streaming->{srt_file}
-                                                     ? sprintf($opt{mplayer_srt_args}, $streaming->{srt_file})
-                                                     : ()
-                                                    ),
-                                                    grep({defined and /\S/} values %MPLAYER),
-                                                   )
-                                              )
-                               );
+            my $command = join(
+                               q{ },
+                               (
+                                $opt{video_players}{$opt{video_player_selected}}{cmd},
+                                (
+                                 defined($streaming->{srt_file})
+                                 ? sprintf($opt{video_players}{$opt{video_player_selected}}{srt}, $streaming->{srt_file})
+                                 : ()
+                                ),
+                                grep({defined($_) and /\S/} values %MPLAYER)
+                               )
+                              );
 
-            say "@mplayer_line" if $yv_obj->get_debug;
+            say $command if $yv_obj->get_debug;
 
-            system @mplayer_line, $streaming->{streaming}{url};
+            system join(q{ }, $command, quotemeta($streaming->{streaming}{url}));
             return if $?;
         }
     }

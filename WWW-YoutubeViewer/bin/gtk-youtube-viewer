@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 11 November 2013
+#  Latest edit on: 11 December 2013
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -43,7 +43,7 @@ use File::Spec::Functions qw(
   );
 
 my $appname  = 'GTK Youtube Viewer';
-my $version  = '3.0.9';
+my $version  = '3.1.0';
 my $execname = 'gtk-youtube-viewer';
 
 # Developer key
@@ -114,14 +114,33 @@ my %CONFIG = (
     active_safe_search_combobox  => 1,
     active_more_options_expander => 0,
 
+    video_players => {
+                      mplayer => {
+                                  cmd => get_mplayer(),
+                                  srt => q{-sub '%s'},
+                                  fs  => q{-fs},
+                                  arg => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d},
+                                 },
+                      vlc => {
+                              cmd => q{vlc},
+                              srt => q{--sub-file '%s'},
+                              fs  => q{--fullscreen},
+                              arg => q{--quiet},
+                             },
+                      mpv => {
+                              cmd => q{mpv},
+                              srt => q{--sub '%s'},
+                              fs  => q{--fullscreen},
+                              arg => q{--really-quiet},
+                             },
+                     },
+    video_player_selected => 'mplayer',
+
     # MPlayer options
-    cache             => 30000,
-    cache_min         => 5,
-    lower_cache       => 1000,
-    lower_cache_min   => 3,
-    mplayer           => get_mplayer(),
-    mplayer_srt_args  => '-sub %s',
-    mplayer_arguments => '-prefer-ipv4 -really-quiet -cache %d -cache-min %d',
+    cache           => 30000,
+    cache_min       => 5,
+    lower_cache     => 1000,
+    lower_cache_min => 3,
 
     # GUI options
     clean_text_entries_on_click => 1,
@@ -173,6 +192,7 @@ my %CONFIG = (
     downloads_folder       => $ENV{'HOME'},
     browser                => undef,
     terminal               => find_terminal(),
+    terminal_exec          => q{-e '%s'},
     youtube_viewer         => undef,
     users_list             => catfile($config_dir, 'youtube_users.txt'),
 );
@@ -182,8 +202,8 @@ my %MPLAYER;
 # MPlayer variable arguments
 sub set_mplayer_arguments {
     my ($cache, $cache_min) = @_;
-    $MPLAYER{mplayer_arguments} = sprintf $CONFIG{mplayer_arguments}, $cache, $cache_min;
-    $MPLAYER{fullscreen} = $CONFIG{fullscreen} ? q{-fs} : q{};
+    $MPLAYER{mplayer_arguments} = sprintf($CONFIG{video_players}{$CONFIG{video_player_selected}}{arg}, $cache, $cache_min);
+    $MPLAYER{fullscreen} = $CONFIG{fullscreen} ? $CONFIG{video_players}{$CONFIG{video_player_selected}}{fs} : q{};
     return 1;
 }
 
@@ -350,6 +370,18 @@ if (ref $CONFIG ne 'HASH') {
 
 my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
+
+# Backwards compatibility (likely to go away in the future)
+if (not exists $CONFIG{video_players}{'custom'}) {
+    if (exists $CONFIG->{mplayer}) {
+        my $hash_ref = $CONFIG{video_players}{'custom'} = {};
+        $hash_ref->{cmd}               = $CONFIG->{mplayer} // q{mplayer};
+        $hash_ref->{fs}                = '-fs';
+        $hash_ref->{srt}               = $CONFIG->{mplayer_srt_args} // q{-sub '%s'};
+        $hash_ref->{arg}               = $CONFIG->{mplayer_arguments} // q{};
+        $CONFIG{video_player_selected} = 'custom';
+    }
+}
 
 if (not \%CONFIG ~~ $CONFIG) {
     dump_configuration();
@@ -1716,30 +1748,24 @@ sub play_videos {
 
         update_mplayer_arguments($streaming->{resolution});
 
-        my @mplayer_line = (
-                            $CONFIG{mplayer},
-                            get_quotewords(
-                                           qr/\s+/, 1,
-                                           join(
-                                                q{ },
-                                                (
-                                                 defined $streaming->{srt_file}
-                                                 ? sprintf($CONFIG{mplayer_srt_args}, $streaming->{srt_file})
-                                                 : ()
-                                                ),
-                                                grep({defined and /\S/} values %MPLAYER),
-                                               )
-                                          )
-                           );
+        my $command = join(
+                           q{ },
+                           (
+                            $CONFIG{video_players}{$CONFIG{video_player_selected}}{cmd},
+                            (
+                             defined($streaming->{srt_file})
+                             ? sprintf($CONFIG{video_players}{$CONFIG{video_player_selected}}{srt}, $streaming->{srt_file})
+                             : ()
+                            ),
+                            grep({defined($_) and /\S/} values %MPLAYER),
+                            quotemeta($streaming->{streaming}{url})
+                           )
+                          );
 
-        if ($yv_obj->get_debug) {
-            print STDERR "@mplayer_line\n";
-            print STDERR "$streaming->{streaming}{url}\n" if $yv_obj->get_debug() == 2;
-            @mplayer_line = grep { !/^--?really-quiet\z/ } @mplayer_line;
-        }
+        say $command if $yv_obj->get_debug;
 
-        # Execute mplayer:
-        system join(q{ }, map { quotemeta } @mplayer_line, $streaming->{streaming}{url}) . q{ &};
+        my $code = execute_external_program($command);
+        warn "Can't play video - MPlayer exit code: $code\n" if $code != 0;
     }
 
     return 1;
@@ -1797,7 +1823,7 @@ sub clear_text {
 }
 
 sub run_cli_youtube_viewer {
-    execute_external_program($CONFIG{terminal}, '-e', q{'} . join(' ', $CONFIG{youtube_viewer}), q{'});
+    execute_cli_youtube_viewer('--interactive');
 }
 
 sub find_terminal {
@@ -1842,7 +1868,7 @@ sub get_options_as_arguments {
 }
 
 sub execute_external_program {
-    system join(' ', map { chr ord eq q{'} ? $_ : quotemeta } @_) . ' &';
+    system $_[0] . ' &';
 }
 
 sub _make_youtube_url {
@@ -1859,7 +1885,9 @@ sub _make_youtube_url {
 
 sub open_youtube_url {
     my $url = _make_youtube_url(get_selected_video_code() or return);
-    execute_external_program((defined $CONFIG{browser} ? $CONFIG{browser} : 'xdg-open'), $url);
+    my $code = execute_external_program(join(q{ }, $CONFIG{browser} // 'xdg-open', quotemeta($url)));
+
+    warn "Can't open YouTube URL - exit code: $code\n" if $code != 0;
     return 1;
 }
 
@@ -1903,20 +1931,19 @@ sub play_selected_video_with_cli_youtube_viewer {
 sub execute_cli_youtube_viewer {
     my @arguments = @_;
 
-    # Executing youtube-viewer
     my $command = join(
                        q{ },
-                       (
-                        map { chr ord eq q{'} ? $_ : quotemeta } $CONFIG{terminal},
-                        '-e', q{'} . join(q{ }, $CONFIG{youtube_viewer}, get_options_as_arguments(), @arguments) . q{'}
-                       )
-                      )
-      . ' &';
+                       $CONFIG{terminal},
+                       sprintf(
+                               $CONFIG{terminal_exec},
+                               join(q{ }, $CONFIG{youtube_viewer}, get_options_as_arguments(), @arguments)
+                              )
+                      );
+    my $code = execute_external_program($command);
 
     say $command if $yv_obj->get_debug;
-    system $command;
 
-    warn "youtube-viewer - exit code: $?\n" if $?;
+    warn "youtube-viewer - exit code: $code\n" if $code != 0;
     return 1;
 }
 
