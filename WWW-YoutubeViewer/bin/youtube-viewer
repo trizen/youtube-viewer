@@ -183,7 +183,7 @@ my %CONFIG = (
                               cmd     => q{vlc},
                               srt     => q{--sub-file '%s'},
                               fs      => q{--fullscreen},
-                              arg     => q{--quiet --play-and-exit},
+                              arg     => q{--quiet --play-and-exit --no-video-title-show},
                               novideo => q{--intf dummy --novideo},
                              },
                       mpv => {
