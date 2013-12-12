@@ -177,7 +177,7 @@ my %CONFIG = (
                                   srt     => q{-sub '%s'},
                                   fs      => q{-fs},
                                   arg     => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d},
-                                  novideo => q{--novideo},
+                                  novideo => q{-novideo},
                                  },
                       vlc => {
                               cmd     => q{vlc},

@@ -125,7 +125,7 @@ my %CONFIG = (
                               cmd => q{vlc},
                               srt => q{--sub-file '%s'},
                               fs  => q{--fullscreen},
-                              arg => q{--quiet},
+                              arg => q{--quiet --play-and-exit},
                              },
                       mpv => {
                               cmd => q{mpv},
