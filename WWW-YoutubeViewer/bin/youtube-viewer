@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 11 December 2013
+#  Latest edit on: 19 December 2013
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -554,6 +554,8 @@ Other options:
    --comments=ID/URL    : show comments for a YouTube video
    --get-title=ID/URL   : get and print the title for a video
    --get-desc=ID/URL    : get and print the description for a video
+   --max-seconds=i      : don't play videos longer than i seconds
+   --min-seconds=i      : don't play videos shorter than i seconds
    --gcap=s             : set the full path to the gcap script
    --get-captions!      : download the closed captions (with gcap)
    --captions-dir=s     : the directory where to download the .srt files
@@ -1122,6 +1124,9 @@ sub parse_arguments {
         'orderby|order|order-by=s' => \$opt{orderby},
         'duration=s'               => \$opt{duration},
         'time=s'                   => \$opt{time},
+
+        'max-seconds=i' => \$opt{max_seconds},
+        'min-seconds=i' => \$opt{min_seconds},
 
         'like=s'                     => \$opt{like_video},
         'dislike=s'                  => \$opt{dislike_video},
@@ -2573,6 +2578,15 @@ sub play_videos {
     my ($videos) = @_;
 
     foreach my $video (@{$videos}) {
+
+        if (defined($opt{max_seconds})) {
+            next if $video->{duration} > $opt{max_seconds};
+        }
+
+        if (defined($opt{min_seconds})) {
+            next if $video->{duration} < $opt{min_seconds};
+        }
+
         my $streaming = get_streaming_url($video->{videoID});
 
         if (defined $streaming->{info}{status} and not $streaming->{info}{status} =~ /^(?:ok|success)/i) {
