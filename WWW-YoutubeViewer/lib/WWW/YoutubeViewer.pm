@@ -607,7 +607,16 @@ sub lwp_mirror {
     $self->{lwp} // $self->set_lwp_useragent();
 
     my %lwp_header = $self->_get_lwp_header();
+
+    if (not $self->get_debug) {
+        $self->{lwp}->show_progress(1);
+    }
+
     my $response = $self->{lwp}->mirror($url, $name);
+
+    if (not $self->get_debug) {
+        $self->{lwp}->show_progress(0);
+    }
 
     if ($response->is_success) {
         return 1;

@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 19 December 2013
+#  Latest edit on: 25 December 2013
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -122,11 +122,11 @@ my $term = Term::ReadLine->new("$appname $version");
 my $key = 'eTj9NtCyOsGMliTTwz-T85muGT-ARAwVREslfB_giHP3X339Jkpn5Xf71pQXY96xWtFY1oFHt530ct5uZZJk5YTghbNm2IrwZ4';
 
 # Options (key=>value) goes here
-my %opt        = ();
+my %opt;
 my $term_width = 80;
 
 # Unchangeable data goes here
-my %constant = (win32 => ($^O =~ /^mswin\d/i || 0));
+my %constant = (win32 => $^O eq 'MSWin32');
 
 my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
   || catdir(
@@ -215,6 +215,7 @@ my %CONFIG = (
     srt_languages => ['en', 'jp'],
     captions_dir  => tmpdir(),
     get_captions  => 1,
+    copy_caption  => 0,
     gcap          => undef,
 
     # Others
@@ -223,7 +224,6 @@ my %CONFIG = (
     colors               => $constant{win32} ^ 1,
     clobber              => 0,
     skip_if_exists       => 0,
-    lwp_downloading      => $constant{win32},
     fullscreen           => 0,
     use_lower_cache      => 0,
     results_with_details => 0,
@@ -231,7 +231,7 @@ my %CONFIG = (
     results_fixed_width  => 0,
     interactive          => 1,
     get_term_width       => $constant{win32} ^ 1,
-    download_with_wget   => $constant{win32} ^ 1,
+    download_with_wget   => 0,
     thousand_separator   => q{,},
     downloads_folder     => curdir(),
     keep_original_video  => 0,
@@ -475,8 +475,8 @@ YouTube options:
    -t  --tops           : show today YouTube video tops
        --tops=all       : show all time YouTube video tops
    -r  --region=ID      : list top videos for a specific region
-   -M  --movies         : show YouTube category of movies
-   -c  --categories     : show available YouTube categories
+   -M  --movies         : show the YouTube category of movies
+   -c  --categories     : show the available YouTube categories
        --edu-categories : show the YouTube EDU categories
        --course-id=ID   : list the video lectures from courseID
    -hl --catlang=s      : language for categories (default: en-US)
@@ -539,7 +539,6 @@ Other options:
    -C  --colorful!      : use colors to delimit the video results
    -D  --details!       : a new look for the results, with more details
    -W  --fixed-width!   : adjust the results to fit inside the term width
-   -L  --lwp-download!  : download the videos with LWP (default: wget)
    -U  --update-config  : update the configuration file before exit
    -N  --noconfig       : start the $appname with the default config
    -I  --interactive!   : prompt for the first user input
@@ -548,6 +547,7 @@ Other options:
    -rp --rem-played     : delete a local video after played (with -dp)
    --really-quiet       : do not display any warning or output
    --use-colors!        : use ANSI colors for text
+   --wget-dl!           : download videos with wget (default: LWP)
    --convert-to=FORMAT  : convert video to a specific format (with -d)
    --ffmpeg-command=s   : ffmpeg command for converting videos after download
    --keep-original!     : keep the original video after converting
@@ -558,6 +558,7 @@ Other options:
    --min-seconds=i      : don't play videos shorter than i seconds
    --gcap=s             : set the full path to the gcap script
    --get-captions!      : download the closed captions (with gcap)
+   --copy-caption!      : copy and rename the caption for downloaded videos
    --captions-dir=s     : the directory where to download the .srt files
    --gdata-url=s        : print video results from a valid GData URL
    --get-term-width!    : adjust the text for your terminal width
@@ -582,6 +583,7 @@ Help options:
 NOTE:
     *  -> requires authentication
     !  -> the argument can be negated with '--no'
+    =i -> requires an integer argument
     =s -> requires an argument
     :s -> can take an optional argument
 
@@ -642,7 +644,7 @@ NOTE: Categories and region IDs are case sensitive!
 ** Playing videos
 1. To stream the videos in other players, you need to change the
    configuration file. Where it says 'video_player_selected', change it
-   to to any defined player inside the 'video_players' tree.
+   to any player which is defined inside the 'video_players' tree.
 
 2. lower_cache and lower_cache_min values are used when -l (--use-lower-cache)
    is specified as argument, or if the resolution of a video is lower than 720p.
@@ -673,7 +675,7 @@ NOTE: Categories and region IDs are case sensitive!
 5. For the option ':kregex', the valid keys are:
    $valid_keys
 
-6. Space inside the values of the STDIN options, can be either escaped
+6. Space inside the values of the STDIN options, can be either quoted
    or backslashed.
    For example:
         :re=video\\ title     ==     :re="video title"
@@ -1125,8 +1127,8 @@ sub parse_arguments {
         'duration=s'               => \$opt{duration},
         'time=s'                   => \$opt{time},
 
-        'max-seconds=i' => \$opt{max_seconds},
-        'min-seconds=i' => \$opt{min_seconds},
+        'max-seconds|max_seconds=i' => \$opt{max_seconds},
+        'min-seconds|min_seconds=i' => \$opt{min_seconds},
 
         'like=s'                     => \$opt{like_video},
         'dislike=s'                  => \$opt{dislike_video},
@@ -1164,7 +1166,7 @@ sub parse_arguments {
         'caption=s'         => \$opt{caption},
         'fullscreen|fs|f!'  => \$opt{fullscreen},
 
-        'lwp-download|L!'                   => \$opt{lwp_downloading},
+        'wget-dl|wget-download|with-wget!'  => \$opt{download_with_wget},
         'dp|downl-play|download_and_play!'  => \$opt{download_and_play},
         'rp|rem-played|remove_played_file!' => \$opt{remove_played_file},
         'clobber!'                          => \$opt{clobber},
@@ -1183,6 +1185,7 @@ sub parse_arguments {
 
         'thousand-separator=s'           => \$opt{thousand_separator},
         'get-captions|get_captions!'     => \$opt{get_captions},
+        'copy-caption|copy_caption!'     => \$opt{copy_caption},
         'captions-dir|captions_dir=s'    => \$opt{captions_dir},
         'skip-if-exists|skip_if_exists!' => \$opt{skip_if_exists},
 
@@ -2502,9 +2505,10 @@ sub download_video {
         $title =~ tr{:"*/?\\|}{;'+%$%%};
     }
 
+    my $video_title = $title;
+
     $title .=
-        $streaming->{streaming}{type} =~ /\bmp4\b/i   ? q{.mp4}
-      : $streaming->{streaming}{type} =~ /\bflv\b/i   ? q{.flv}
+        $streaming->{streaming}{type} =~ /\bflv\b/i   ? q{.flv}
       : $streaming->{streaming}{type} =~ /\bwebm\b/i  ? q{.webm}
       : $streaming->{streaming}{type} =~ /\b3gpp?\b/i ? q{.3gp}
       :                                                 q{.mp4};
@@ -2533,7 +2537,7 @@ sub download_video {
             $title =~ s{(?:_$last_i)?(\.\w{3,4})$}{_$i$1};
         }
 
-        if ($opt{download_with_wget} and not $opt{lwp_downloading}) {
+        if ($opt{download_with_wget}) {
             system "wget", ($opt{clobber} ? () : q{-nc}), $streaming->{streaming}{url}, q{-O}, $title;
             return if $?;
         }
@@ -2549,6 +2553,7 @@ sub download_video {
         my $new_file = "$output.$opt{convert_to}";
         my $ffmpeg = sprintf($opt{ffmpeg_command}, map { q{"} . s{(["\\`\$])}{\\$1}gr . q{"} }
                                map { rel2abs($_) } $title, $new_file);
+
         say $ffmpeg if $yv_obj->get_debug;
         system $ffmpeg;
 
@@ -2559,19 +2564,68 @@ sub download_video {
     }
     elsif ($opt{download_and_play}) {
 
-        update_mplayer_arguments();
-        my @mplayer_line =
-          ($opt{mplayer}, get_quotewords(qr/\s+/, 1, join(" ", grep { defined && /\S/ } values %MPLAYER)));
+        my $command = get_player_command($streaming);
+        say $command if $yv_obj->get_debug;
 
-        say "@mplayer_line" if $yv_obj->get_debug;
-
-        system @mplayer_line, $title;
+        system join(q{ }, $command, quotemeta($title));
         if ($? == 0 and $opt{remove_played_file}) {
             unlink $title;
         }
     }
 
+    if ($opt{copy_caption} and -e $title) {
+
+        opendir(my $dir_h, $opt{captions_dir})
+          or do {
+            warn "[!] Can't open dir `$opt{captions_dir}': $!\n";
+            return 1;    # it's OK, video is successfully downloaded
+          };
+
+        my @srt_files;
+        while (defined(my $file = readdir($dir_h))) {
+            if ($file =~ /\.srt\z/i and $file =~ /^$info->{videoID}_/) {
+                push @srt_files, $file;
+            }
+        }
+        closedir $dir_h;
+
+        foreach my $lang (@{$opt{srt_languages}}) {
+            my @matches = grep { substr($_, length($info->{videoID}) + 1, length($lang)) eq $lang } @srt_files;
+
+            if ($#matches != -1) {
+
+                my $from = catfile($opt{captions_dir},     $matches[0]);
+                my $to   = catfile($opt{downloads_folder}, $video_title . '.srt');
+
+                require File::Copy;
+                File::Copy::copy($from, $to)
+                  or warn "[!] Can't copy the caption file from `$opt{captions_dir}' into `$opt{downloads_folder}': $!\n";
+
+                last;
+            }
+        }
+    }
+
     return 1;
+}
+
+sub get_player_command {
+    my ($streaming) = @_;
+
+    update_mplayer_arguments($streaming->{resolution});
+
+    join(
+         q{ },
+         (
+          $opt{video_players}{$opt{video_player_selected}}{cmd},
+          (
+           defined($streaming->{srt_file})
+           ? sprintf($opt{video_players}{$opt{video_player_selected}}{srt}, $streaming->{srt_file})
+           : ()
+          ),
+          grep({defined($_) and /\S/} values %MPLAYER)
+         )
+        );
 }
 
 sub play_videos {
@@ -2595,6 +2649,7 @@ sub play_videos {
         }
 
         if (not defined $streaming->{streaming}) {
+            warn colored("(x_x) No streaming URL found...", 'bold red') . "\n\n";
             next;
         }
 
@@ -2606,21 +2661,7 @@ sub play_videos {
             }
         }
         else {
-            update_mplayer_arguments($streaming->{resolution});
-
-            my $command = join(
-                               q{ },
-                               (
-                                $opt{video_players}{$opt{video_player_selected}}{cmd},
-                                (
-                                 defined($streaming->{srt_file})
-                                 ? sprintf($opt{video_players}{$opt{video_player_selected}}{srt}, $streaming->{srt_file})
-                                 : ()
-                                ),
-                                grep({defined($_) and /\S/} values %MPLAYER)
-                               )
-                              );
-
+            my $command = get_player_command($streaming);
             say $command if $yv_obj->get_debug;
 
             system join(q{ }, $command, quotemeta($streaming->{streaming}{url}));
