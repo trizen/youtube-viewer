@@ -114,7 +114,7 @@ sub get_caption {
             }
 
             if (not defined $srt_file) {
-                system $^X, $self->{gcap}, "http://youtube.com/v/$code";
+                system $self->{gcap}, "http://youtube.com/v/$code";
                 if ($? == 0 and not $i++) {
                     redo;
                 }
