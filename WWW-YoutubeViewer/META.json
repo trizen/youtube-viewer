@@ -4,7 +4,7 @@
       "Daniel \"Trizen\" Șuteu <trizenx@gmail.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.42",
+   "generated_by" : "Module::Build version 0.4203",
    "license" : [
       "perl_5"
    ],
@@ -15,10 +15,6 @@
    "name" : "WWW-YoutubeViewer",
    "prereqs" : {
       "build" : {
-         "recommends" : {
-            "Term::ReadLine::Gnu::XS" : "0",
-            "XML::Fast" : "0"
-         },
          "requires" : {
             "Test::More" : "0"
          }
@@ -29,6 +25,10 @@
          }
       },
       "runtime" : {
+         "recommends" : {
+            "Term::ReadLine::Gnu::XS" : "0",
+            "XML::Fast" : "0"
+         },
          "requires" : {
             "Data::Dump" : "0",
             "File::Path" : "0",
@@ -40,8 +40,7 @@
             "Term::UI" : "0",
             "Text::ParseWords" : "0",
             "Text::Wrap" : "0",
-            "URI::Escape" : "0",
-            "perl" : "5.016"
+            "URI::Escape" : "0"
          }
       }
    },

@@ -2,7 +2,6 @@ bin/gtk-youtube-viewer
 bin/youtube-viewer
 Build.PL
 Changes
-ignore.txt
 lib/WWW/YoutubeViewer.pm
 lib/WWW/YoutubeViewer/GetCaption.pm
 lib/WWW/YoutubeViewer/Itags.pm
