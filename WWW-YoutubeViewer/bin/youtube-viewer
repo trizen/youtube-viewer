@@ -512,7 +512,7 @@ YouTube options:
    -F --favorites:s     : show the latest favorited videos *
    -R --recommended     : show the recommended videos for you *
    -S --subscriptions:s : show the new subscription videos *
-   -W --watched         : show the latest watched videos on YouTube *
+   -w --watched         : show the latest watched videos on YouTube *
    --channel-sugg       : show the suggested YouTube channels for you *
    --subscribe=USER     : subscribe to a user's channel *
    --favorite=ID/URL    : favorite a YouTube video by URL or ID *
@@ -1166,7 +1166,7 @@ sub parse_arguments {
         'caption=s'         => \$opt{caption},
         'fullscreen|fs|f!'  => \$opt{fullscreen},
 
-        'wget-dl|wget-download|with-wget!'  => \$opt{download_with_wget},
+        'wget-dl|wget-download!'            => \$opt{download_with_wget},
         'dp|downl-play|download_and_play!'  => \$opt{download_and_play},
         'rp|rem-played|remove_played_file!' => \$opt{remove_played_file},
         'clobber!'                          => \$opt{clobber},
