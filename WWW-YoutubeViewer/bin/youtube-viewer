@@ -194,7 +194,8 @@ my %CONFIG = (
                               novideo => q{--no-video},
                              },
                      },
-    video_player_selected => 'mplayer',    # maybe: detect_video_player()?
+    video_player_selected   => 'mplayer',    # maybe: detect_video_player()?
+    combine_multiple_videos => 0,
 
     # Youtube options
     prefer_https        => 0,
@@ -548,6 +549,7 @@ Other options:
    --really-quiet       : do not display any warning or output
    --use-colors!        : use ANSI colors for text
    --wget-dl!           : download videos with wget (default: LWP)
+   --combine-multiple!  : combine multiple videos into one play instance
    --convert-to=FORMAT  : convert video to a specific format (with -d)
    --ffmpeg-command=s   : ffmpeg command for converting videos after download
    --keep-original!     : keep the original video after converting
@@ -1179,6 +1181,7 @@ sub parse_arguments {
         'more|m!'                           => \$opt{more_results},
         'gdata-url=s'                       => \$opt{get_gdata_url},
         'gcap=s'                            => \$opt{gcap},
+        'combine-multiple-videos|combine!'  => \$opt{combine_multiple_videos},
 
         'quiet|q!'      => \$opt{quiet},
         'really-quiet!' => \$opt{really_quiet},
@@ -2631,6 +2634,7 @@ sub get_player_command {
 sub play_videos {
     my ($videos) = @_;
 
+    my @streaming_urls;
     foreach my $video (@{$videos}) {
 
         if (defined($opt{max_seconds})) {
@@ -2648,7 +2652,7 @@ sub play_videos {
             warn colored("(x_x) Status: $streaming->{info}{status}", 'bold red') . "\n\n";
         }
 
-        if (not defined $streaming->{streaming}) {
+        if (ref($streaming->{streaming}) ne 'HASH') {
             warn colored("(x_x) No streaming URL found...", 'bold red') . "\n\n";
             next;
         }
@@ -2660,6 +2664,9 @@ sub play_videos {
                 return;
             }
         }
+        elsif ($opt{combine_multiple_videos}) {
+            push @streaming_urls, $streaming;
+        }
         else {
             my $command = get_player_command($streaming);
             say $command if $yv_obj->get_debug;
@@ -2667,6 +2674,16 @@ sub play_videos {
             system join(q{ }, $command, quotemeta($streaming->{streaming}{url}));
             return if $?;
         }
+    }
+
+    if ($opt{combine_multiple_videos} && @streaming_urls) {
+        my $streaming = $streaming_urls[0];
+
+        my $command = get_player_command($streaming);
+        say $command if $yv_obj->get_debug;
+
+        system join(q{ }, $command, map { quotemeta($_->{streaming}{url}) } @streaming_urls);
+        return if $?;
     }
 
     return 1;
