@@ -331,6 +331,7 @@ $action_options
 :q(ueue)=i,i,...  : enqueue videos to play them later
 :pq, :play-queue  : play the enqueued videos (if any)
 :anp :nnp         : auto-next-page, no-next-page
+:play=i,i,...     : play a group of selected videos
 :regex=my?[regex] : play videos matched by a regex (/i)
 :kregex=KEY,RE    : play videos if the value of KEY matches the RE
 
@@ -3019,7 +3020,16 @@ sub print_videos {
                         play_videos([@{$videos}[@nums]]);
                     }
                     else {
-                        warn colored("\n[!] No video selected for download!", 'bold red') . "\n";
+                        warn_no_thing_selected('video');
+                    }
+                }
+                when (/^(?:play|P)${digit_or_equal_re}(.*)/) {
+                    if (my @nums = get_valid_numbers($videos, $1)) {
+                        local $opt{download_video} = 0;
+                        play_videos([@{$videos}[@nums]]);
+                    }
+                    else {
+                        warn_no_thing_selected('video');
                     }
                 }
                 when (/^i(?:nfo)?${digit_or_equal_re}(.*)/) {
