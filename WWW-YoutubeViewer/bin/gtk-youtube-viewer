@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2010-2013 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
+# Copyright (C) 2010-2014 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 11 December 2013
+#  Latest edit on: 09 January 2014
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -54,21 +54,42 @@ my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
   || catdir(($ENV{HOME} || $ENV{LOGDIR} || (getpwuid($<))[7] || `echo -n ~`), '.config');
 
 # Configuration dir/file
-my $config_dir = catdir($xdg_config_home, $execname);
-my $config_file = catfile($config_dir, "$execname.conf");
-my $yv_config_dir = catdir($xdg_config_home, 'youtube-viewer');
-my $authentication_file = catfile($yv_config_dir, 'reg.dat');
+my $config_dir = catdir($xdg_config_home, 'youtube-viewer');
+my $config_file         = catfile($config_dir, "$execname.conf");
+my $youtube_users_file  = catfile($config_dir, 'youtube_users.txt');
+my $authentication_file = catfile($config_dir, 'reg.dat');
 
-foreach my $dir ($config_dir, $yv_config_dir) {
+# Create the configuration directory
+foreach my $dir ($config_dir) {
     if (not -d $dir) {
         require File::Path;
         File::Path::make_path($dir)
-          or warn "[!] Can't create dir '$dir': $!";
+          or warn "[!] Can't create the configuration directory `$dir': $!";
     }
 }
 
-# Unchangeable variables goes here
-my %constant = (win32 => ($^O =~ /^mswin\d/i || 0));
+## Backwards compatibility
+{
+    my $old_config_dir = catdir($xdg_config_home, $execname);
+    my $old_config_file        = catfile($old_config_dir, "$execname.conf");
+    my $old_youtube_users_file = catfile($old_config_dir, 'youtube_users.txt');
+
+    if (-e $old_config_file and not -e $config_file) {
+        require File::Copy;
+        File::Copy::move($old_config_file, $config_file)
+          or warn "[!] Can't move the configuration file `$old_config_file' to `$config_file': $!";
+    }
+
+    if (-e $old_youtube_users_file and not -e $youtube_users_file) {
+        require File::Copy;
+        File::Copy::move($old_youtube_users_file, $youtube_users_file)
+          or warn "[!] Can't move the youtube users file `$old_youtube_users_file' to `$youtube_users_file': $!";
+    }
+}
+## end of compatibility
+
+# Constants
+my %constant = (win32 => $^O eq 'MSWin32');
 
 # Share directory
 my $share_dir = dist_dir('WWW-YoutubeViewer');
@@ -181,20 +202,21 @@ my %CONFIG = (
     debug           => 0,
     fullscreen      => 0,
     use_lower_cache => 0,
-    use_threads     => 0,
 
-    use_threads_for_thumbs => 0,                                           # not very stable
-    hpaned_position        => 420,
-    search_channels        => 0,
-    search_playlists       => 0,
-    thousand_separator     => q{,},
-    default_thumb          => 'default',
-    downloads_folder       => $ENV{'HOME'},
-    browser                => undef,
-    terminal               => find_terminal(),
-    terminal_exec          => q{-e '%s'},
-    youtube_viewer         => undef,
-    users_list             => catfile($config_dir, 'youtube_users.txt'),
+    use_threads            => 0,
+    use_threads_for_thumbs => 0,    # not very stable
+
+    hpaned_position    => 420,
+    search_channels    => 0,
+    search_playlists   => 0,
+    thousand_separator => q{,},
+    default_thumb      => 'default',
+    downloads_folder   => $ENV{'HOME'},
+    browser            => undef,
+    terminal           => find_terminal(),
+    terminal_exec      => q{-e '%s'},
+    youtube_viewer     => undef,
+    youtube_users_file => $youtube_users_file,
 );
 
 my %MPLAYER;
@@ -408,7 +430,7 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      key                 => $key,
                                      app_name            => $appname,
                                      app_version         => $version,
-                                     config_dir          => $yv_config_dir,
+                                     config_dir          => $config_dir,
                                      authentication_file => $authentication_file,
                                     );
 
@@ -509,13 +531,9 @@ apply_configuration();
 
 # YouTube usernames
 my %users_table = map { lc($_) => $_ } (
-                                        'AtGoogleTalks',    'AtheistsAreSkeptics', 'Best0fScience',        'Google',
-                                        'GoogleChrome',     'GoogleTechTalks',     'KhanAcademy',          'NASAtelevision',
-                                        'NatCen4ScienceEd', 'GoogleDevelopers',    'VSauce',               'Gotbletu',
-                                        'ScienceChannel',   'SpaceRip',            'TEDtalksDirector',     'ThunderF00t',
-                                        'MIT',              'SixtySymbols',        'SpitzerScienceCenter', 'SciShow',
-                                        'UCBerkeley',       'UCTelevision',        'FOSDEMtalks',          'BigThink',
-                                        'ProfessorFink',    'StanfordUniversity',  'UCTVSeminars',         '1Veritasium',
+                        'KhanAcademy',  'VSauce',       'Gotbletu',      'ScienceChannel', 'SpaceRip',      'TEDtalksDirector',
+                        'MIT',          'SixtySymbols', 'SciShow',       'NumberPhile',    'ComputerPhile', 'UCBerkeley',
+                        'UCTelevision', 'BigThink',     'ProfessorFink', 'UCTVSeminars',   '1Veritasium',   'MinutePhysics'
                                        );
 set_usernames();
 
@@ -661,7 +679,7 @@ set_text(
     $config_file
 
 * Users list
-    $CONFIG{users_list}
+    $CONFIG{youtube_users_file}
 
 * Key binds
 
@@ -1152,13 +1170,14 @@ set_youtube_tops('all_time', 'All time tops');
 
 # ------------ Usernames list window ------------ #
 sub set_usernames {
-    if (-e $CONFIG{users_list}) {
-        open my $fh, '<', $CONFIG{users_list};
-        while (defined(my $user = <$fh>)) {
-            chomp $user;
-            $users_table{lc $user} = $user;
+    if (-e $CONFIG{youtube_users_file}) {
+        if (open my $fh, '<', $CONFIG{youtube_users_file}) {
+            while (defined(my $user = <$fh>)) {
+                chomp $user;
+                $users_table{lc $user} = $user;
+            }
+            close $fh;
         }
-        close $fh;
     }
     foreach my $user (sort { lc $a cmp lc $b } values %users_table) {
         my $iter = $users_liststore->append;
@@ -1190,7 +1209,7 @@ sub remove_selected_user {
 }
 
 sub save_usernames_to_file {
-    open my $fh, '>', $CONFIG{users_list} or return 0;
+    open my $fh, '>', $CONFIG{youtube_users_file} or return 0;
     local $, = "\n";
     print $fh sort { lc $a cmp lc $b } values %users_table;
     close $fh;
