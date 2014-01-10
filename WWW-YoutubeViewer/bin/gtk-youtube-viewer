@@ -22,6 +22,7 @@
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
+use utf8;
 use 5.010;
 use strict;
 
@@ -120,6 +121,19 @@ sub get_mplayer {
         return -x $mplayer_path ? $mplayer_path : q{mplayer}    # *NIX MPlayer
     }
 }
+
+my %symbols = (
+               up_arrow    => '↑',
+               down_arrow  => '↓',
+               category    => '❖',
+               face        => '☺',
+               average     => 'x̄',
+               play        => '▶',
+               views       => '༓',
+               heart       => '❤',
+               right_arrow => '→',
+               crazy_arrow => '↬',
+              );
 
 # Main configuration
 my %CONFIG = (
@@ -1443,30 +1457,28 @@ sub print_videos {
                         "<big><b>"
                           . encode_entities($video->{title} // 'Unknown')
                           . "</b></big>\n\n"
-                          . "<b>Likes\t:</b> "
+                          . "<b>$symbols{up_arrow}\t</b> "
                           . $yv_utils->set_thousands($video->{likes}) . "\n"
-                          . "<b>Dislikes\t:</b> "
+                          . "<b>$symbols{down_arrow}\t</b> "
                           . $yv_utils->set_thousands($video->{dislikes}) . "\n"
-                          . "<b>Favorited\t:</b> "
-                          . $yv_utils->set_thousands($video->{favorited}) . "\n"
-                          . "<b>Category\t:</b> "
+                          . "<b>$symbols{category}\t</b> "
                           . encode_entities($video->{category} // 'Unknown') . "\n"
-                          . "<b>Publisher\t: </b>"
+                          . "<b>$symbols{face}\t</b> "
                           . $video->{author} . "\n\n" . "<i>"
                           . encode_entities($row_description) . "</i>"
                        );
 
         $liststore->set(
             $iter, 2,
-            "<b>Length\t:</b> "
+            "<b>$symbols{play}\t</b> "
               . $yv_utils->format_time($video->{duration}) . "\n"
-              . "<b>Rating\t:</b> "
+              . "<b>$symbols{average}\t</b> "
               . sprintf('%.2f', ($video->{rating} || 0)) . "\n"
-              . "<b>Views\t:</b> "
+              . "<b>$symbols{views}\t</b> "
               . $yv_utils->set_thousands($video->{views})
               . do {
                 defined $video->{published}
-                  ? "\n" . "<b>Added\t: </b>" . $yv_utils->format_date($video->{published})
+                  ? "\n" . "<b>$symbols{right_arrow}\t </b>" . $yv_utils->format_date($video->{published})
                   : q{};
               }
         );
@@ -1516,20 +1528,20 @@ sub print_channels {
                         '<big><b>'
                           . encode_entities($channel->{title})
                           . "</b></big>\n\n"
-                          . "<b>Author\t:</b> "
+                          . "<b>$symbols{face}\t</b> "
                           . $channel->{name} . "\n"
-                          . "<b>Subscr\t:</b> "
+                          . "<b>$symbols{heart}\t</b> "
                           . $yv_utils->set_thousands($channel->{subscribers}) . "\n"
                           . (
                              exists($channel->{views})
-                             ? ("<b>Views\t:</b> " . $yv_utils->set_thousands($channel->{views}))
-                             : ("<b>Videos\t:</b> " . $yv_utils->set_thousands($channel->{videos}))
+                             ? ("<b>$symbols{views}\t</b> " . $yv_utils->set_thousands($channel->{views}))
+                             : ("<b>$symbols{play}\t</b> " . $yv_utils->set_thousands($channel->{videos}))
                             )
                           . "\n\n<i>"
                           . encode_entities($row_description) . '</i>'
                        );
 
-        $liststore->set($iter, 2, "<b>Updated:</b> " . $yv_utils->format_date($channel->{updated}) . "\n\n");
+        $liststore->set($iter, 2, "<b>$symbols{crazy_arrow}\t</b> " . $yv_utils->format_date($channel->{updated}) . "\n\n");
 
         if ($CONFIG{show_thumbs}) {
             my $pixbuf = _get_pixbuf_thumbnail($channel->{thumbnail});
@@ -1572,16 +1584,16 @@ sub print_playlists {
                         '<big><b>'
                           . encode_entities($playlist->{'title'})
                           . "</b></big>\n\n"
-                          . "<b>Author\t:</b> "
+                          . "<b>$symbols{face}\t</b> "
                           . $playlist->{name} . "\n"
-                          . "<b>Published\t:</b> "
+                          . "<b>$symbols{right_arrow}\t</b> "
                           . $yv_utils->format_date($playlist->{published}) . "\n"
-                          . "<b>Updated\t:</b> "
+                          . "<b>$symbols{crazy_arrow}\t</b> "
                           . $yv_utils->format_date($playlist->{updated}) . "\n\n" . '<i>'
                           . encode_entities($row_description) . '</i>'
                        );
 
-        $liststore->set($iter, 2, "<b>Videos:</b> " . $yv_utils->set_thousands($playlist->{count}) . "\n\n");
+        $liststore->set($iter, 2, "<b>$symbols{play}\t</b> " . $yv_utils->set_thousands($playlist->{count}) . "\n\n");
 
         if ($CONFIG{show_thumbs}) {
             my $pixbuf = _get_pixbuf_thumbnail($playlist->{thumbnail});
@@ -2104,11 +2116,6 @@ sub set_video_details {
     my ($code, $iter) = @_;
     my $main_details = $liststore->get($iter, 0);
 
-    my %labels = (
-                  Added  => 'Published',
-                  Length => 'Duration',
-                 );
-
     # Setting title
     my $title = substr($main_details, 0, index($main_details, '</big>') + 6, '');
     $gui->get_object('video_title_label')->set_label("<big>$title</big>");
@@ -2116,11 +2123,8 @@ sub set_video_details {
     # Setting video details
     $main_details =~ s/^\s+//;
     $main_details =~ s{\s*<i>.+</i>\s*}{\n};
-    $main_details =~ s/\s+/$-[0] <= 8 ? "\t\t" : "\t"/e;
 
     my $secondary_details = $liststore->get($iter, 2);
-    $secondary_details =~ s/:(?!\d)/\t: /g;
-    $secondary_details =~ s/\b$_\b\t/$labels{$_}/ for keys %labels;
     $gui->get_object('video_details_label')->set_label($main_details . $secondary_details);
 
     # Setting the link button
