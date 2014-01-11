@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 09 January 2014
+#  Latest edit on: 11 January 2014
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -1456,7 +1456,7 @@ sub print_videos {
                         0,
                         "<big><b>"
                           . encode_entities($video->{title} // 'Unknown')
-                          . "</b></big>\n\n"
+                          . "</b></big>\n"
                           . "<b>$symbols{up_arrow}\t</b> "
                           . $yv_utils->set_thousands($video->{likes}) . "\n"
                           . "<b>$symbols{down_arrow}\t</b> "
@@ -1464,7 +1464,7 @@ sub print_videos {
                           . "<b>$symbols{category}\t</b> "
                           . encode_entities($video->{category} // 'Unknown') . "\n"
                           . "<b>$symbols{face}\t</b> "
-                          . $video->{author} . "\n\n" . "<i>"
+                          . $video->{author} . "\n" . "<i>"
                           . encode_entities($row_description) . "</i>"
                        );
 
@@ -1541,7 +1541,7 @@ sub print_channels {
                           . encode_entities($row_description) . '</i>'
                        );
 
-        $liststore->set($iter, 2, "<b>$symbols{crazy_arrow}\t</b> " . $yv_utils->format_date($channel->{updated}) . "\n\n");
+        $liststore->set($iter, 2, "<b>$symbols{crazy_arrow}\t</b> " . $yv_utils->format_date($channel->{updated}) . "\n");
 
         if ($CONFIG{show_thumbs}) {
             my $pixbuf = _get_pixbuf_thumbnail($channel->{thumbnail});
@@ -1593,7 +1593,7 @@ sub print_playlists {
                           . encode_entities($row_description) . '</i>'
                        );
 
-        $liststore->set($iter, 2, "<b>$symbols{play}\t</b> " . $yv_utils->set_thousands($playlist->{count}) . "\n\n");
+        $liststore->set($iter, 2, "<b>$symbols{play}\t</b> " . $yv_utils->set_thousands($playlist->{count}) . "\n");
 
         if ($CONFIG{show_thumbs}) {
             my $pixbuf = _get_pixbuf_thumbnail($playlist->{thumbnail});
