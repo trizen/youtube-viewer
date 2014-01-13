@@ -67,8 +67,6 @@ my %valid_options = (
     lwp_timeout => {valid => [qr/^\d+$/],            default => 30},
     key         => {valid => [qr/^.{5}/],            default => undef},
     author      => {valid => [qr{^[\-\w.]{2,64}\z}], default => undef},
-    app_version => {valid => [qr/^v?\d/],            default => $VERSION},
-    app_name    => {valid => [qr/^./],               default => 'Youtube Viewer'},
     config_dir  => {valid => [qr/^./],               default => q{.}},
 
     authentication_file => {valid => [qr/^./],         default => undef},
@@ -142,11 +140,6 @@ sub new {
             $self->$code(delete $opts{$key});
         }
     }
-
-    $self->{start_index} =
-         delete($opts{start_index})
-      || $self->get_start_index()
-      || 1;
 
     $self->load_authentication_tokens();
 
@@ -1720,22 +1713,6 @@ Returns a list of videos from playlistID.
 =head2 get_videos_from_username($username)
 
 Returns the latest videos uploaded by a username.
-
-=head2 set_app_name($appname)
-
-Set the application name.
-
-=head2 get_app_name()
-
-Returns the application name.
-
-=head2 set_app_version($version)
-
-Set the application version.
-
-=head2 get_app_version()
-
-Returns the application version.
 
 =head2 get_v()
 

@@ -413,8 +413,6 @@ if (not defined $CONFIG{gcap}) {
 require WWW::YoutubeViewer;
 my $yv_obj = WWW::YoutubeViewer->new(
                                      key                 => $key,
-                                     app_name            => $appname,
-                                     app_version         => $version,
                                      config_dir          => $config_dir,
                                      escape_utf8         => 1,
                                      authentication_file => $authentication_file,

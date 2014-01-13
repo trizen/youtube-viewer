@@ -442,8 +442,6 @@ require WWW::YoutubeViewer;
 my $yv_obj = WWW::YoutubeViewer->new(
                                      escape_utf8         => 1,
                                      key                 => $key,
-                                     app_name            => $appname,
-                                     app_version         => $version,
                                      config_dir          => $config_dir,
                                      authentication_file => $authentication_file,
                                     );
