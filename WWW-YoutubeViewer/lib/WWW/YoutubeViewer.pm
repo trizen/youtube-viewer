@@ -44,7 +44,7 @@ our @region_IDs = qw(
   IT JP MX NL NZ PL RU ZA KR ES SE TW US
   );
 
-our @feed_methods = qw(newsubscriptionvideos recommendations favorites watch_history);
+our @feed_methods = qw(newsubscriptionvideos recommendations favorites watch_history watch_later);
 
 my %valid_options = (
 
@@ -1693,6 +1693,10 @@ Returns a list of videos, recommended for you by Youtube.
 =head2 get_watch_history(;$user)
 
 Returns the latest videos watched on Youtube.
+
+=head2 get_watch_later(;$user)
+
+Returns the saved videos to watch a later time.
 
 =head2 get_newsubscriptionvideos(;$user)
 
