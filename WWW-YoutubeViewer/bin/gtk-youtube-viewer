@@ -199,7 +199,7 @@ my %CONFIG = (
     categories_language => 'en-US',
 
     # URI options
-    thumb_url           => 'http://i.ytimg.com/vi/%s/%s.jpg',
+    thumb_url           => 'http://i1.ytimg.com/vi/%s/%s.jpg',
     youtube_video_url   => 'http://www.youtube.com/watch?v=%s',
     playlists_url       => 'http://www.youtube.com/playlist?list=%s',
     youtube_profile_url => 'http://www.youtube.com/user/%s',
@@ -224,7 +224,7 @@ my %CONFIG = (
     search_channels    => 0,
     search_playlists   => 0,
     thousand_separator => q{,},
-    default_thumb      => 'default',
+    default_thumb      => 'mqdefault',
     downloads_folder   => $ENV{'HOME'},
     browser            => undef,
     terminal           => find_terminal(),
