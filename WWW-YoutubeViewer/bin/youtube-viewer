@@ -64,7 +64,6 @@
 # - Added support to continue playing searched videos, usage: "youtube-viewer [words] -A"      - (v2.1.*)
 # - Added support to print counted videos and support to insert a number instead of video code - (v2.1.*)
 # - Added support to search YouTube Videos in script (e.g.: youtube-viewer avatar trailer)     - (v2.0.*)
-# - Added support for script to choose automat quality if it is lower than 1080p               - (v2.0.*)
 # - Added support to choose the quality only between 720p and 1080p (if it is available)       - (v2.0.*)
 # - Added support for YouTube video codes (e.g.: youtube-viewer WVTWCPoUt8w)                   - (v1.0.*)
 # - Added support for 720p and 1080p YouTube Videos...                                         - (v1.0.*)
@@ -197,7 +196,7 @@ my %CONFIG = (
     video_player_selected   => 'mplayer',    # maybe: detect_video_player()?
     combine_multiple_videos => 0,
 
-    # Youtube options
+    # YouTube options
     prefer_https        => 0,
     results             => 20,
     resolution          => 'original',
@@ -513,6 +512,7 @@ YouTube options:
    -R --recommended     : show the recommended videos for you *
    -S --subscriptions:s : show the new subscription videos *
    -w --watched         : show the latest watched videos on YouTube *
+   -L --later           : show the saved videos to watch at a later time *
    --channel-sugg       : show the suggested YouTube channels for you *
    --subscribe=USER     : subscribe to a user's channel *
    --favorite=ID/URL    : favorite a YouTube video by URL or ID *
@@ -520,16 +520,18 @@ YouTube options:
    --dislike=ID/URL     : send a 'dislike' rating to one or more videos *
 
 MPlayer options:
-   -f  --fullscreen!    : set the fullscreen mode for video player
+   -f  --fullscreen!    : set the fullscreen mode for the selected video player
    -n  --novideo!       : play the music only without a video in the foreground
    -l  --use-lc         : use a lower cache for MPlayer (for slow connections)
+   --vo=s               : specify the video output for MPlayer
    --nocache            : use no cache while streaming videos (with MPlayer)
    --cache=i            : set the cache for MPlayer (set: $opt{cache})
    --cache-min=i        : set the cache-min for MPlayer (set: $opt{cache_min})
    --lcache=i           : set the lower-cache for MPlayer (set: $opt{lower_cache})
    --lcache-min=i       : set the lower-cache-min for MPlayer (set: $opt{lower_cache_min})
+   --append-mplayer=s   : append some command-line parameters to the media player
    --video-player=s     : select a video player to stream videos
-                          avaiable: @{[keys %{$CONFIG->{video_players}}]}
+                          available players: @{[keys %{$CONFIG->{video_players}}]}
 
 Other options:
    -d  --download!      : download the video(s)
@@ -581,7 +583,7 @@ Help options:
    -h  --help           : print help and exit
        --debug:1,2      : see behind the scenes
 
-NOTE:
+NOTES:
     *  -> requires authentication
     !  -> the argument can be negated with '--no'
     =i -> requires an integer argument
@@ -1108,6 +1110,7 @@ sub parse_arguments {
         'favorites|favorited-videos|F:s'          => \$opt{favorites},
         'recommended|recommendations|R:s'         => \$opt{recommendations},
         'watch_history|watched|w:s'               => \$opt{watch_history},
+        'watch_later|later|L:s'                   => \$opt{watch_later},
         'subscribe=s'                             => \$opt{subscribe_channel},
         'favorite=s'                              => \$opt{favorite_video},
         'channel-suggestions'                     => \$opt{channel_suggestions},
@@ -1159,6 +1162,8 @@ sub parse_arguments {
         'lcache|lower-cache|lower_cache=i'            => \$opt{lower_cache},
         'lcache-minlower-cache-min|lower_cache_min=i' => \$opt{lower_cache_min},
         'use-lower-cache|l|use_lower_cache|use-lc!'   => \$opt{use_lower_cache},
+        'append-mplayer|arg=s'                                        => \$MPLAYER{user_defined_arguments},
+        'vo=s'                                          => sub {$MPLAYER{video_output} = "-vo $_[1]"},
 
         # Others
         'colorful|C!'       => \$opt{results_with_colors},

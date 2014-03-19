@@ -44,7 +44,7 @@ our @region_IDs = qw(
   IT JP MX NL NZ PL RU ZA KR ES SE TW US
   );
 
-our @feed_methods = qw(newsubscriptionvideos recommendations favorites watch_history);
+our @feed_methods = qw(newsubscriptionvideos recommendations favorites watch_history watch_later);
 
 my %valid_options = (
 
