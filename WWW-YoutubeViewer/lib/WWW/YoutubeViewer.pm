@@ -1694,6 +1694,10 @@ Returns a list of videos, recommended for you by Youtube.
 
 Returns the latest videos watched on Youtube.
 
+=head2 get_watch_later(;$user)
+
+Returns the saved videos to watch a later time.
+
 =head2 get_newsubscriptionvideos(;$user)
 
 Returns the videos from the subscriptions for the current logged user.
@@ -1969,7 +1973,7 @@ https://developers.google.com/youtube/2.0/developers_guide_protocol_api_query_pa
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012-2013 Trizen.
+Copyright 2012-2014 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
