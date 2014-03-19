@@ -524,6 +524,7 @@ MPlayer options:
    -n  --novideo!       : play the music only without a video in the foreground
    -l  --use-lc         : use a lower cache for MPlayer (for slow connections)
    --vo=s               : specify the video output for MPlayer
+   --af=s               : specify an audio filter for MPlayer
    --nocache            : use no cache while streaming videos (with MPlayer)
    --cache=i            : set the cache for MPlayer (set: $opt{cache})
    --cache-min=i        : set the cache-min for MPlayer (set: $opt{cache_min})
@@ -1162,8 +1163,9 @@ sub parse_arguments {
         'lcache|lower-cache|lower_cache=i'            => \$opt{lower_cache},
         'lcache-minlower-cache-min|lower_cache_min=i' => \$opt{lower_cache_min},
         'use-lower-cache|l|use_lower_cache|use-lc!'   => \$opt{use_lower_cache},
-        'append-mplayer|arg=s'                                        => \$MPLAYER{user_defined_arguments},
-        'vo=s'                                          => sub {$MPLAYER{video_output} = "-vo $_[1]"},
+        'append-mplayer|arg=s'                        => \$MPLAYER{user_defined_arguments},
+        'vo=s'                                        => sub { $MPLAYER{video_output} = "-vo $_[1]" },
+        'af=s'                                        => sub { $MPLAYER{video_output} = "-af $_[1]" },
 
         # Others
         'colorful|C!'       => \$opt{results_with_colors},
