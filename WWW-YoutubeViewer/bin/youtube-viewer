@@ -1165,7 +1165,7 @@ sub parse_arguments {
         'use-lower-cache|l|use_lower_cache|use-lc!'   => \$opt{use_lower_cache},
         'append-mplayer|arg=s'                        => \$MPLAYER{user_defined_arguments},
         'vo=s'                                        => sub { $MPLAYER{video_output} = "-vo $_[1]" },
-        'af=s'                                        => sub { $MPLAYER{video_output} = "-af $_[1]" },
+        'af=s'                                        => sub { $MPLAYER{audio_filter} = "-af $_[1]" },
 
         # Others
         'colorful|C!'       => \$opt{results_with_colors},
