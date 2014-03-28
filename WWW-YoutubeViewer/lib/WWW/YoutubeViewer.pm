@@ -8,6 +8,8 @@ use strict;
 use autouse 'XML::Fast'   => qw{ xml2hash($;%) };
 use autouse 'URI::Escape' => qw{ uri_escape uri_escape_utf8 uri_unescape };
 
+=encoding utf8
+
 =head1 NAME
 
 WWW::YoutubeViewer - A very easy interface to YouTube.
