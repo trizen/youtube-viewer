@@ -1206,7 +1206,7 @@ sub get_educategories {
 }
 
 sub _get_pairs_from_info_data {
-    my ($self, $content) = @_;
+    my ($self, $content, $videoID) = @_;
 
     my @array;
     my $i = 0;
@@ -1227,6 +1227,19 @@ sub _get_pairs_from_info_data {
             # Add signature
             if (exists $hash_ref->{sig}) {
                 $hash_ref->{url} .= "&signature=$hash_ref->{sig}";
+            }
+            elsif (exists $hash_ref->{s}) {    # has an encrypted signature :(
+                if (system('youtube-dl', '--version') == 0) {    # check if youtube-dl is installed
+
+                    # Unfortunately, this streaming URL doesn't work with 'mplayer', but it works with 'mpv' and 'vlc'
+                    chomp(my $url = `youtube-dl --get-url "http://www.youtube.com/watch?v=$videoID"`);
+                    foreach my $item (@array) {
+                        if (exists $item->{url}) {
+                            $item->{url} = $url;
+                        }
+                    }
+                    last;
+                }
             }
 
             # Add proxy (if defined http_proxy)
@@ -1254,7 +1267,7 @@ sub get_streaming_urls {
     my $url = ($self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID));
 
     my $content = uri_unescape($self->lwp_get($url) // return);
-    my @info = $self->_get_pairs_from_info_data($content);
+    my @info = $self->_get_pairs_from_info_data($content, $videoID);
 
     if ($self->get_debug == 2) {
         require Data::Dump;
@@ -1965,7 +1978,7 @@ Returns the video_info arguments.
 
 =head1 AUTHOR
 
-Trizen, C<< <trizenx at gmail.com> >>
+Daniel "Trizen" Șuteu, C<< <trizenx at gmail.com> >>
 
 =head1 SEE ALSO
 
@@ -1973,7 +1986,7 @@ https://developers.google.com/youtube/2.0/developers_guide_protocol_api_query_pa
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012-2014 Trizen.
+Copyright 2012-2014 Daniel "Trizen" Șuteu.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
