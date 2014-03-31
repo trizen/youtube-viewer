@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 19 March 2014
+#  Latest edit on: 01 April 2014
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -2597,15 +2597,21 @@ sub download_video {
     }
 
     if (defined $opt{convert_to}) {
-        my $output = $title;
-        $output =~ s/\.\w{2,5}$//;
+        my $new_file = "$video_title.$opt{convert_to}";
 
-        my $new_file = "$output.$opt{convert_to}";
-        my $ffmpeg = sprintf($opt{ffmpeg_command}, map { q{"} . s{(["\\`\$])}{\\$1}gr . q{"} }
-                               map { rel2abs($_) } $title, $new_file);
+        my @ffmpeg;
+        my @titles = ($title, $new_file);
+        foreach my $arg (get_quotewords(qr/\s+/, 0, $opt{ffmpeg_command})) {
+            push @ffmpeg, $arg eq '%s' ? shift(@titles) : $arg;
+        }
 
-        say $ffmpeg if $yv_obj->get_debug;
-        system $ffmpeg;
+        say "@ffmpeg" if $yv_obj->get_debug;
+
+        if (@titles) {
+            warn "[WARN] Invalid ffmpeg_command: needs input and output file!\n";
+        }
+
+        system @ffmpeg;
 
         if (not $? and not $opt{keep_original_video}) {
             unlink $title
