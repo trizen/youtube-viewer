@@ -1838,6 +1838,27 @@ sub valid_num {
     return $num =~ /^[0-9]{1,2}\z/ && $num != 0 && $num <= @{$array_ref};
 }
 
+sub chop_title {
+    my ($title, $title_length) = @_;
+
+    $title_length || do {
+        warn "Value of \$title_length must be greater than 0!\n";
+        return $title;
+    };
+
+    require Text::CharWidth;
+    my $title_width_len = Text::CharWidth::mbswidth($title);
+    if ($title_width_len != $title_length) {
+        while (Text::CharWidth::mbswidth($title) >= $title_length) {
+            chop $title;
+        }
+
+        $title .= ' ' x ($title_length - Text::CharWidth::mbswidth($title));
+    }
+
+    return $title;
+}
+
 # ... PRINT SUBROUTINES ... #
 sub print_channels {
     my ($results, $type) = @_;
@@ -2294,6 +2315,10 @@ TITLE: %s
 DESCR: %s
 FORMAT
 
+    if ($opt{get_term_width} and $opt{results_fixed_width}) {
+        get_term_width();
+    }
+
     my $num = 0;
     foreach my $playlist (@{$playlists}) {
         if ($opt{results_with_details}) {
@@ -2309,6 +2334,22 @@ FORMAT
                              text  => [$playlist->{summary} || 'No description available...']
                             ),
                   );
+        }
+        elsif ($opt{results_fixed_width}) {
+
+            require List::Util;
+
+            my $max_author_len = List::Util::max(map { length($_->{name}) } @{$playlists});
+            my $count_width    = List::Util::max(map { length($_->{count}) } @{$playlists});
+            my $title_length = $term_width - ($max_author_len + $count_width + 2 + 3 + 1 + 2);
+
+            print "\n" if $num == 0;
+            foreach my $vid (@{$playlists}) {
+                printf "%s. %s %*s [%*s]\n", colored(sprintf('%2d', ++$num), 'bold'),
+                  chop_title($vid->{title}, $title_length),
+                  $max_author_len, $vid->{name}, $count_width, $vid->{count};
+            }
+            last;
         }
         elsif ($opt{results_with_colors}) {
             print "\n" if $num == 0;
@@ -2811,7 +2852,6 @@ sub print_videos {
         elsif ($opt{results_fixed_width}) {
 
             require List::Util;
-            require Text::CharWidth;
 
             my $max_author_len = List::Util::max(map { length($_->{author}) } @{$videos});
             my $time_width = List::Util::first(sub { $_->{duration} >= 3600 }, @{$videos}) ? 8 : 6;
@@ -2819,20 +2859,8 @@ sub print_videos {
 
             print "\n" if $num == 0;
             foreach my $vid (@{$videos}) {
-
-                my $cp_title = $vid->{title};
-
-                my $title_width_len = Text::CharWidth::mbswidth($cp_title);
-                if ($title_width_len != $title_length) {
-                    while (Text::CharWidth::mbswidth($cp_title) >= $title_length) {
-                        chop $cp_title;
-                    }
-
-                    $cp_title .= ' ' x ($title_length - Text::CharWidth::mbswidth($cp_title));
-                }
-
                 printf "%s. %s %*s %*s\n", colored(sprintf('%2d', ++$num), 'bold'),
-                  $cp_title,
+                  chop_title($vid->{title}, $title_length),
                   $max_author_len, $vid->{author}, $time_width, $yv_utils->format_time($vid->{duration});
             }
             last;
