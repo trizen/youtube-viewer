@@ -1841,15 +1841,15 @@ sub valid_num {
 sub chop_title {
     my ($title, $title_length) = @_;
 
-    $title_length || do {
-        warn "Value of \$title_length must be greater than 0!\n";
+    $title_length > 0 or do {
+        warn "[WARN] Insufficient space for title: increase your terminal width!\n";
         return $title;
     };
 
     require Text::CharWidth;
     my $title_width_len = Text::CharWidth::mbswidth($title);
     if ($title_width_len != $title_length) {
-        while (Text::CharWidth::mbswidth($title) >= $title_length) {
+        while (Text::CharWidth::mbswidth($title) > $title_length) {
             chop $title;
         }
 
