@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 01 April 2014
+#  Latest edit on: 02 April 2014
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -2798,14 +2798,13 @@ sub print_video_info {
     print "\n$hr\n", q{ } x (($term_width - $title_length) / 2 - 4) => (_bold_color("=>> $info->{title} <<=") . "\n\n"),
       map(sprintf(q{** } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]),
           (
-           ['Author'    => $info->{author}],
-           ['Category'  => $info->{category}],
-           ['Duration'  => $yv_utils->format_time($info->{duration})],
-           ['Rating'    => sprintf('%.2f', $info->{rating})],
-           ['Likes'     => $yv_utils->set_thousands($info->{likes})],
-           ['Dislikes'  => $yv_utils->set_thousands($info->{dislikes})],
-           ['Favorited' => $yv_utils->set_thousands($info->{favorited})],
-           ['Views'     => $yv_utils->set_thousands($info->{views})],
+           ['Author'   => $info->{author}],
+           ['Category' => $info->{category}],
+           ['Duration' => $yv_utils->format_time($info->{duration})],
+           ['Rating'   => sprintf('%.2f', $info->{rating})],
+           ['Likes'    => $yv_utils->set_thousands($info->{likes})],
+           ['Dislikes' => $yv_utils->set_thousands($info->{dislikes})],
+           ['Views'    => $yv_utils->set_thousands($info->{views})],
            $info->{published} ? ['Published' => $yv_utils->format_date($info->{published})] : (),
             )),
       "$hr\n";
