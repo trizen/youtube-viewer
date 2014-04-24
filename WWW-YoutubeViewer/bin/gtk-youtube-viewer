@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 11 January 2014
+#  Latest edit on: 24 April 2014
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -156,6 +156,12 @@ my %CONFIG = (
                                   fs  => q{-fs},
                                   arg => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d},
                                  },
+                      smplayer => {
+                                   cmd => q{smplayer},
+                                   srt => q{-sub '%s'},
+                                   fs  => q{-fullscreen},
+                                   arg => q{-close-at-end},
+                                  },
                       vlc => {
                               cmd => q{vlc},
                               srt => q{--sub-file '%s'},
