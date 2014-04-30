@@ -1637,7 +1637,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
     <property name="program_name">GTK Youtube Viewer</property>
     <property name="copyright" translatable="yes">Copyright © 2010-2014 by Trizen</property>
     <property name="comments" translatable="yes">Written in Perl, Gtk2 and Glade under the GPLv3.</property>
-    <property name="website">http://trizen.googlecode.com</property>
+    <property name="website">https://code.google.com/p/trizen/</property>
     <property name="website_label" translatable="yes">Application's website</property>
     <property name="license" translatable="yes">
 Copyright (C) 2010-2014 Trizen &lt;trizenx@gmail.com&gt;.
