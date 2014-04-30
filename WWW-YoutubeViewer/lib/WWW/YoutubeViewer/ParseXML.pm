@@ -271,8 +271,23 @@ sub xml2hash {
     return $xml_ref;
 }
 
-sub _decode_entities {
-    $_[0] =~ s{&amp;}{&}gr =~ s{&quot;}{"}gr =~ s{&apos;}{'}gr =~ s{&gt;}{>}gr =~ s{&lt;}{<}gr;
+{
+    my %entities = (
+                    'amp'  => '&',
+                    'quot' => '"',
+                    'apos' => "'",
+                    'gt'   => '>',
+                    'lt'   => '<',
+                   );
+
+    state $ent_re = do {
+        local $" = '|';
+        qr/&(@{[keys %entities]});/;
+    };
+
+    sub _decode_entities {
+        $_[0] =~ s/$ent_re/$entities{$1}/gor;
+    }
 }
 
 =head1 AUTHOR
