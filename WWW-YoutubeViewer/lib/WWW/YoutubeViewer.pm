@@ -5,9 +5,6 @@ no if $] >= 5.018, warnings => 'experimental::smartmatch';
 use utf8;
 use strict;
 
-use autouse 'XML::Fast'   => qw{ xml2hash($;%) };
-use autouse 'URI::Escape' => qw{ uri_escape uri_escape_utf8 uri_unescape };
-
 =encoding utf8
 
 =head1 NAME
@@ -16,7 +13,7 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =head1 VERSION
 
-Version 0.05
+Version 0.06
 
 =cut
 
@@ -70,6 +67,8 @@ my %valid_options = (
     key         => {valid => [qr/^.{5}/],            default => undef},
     author      => {valid => [qr{^[\-\w.]{2,64}\z}], default => undef},
     config_dir  => {valid => [qr/^./],               default => q{.}},
+
+    use_internal_xml_parser => {valid => [1, 0], default => 0},
 
     authentication_file => {valid => [qr/^./],         default => undef},
     categories_language => {valid => [qr/^[a-z]+-\w/], default => 'en-US'},
@@ -324,14 +323,16 @@ Escapes a string with URI::Escape and returns it.
 sub escape_string {
     my ($self, $string) = @_;
 
+    require URI::Escape;
+
     if ($self->get_escape_utf8) {
         utf8::decode($string);
     }
 
     my $escaped =
       $self->get_escape_utf8()
-      ? uri_escape_utf8($string)
-      : uri_escape($string);
+      ? URI::Escape::uri_escape_utf8($string)
+      : URI::Escape::uri_escape($string);
 
     return $escaped;
 }
@@ -666,6 +667,33 @@ sub _xml2hash_pp {
              thumbnail  => $self->_get_thumbnail_from_gdata($gdata),
             }
 
+          : $opts{shows}
+
+          # Shows
+          ? {
+             showID  => (split(/:/, $gdata->{'id'}))[-1],
+             title   => $gdata->{'title'},
+             name    => $gdata->{'author'}[0]{'name'},
+             author  => $gdata->{'author'}[0]{'yt:userId'},
+             count   => $gdata->{'yt:countHint'},
+             summary => $gdata->{'summary'},
+             seasons => $gdata->{'gd:feedLink'}[0]{'-countHint'},
+            }
+
+          : $opts{shows_content}
+
+          # Seasons of a show
+          ? {
+             seasonID  => (split(/:/, $gdata->{'id'}))[-1],
+             title     => $gdata->{'title'},
+             published => $gdata->{'published'},
+             updated   => $gdata->{'updated'},
+             name      => $gdata->{'author'}[0]{'name'},
+             author    => $gdata->{'author'}[0]{'yt:userId'},
+             clips     => $gdata->{'gd:feedLink'}[0]{'-countHint'},
+             episodes  => $gdata->{'gd:feedLink'}[1]{'-countHint'},
+            }
+
           : $opts{comments}
 
           # Comments
@@ -761,6 +789,33 @@ sub _xml2hash {
              published  => $gdata->{'published'},
              updated    => $gdata->{'updated'},
              thumbnail  => $self->_get_thumbnail_from_gdata($gdata),
+            }
+
+          : $opts{shows}
+
+          # Shows
+          ? {
+             showID  => (split(/:/, $gdata->{'id'}))[-1],
+             title   => $gdata->{'title'},
+             name    => $gdata->{'author'}{'name'},
+             author  => $gdata->{'author'}{'yt:userId'},
+             count   => $gdata->{'yt:countHint'},
+             summary => $gdata->{'summary'},
+             seasons => $gdata->{'gd:feedLink'}{'-countHint'},
+            }
+
+          : $opts{shows_content}
+
+          # Seasons of a show
+          ? {
+             seasonID  => (split(/:/, $gdata->{'id'}))[-1],
+             title     => $gdata->{'title'},
+             published => $gdata->{'published'},
+             updated   => $gdata->{'updated'},
+             name      => $gdata->{'author'}{'name'},
+             author    => $gdata->{'author'}{'yt:userId'},
+             clips     => $gdata->{'gd:feedLink'}[0]{'-countHint'},
+             episodes  => $gdata->{'gd:feedLink'}[1]{'-countHint'},
             }
 
           : $opts{comments}
@@ -863,22 +918,35 @@ sub get_content {
     my ($self, $url, %opts) = @_;
 
     my $hash;
-    my $xml_fast = 1;
+    my $xml_fast = !($self->get_use_internal_xml_parser);
     my $xml_content = $self->lwp_get($url) // return [];
-    eval { $hash = xml2hash($xml_content) // return [] };
 
-    if ($@) {
-        if ($@ =~ /^Can't locate (\S+)\.pm\b/) {
-            $xml_fast = 0;
-            if ($self->get_debug()) {
-                print STDERR "** Using WWW::YoutubeViewer::ParseXML to parse the GData XML.\n";
+    if ($xml_fast) {
+        eval { require XML::Fast; $hash = XML::Fast::xml2hash($xml_content) // return [] };
+        if ($@) {
+            if ($@ =~ /^Can't locate (\S+)\.pm\b/) {
+                warn "[WARN] XML::Fast is not installed!\n" if $self->get_debug;
+                $self->set_use_internal_xml_parser(1);
+                $xml_fast = 0;
             }
-
-            require WWW::YoutubeViewer::ParseXML;
-            $hash = WWW::YoutubeViewer::ParseXML::xml2hash($xml_content);
+            else {
+                warn $@ if $self->get_debug;
+                warn "[XML::Fast] Error occured while parsing the XML content of: $url\n";
+                return [];
+            }
         }
-        else {
-            warn "XML::Fast: Error occured while parsing the XML content of: $url\n";
+    }
+
+    if (not $xml_fast) {
+        if ($self->get_debug()) {
+            print STDERR "** Using WWW::YoutubeViewer::ParseXML to parse the GData XML.\n";
+        }
+
+        require WWW::YoutubeViewer::ParseXML;
+        eval { $hash = WWW::YoutubeViewer::ParseXML::xml2hash($xml_content) // return [] };
+        if ($@) {
+            warn $@ if $self->get_debug;
+            warn "[WWW::YoutubeViewer::ParseXML] Error occured while parsing the XML content of: $url\n";
             return [];
         }
     }
@@ -1213,12 +1281,13 @@ sub _get_pairs_from_info_data {
     my @array;
     my $i = 0;
 
+    require URI::Escape;
     foreach my $block (split(/,/, $content)) {
         foreach my $pair (split(/&/, $block)) {
             $pair =~ s{^url_encoded_fmt_stream_map=(?=\w+=)}{}im;
             my ($key, $value) = split(/=/, $pair);
             $key // next;
-            $array[$i]->{$key} = uri_unescape($value);
+            $array[$i]->{$key} = URI::Escape::uri_unescape($value);
         }
         ++$i;
     }
@@ -1268,7 +1337,8 @@ sub get_streaming_urls {
 
     my $url = ($self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID));
 
-    my $content = uri_unescape($self->lwp_get($url) // return);
+    require URI::Escape;
+    my $content = URI::Escape::uri_unescape($self->lwp_get($url) // return);
     my @info = $self->_get_pairs_from_info_data($content, $videoID);
 
     if ($self->get_debug == 2) {
@@ -1625,10 +1695,14 @@ sub get_video_info {
     # Create some simple subroutines
     foreach my $method (
                         ['related_videos', '/videos/%s/related', {}],
-                        ['playlists_from_username',        '/users/%s/playlists', {playlists => 1}],
-                        ['videos_from_username',           '/users/%s/uploads',   {}],
-                        ['favorited_videos_from_username', '/users/%s/favorites', {}],
-                        ['videos_from_playlist',           '/playlists/%s',       {}],
+                        ['playlists_from_username',        '/users/%s/playlists',  {playlists     => 1}],
+                        ['shows_from_username',            '/users/%s/shows',      {shows         => 1}],
+                        ['shows_content_from_id',          '/shows/%s/content',    {shows_content => 1}],
+                        ['clips_from_season_id',           '/seasons/%s/clips',    {}],
+                        ['episodes_from_season_id',        '/seasons/%s/episodes', {}],
+                        ['videos_from_username',           '/users/%s/uploads',    {}],
+                        ['favorited_videos_from_username', '/users/%s/favorites',  {}],
+                        ['videos_from_playlist',           '/playlists/%s',        {}],
       ) {
 
         *{__PACKAGE__ . '::get_' . $method->[0]} = sub {
@@ -1724,6 +1798,22 @@ Returns the latest favorited videos for a given username.
 =head2 get_playlists_from_username($username)
 
 Returns a list of playlists created by $username.
+
+=head2 get_shows_from_username($username)
+
+Returns a list of shows belonging to a user.
+
+=head2 get_shows_content_from_id($showID)
+
+Returns a list of seasons for a given show ID.
+
+=head2 get_clips_from_season_id($seasonID)
+
+Retruns a list of videos (clips) from a season ID.
+
+=head2 get_episodes_from_season_id($seasonID)
+
+Returns a list of videos (episodes) from a season ID.
 
 =head2 get_videos_from_playlist($playlistID)
 
@@ -1909,6 +1999,15 @@ Set a configuration directory.
 =head2 get_config_dir()
 
 Get the configuration directory.
+
+=head2 set_use_internal_xml_parser($bool)
+
+By default, WWW::YoutubeViewer will try to use the XML::Fast module first.
+A true value will make WWW::YoutubeViewer to always use the internal XML parser.
+
+=head2 get_use_internal_xml_parser()
+
+Returns true if the internal XML parser is in use.
 
 =head2 set_authentication_file($filename)
 

@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 02 April 2014
+#  Latest edit on: 02 May 2014
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -26,20 +26,24 @@
 # youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
 #
 # [CHANGELOG]
-# - Added support for YouTube EDU categories (-edu) // Options: :dv, :lec, :courses, :course   - NEW (v3.0.4)
-# - Some minor bug-fixes // New options has been added: --pp, :pp, :anp, :kregex               - NEW (v3.0.3)
-# - Added support for more resolutions, UTF-8 support, --convert-to=FMT and many bug-fixes     - NEW (v3.0.1)
-# - Youtube Viewer 3.0 has been released! New options, better functionality and new bugs :)    - NEW (v3.0.0)
-# - Added support for detailed results (usage: -D or --details) // Support for comments        - NEW (v2.5.8)
-# - Switched to Term::ReadLine for a better STDIN support // Better colors // Info support     - NEW (v2.5.7)
-# - Added support for: -duration, -caption=s, -safe-search=s, -hd // Improved code quality     - NEW (v2.5.6)
-# - Added support for configuration file, improved stability, improved debug mode              - NEW (v2.5.5)
-# - Switched to XML::Fast for parsing gdata XML, in consequence, youtube-viewer is faster!     - NEW (v2.5.5)
-# - Switched to Getopt::Long, added SIGINT handler and a better way to execute mplayer         - NEW (v2.5.5)
-# - Added support to list playlists created by a specific user (usage: -up <USERNAME>)         - NEW (v2.5.4)
-# - Improved parsing support for arguments, including arguments specified via STDIN.           - NEW (v2.5.4)
-# - Added support to search for videos uploaded by a particular YouTube user (-author=USER)    - NEW (v2.5.4)
-# - Added support to get video results starting with a predefined page (e.g.: -page=4)         - NEW (v2.5.4)
+# - Added support for more video players (--player=s) // Added support for shows (--us=s)      - NEW (v3.1.0)
+# - Added the ':play' stdin option // Added the support for 'watch_later' videos (-L)          - NEW (v3.1.0)
+# - Added a new option to combine multiple videos into one play instance (--combine-multiple)  - NEW (v3.1.0)
+# - New authentication support (OAuth 2.0) // Added support for download & play (-dp)          - (v3.0.7)
+# - Added support for YouTube EDU categories (-edu) // Options: :dv, :lec, :courses, :course   - (v3.0.4)
+# - Some minor bug-fixes // New options has been added: --pp, :pp, :anp, :kregex               - (v3.0.3)
+# - Added support for more resolutions, UTF-8 support, --convert-to=FMT and many bug-fixes     - (v3.0.1)
+# - Youtube Viewer 3.0 has been released! New options, better functionality and new bugs :)    - (v3.0.0)
+# - Added support for detailed results (usage: -D or --details) // Support for comments        - (v2.5.8)
+# - Switched to Term::ReadLine for a better STDIN support // Better colors // Info support     - (v2.5.7)
+# - Added support for: -duration, -caption=s, -safe-search=s, -hd // Improved code quality     - (v2.5.6)
+# - Added support for configuration file, improved stability, improved debug mode              - (v2.5.5)
+# - Switched to XML::Fast for parsing gdata XML, in consequence, youtube-viewer is faster!     - (v2.5.5)
+# - Switched to Getopt::Long, added SIGINT handler and a better way to execute mplayer         - (v2.5.5)
+# - Added support to list playlists created by a specific user (usage: -up <USERNAME>)         - (v2.5.4)
+# - Improved parsing support for arguments, including arguments specified via STDIN.           - (v2.5.4)
+# - Added support to search for videos uploaded by a particular YouTube user (-author=USER)    - (v2.5.4)
+# - Added support to get video results starting with a predefined page (e.g.: -page=4)         - (v2.5.4)
 # - Added support for previous page and support to list youtube usernames from a file          - (v2.5.2)
 # - Added few options to control cache of MPlayer and lower cache for lower video resolutions  - (v2.5.1)
 # - Added colors for text (--use_colors), 360p support (-3), playlist support                  - (v2.5.0)
@@ -77,6 +81,7 @@
 # - Julian Ospald (for adding youtube-viewer in the gentoo portage tree: http://packages.gentoo.org/package/net-misc/youtube-viewer)
 # - 666philb (for packaging gtk-youtube-viewer for Puppy Linux: http://www.murga-linux.com/puppy/viewtopic.php?t=76835)
 # - Kevin Lemonnier (for adding support for proxy - https://github.com/Ulrar)
+# - Georgo (for adding the 'Watch Later' feature - https://github.com/trizen/youtube-viewer/pull/44)
 
 =head1 NAME
 
@@ -237,6 +242,8 @@ my %CONFIG = (
     keep_original_video  => 0,
     download_and_play    => 0,
     remove_played_file   => 0,
+    termui_autoreply     => 0,
+    use_xml_fast         => 1,
     ffmpeg_command       => 'ffmpeg -i %s %s',
     convert_to           => undef,
 );
@@ -272,7 +279,7 @@ my $action_options = <<'ACTIONS';
 :logout           : will delete the authentication key
 ACTIONS
 
-my $control_help = <<'CONTROL';
+my $control_options = <<'CONTROL';
 # Control
 :n(ext)           : get the next page of results
 :b(ack)           : get the previous page of results
@@ -298,27 +305,40 @@ NOTES
 my $general_help = <<"HELP";
 
 $action_options
+$control_options
 $other_options
 $notes_options
 Examples:
-     4                 : select the 4th result
+     3                 : select the 3rd result
     -V funny cats      : search for videos
     -p classical music : search for playlists of videos
 HELP
 
+my $playlists_help = <<"PL_HELP" . $general_help;
+
+# Playlists
+:pp=i,i           : play videos from the selected playlists
+PL_HELP
+
+my $comments_help = <<"COM_HELP" . $general_help;
+
+# Comments
+:c(omment)        : send a comment to this video
+COM_HELP
+
 my $complete_help = <<"STDIN_HELP";
 
 $base_options
-$control_help
+$control_options
 $action_options
 # YouTube
-:i(nfo)=i,i       : show video informations
+:i(nfo)=i,i       : display more information
 :d(ownload)=i,i   : download the selected videos
-:c(omments)=i     : show video comments
-:r(elated)=i      : show related videos
-:a(uthor)=i       : show a video author's latest uploads
-:p(laylists)=i    : show author's latest playlists
-:subscribe=i      : subscribe to an author's channel
+:c(omments)=i     : display video comments
+:r(elated)=i      : display related videos
+:a(uthor)=i       : display latest author's uploads
+:p(laylists)=i    : display author's playlists
+:subscribe=i      : subscribe to author's channel
 :(dis)like=i      : like or dislike a video
 :fav(orite)=i     : favorite a video
 
@@ -371,7 +391,7 @@ our $CONFIG;
 require $config_file;    # Load the configuration file
 
 if (ref $CONFIG ne 'HASH') {
-    die "ERROR: Invalid configuration file!\n\t\$CONFIG is not an HASH ref!";
+    die "[ERROR] Invalid configuration file!\n\t\$CONFIG is not an HASH ref!";
 }
 
 my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
@@ -428,30 +448,11 @@ my $yv_obj = WWW::YoutubeViewer->new(
 }
 
 require WWW::YoutubeViewer::Utils;
-my $yv_utils = WWW::YoutubeViewer::Utils->new(thousand_separator => $opt{thousand_separator},);
+my $yv_utils = WWW::YoutubeViewer::Utils->new(thousand_separator => $opt{thousand_separator});
 
-{
-    no strict 'refs';
-    foreach my $name (qw(description title)) {
-        *{__PACKAGE__ . '::get_and_print_video_' . $name} = sub {
-            foreach my $id (@_) {
-                my $videoID = get_valid_video_id($id) // next;
-                my $info = $yv_obj->get_video_info($videoID);
-                if (@{$info->{results}}) {
-                    say $info->{results}[0]{$name};
-                }
-                else {
-                    warn_cant_get($name, $videoID);
-                }
-            }
-        };
-    }
-}
-
-# Apply the configuration file
-unless (qr/^--?(?>N|noconfig)\z/ ~~ \@ARGV) {
-    my (%temp_hash) = %CONFIG;
-    apply_configuration(\%temp_hash);
+{    # Apply the configuration file
+    my %temp = %CONFIG;
+    apply_configuration(\%temp);
 }
 
 #---------------------- YOUTUBE-VIEWER USAGE ----------------------#
@@ -463,33 +464,57 @@ sub help {
 \n  $eqs \U$appname\E $eqs
 \t\t\t\t\t\t by Trizen (trizenx\@gmail.com)
 
-usage: $execname [options] ([url] || [keywords])
+usage: $execname [options] ([url] | [keywords])
 
-Base Options:
-   <url>                : play an YouTube video by URL
-   <keywords>           : search and list YouTube videos
-   <playlist_url>       : list a playlist of YouTube videos
+== Base ==
+   [URL]             : play an YouTube video by URL
+   [keywords]        : search for YouTube videos
+   [playlist URL]    : display a playlist of YouTube videos
 
-YouTube options:
-   -t  --tops           : show today YouTube video tops
-       --tops=all       : show all time YouTube video tops
-   -r  --region=ID      : list top videos for a specific region
-   -M  --movies         : show the YouTube category of movies
-   -c  --categories     : show the available YouTube categories
-       --edu-categories : show the YouTube EDU categories
-       --course-id=ID   : list the video lectures from courseID
+
+== YouTube Options ==
+
+ * Video tops:
+   -t  --tops           : display the YouTube video tops
+       --tops=all       : display all time YouTube video tops
+   -r  --region=s       : list top videos for a specific region
+   -M  --movies         : display the YouTube category of movies
+
+ * Categories
+   -c  --categories     : display the available YouTube categories
+       --edu-categories : display the YouTube EDU categories
+       --course-id=s    : list the video lectures from a course_ID
    -hl --catlang=s      : language for categories (default: en-US)
-   -p  --playlists      : search for playlists of videos
-       --playlist=ID    : list a playlist of videos by playlistID
-       --pp=ID,ID       : play the videos from the given playlist IDs
+
+ * Videos
    -u  --user=s         : list videos uploaded by a specific user
-   -up --user-pl=s      : list playlists created by a specific user
    -uf --user-fav=s     : list the videos favorited by a specific user
-   -V  --videos=K-WORDS : search for YouTube videos (default mode)
-   -id --videoids=ID,ID : play the YouTube videos by video IDs
-   -rv --related=URL/ID : show related videos for a video ID/URL
-   --channels           : search for Youtube channels
-   --disco              : YouTube discovery - search and list the playlist
+   -id --videoids=s,s   : play YouTube videos by their IDs
+   -rv --related=s      : show related videos for a video ID or URL
+       --gdata-url=s    : print video results from a valid GData URL
+       --search=s       : search for YouTube videos (default mode)
+
+ * Playlists
+   -p  --playlists   : search for playlists of videos
+       --playlist=s  : list a playlist of videos by playlistID
+       --pp=s,s      : play the videos from the given playlist IDs
+       --disco       : YouTube discovery - search and display a disco playlist
+   -up --user-pl=s   : list the playlists created by a specific user
+
+ * Channels
+   --channels         : search for Youtube channels
+   --channel-suggest  : show the suggested YouTube channels for you *
+
+ * Shows
+   -us --user-shows=s : display the shows belonging to a user
+       --seasons=s    : get and print the seasons of a YouTube show_ID
+       --episodes=s   : get and print the episodes for a show season_ID
+       --clips=s      : get and print the clips for a show season_ID
+
+* Comments
+   --comments=s         : display comments for a YouTube video by ID or URL
+
+ * Filtering
    --author=s           : search in videos uploaded by a specific user
    --duration=s         : filter search results based on video length
                           valid values are: short, medium, long
@@ -502,79 +527,105 @@ YouTube options:
    --orderby=s          : order entries by: published, viewCount or rating
    --time=s             : show only videos uploaded within the specified time
                           valid values are: today, this_week and this_month
-   --hd                 : search only for videos available in at least 720p
+   --hd!                : search only for videos available in at least 720p
    --page=i             : get results starting with a specific page
-   --results=[1-50]     : how many results to display per page
+   --results=i          : how many results to display per page (max: 50)
    -2  -3  -4  -7  -1   : resolutions: 240p, 360p, 480p, 720p and 1080p
-   --resolution=RES     : available resolutions: original, 1080p, 720p,
+   --resolution=s       : available resolutions: original, 1080p, 720p,
                           480p, 360p, 240p, 144p, audio
+
+ * Account
+   --login              : will prompt you for login
+   --logout             : will delete the authentication key
+
+ * [GET] Personal
    -F --favorites:s     : show the latest favorited videos *
    -R --recommended     : show the recommended videos for you *
    -S --subscriptions:s : show the new subscription videos *
    -w --watched         : show the latest watched videos on YouTube *
    -L --later           : show the saved videos to watch at a later time *
-   --channel-sugg       : show the suggested YouTube channels for you *
-   --subscribe=USER     : subscribe to a user's channel *
-   --favorite=ID/URL    : favorite a YouTube video by URL or ID *
-   --like=ID/URL        : send a 'like' rating to one or more videos *
-   --dislike=ID/URL     : send a 'dislike' rating to one or more videos *
 
-MPlayer options:
-   -f  --fullscreen!    : set the fullscreen mode for the selected video player
-   -n  --novideo!       : play the music only without a video in the foreground
-   -l  --use-lc         : use a lower cache for MPlayer (for slow connections)
-   --vo=s               : specify the video output for MPlayer
-   --af=s               : specify an audio filter for MPlayer
-   --nocache            : use no cache while streaming videos (with MPlayer)
-   --cache=i            : set the cache for MPlayer (set: $opt{cache})
-   --cache-min=i        : set the cache-min for MPlayer (set: $opt{cache_min})
-   --lcache=i           : set the lower-cache for MPlayer (set: $opt{lower_cache})
-   --lcache-min=i       : set the lower-cache-min for MPlayer (set: $opt{lower_cache_min})
-   --append-mplayer=s   : append some command-line parameters to the media player
-   --video-player=s     : select a video player to stream videos
-                          available players: @{[keys %{$CONFIG->{video_players}}]}
+* [POST] Personal
+   --subscribe=s        : subscribe to a channel *
+   --favorite=s         : favorite a YouTube video by URL or ID *
+   --like=s             : send a 'like' rating to a video URL or ID *
+   --dislike=s          : send a 'dislike' rating to a video URL or ID *
 
-Other options:
-   -d  --download!      : download the video(s)
-   -i  --info=ID/URL    : show video informations for a videoID or URL
-   -A  --all!           : play all the video results in order
-   -s  --shuffle!       : shuffle the playlist before playing (with -A)
+
+== Player Options ==
+
+ * Cache
+   --cache=i       : set the cache for MPlayer (set: $opt{cache})
+   --cache-min=i   : set the cache-min for MPlayer (set: $opt{cache_min})
+   --lcache=i      : set the lower-cache for MPlayer (set: $opt{lower_cache})
+   --lcache-min=i  : set the lower-cache-min for MPlayer (set: $opt{lower_cache_min})
+   --nocache       : don't use any cache for MPlayer (for fast connections)
+   --use-lc        : always use lower cache for MPlayer (for slow connections)
+
+ * Arguments
+   -f  --fullscreen!  : set the fullscreen mode for the selected video player
+   -n  --novideo!     : play the music only without a video in the foreground
+   --vo=s             : specify the video output for MPlayer
+   --af=s             : specify an audio filter for MPlayer
+   --append-mplayer=s : append some command-line parameters to the media player
+   --video-player=s   : select a video player to stream videos
+                        available players: @{[keys %{$CONFIG->{video_players}}]}
+
+
+== Download Options ==
+
+ * Download
+   -d  --download!       : activate the download mode
+   -dp --downl-play!     : play the video after download (with -d)
+   -rp --rem-played!     : delete a local video after played (with -dp)
+       --wget-dl!        : download videos with wget (default: LWP)
+       --clobber!        : overwrite an existent video (with -d)
+       --skip-if-exists! : don't download videos which already exists (with -d)
+       --copy-caption!   : copy and rename the caption for downloaded videos
+       --downloads-dir=s : downloads directory (set: '$opt{downloads_folder}')
+
+ * Convert
+   --ffmpeg-command=s   : ffmpeg command for converting videos after download
+   --convert-to=s       : convert video to a specific format (with -d)
+   --keep-original!     : keep the original video after converting
+
+
+== Oher Options ==
+
+ * Behavior
+   -A  --all!            : play all the video results in order
+   -s  --shuffle!        : shuffle the playlist before playing (with -A)
+   -I  --interactive!    : prompt for the first user input
+       --autoreply!      : auto reply questions asked by Term::UI
+       --max-seconds=i   : don't play videos longer than i seconds
+       --min-seconds=i   : don't play videos shorter than i seconds
+       --combine-multi!  : combine multiple videos into one play instance
+       --get-term-width! : allow $execname to read your terminal width
+       --use-xml-fast!   : use XML::Fast to parse the GData XML content
+
+ * Closed-captions
+   --gcap=s             : set the full path to the gcap script
+   --get-captions!      : download the closed captions (with gcap)
+   --captions-dir=s     : the directory where to download the .srt files
+
+ * Config
+   -U  --update-config! : update the configuration file before exit
+
+ * Output
    -C  --colorful!      : use colors to delimit the video results
    -D  --details!       : a new look for the results, with more details
    -W  --fixed-width!   : adjust the results to fit inside the term width
-   -U  --update-config  : update the configuration file before exit
-   -N  --noconfig       : start the $appname with the default config
-   -I  --interactive!   : prompt for the first user input
+   -i  --info=ID/URL    : show video informations for a videoID or URL
    -q  --quiet          : do not display any warning
-   -dp --downl-play     : play the video after download (with -d)
-   -rp --rem-played     : delete a local video after played (with -dp)
-   --really-quiet       : do not display any warning or output
-   --use-colors!        : use ANSI colors for text
-   --wget-dl!           : download videos with wget (default: LWP)
-   --combine-multiple!  : combine multiple videos into one play instance
-   --convert-to=FORMAT  : convert video to a specific format (with -d)
-   --ffmpeg-command=s   : ffmpeg command for converting videos after download
-   --keep-original!     : keep the original video after converting
-   --comments=ID/URL    : show comments for a YouTube video
-   --get-title=ID/URL   : get and print the title for a video
-   --get-desc=ID/URL    : get and print the description for a video
-   --max-seconds=i      : don't play videos longer than i seconds
-   --min-seconds=i      : don't play videos shorter than i seconds
-   --gcap=s             : set the full path to the gcap script
-   --get-captions!      : download the closed captions (with gcap)
-   --copy-caption!      : copy and rename the caption for downloaded videos
-   --captions-dir=s     : the directory where to download the .srt files
-   --gdata-url=s        : print video results from a valid GData URL
-   --get-term-width!    : adjust the text for your terminal width
-   --login              : will prompt you for login
-   --logout             : will delete the authentication key
+       --really-quiet   : do not display any warning or output
+       --use-colors!    : use ANSI colors for text
+
+ * Other
    --http_proxy=s       : HTTP proxy to use, format 'http://domain.tld:port/'.
                           If authentication required,
                           use 'http://user:pass\@domain.tld:port/'
-   --clobber            : overwrite an existent video (with -d)
-   --skip-if-exists!    : don't download videos which already exists (with -d)
    --prefer-https!      : use the HTTPS protocol instead of the HTTP protocol
-   --downloads-dir=s    : downloads directory (set: '$opt{downloads_folder}')
+
 
 Help options:
    -T  --tricks         : show more 'hidden' features of $appname
@@ -585,11 +636,12 @@ Help options:
        --debug:1,2      : see behind the scenes
 
 NOTES:
-    *  -> requires authentication
-    !  -> the argument can be negated with '--no'
-    =i -> requires an integer argument
-    =s -> requires an argument
-    :s -> can take an optional argument
+    *    -> requires authentication
+    !    -> the argument can be negated with '--no'
+    =i   -> requires an integer argument
+    =s   -> requires an argument
+    :s   -> can take an optional argument
+    =s,s -> can take more arguments separated by commas
 
 HELP
     main_quit(0);
@@ -889,6 +941,10 @@ sub apply_configuration {
         $yv_obj->set_hd(delete($opt->{hd}) ? 'true' : undef);
     }
 
+    if (defined $opt->{use_xml_fast}) {
+        $yv_obj->set_use_internal_xml_parser(not delete $opt->{use_xml_fast});
+    }
+
     if (defined $opt->{more_results}) {
         $yv_obj->set_results(delete($opt->{more_results}) ? 50 : $CONFIG{results});
     }
@@ -920,6 +976,15 @@ sub apply_configuration {
         }
     }
 
+    if (defined $opt{termui_autoreply}) {
+        if (delete $opt->{termui_autoreply}) {
+            $Term::UI::AUTOREPLY = 1;
+        }
+        else {
+            $Term::UI::AUTOREPLY = 0;
+        }
+    }
+
     # ... SUBROUTINE CALLS ... #
     if (defined $opt->{subscribe_channel}) {
         subscribe_to_channels(split(/[,\s]+/, delete $opt->{subscribe_channel}));
@@ -927,14 +992,6 @@ sub apply_configuration {
 
     if (defined $opt->{favorite_video}) {
         favorite_videos(split(/[,\s]+/, delete $opt->{favorite_video}));
-    }
-
-    if (defined $opt->{get_title}) {
-        get_and_print_video_title(split(/[,\s]+/, delete $opt->{get_title}));
-    }
-
-    if (defined $opt->{get_description}) {
-        get_and_print_video_description(split(/[,\s]+/, delete $opt->{get_description}));
     }
 
     if (defined $opt->{like_video}) {
@@ -994,12 +1051,24 @@ sub apply_configuration {
         }
     }
 
-    if (delete $opt->{show_categories}) {
+    if (delete $opt->{categories}) {
         print_categories(categories => $yv_obj->get_categories());
     }
 
-    if (delete $opt->{show_educategories}) {
+    if (delete $opt->{educategories}) {
         print_categories(categories => $yv_obj->get_educategories(), edu => 1);
+    }
+
+    if (defined $opt->{show_seasons}) {
+        get_and_print_content_from_show(delete $opt->{show_seasons});
+    }
+
+    if (defined $opt->{season_episodes}) {
+        get_and_print_episodes_from_season_id(delete $opt->{season_episodes});
+    }
+
+    if (defined $opt->{season_clips}) {
+        get_and_print_clips_from_season_id(delete $opt->{season_clips});
     }
 
     if (defined $opt->{user_videos}) {
@@ -1008,6 +1077,15 @@ sub apply_configuration {
         }
         else {
             warn_invalid("username", $opt->{user_videos});
+        }
+    }
+
+    if (defined $opt->{user_shows}) {
+        if ($opt->{user_shows} =~ /$valid_username_re/) {
+            print_shows($yv_obj->get_shows_from_username(delete $opt->{user_shows}));
+        }
+        else {
+            warn_invalid("username", $opt->{user_shows});
         }
     }
 
@@ -1030,8 +1108,8 @@ sub apply_configuration {
         }
     }
 
-    if (defined $opt->{show_tops}) {
-        print_video_tops(time_id => (delete($opt->{show_tops}) =~ /^all/i ? 'all_time' : 'today'));
+    if (defined $opt->{video_tops}) {
+        print_video_tops(time_id => (delete($opt->{video_tops}) =~ /^all/i ? 'all_time' : 'today'));
     }
 
     if (delete $opt->{show_movies}) {
@@ -1068,8 +1146,8 @@ sub apply_configuration {
         }
     }
 
-    if (defined $opt->{show_video_info}) {
-        get_and_print_video_info(split(/[,\s]+/, delete $opt->{show_video_info}));
+    if (defined $opt->{print_video_info}) {
+        get_and_print_video_info(split(/[,\s]+/, delete $opt->{print_video_info}));
     }
 }
 
@@ -1097,14 +1175,15 @@ sub parse_arguments {
 
         'movies|M'                                   => \$opt{show_movies},
         'disco|discovery'                            => \$opt{disco},
-        'get_title|get-title=s'                      => \$opt{get_title},
-        'get-description|get_description=s'          => \$opt{get_description},
         'comments=s'                                 => \$opt{get_comments},
         'search|videos|V:s'                          => \$opt{search_videos},
         'video-ids|videoids|id|ids=s'                => \$opt{play_video_ids},
-        'tops|video-tops|t:s'                        => \$opt{show_tops},
-        'c|categories|show-categories'               => \$opt{show_categories},
-        'ec|educategories|edu-categories'            => \$opt{show_educategories},
+        'tops|video-tops|t:s'                        => \$opt{video_tops},
+        'c|categories'                               => \$opt{categories},
+        'ec|educategories|edu-categories'            => \$opt{educategories},
+        'show-seasons|show_seasons|seasons=s',       => \$opt{show_seasons},
+        'season-episodes|season_episodes|episodes=s' => \$opt{season_episodes},
+        'season-clips|season_clips|clips=s'          => \$opt{season_clips},
         'channels|search-channels|search_channels:s' => \$opt{search_channels},
 
         'subscriptions|newsubscriptionvideos|S:s' => \$opt{newsubscriptionvideos},
@@ -1119,6 +1198,7 @@ sub parse_arguments {
         'login|authenticate'     => \$opt{authenticate},
         'logout'                 => \$opt{logout},
         'user|username|u|uv=s'   => \$opt{user_videos},
+        'shows|user-shows|us=s'  => \$opt{user_shows},
         'user-playlists|up=s'    => \$opt{user_playlists},
         'user-favorited|uf=s'    => \$opt{user_favorited_videos},
         'related-videos|rl|rv=s' => \$opt{related_videos},
@@ -1141,13 +1221,13 @@ sub parse_arguments {
         'all|A|play-all!'            => \$opt{play_all},
         'use-colors|colors|colored!' => \$opt{colors},
         'prefer-https|prefer_https!' => \$opt{prefer_https},
+        'use-xml-fast|use_xml_fast!' => \$opt{use_xml_fast},
 
-        'noconfig|N'               => \$opt{noconfig},
         'playlists|p|pl:s'         => \$opt{search_playlists},
         'course|course-id=s'       => \$opt{course_id},
         'play-playlists|pp=s'      => \$opt{play_playlists},
         'debug:1'                  => \$opt{debug},
-        'download|d!'              => \$opt{download_video},
+        'download|dl|d!'           => \$opt{download_video},
         'safe-search|safeSearch=s' => \$opt{safe_search},
         'hd|high-definition!'      => \$opt{hd},
         'I|interactive!'           => \$opt{interactive},
@@ -1178,7 +1258,7 @@ sub parse_arguments {
         'dp|downl-play|download_and_play!'  => \$opt{download_and_play},
         'rp|rem-played|remove_played_file!' => \$opt{remove_played_file},
         'clobber!'                          => \$opt{clobber},
-        'info|i|show-info=s'                => \$opt{show_video_info},
+        'info|i|video-info=s'               => \$opt{print_video_info},
         'get-term-width!'                   => \$opt{get_term_width},
         'page=i'                            => \$opt{page},
         'novideo|n!'                        => \$opt{novideo},
@@ -1191,14 +1271,14 @@ sub parse_arguments {
 
         'quiet|q!'      => \$opt{quiet},
         'really-quiet!' => \$opt{really_quiet},
+        'autoreply!'    => \$opt{termui_autoreply},
 
         'thousand-separator=s'           => \$opt{thousand_separator},
         'get-captions|get_captions!'     => \$opt{get_captions},
         'copy-caption|copy_caption!'     => \$opt{copy_caption},
         'captions-dir|captions_dir=s'    => \$opt{captions_dir},
         'skip-if-exists|skip_if_exists!' => \$opt{skip_if_exists},
-
-        'downloads-dir|downloads_folder|downloads-folder|download-dir=s' => \$opt{downloads_folder},
+        'downloads-dir|download-dir=s'   => \$opt{downloads_folder},
     );
 
     apply_configuration(\%opt, $keywords);
@@ -1603,6 +1683,70 @@ sub get_and_print_videos_from_course {
     return 1;
 }
 
+sub get_and_print_clips_from_season_id {
+    my ($season_id) = @_;
+
+    if ($season_id =~ /$valid_video_id_re/) {
+        my $info = $yv_obj->get_clips_from_season_id($season_id);
+
+        if (@{$info->{results}}) {
+            print_videos($info);
+        }
+        else {
+            warn colored("\n[!] No clips found...", 'bold red') . "\n";
+            return;
+        }
+    }
+    else {
+        warn_invalid('episode ID', $season_id);
+        return;
+    }
+}
+
+sub get_and_print_episodes_from_season_id {
+    my ($season_id) = @_;
+
+    if ($season_id =~ /$valid_video_id_re/) {
+        my $info = $yv_obj->get_episodes_from_season_id($season_id);
+
+        if (@{$info->{results}}) {
+            print_videos($info);
+        }
+        else {
+            warn colored("\n[!] No episode found...", 'bold red') . "\n";
+            return;
+        }
+    }
+    else {
+        warn_invalid('episode ID', $season_id);
+        return;
+    }
+}
+
+sub get_and_print_content_from_show {
+    my ($show_id) = @_;
+
+    if ($show_id =~ /$valid_video_id_re/) {
+        my $info = $yv_obj->get_shows_content_from_id($show_id);
+
+        if (@{$info->{results}}) {
+            print_show_seasons($info);
+        }
+        else {
+            warn colored("\n[!] Inexistent show...", 'bold red') . "\n";
+            return;
+        }
+    }
+    else {
+        warn_invalid('showID', $show_id);
+        return;
+    }
+
+    return 1;
+}
+
+get_and_print_content_from_show("CNETTV");
+
 sub get_and_print_videos_from_playlist {
     my ($playlistID) = @_;
 
@@ -1825,6 +1969,14 @@ sub get_input_for_comments {
     return get_user_input(_bold_color("\n=>> Press <ENTER> for the next page of comments (:h for help)") . "\n> ");
 }
 
+sub get_input_for_shows {
+    return get_user_input(_bold_color("\n=>> Select a video show (:h for help)") . "\n> ");
+}
+
+sub get_input_for_seasons {
+    return get_user_input(_bold_color("\n=>> Select a show season (:h for help)") . "\n> ");
+}
+
 sub get_input_for_video_tops {
     return get_user_input(_bold_color("\n=>> Select a video top (:h for help)") . "\n> ");
 }
@@ -1893,7 +2045,7 @@ sub print_channels {
         }
         else {
             print "\n" if $i == 0;
-            printf "%s. %s (by %s)\n", colored(sprintf('%2d', ++$i), 'bold'), $channel->{title}, $channel->{name},;
+            printf "%s. %s (by %s)\n", colored(sprintf('%2d', ++$i), 'bold'), $channel->{title}, $channel->{name};
         }
     }
 
@@ -1946,6 +2098,187 @@ sub print_channels {
     __SUB__->(@_);
 }
 
+sub print_show_seasons {
+    my ($results) = @_;
+
+    if (not @{$results->{results}}) {
+        warn colored("\n[!] No seasons found...", 'bold red') . "\n";
+    }
+
+    my $url     = $results->{url};
+    my $seasons = $results->{results};
+
+    my $i = 0;
+    foreach my $season (@{$seasons}) {
+        if ($season->{title} =~ /^([0-9]+)$/) {
+            $season->{title} = "Season $1";
+        }
+
+        printf(
+               "\n%s. %s\n    %s: %-13s %-13s: %-20s %s: %s\n" . "    %s: %-12s %s: %s\n",
+               colored(sprintf('%2d', ++$i), 'bold') => colored($season->{title}, 'bold blue'),
+               colored('Episodes'  => 'bold') => $yv_utils->set_thousands($season->{episodes}),
+               colored('Clips'     => 'bold') => $yv_utils->set_thousands($season->{clips}),
+               colored('Author'    => 'bold') => $season->{name},
+               colored('Published' => 'bold') => $yv_utils->format_date($season->{published}),
+               colored('Updated '  => 'bold') => $yv_utils->format_date($season->{updated}),
+              );
+    }
+
+    my @keywords = get_input_for_seasons();
+
+    foreach my $key (@keywords) {
+        if ($key =~ /$valid_opt_re/) {
+            given ($1) {
+                when (
+                      general_options(
+                                      opt  => $_,
+                                      sub  => __SUB__,
+                                      url  => $url,
+                                      res  => $seasons,
+                                      mode => 'shows_content',
+                                     )
+                  ) {
+                }
+                when (['r', 'return']) {
+                    return 1;
+                }
+                when (['h', 'help']) {
+                    print $general_help;
+                    press_enter_to_continue();
+                }
+            }
+        }
+        else {
+            given ($key) {
+                when (\&youtube_urls) { }    # do nothing
+                when (valid_num($_, $seasons)) {
+
+                    if ($seasons->[$_ - 1]{episodes} > 0 and $seasons->[$_ - 1]{clips} > 0) {
+                        my $reply = $term->get_reply(
+                                                     prompt  => colored('=>> Episodes or clips?', 'bold green'),
+                                                     choices => [qw(episodes clips)],
+                                                     default => 'episodes',
+                                                    );
+
+                        if ($reply eq 'episodes') {
+                            get_and_print_episodes_from_season_id($seasons->[$_ - 1]{seasonID});
+                        }
+                        else {
+                            get_and_print_clips_from_season_id($seasons->[$_ - 1]{seasonID});
+                        }
+                    }
+                    elsif ($seasons->[$_ - 1]{episodes} > 0) {
+                        get_and_print_episodes_from_season_id($seasons->[$_ - 1]{seasonID});
+
+                    }
+                    elsif ($seasons->[$_ - 1]{clips} > 0) {
+                        get_and_print_clips_from_season_id($seasons->[$_ - 1]{seasonID});
+                    }
+                    else {
+                        warn colored("\n[!] This show contains 0 episodes and 0 clips!", 'bold red') . "\n";
+                    }
+                }
+                default {
+                    warn_invalid('keyword', $_);
+                }
+            }
+        }
+    }
+
+    __SUB__->(@_);
+}
+
+sub print_shows {
+    my ($results) = @_;
+
+    if (not @{$results->{results}}) {
+        warn colored("\n[!] No shows found...", 'bold red') . "\n";
+    }
+
+    my $url   = $results->{url};
+    my $shows = $results->{results};
+
+    my $i = 0;
+    foreach my $show (@{$shows}) {
+        if ($opt{results_with_details}) {
+            printf(
+                   "\n%s. %s [%s]\n%s\n",
+                   colored(sprintf('%2d', ++$i), 'bold') => colored($show->{title}, 'bold blue'),
+                   colored('seasons: ' . sprintf('%d', $show->{seasons}), 'bold'),
+                   wrap_text(
+                             i_tab => q{ } x 4,
+                             s_tab => q{ } x 4,
+                             text  => [$show->{summary} || 'No description available...'],
+                            ),
+                  );
+        }
+        elsif ($opt{results_fixed_width}) {
+
+            require List::Util;
+
+            my $max_author_len = List::Util::max(map { length($_->{name}) } @{$shows});
+            my $count_width    = List::Util::max(map { length($_->{seasons}) } @{$shows});
+            my $title_length = $term_width - ($max_author_len + $count_width + 2 + 3 + 1 + 2);
+
+            foreach my $show (@{$shows}) {
+                print "\n" if $i == 0;
+                printf "%s. %s %*s [%*s]\n", colored(sprintf('%2d', ++$i), 'bold'),
+                  chop_title($show->{title}, $title_length),
+                  $max_author_len, $show->{name}, $count_width, $show->{seasons};
+            }
+            last;
+        }
+        else {
+            print "\n" if $i == 0;
+            printf "%s. %s (by %s) [%d]\n", colored(sprintf('%2d', ++$i), 'bold'), $show->{title}, $show->{name},
+              $show->{seasons};
+        }
+    }
+
+    my @keywords = get_input_for_shows();
+
+    foreach my $key (@keywords) {
+        if ($key =~ /$valid_opt_re/) {
+            given ($1) {
+                when (
+                      general_options(
+                                      opt  => $_,
+                                      sub  => __SUB__,
+                                      url  => $url,
+                                      res  => $shows,
+                                      mode => 'shows',
+                                     )
+                  ) {
+                }
+                when (['r', 'return']) {
+                    return 1;
+                }
+                when (['h', 'help']) {
+                    print $general_help;
+                    press_enter_to_continue();
+                }
+                default {
+                    warn_invalid('option', $_);
+                }
+            }
+        }
+        else {
+            given ($key) {
+                when (\&youtube_urls) { }    # do nothing
+                when (valid_num($_, $shows)) {
+                    get_and_print_content_from_show($shows->[$_ - 1]{showID});
+                }
+                default {
+                    warn_invalid('keyword', $_);
+                }
+            }
+        }
+    }
+
+    __SUB__->(@_);
+}
+
 sub print_comments {
     my ($results, $videoID) = @_;
 
@@ -1955,20 +2288,6 @@ sub print_comments {
 
     my $url      = $results->{url};
     my $comments = $results->{results};
-
-    state $comments_help = <<"HELP";
-
-# Comments
-:c(omment)        : send a comment to this video
-
-# Control
-:n(ext)           : show the next page of comments
-:b(ack)           : show the previous page of comments
-
-$action_options
-$other_options
-$notes_options
-HELP
 
     my $i = 0;
     foreach my $comment (@{$comments}) {
@@ -1986,7 +2305,6 @@ HELP
 
     my @keywords = get_input_for_comments();
 
-    my @for_search;
     foreach my $key (@keywords) {
         if ($key =~ /$valid_opt_re/) {
             given ($1) {
@@ -2078,7 +2396,6 @@ sub print_courses {
 
     my @keywords = get_input_for_courses();
 
-    my @for_search;
     foreach my $key (@keywords) {
         if ($key =~ /$valid_opt_re/) {
             given ($1) {
@@ -2395,9 +2712,7 @@ FORMAT
                   ) {
                 }
                 when (['h', 'help']) {
-                    my $help = $control_help;
-                    $help .= ":pp=i,i           : play videos from the selected playlists\n";
-                    print "\n", $help, $general_help;
+                    print $playlists_help;
                     press_enter_to_continue();
                 }
                 when (['r', 'return']) {
