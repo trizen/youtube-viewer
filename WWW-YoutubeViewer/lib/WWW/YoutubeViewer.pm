@@ -529,7 +529,7 @@ sub lwp_get {
 
         if ($status eq '401 Token invalid' and defined($self->get_refresh_token)) {
             if (defined(my $json = $self->oauth_refresh_token())) {
-                if ($json =~ m{^\h*"access_token"\h*:\h*"(.{10,}?)"}m) {
+                if ($json =~ m{^\h*"access_token"\h*:\h*"(.{10,}?)"}m) {    # "
 
                     $self->set_access_token($1);
 
@@ -541,8 +541,8 @@ sub lwp_get {
                         return $new_resp->decoded_content;
                     }
                     elsif ($new_resp->status_line() eq '401 Token invalid') {
-                        $self->set_refresh_token();    # refresh token was invalid
-                        $self->set_access_token();     # access token is also broken
+                        $self->set_refresh_token();                         # refresh token was invalid
+                        $self->set_access_token();                          # access token is also broken
                         warn "[!] Can't refresh the access token!\n";
                     }
                     else {
