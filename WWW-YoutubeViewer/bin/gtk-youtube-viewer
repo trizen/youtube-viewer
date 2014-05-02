@@ -217,6 +217,7 @@ my %CONFIG = (
     terminal           => undef,                 # autodetect it later
     terminal_exec      => q{-e '%s'},
     youtube_viewer     => undef,
+    use_xml_fast       => 1,
     youtube_users_file => $youtube_users_file,
 );
 
@@ -495,6 +496,10 @@ sub apply_configuration {
                 warn "[!] Invalid value <$value> for option <$option_name>.\n";
             }
         }
+    }
+
+    if (defined $CONFIG{use_xml_fast}) {
+        $yv_obj->set_use_internal_xml_parser(not $CONFIG{use_xml_fast});
     }
 
     # Spin button results setting config value
