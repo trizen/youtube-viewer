@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 24 April 2014
+#  Latest edit on: 02 May 2014
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -89,37 +89,18 @@ foreach my $dir ($config_dir) {
 }
 ## end of compatibility
 
-# Constants
-my %constant = (win32 => $^O eq 'MSWin32');
-
 # Share directory
 my $share_dir = dist_dir('WWW-YoutubeViewer');
 
 sub which_command {
     my ($cmd) = @_;
-    foreach my $path (path()) {
+    state $paths = [path()];
+    foreach my $path (@{$paths}) {
         if (-e (my $cmd_path = catfile($path, $cmd))) {
             return $cmd_path;
         }
     }
     return;
-}
-
-# Get mplayer
-sub get_mplayer {
-    if ($constant{win32}) {
-        my $smplayer = catfile($ENV{ProgramFiles}, qw(SMPlayer mplayer mplayer.exe));
-
-        if (not -e $smplayer) {
-            warn "\n\n!!! Please install SMPlayer in order to stream YouTube videos.\n\n";
-        }
-
-        return $smplayer;    # Windows MPlayer
-    }
-    else {
-        my $mplayer_path = '/usr/bin/mplayer';
-        return -x $mplayer_path ? $mplayer_path : q{mplayer}    # *NIX MPlayer
-    }
 }
 
 my %symbols = (
@@ -151,7 +132,7 @@ my %CONFIG = (
 
     video_players => {
                       mplayer => {
-                                  cmd => get_mplayer(),
+                                  cmd => q{mplayer},
                                   srt => q{-sub '%s'},
                                   fs  => q{-fs},
                                   arg => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d},
@@ -175,7 +156,7 @@ my %CONFIG = (
                               arg => q{--really-quiet},
                              },
                      },
-    video_player_selected => 'mplayer',
+    video_player_selected => undef,    # autodetect it later
 
     # MPlayer options
     cache           => 30000,
@@ -413,18 +394,6 @@ if (ref $CONFIG ne 'HASH') {
 my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
 
-# Backwards compatibility (likely to go away in the future)
-if (not exists $CONFIG{video_players}{'custom'}) {
-    if (exists $CONFIG->{mplayer}) {
-        my $hash_ref = $CONFIG{video_players}{'custom'} = {};
-        $hash_ref->{cmd}               = $CONFIG->{mplayer} // q{mplayer};
-        $hash_ref->{fs}                = '-fs';
-        $hash_ref->{srt}               = $CONFIG->{mplayer_srt_args} // q{-sub '%s'};
-        $hash_ref->{arg}               = $CONFIG->{mplayer_arguments} // q{};
-        $CONFIG{video_player_selected} = 'custom';
-    }
-}
-
 if (not \%CONFIG ~~ $CONFIG) {
     dump_configuration();
 }
@@ -433,6 +402,18 @@ if (not \%CONFIG ~~ $CONFIG) {
 if (not defined $CONFIG{gcap}) {
     if (defined(my $gcap = which_command('gcap'))) {
         $CONFIG{gcap} = $gcap;
+    }
+}
+
+# Locating a video player
+if (not defined $CONFIG{video_player_selected}) {
+    foreach my $key (sort keys %{$CONFIG{video_players}}) {
+        if (defined(my $abs_player_path = which_command($CONFIG{video_players}{$key}{cmd}))) {
+            $CONFIG{video_players}{$key}{cmd} = $abs_player_path;
+            $CONFIG{video_player_selected} = $key;
+            dump_configuration();
+            last;
+        }
     }
 }
 

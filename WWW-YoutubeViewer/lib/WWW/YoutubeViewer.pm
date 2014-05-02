@@ -910,7 +910,7 @@ Returns a hash reference containing the URL and RESULTS:
 Valid %opts:
     playlists => 1, comments => 1, videos => 1,
     channels  => 1, channel_suggestions => 1,
-    courses   => 1,
+    courses   => 1, shows => 1, shows_content => 1,
 
 =cut
 

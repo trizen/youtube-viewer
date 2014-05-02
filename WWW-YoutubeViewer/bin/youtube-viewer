@@ -26,7 +26,8 @@
 # youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
 #
 # [CHANGELOG]
-# - Added support for more video players (--player=s) // Added support for shows (--us=s)      - NEW (v3.1.0)
+# - Added support for more video players (--player=s) // Added support for shows (--us=author) - NEW (v3.1.0)
+# - Added support to --copy-caption for downloaded videos // Added fixed-width for playlists   - NEW (v3.1.0)
 # - Added the ':play' stdin option // Added the support for 'watch_later' videos (-L)          - NEW (v3.1.0)
 # - Added a new option to combine multiple videos into one play instance (--combine-multiple)  - NEW (v3.1.0)
 # - New authentication support (OAuth 2.0) // Added support for download & play (-dp)          - (v3.0.7)
@@ -72,6 +73,9 @@
 # - Added support for YouTube video codes (e.g.: youtube-viewer WVTWCPoUt8w)                   - (v1.0.*)
 # - Added support for 720p and 1080p YouTube Videos...                                         - (v1.0.*)
 
+# Many thanks to everyone who contributed in making this application.
+#   https://github.com/trizen/youtube-viewer/graphs/contributors
+
 # Special thanks to:
 # - Army (for the bug reports and for his great ideas: https://aur.archlinux.org/packages.php?ID=37779&comments=all)
 # - dhn (for adding youtube-viewer in freshports.org: http://www.freshports.org/multimedia/youtube-viewer)
@@ -80,7 +84,7 @@
 # - gotbletu (for the great video review of youtube-viewer: http://www.youtube.com/watch?v=FnJ67oAxVQ4)
 # - Julian Ospald (for adding youtube-viewer in the gentoo portage tree: http://packages.gentoo.org/package/net-misc/youtube-viewer)
 # - 666philb (for packaging gtk-youtube-viewer for Puppy Linux: http://www.murga-linux.com/puppy/viewtopic.php?t=76835)
-# - Kevin Lemonnier (for adding support for proxy - https://github.com/Ulrar)
+# - Kevin Lemonnier (for adding proxy support - https://github.com/Ulrar)
 # - Georgo (for adding the 'Watch Later' feature - https://github.com/trizen/youtube-viewer/pull/44)
 
 =head1 NAME
@@ -130,7 +134,7 @@ my %opt;
 my $term_width = 80;
 
 # Unchangeable data goes here
-my %constant = (win32 => $^O eq 'MSWin32');
+my %constant = (win32 => $^O eq 'MSWin32');    # doh
 
 my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
   || catdir(
@@ -155,7 +159,8 @@ if (not -d $config_dir) {
 
 sub which_command {
     my ($cmd) = @_;
-    foreach my $path (path()) {
+    state $paths = [path()];
+    foreach my $path (@{$paths}) {
         if (-e (my $cmd_path = catfile($path, $cmd))) {
             return $cmd_path;
         }
@@ -198,7 +203,13 @@ my %CONFIG = (
                               novideo => q{--no-video},
                              },
                      },
-    video_player_selected   => 'mplayer',    # maybe: detect_video_player()?
+
+    video_player_selected => (
+        $constant{win32}
+        ? 'mplayer'
+        : undef            # autodetect it later
+    ),
+
     combine_multiple_videos => 0,
 
     # YouTube options
@@ -397,19 +408,6 @@ if (ref $CONFIG ne 'HASH') {
 my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
 
-# Backwards compatibility (likely to go away in the future)
-if (not exists $CONFIG{video_players}{'custom'}) {
-    if (exists $CONFIG->{mplayer}) {
-        my $hash_ref = $CONFIG{video_players}{'custom'} = {};
-        $hash_ref->{cmd}               = $CONFIG->{mplayer} // q{mplayer};
-        $hash_ref->{fs}                = '-fs';
-        $hash_ref->{novideo}           = '-novideo';
-        $hash_ref->{srt}               = $CONFIG->{mplayer_srt_args} // q{-sub '%s'};
-        $hash_ref->{arg}               = $CONFIG->{mplayer_arguments} // q{};
-        $CONFIG{video_player_selected} = 'custom';
-    }
-}
-
 if (not \%CONFIG ~~ $CONFIG) {
     dump_configuration();
 }
@@ -419,6 +417,18 @@ if (not defined $CONFIG{gcap}) {
     if (defined(my $gcap = which_command('gcap'))) {
         $CONFIG{gcap} = $gcap;
         dump_configuration();
+    }
+}
+
+# Locating a video player
+if (not defined $CONFIG{video_player_selected}) {
+    foreach my $key (sort keys %{$CONFIG{video_players}}) {
+        if (defined(my $abs_player_path = which_command($CONFIG{video_players}{$key}{cmd}))) {
+            $CONFIG{video_players}{$key}{cmd} = $abs_player_path;
+            $CONFIG{video_player_selected} = $key;
+            dump_configuration();
+            last;
+        }
     }
 }
 
@@ -1372,10 +1382,8 @@ sub get_mplayer {
 
         return $smplayer;    # Windows MPlayer
     }
-    else {
-        my $mplayer_path = '/usr/bin/mplayer';
-        return -x $mplayer_path ? $mplayer_path : q{mplayer}    # *NIX MPlayer
-    }
+
+    return 'mplayer';        # *NIX MPlayer
 }
 
 # Get term width
