@@ -212,9 +212,9 @@ my %CONFIG = (
     search_playlists   => 0,
     thousand_separator => q{,},
     default_thumb      => 'mqdefault',
-    downloads_folder   => $ENV{'HOME'},
+    downloads_folder   => curdir(),
     browser            => undef,
-    terminal           => find_terminal(),
+    terminal           => undef,                 # autodetect it later
     terminal_exec      => q{-e '%s'},
     youtube_viewer     => undef,
     youtube_users_file => $youtube_users_file,
@@ -415,6 +415,24 @@ if (not defined $CONFIG{video_player_selected}) {
             last;
         }
     }
+}
+
+# Locating a terminal
+if (not defined $CONFIG{terminal}) {
+    foreach my $term (
+                      'gnome-terminal', 'lxterminal', 'terminal', 'xfce4-terminal',
+                      'sakura',         'lilyterm',   'evilvte',  'superterm',
+                      'terminator',     'kterm',      'mlterm',   'mrxvt',
+                      'rxvt',           'urxvt',      'termit',   'fbterm',
+                      'stjerm',         'yakuake',    'roxterm',  'xterm'
+      ) {
+        if (defined(my $abs_path = which_command($term))) {
+            $CONFIG{terminal} = $abs_path;
+            last;
+        }
+    }
+
+    $CONFIG{terminal} //= $ENV{TERM} || 'xterm';
 }
 
 {
@@ -664,8 +682,8 @@ sub users_menu_popup {
 set_text(
     $textview_help, <<"HELP_TEXT"
 * Links
-    main website: http://trizen.googlecode.com
-    development website: https://github.com/trizen/$execname
+    main website: https://code.google.com/p/trizen/
+    development website: https://github.com/trizen/youtube-viewer
     developer's website: http://trizen.go.ro
 
 * Developer
@@ -738,10 +756,10 @@ clear_list
     1 to clean the treeview list before each search
 
 gcap
-    full path to the gcap application ( see http://gcap.googlecode.com )
+    full path to the gcap application ( see https://code.google.com/p/gcap/ )
 
 srt_languages
-    default subtitle languages (requires: gcap)
+    preferred subtitle languages (requires: gcap)
 
 captions_dir
     the directory where to store the closed captions from YouTube (.srt files)
@@ -1840,23 +1858,6 @@ sub clear_text {
 
 sub run_cli_youtube_viewer {
     execute_cli_youtube_viewer('--interactive');
-}
-
-sub find_terminal {
-    foreach my $term (
-                      'gnome-terminal', 'lxterminal', 'terminal', 'xfce4-terminal',
-                      'sakura',         'lilyterm',   'evilvte',  'superterm',
-                      'terminator',     'kterm',      'mlterm',   'mrxvt',
-                      'rxvt',           'urxvt',      'uuterm',   'termit',
-                      'fbterm',         'stjerm',     'yakuake',  'roxterm'
-      ) {
-        foreach my $path (path()) {
-            if (-e (my $terminal = catfile($path, $term))) {
-                return $terminal;
-            }
-        }
-    }
-    return $ENV{TERM} || 'xterm';
 }
 
 sub get_options_as_arguments {
