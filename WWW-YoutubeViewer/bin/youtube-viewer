@@ -1753,8 +1753,6 @@ sub get_and_print_content_from_show {
     return 1;
 }
 
-get_and_print_content_from_show("CNETTV");
-
 sub get_and_print_videos_from_playlist {
     my ($playlistID) = @_;
 
