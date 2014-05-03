@@ -1706,7 +1706,7 @@ sub get_and_print_clips_from_season_id {
         }
     }
     else {
-        warn_invalid('episode ID', $season_id);
+        warn_invalid('seasonID', $season_id);
         return;
     }
 }
@@ -1726,7 +1726,7 @@ sub get_and_print_episodes_from_season_id {
         }
     }
     else {
-        warn_invalid('episode ID', $season_id);
+        warn_invalid('seasonID', $season_id);
         return;
     }
 }
@@ -2875,7 +2875,7 @@ sub download_video {
         $title =~ tr{/}{%};
     }
     else {
-        $title =~ tr{:"*/?\\|}{;'+%$%%};
+        $title =~ tr{:"*/?\\|}{;'+%$%%};    # "
     }
 
     my $video_title = $title;
