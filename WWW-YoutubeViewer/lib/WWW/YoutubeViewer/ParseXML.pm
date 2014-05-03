@@ -4,17 +4,19 @@ use 5.014;
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
+=encoding utf8
+
 =head1 NAME
 
 WWW::YoutubeViewer::ParseXML - Convert XML to a HASH ref structure.
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -23,7 +25,6 @@ Parse XML content and return an HASH ref structure.
 Usage:
 
     use WWW::YoutubeViewer::ParseXML;
-
     my $hash_ref = WWW::YoutubeViewer::ParseXML::xml2hash($xml_string);
 
 =head1 SUBROUTINES/METHODS
@@ -52,20 +53,6 @@ sub xml2hash {
         state $valid_tag = qr{[^\-.\s0-9$inv_chars][^$inv_chars\s]*};
 
         {
-            when (/\G<\?/gc) {
-                /\G.*?\?>\s*/gcs or die "Invalid XML!";
-                redo
-            }
-            when (/\G<!--/gc) {
-                /\G.*?-->\s*/gcs or die "Comment not closed!";
-                redo
-            }
-            when (/\G<!DOCTYPE\s+/gc) {
-                /\G(?>$valid_tag|\s+|".*?"|'.*?')*\[.*?\]>\s*/sgco
-                  or /\G.*?>\s*/sgc
-                  or die "DOCTYPE not closed!";
-                redo
-            }
             when (
                 m{\G< \s*
                         ($valid_tag)  \s*
@@ -256,6 +243,20 @@ sub xml2hash {
                 }
                 redo
             }
+            when (/\G<\?/gc) {
+                /\G.*?\?>\s*/gcs or die "Invalid XML!";
+                redo
+            }
+            when (/\G<!--/gc) {
+                /\G.*?-->\s*/gcs or die "Comment not closed!";
+                redo
+            }
+            when (/\G<!DOCTYPE\s+/gc) {
+                /\G(?>$valid_tag|\s+|".*?"|'.*?')*\[.*?\]>\s*/sgco
+                  or /\G.*?>\s*/sgc
+                  or die "DOCTYPE not closed!";
+                redo
+            }
             when (/\G\z/gc) {
                 break;
             }
@@ -292,8 +293,7 @@ sub xml2hash {
 
 =head1 AUTHOR
 
-Trizen, C<< <trizenx at gmail.com> >>
-
+Daniel "Trizen" Șuteu, C<< <trizenx at gmail.com> >>
 
 =head1 SUPPORT
 
@@ -304,7 +304,7 @@ You can find documentation for this module with the perldoc command.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012-2013 Trizen.
+Copyright 2012-2014 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
