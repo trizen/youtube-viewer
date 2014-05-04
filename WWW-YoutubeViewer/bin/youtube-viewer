@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 02 May 2014
+#  Latest edit on: 04 May 2014
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -150,6 +150,7 @@ my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
 my $config_dir = catdir($xdg_config_home, $execname);
 my $config_file         = catfile($config_dir, "$execname.conf");
 my $authentication_file = catfile($config_dir, 'reg.dat');
+my $history_file        = catfile($config_dir, 'input_history.txt');
 
 if (not -d $config_dir) {
     require File::Path;
@@ -255,6 +256,7 @@ my %CONFIG = (
     remove_played_file   => 0,
     termui_autoreply     => 0,
     use_xml_fast         => 1,
+    save_input_history   => 0,
     ffmpeg_command       => 'ffmpeg -i %s %s',
     convert_to           => undef,
 );
@@ -277,11 +279,11 @@ my $base_options = <<'BASE';
 [keywords]        : search for YouTube videos
 [youtube-url]     : play a video by YouTube URL
 :v(ideoid)=ID     : play videos by YouTube video IDs
-[playlist-url]    : list videos from a playlistURL
-:playlist=ID      : list videos from a playlistID
-:lectures=ID      : list lectures from a categoryID
-:course=ID        : list lectures from a courseID
-:courses=ID       : list courses of lectures from a categoryID
+[playlist-url]    : display videos from a playlistURL
+:playlist=ID      : display videos from a playlistID
+:lectures=ID      : display lectures from a categoryID
+:course=ID        : display lectures from a courseID
+:courses=ID       : display courses of lectures from a categoryID
 BASE
 
 my $action_options = <<'ACTIONS';
@@ -298,10 +300,10 @@ CONTROL
 
 my $other_options = <<'OTHER';
 # Others
-:r(eturn)         : return to the previous section
+:r(eturn)         : return to previous section
+:dv=i             : dump result as key=>value pairs
+-argv -argv2=v    : apply some arguments (e.g.: -u=google)
 :reset, :reload   : restart the application
-:dv=i             : print the key=>value informations
--argv -argv2=v    : some arguments (e.g.: -u=google)
 :q, :quit, :exit  : close the application
 OTHER
 
@@ -358,7 +360,7 @@ $action_options
 3-8, 3..8         : same as 3 4 5 6 7 8
 8-3, 8..3         : same as 8 7 6 5 4 3
 8 2 12 4 6 5 1    : play the videos in your order
-:q(ueue)=i,i,...  : enqueue videos to play them later
+:q(ueue)=i,i,...  : enqueue videos for playing them later
 :pq, :play-queue  : play the enqueued videos (if any)
 :anp :nnp         : auto-next-page, no-next-page
 :play=i,i,...     : play a group of selected videos
@@ -433,6 +435,17 @@ if (not defined $CONFIG{video_player_selected}) {
 }
 
 @opt{keys %CONFIG} = values(%CONFIG);
+
+if ($opt{save_input_history}) {
+    if (open($opt{history_fh}, '>>:utf8', $history_file)) {
+        select((select($opt{history_fh}), $| = 1)[0]);    # autoflush
+    }
+    else {
+        warn "Can't open history file `$history_file' for appending: $!";
+    }
+
+    $term->ReadHistory($history_file);
+}
 
 {
     my $i = length $key;
@@ -577,7 +590,7 @@ usage: $execname [options] ([url] | [keywords])
    -n  --novideo!     : play the music only without a video in the foreground
    --vo=s             : specify the video output for MPlayer
    --af=s             : specify an audio filter for MPlayer
-   --append-mplayer=s : append some command-line parameters to the media player
+   --append-arg=s     : append some command-line parameters to the media player
    --video-player=s   : select a video player to stream videos
                         available players: @{[keys %{$CONFIG->{video_players}}]}
 
@@ -688,7 +701,7 @@ sub tricks {
         s_tab => q{ } x 3,
         text  => [
             sort qw(
-              favorited videoID
+              videoID
               name duration author
               description dislikes
               rating published views
@@ -1197,12 +1210,12 @@ sub parse_arguments {
         'channels|search-channels|search_channels:s' => \$opt{search_channels},
 
         'subscriptions|newsubscriptionvideos|S:s' => \$opt{newsubscriptionvideos},
-        'favorites|favorited-videos|F:s'          => \$opt{favorites},
+        'favorites|fv|favorited-videos|F:s'       => \$opt{favorites},
         'recommended|recommendations|R:s'         => \$opt{recommendations},
         'watch_history|watched|w:s'               => \$opt{watch_history},
         'watch_later|later|L:s'                   => \$opt{watch_later},
         'subscribe=s'                             => \$opt{subscribe_channel},
-        'favorite=s'                              => \$opt{favorite_video},
+        'favorite|favorite-video|fav=s'           => \$opt{favorite_video},
         'channel-suggestions'                     => \$opt{channel_suggestions},
 
         'login|authenticate'     => \$opt{authenticate},
@@ -1253,7 +1266,7 @@ sub parse_arguments {
         'lcache|lower-cache|lower_cache=i'            => \$opt{lower_cache},
         'lcache-minlower-cache-min|lower_cache_min=i' => \$opt{lower_cache_min},
         'use-lower-cache|l|use_lower_cache|use-lc!'   => \$opt{use_lower_cache},
-        'append-mplayer|arg=s'                        => \$MPLAYER{user_defined_arguments},
+        'append-mplayer|append-arg|arg=s'             => \$MPLAYER{user_defined_arguments},
         'vo=s'                                        => sub { $MPLAYER{video_output} = "-vo $_[1]" },
         'af=s'                                        => sub { $MPLAYER{audio_filter} = "-af $_[1]" },
 
@@ -1504,8 +1517,12 @@ sub get_user_input {
     return q{:next} if $input eq q{};    # <ENTER> for the next page
 
     my ($args, $keywords) = parse_options($input);
-    apply_input_arguments($args, $keywords);
 
+    if ($opt{save_input_history} && @{$keywords}) {
+        say {$opt{history_fh}} join(' ', @{$keywords});
+    }
+
+    apply_input_arguments($args, $keywords);
     return @{$keywords};
 }
 
@@ -3281,7 +3298,7 @@ sub print_videos {
                 when (['r', 'return']) {
                     return 1;
                 }
-                when (/^a(?:uthor)?${digit_or_equal_re}(.*)/) {
+                when (/^(?:a(?:uthor)?|u)${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($videos, $1)) {
                         foreach my $id (@nums) {
                             my $username = $videos->[$id]{author};
@@ -3298,7 +3315,7 @@ sub print_videos {
                         warn_no_thing_selected('video');
                     }
                 }
-                when (/^p(?:laylists?)?${digit_or_equal_re}(.*)/) {
+                when (/^(?:p(?:laylists?)?|up)${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($videos, $1)) {
                         foreach my $id (@nums) {
                             my $username = $videos->[$id]{author};
@@ -3324,7 +3341,7 @@ sub print_videos {
                         warn_no_thing_selected('video');
                     }
                 }
-                when (/^fav(?:orite)?+${digit_or_equal_re}(.*)/) {
+                when (/^(?:fav(?:orite)?|F)${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($videos, $1)) {
                         favorite_videos(map $videos->[$_]{videoID}, @nums);
                     }
@@ -3332,7 +3349,7 @@ sub print_videos {
                         warn_no_thing_selected('video');
                     }
                 }
-                when (/^subscribe${digit_or_equal_re}(.*)/) {
+                when (/^(?:subscribe|S)${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($videos, $1)) {
                         subscribe_to_channels(map $videos->[$_]{author}, @nums);
                     }
