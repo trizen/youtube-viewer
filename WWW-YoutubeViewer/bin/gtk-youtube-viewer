@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 02 May 2014
+#  Latest edit on: 04 May 2014
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -408,7 +408,7 @@ if (not defined $CONFIG{gcap}) {
 
 # Locating a video player
 if (not defined $CONFIG{video_player_selected}) {
-    foreach my $key (sort keys %{$CONFIG{video_players}}) {
+    foreach my $key (reverse sort keys %{$CONFIG{video_players}}) {
         if (defined(my $abs_player_path = which_command($CONFIG{video_players}{$key}{cmd}))) {
             $CONFIG{video_players}{$key}{cmd} = $abs_player_path;
             $CONFIG{video_player_selected} = $key;
