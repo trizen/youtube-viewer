@@ -451,7 +451,7 @@ if ($opt{save_input_history}) {
     # only the last n entries, minus some random number to avoid an imediate second rewrite.
     #            - the 'rand' part implies that you're lucky :) -
     if ((my @history = $term->history_list) > $opt{history_size_limit}) {
-        open my $fh, '>:utf8', $history_file;
+        open my $fh, '>', $history_file;
         say {$fh}
           join("\n", @history[(@history - $opt{history_size_limit}) + int(rand($opt{history_size_limit})) .. $#history]);
         close $fh;
