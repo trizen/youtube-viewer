@@ -256,6 +256,7 @@ my %CONFIG = (
     termui_autoreply     => 0,
     use_xml_fast         => 1,
     save_input_history   => 0,
+    history_size_limit   => 1_000,
     ffmpeg_command       => 'ffmpeg -i %s %s',
     convert_to           => undef,
 );
@@ -445,6 +446,16 @@ if ($opt{save_input_history}) {
     }
 
     $term->ReadHistory($history_file);
+
+    # Rewrite the history file when the history size limit has been reached in order to keep
+    # only the last n entries, minus some random number to avoid an imediate second rewrite.
+    #            - the 'rand' part implies that you're lucky :) -
+    if ((my @history = $term->history_list) > $opt{history_size_limit}) {
+        open my $fh, '>:utf8', $history_file;
+        say {$fh}
+          join("\n", @history[(@history - $opt{history_size_limit}) + int(rand($opt{history_size_limit})) .. $#history]);
+        close $fh;
+    }
 }
 
 {
