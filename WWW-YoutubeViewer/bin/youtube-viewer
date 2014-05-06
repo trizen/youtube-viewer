@@ -1529,8 +1529,8 @@ sub get_user_input {
 
     my ($args, $keywords) = parse_options($input);
 
-    if ($opt{save_input_history} && @{$keywords}) {
-        say {$opt{history_fh}} join(' ', @{$keywords});
+    if ($opt{save_input_history} && (@{$keywords} || @{$args})) {
+        say {$opt{history_fh}} join(' ', @{$args}, @{$keywords});
     }
 
     apply_input_arguments($args, $keywords);
