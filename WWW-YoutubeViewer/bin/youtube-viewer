@@ -1336,10 +1336,10 @@ for (my $i = 0 ; $i <= $#ARGV ; $i++) {
 if (my @keywords = grep chr ord ne q{-}, @ARGV) {
     print_videos($yv_obj->search(@keywords));
 }
-elsif (-t and $opt{interactive}) {
+elsif ($opt{interactive} and -t) {
     first_user_input();
 }
-elsif (-t STDOUT and not -t STDIN) {
+elsif ($opt{interactive} and -t STDOUT and not -t) {
     print_videos($yv_obj->search(<>));
 }
 else {
