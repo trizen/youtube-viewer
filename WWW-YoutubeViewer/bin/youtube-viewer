@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 04 May 2014
+#  Latest edit on: 28 May 2014
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -630,6 +630,7 @@ usage: $execname [options] ([url] | [keywords])
    -A  --all!            : play all the video results in order
    -s  --shuffle!        : shuffle the playlist before playing (with -A)
    -I  --interactive!    : prompt for the first user input
+       --std-input=s     : use this value as the first standard input
        --autoreply!      : auto reply questions asked by Term::UI
        --max-seconds=i   : don't play videos longer than i seconds
        --min-seconds=i   : don't play videos shorter than i seconds
@@ -1253,6 +1254,7 @@ sub parse_arguments {
         'dislike=s'                  => \$opt{dislike_video},
         'author=s'                   => \$opt{author},
         'all|A|play-all!'            => \$opt{play_all},
+        'input|std-input=s'          => \$opt{std_input},
         'use-colors|colors|colored!' => \$opt{colors},
         'prefer-https|prefer_https!' => \$opt{prefer_https},
         'use-xml-fast|use_xml_fast!' => \$opt{use_xml_fast},
@@ -1518,6 +1520,10 @@ sub parse_options {
 
 sub get_user_input {
     my ($text) = @_;
+
+    if (defined $opt{std_input}) {
+        return delete $opt{std_input};
+    }
 
     my $input = $term->readline($text);
     utf8::decode($input);
@@ -1901,7 +1907,7 @@ sub general_options {
             do $0;
         }
         when (/^dv${digit_or_equal_re}(.*)/ and ref $results eq 'ARRAY') {
-            if (my @nums = get_valid_numbers($results, $1)) {
+            if (my @nums = get_valid_numbers($#{$results}, $1)) {
                 print "\n";
                 foreach my $num (@nums) {
                     foreach my $key (sort keys %{$results->[$num]}) {
@@ -2753,7 +2759,7 @@ FORMAT
                     return 1;
                 }
                 when (/^i(?:nfo)?${digit_or_equal_re}(.*)/) {
-                    if (my @ids = get_valid_numbers($playlists, $1)) {
+                    if (my @ids = get_valid_numbers($#{$playlists}, $1)) {
                         foreach my $id (@ids) {
                             my $desc = wrap_text(
                                                  i_tab => q{ } x 7,
@@ -2770,7 +2776,7 @@ FORMAT
                     }
                 }
                 when (/^pp${digit_or_equal_re}(.*)/) {
-                    if (my @ids = get_valid_numbers($playlists, $1)) {
+                    if (my @ids = get_valid_numbers($#{$playlists}, $1)) {
                         my $arg = "--pp=" . join(q{,}, map { $_->{playlistID} } @{$playlists}[@ids]);
                         apply_input_arguments([$arg]);
                     }
@@ -2828,7 +2834,7 @@ sub get_range_numbers {
 }
 
 sub get_valid_numbers {
-    my ($videos, $input) = @_;
+    my ($max, $input) = @_;
 
     my @output;
     foreach my $id (split(/[,\s]+/, $input)) {
@@ -2838,7 +2844,7 @@ sub get_valid_numbers {
           :                          next;
     }
 
-    return map $_ - 1, grep { $_ > 0 and $_ <= @{$videos} } @output;
+    return grep { $_ >= 0 and $_ <= $max } map { $_ - 1 } @output;
 }
 
 sub get_streaming_url {
@@ -3310,7 +3316,7 @@ sub print_videos {
                     return 1;
                 }
                 when (/^(?:a(?:uthor)?|u)${digit_or_equal_re}(.*)/) {
-                    if (my @nums = get_valid_numbers($videos, $1)) {
+                    if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                         foreach my $id (@nums) {
                             my $username = $videos->[$id]{author};
                             my $request  = $yv_obj->get_videos_from_username($username);
@@ -3327,7 +3333,7 @@ sub print_videos {
                     }
                 }
                 when (/^(?:p(?:laylists?)?|up)${digit_or_equal_re}(.*)/) {
-                    if (my @nums = get_valid_numbers($videos, $1)) {
+                    if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                         foreach my $id (@nums) {
                             my $username = $videos->[$id]{author};
                             my $request  = $yv_obj->get_playlists_from_username($username);
@@ -3345,7 +3351,7 @@ sub print_videos {
                 }
                 when (/^((?:dis)?like)${digit_or_equal_re}(.*)/) {
                     my $rating = $1;
-                    if (my @nums = get_valid_numbers($videos, $2)) {
+                    if (my @nums = get_valid_numbers($#{$videos}, $2)) {
                         rating_videos($rating, map $videos->[$_]{videoID}, @nums);
                     }
                     else {
@@ -3353,7 +3359,7 @@ sub print_videos {
                     }
                 }
                 when (/^(?:fav(?:orite)?|F)${digit_or_equal_re}(.*)/) {
-                    if (my @nums = get_valid_numbers($videos, $1)) {
+                    if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                         favorite_videos(map $videos->[$_]{videoID}, @nums);
                     }
                     else {
@@ -3361,7 +3367,7 @@ sub print_videos {
                     }
                 }
                 when (/^(?:subscribe|S)${digit_or_equal_re}(.*)/) {
-                    if (my @nums = get_valid_numbers($videos, $1)) {
+                    if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                         subscribe_to_channels(map $videos->[$_]{author}, @nums);
                     }
                     else {
@@ -3369,7 +3375,7 @@ sub print_videos {
                     }
                 }
                 when (/^(?:en)?q(?:ueue)?+${digit_or_equal_re}(.*)/) {
-                    if (my @nums = get_valid_numbers($videos, $1)) {
+                    if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                         push @{$opt{_queue_play}}, map $_->{videoID}, @{$videos}[@nums];
                     }
                     else {
@@ -3386,7 +3392,7 @@ sub print_videos {
                     }
                 }
                 when (/^c(?:omments?)?${digit_or_equal_re}(.*)/) {
-                    if (my @nums = get_valid_numbers($videos, $1)) {
+                    if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                         get_and_print_comments(map $videos->[$_]{videoID}, @nums);
                     }
                     else {
@@ -3394,7 +3400,7 @@ sub print_videos {
                     }
                 }
                 when (/^r(?:elated)?${digit_or_equal_re}(.*)/) {
-                    if (my ($id) = get_valid_numbers($videos, $1)) {
+                    if (my ($id) = get_valid_numbers($#{$videos}, $1)) {
                         get_and_print_related_videos($videos->[$id]{videoID});
                     }
                     else {
@@ -3402,7 +3408,7 @@ sub print_videos {
                     }
                 }
                 when (/^d(?:ownload)?${digit_or_equal_re}(.*)/) {
-                    if (my @nums = get_valid_numbers($videos, $1)) {
+                    if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                         local $opt{download_video} = 1;
                         play_videos([@{$videos}[@nums]]);
                     }
@@ -3411,7 +3417,7 @@ sub print_videos {
                     }
                 }
                 when (/^(?:play|P)${digit_or_equal_re}(.*)/) {
-                    if (my @nums = get_valid_numbers($videos, $1)) {
+                    if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                         local $opt{download_video} = 0;
                         play_videos([@{$videos}[@nums]]);
                     }
@@ -3420,7 +3426,7 @@ sub print_videos {
                     }
                 }
                 when (/^i(?:nfo)?${digit_or_equal_re}(.*)/) {
-                    if (my @nums = get_valid_numbers($videos, $1)) {
+                    if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                         foreach my $num (@nums) {
                             print_video_info($videos->[$num]);
                         }
@@ -3469,7 +3475,7 @@ sub print_videos {
                 when (!$contains_keywords && (valid_num($_, $videos) || /$range_num_re/)) {
                     my @for_play;
                     if (/$range_num_re/) {
-                        my @ids = get_valid_numbers($videos, "$1..$2");
+                        my @ids = get_valid_numbers($#{$videos}, "$1..$2");
                         continue if not @ids;
                         push @for_play, @ids;
                     }

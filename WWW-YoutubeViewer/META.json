@@ -47,7 +47,7 @@
    "provides" : {
       "WWW::YoutubeViewer" : {
          "file" : "lib/WWW/YoutubeViewer.pm",
-         "version" : "0.05"
+         "version" : "0.06"
       },
       "WWW::YoutubeViewer::GetCaption" : {
          "file" : "lib/WWW/YoutubeViewer/GetCaption.pm",
@@ -59,7 +59,7 @@
       },
       "WWW::YoutubeViewer::ParseXML" : {
          "file" : "lib/WWW/YoutubeViewer/ParseXML.pm",
-         "version" : "0.03"
+         "version" : "0.04"
       },
       "WWW::YoutubeViewer::RegularExpressions" : {
          "file" : "lib/WWW/YoutubeViewer/RegularExpressions.pm",
@@ -76,5 +76,5 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "0.05"
+   "version" : "0.06"
 }
