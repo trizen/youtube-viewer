@@ -1521,18 +1521,13 @@ sub parse_options {
 sub get_user_input {
     my ($text) = @_;
 
-    if (defined $opt{std_input}) {
-        return delete $opt{std_input};
-    }
-
-    my $input = $term->readline($text);
-    utf8::decode($input);
-
-    $input =~ s/^\s+//;
-    $input =~ s/\s+$//;
+    my $input = unpack(
+                       'A*', defined($opt{std_input})
+                       ? delete($opt{std_input})
+                       : $term->readline($text)
+                      ) =~ s/^\s+//r;
 
     return q{:next} if $input eq q{};    # <ENTER> for the next page
-
     my ($args, $keywords) = parse_options($input);
 
     if ($opt{save_input_history} && (@{$keywords} || @{$args})) {
