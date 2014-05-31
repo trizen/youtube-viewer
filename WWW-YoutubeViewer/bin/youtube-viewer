@@ -1527,6 +1527,9 @@ sub get_user_input {
                        : $term->readline($text)
                       ) =~ s/^\s+//r;
 
+    require Encode;
+    $input = Encode::decode_utf8($input);
+
     return q{:next} if $input eq q{};    # <ENTER> for the next page
     my ($args, $keywords) = parse_options($input);
 
