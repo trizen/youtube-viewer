@@ -2,26 +2,26 @@
 use ExtUtils::MakeMaker;
 WriteMakefile
 (
-  'NAME' => 'WWW::YoutubeViewer',
   'VERSION_FROM' => 'lib/WWW/YoutubeViewer.pm',
-  'PREREQ_PM' => {
-                   'Data::Dump' => 0,
-                   'File::Path' => 0,
-                   'File::Spec::Functions' => 0,
-                   'Getopt::Long' => 0,
-                   'HTTP::Request' => 0,
-                   'LWP::UserAgent' => 0,
-                   'Term::ANSIColor' => 0,
-                   'Term::UI' => 0,
-                   'Test::More' => 0,
-                   'Text::ParseWords' => 0,
-                   'Text::Wrap' => 0,
-                   'URI::Escape' => 0
-                 },
-  'INSTALLDIRS' => 'site',
   'EXE_FILES' => [
                    'bin/youtube-viewer'
                  ],
-  'PL_FILES' => {}
+  'PL_FILES' => {},
+  'INSTALLDIRS' => 'site',
+  'PREREQ_PM' => {
+                   'URI::Escape' => 0,
+                   'Term::ANSIColor' => 0,
+                   'Text::Wrap' => 0,
+                   'Data::Dump' => 0,
+                   'LWP::UserAgent' => 0,
+                   'Term::ReadLine' => 0,
+                   'File::Spec::Functions' => 0,
+                   'HTTP::Request' => 0,
+                   'Test::More' => 0,
+                   'Getopt::Long' => 0,
+                   'Text::ParseWords' => 0,
+                   'File::Path' => 0
+                 },
+  'NAME' => 'WWW::YoutubeViewer'
 )
 ;

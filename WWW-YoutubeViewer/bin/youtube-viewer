@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 28 May 2014
+#  Latest edit on: 01 June 2014
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -116,14 +116,13 @@ use 5.016;
 use File::Spec::Functions qw(catdir catfile curdir path rel2abs tmpdir);
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
-no if $] >= 5.018, warnings => 'deprecated';
 
 my $appname  = 'Youtube Viewer';
 my $version  = '3.1.0';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
-require Term::UI;
+require Term::ReadLine;
 my $term = Term::ReadLine->new("$appname $version");
 
 # Developer key
@@ -253,7 +252,6 @@ my %CONFIG = (
     keep_original_video  => 0,
     download_and_play    => 0,
     remove_played_file   => 0,
-    termui_autoreply     => 0,
     use_xml_fast         => 1,
     save_input_history   => 0,
     history_size_limit   => 1_000,
@@ -631,7 +629,6 @@ usage: $execname [options] ([url] | [keywords])
    -s  --shuffle!        : shuffle the playlist before playing (with -A)
    -I  --interactive!    : prompt for the first user input
        --std-input=s     : use this value as the first standard input
-       --autoreply!      : auto reply questions asked by Term::UI
        --max-seconds=i   : don't play videos longer than i seconds
        --min-seconds=i   : don't play videos shorter than i seconds
        --combine-multi!  : combine multiple videos into one play instance
@@ -1011,15 +1008,6 @@ sub apply_configuration {
         }
     }
 
-    if (defined $opt{termui_autoreply}) {
-        if (delete $opt->{termui_autoreply}) {
-            $Term::UI::AUTOREPLY = 1;
-        }
-        else {
-            $Term::UI::AUTOREPLY = 0;
-        }
-    }
-
     # ... SUBROUTINE CALLS ... #
     if (defined $opt->{subscribe_channel}) {
         subscribe_to_channels(split(/[,\s]+/, delete $opt->{subscribe_channel}));
@@ -1307,7 +1295,6 @@ sub parse_arguments {
 
         'quiet|q!'      => \$opt{quiet},
         'really-quiet!' => \$opt{really_quiet},
-        'autoreply!'    => \$opt{termui_autoreply},
 
         'thousand-separator=s'           => \$opt{thousand_separator},
         'get-captions|get_captions!'     => \$opt{get_captions},
@@ -1478,13 +1465,43 @@ sub get_quotewords {
     return Text::ParseWords::quotewords(@_);
 }
 
+# Straight copy of parse_options() from Term::UI
+sub _parse_options {
+    my ($input) = @_;
+
+    my $return = {};
+    while (   $input =~ s/(?:^|\s+)--?([-\w]+=(["']).+?\2)(?=\Z|\s+)//
+           or $input =~ s/(?:^|\s+)--?([-\w]+=\S+)(?=\Z|\s+)//
+           or $input =~ s/(?:^|\s+)--?([-\w]+)(?=\Z|\s+)//) {
+        my $match = $1;
+
+        if ($match =~ /^([-\w]+)=(["'])(.+?)\2$/) {
+            $return->{$1} = $3;
+
+        }
+        elsif ($match =~ /^([-\w]+)=(\S+)$/) {
+            $return->{$1} = $2;
+
+        }
+        elsif ($match =~ /^no-?([-\w]+)$/i) {
+            $return->{$1} = 0;
+
+        }
+        elsif ($match =~ /^([-\w]+)$/) {
+            $return->{$1} = 1;
+        }
+    }
+
+    return wantarray ? ($return, $input) : $return;
+}
+
 sub parse_options2 {
     my ($input) = @_;
 
     warn(colored("\n[!] Input with an odd number of quotes: <$input>", 'bold red') . "\n\n")
       if $yv_obj->get_debug;
 
-    my ($args, $keywords) = $term->parse_options($input);
+    my ($args, $keywords) = _parse_options($input);
 
     my @args =
         map $args->{$_} eq '0' ? "--no-$_"
@@ -1576,8 +1593,8 @@ INFO
         $yv_obj->set_access_token($info->{access_token})   // return;
         $yv_obj->set_refresh_token($info->{refresh_token}) // return;
 
-        my $remember_me = $term->ask_yn(prompt  => colored("\nRemember me", 'bold'),
-                                        default => 'y',);
+        my $remember_me = ask_yn(prompt  => colored("\nRemember me", 'bold'),
+                                 default => 'y');
 
         if ($remember_me) {
             $yv_obj->set_authentication_file($authentication_file);
@@ -2023,6 +2040,41 @@ sub get_input_for_categories {
     return get_user_input(_bold_color("\n=>> Select a category (:h for help)") . "\n> ");
 }
 
+sub ask_yn {
+    my (%opt) = @_;
+    my $c = join('/', map { $_ eq $opt{default} ? ucfirst($_) : $_ } qw(y n));
+
+    my $answ;
+    do {
+        $answ = lc($term->readline($opt{prompt} . " [$c]: "));
+        $answ = $opt{default} unless $answ =~ /\S/;
+    } while ($answ !~ /^y(?:es)?$/ and $answ !~ /^no?$/);
+
+    return chr(ord($answ)) eq 'y';
+}
+
+sub get_reply {
+    my (%opt) = @_;
+
+    my $default = 1;
+    while (my ($i, $choice) = each @{$opt{choices}}) {
+        print "\n" if $i == 0;
+        printf("%3d> %s\n", $i + 1, $choice);
+        if ($choice eq $opt{default}) {
+            $default = $i + 1;
+        }
+    }
+    print "\n";
+
+    my $answ;
+    do {
+        $answ = $term->readline($opt{prompt} . " [$default]: ");
+        $answ = $default unless $answ =~ /\S/;
+    } while ($answ !~ /^[0-9]+\z/ or $answ < 1 or $answ > @{$opt{choices}});
+
+    return $opt{choices}[$answ - 1];
+}
+
 sub valid_num {
     my ($num, $array_ref) = @_;
     return $num =~ /^[0-9]{1,2}\z/ && $num != 0 && $num <= @{$array_ref};
@@ -2193,11 +2245,11 @@ sub print_show_seasons {
                 when (valid_num($_, $seasons)) {
 
                     if ($seasons->[$_ - 1]{episodes} > 0 and $seasons->[$_ - 1]{clips} > 0) {
-                        my $reply = $term->get_reply(
-                                                     prompt  => colored('=>> Episodes or clips?', 'bold green'),
-                                                     choices => [qw(episodes clips)],
-                                                     default => 'episodes',
-                                                    );
+                        my $reply = get_reply(
+                                              prompt  => colored('=>> Episodes or clips?', 'bold'),
+                                              choices => [qw(episodes clips)],
+                                              default => 'episodes',
+                                             );
 
                         if ($reply eq 'episodes') {
                             get_and_print_episodes_from_season_id($seasons->[$_ - 1]{seasonID});
@@ -2534,11 +2586,11 @@ sub print_categories {
                 when (valid_num($_, $categories)) {
                     my $cat_id = $categories->[$_ + $track - 1]{term};
                     if ($edu_mode) {
-                        my $reply = $term->get_reply(
-                                                     prompt  => colored('=>> Show courses or lectures?', 'bold green'),
-                                                     choices => [qw(courses lectures)],
-                                                     default => 'lectures',
-                                                    );
+                        my $reply = get_reply(
+                                              prompt  => colored('=>> Courses or lectures?', 'bold'),
+                                              choices => [qw(courses lectures)],
+                                              default => 'lectures',
+                                             );
 
                         if ($reply eq 'courses') {
                             print_courses($yv_obj->get_courses_from_category($cat_id));
