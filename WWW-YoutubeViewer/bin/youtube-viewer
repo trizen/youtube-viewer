@@ -26,6 +26,8 @@
 # youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
 #
 # [CHANGELOG]
+# - Added the `--std-input=s` option which can be used to specify the first standard input     - NEW (v3.1.1)
+# - Added input history support across sessions, with the 'save_input_history' config-key      - NEW (v3.1.1)
 # - Added support for more video players (--player=s) // Added support for shows (--us=author) - NEW (v3.1.0)
 # - Added support to --copy-caption for downloaded videos // Added fixed-width for playlists   - NEW (v3.1.0)
 # - Added the ':play' stdin option // Added the support for 'watch_later' videos (-L)          - NEW (v3.1.0)
@@ -118,7 +120,7 @@ use File::Spec::Functions qw(catdir catfile curdir path rel2abs tmpdir);
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.1.0';
+my $version  = '3.1.1';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
