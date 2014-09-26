@@ -84,7 +84,7 @@ my %valid_options = (
     access_token  => {valid => [qr/^.{5}/], default => undef},
     refresh_token => {valid => [qr/^.{5}/], default => undef},
 
-    # No input value alowed
+    # No input value allowed
     categories_url    => {valid => q[], default => 'http://gdata.youtube.com/schemas/2007/categories.cat'},
     educategories_url => {valid => q[], default => 'http://gdata.youtube.com/schemas/2007/educategories.cat'},
     feeds_url         => {valid => q[], default => 'http://gdata.youtube.com/feeds/api'},
@@ -116,7 +116,13 @@ my %valid_options = (
 
         # Create the 'get_*' subroutines
         *{__PACKAGE__ . '::get_' . $key} = sub {
-            return $_[0]->{$key};
+            my ($self) = @_;
+
+            if (not exists $self->{$key}) {
+                return ($self->{$key} = $valid_options{$key}{default});
+            }
+
+            $self->{$key};
         };
     }
 }
@@ -133,12 +139,9 @@ sub new {
     my $self = bless {}, $class;
 
     foreach my $key (keys %valid_options) {
-        if (ref $valid_options{$key}{valid} ne 'ARRAY') {
-            $self->{$key} = $valid_options{$key}{default};
-        }
-        else {
-            my $code = \&{"set_$key"};
-            $self->$code(delete $opts{$key});
+        if (exists $opts{$key}) {
+            my $method = "set_$key";
+            $self->$method(delete $opts{$key});
         }
     }
 
@@ -149,6 +152,17 @@ sub new {
     }
 
     return $self;
+}
+
+=head2 get_prefer_https()
+
+Will return the value of prefer_https.
+
+=cut
+
+sub get_prefer_https {
+    my ($self) = @_;
+    return $self->{prefer_https};
 }
 
 =head2 set_prefer_https($bool)
@@ -267,17 +281,6 @@ sub save_authentication_tokens {
     }
 
     return;
-}
-
-=head2 get_prefer_https()
-
-Will return the value of prefer_https.
-
-=cut
-
-sub get_prefer_https {
-    my ($self) = @_;
-    return $self->{prefer_https};
 }
 
 =head2 get_start_index_var($page, $results)
@@ -959,37 +962,10 @@ sub get_content {
     return $xml_fast ? $self->_xml2hash($hash, %opts) : $self->_xml2hash_pp($hash, %opts);
 }
 
-sub _url_doesnt_contain_arguments {
-    my ($self, $url) = @_;
-    return 1 if $url =~ m{^https?+://[\w-]++(?>\.[\w-]++)++(?>/[\w-]++)*+/?+$};
-    return;
-}
-
-=head2 prepare_url($url)
-
-Accepts a URL without arguments, appends the
-C<default_arguments()> to it, and returns it.
-
-=cut
-
-sub prepare_url {
-    my ($self, $url) = @_;
-
-    # If the URL doesn't contain any arguments, set defaults
-    if ($self->_url_doesnt_contain_arguments($url)) {
-        $url .= '?' . $self->default_gdata_arguments();
-    }
-    else {
-        warn "Invalid url: $url";
-    }
-
-    return $url;
-}
-
-sub _make_feed_url_with_args {
+sub _prepare_feed_url {
     my ($self, $suburl, @args) = @_;
 
-    my $url = $self->prepare_url($self->get_feeds_url() . $suburl);
+    my $url = $self->get_feeds_url() . $suburl . '?' . $self->default_gdata_arguments();
     return $self->_concat_args($url, @args);
 }
 
@@ -1012,7 +988,7 @@ sub get_videos_from_category {
                };
     }
 
-    my $url = $self->_make_feed_url_with_args('/videos', ('category' => $cat_id));
+    my $url = $self->_prepare_feed_url('/videos', ('category' => $cat_id));
 
     return {
             url     => $url,
@@ -1032,7 +1008,7 @@ sub get_courses_from_category {
 
     # http://gdata.youtube.com/feeds/api/edu/courses?category=CAT_ID
 
-    my $url = $self->_make_feed_url_with_args('/edu/courses', ('category' => $cat_id));
+    my $url = $self->_prepare_feed_url('/edu/courses', ('category' => $cat_id));
 
     return {
             url     => $url,
@@ -1052,7 +1028,7 @@ sub get_video_lectures_from_course {
 
     # http://gdata.youtube.com/feeds/api/edu/lectures?course=COURSE_ID
 
-    my $url = $self->_make_feed_url_with_args('/edu/lectures', ('course' => $course_id));
+    my $url = $self->_prepare_feed_url('/edu/lectures', ('course' => $course_id));
 
     return {
             url     => $url,
@@ -1072,7 +1048,7 @@ sub get_video_lectures_from_category {
 
     # http://gdata.youtube.com/feeds/api/edu/lectures?category=CAT_ID
 
-    my $url = $self->_make_feed_url_with_args('/edu/lectures', ('category' => $cat_id));
+    my $url = $self->_prepare_feed_url('/edu/lectures', ('category' => $cat_id));
 
     return {
             url     => $url,
@@ -1096,7 +1072,7 @@ sub get_movies {
 
     # http://gdata.youtube.com/feeds/api/charts/movies/most_popular
 
-    my $url = $self->_make_feed_url_with_args("/charts/movies/$movie_id");
+    my $url = $self->_prepare_feed_url("/charts/movies/$movie_id");
 
     return {
             url     => $url,
@@ -1370,7 +1346,7 @@ sub get_channel_suggestions {
         return;
     }
 
-    my $url = $self->_make_feed_url_with_args('/users/default/suggestion', (type => 'channel', inline => 'true'));
+    my $url = $self->_prepare_feed_url('/users/default/suggestion', (type => 'channel', inline => 'true'));
 
     return {
             url     => $url,
@@ -1408,7 +1384,7 @@ sub search_channels {
     # https://gdata.youtube.com/feeds/api/channels?q=soccer&v=2
 
     my $keywords = $self->escape_string("@keywords");
-    my $url = $self->_make_feed_url_with_args('/channels', ('q' => $keywords));
+    my $url = $self->_prepare_feed_url('/channels', ('q' => $keywords));
 
     return {
             url     => $url,
@@ -1427,7 +1403,7 @@ sub search_for_playlists {
 
     my $keywords = $self->escape_string("@keywords");
 
-    my $url = $self->_make_feed_url_with_args('/playlists/snippets', ('q' => $keywords));
+    my $url = $self->_prepare_feed_url('/playlists/snippets', ('q' => $keywords));
 
     return {
             url     => $url,
@@ -1644,8 +1620,7 @@ sub _next_or_back {
         $next
             ? $1 + $self->get_results()
             : $1 - $self->get_results();
-    }e;
-    return $url;
+    }er;
 }
 
 =head2 get_disco_videos(\@keywords)
@@ -1707,7 +1682,7 @@ sub get_video_info {
 
         *{__PACKAGE__ . '::get_' . $method->[0]} = sub {
             my ($self, $id) = @_;
-            my $url = $self->prepare_url($self->get_feeds_url() . sprintf($method->[1], $id));
+            my $url = $self->_prepare_feed_url(sprintf($method->[1], $id));
             return {
                     url     => $url,
                     results => $self->get_content($url, %{$method->[2]}),
@@ -1748,7 +1723,7 @@ sub get_video_info {
                 }
             }
 
-            my $url = $self->prepare_url($self->get_feeds_url() . "/users/$user/$method");
+            my $url = $self->_prepare_feed_url("/users/$user/$method");
             return {
                     url     => $url,
                     results => $self->get_content($url),
