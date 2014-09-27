@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 01 June 2014
+#  Latest edit on: 27 September 2014
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -1539,6 +1539,12 @@ sub parse_options {
 
 sub get_user_input {
     my ($text) = @_;
+
+    if (not $opt{interactive}) {
+        if (not defined $opt{std_input}) {
+            return ':return';
+        }
+    }
 
     my $input = unpack(
                        'A*', defined($opt{std_input})
@@ -3086,7 +3092,7 @@ sub get_player_command {
            ? sprintf($opt{video_players}{$opt{video_player_selected}}{srt}, $streaming->{srt_file})
            : ()
           ),
-          grep({defined($_) and /\S/} values %MPLAYER)
+          grep({ defined($_) and /\S/ } values %MPLAYER)
          )
         );
 }
