@@ -198,7 +198,7 @@ my %CONFIG = (
                              },
                       mpv => {
                               cmd     => q{mpv},
-                              srt     => q{--sub '%s'},
+                              srt     => q{--sub-file '%s'},
                               fs      => q{--fullscreen},
                               arg     => q{--really-quiet},
                               novideo => q{--no-video},
