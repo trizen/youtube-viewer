@@ -406,6 +406,14 @@ if (not defined $CONFIG{gcap}) {
     }
 }
 
+# Check for HTTPS support
+if (not $CONFIG{prefer_https}) {
+    eval { require LWP::Protocol::https };
+    if (not $@) {
+        $CONFIG{prefer_https} = 1;
+    }
+}
+
 # Locating a video player
 if (not defined $CONFIG{video_player_selected}) {
     foreach my $key (reverse sort keys %{$CONFIG{video_players}}) {
@@ -1796,7 +1804,7 @@ sub play_videos {
                              ? sprintf($CONFIG{video_players}{$CONFIG{video_player_selected}}{srt}, $streaming->{srt_file})
                              : ()
                             ),
-                            grep({defined($_) and /\S/} values %MPLAYER),
+                            grep({ defined($_) and /\S/ } values %MPLAYER),
                             quotemeta($streaming->{streaming}{url})
                            )
                           );
