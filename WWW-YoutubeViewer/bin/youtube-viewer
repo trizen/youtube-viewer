@@ -427,6 +427,7 @@ if (not $CONFIG{prefer_https}) {
     eval { require LWP::Protocol::https };
     if (not $@) {
         $CONFIG{prefer_https} = 1;
+        dump_configuration();
     }
 }
 
