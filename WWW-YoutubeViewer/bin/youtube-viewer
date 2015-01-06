@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2010-2014 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
+# Copyright (C) 2010-2015 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 27 September 2014
+#  Latest edit on: 06 January 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -100,7 +100,7 @@ See: youtube-viewer --help
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2014 Trizen.
+Copyright 2010-2015 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
@@ -637,6 +637,7 @@ usage: $execname [options] ([url] | [keywords])
 
  * Behavior
    -A  --all!            : play all the video results in order
+   -B  --backwards!      : play all video results in reverse order
    -s  --shuffle!        : shuffle the playlist before playing (with -A)
    -I  --interactive!    : prompt for the first user input
        --std-input=s     : use this value as the first standard input
@@ -1253,6 +1254,7 @@ sub parse_arguments {
         'dislike=s'                  => \$opt{dislike_video},
         'author=s'                   => \$opt{author},
         'all|A|play-all!'            => \$opt{play_all},
+        'backwards|B!'               => \$opt{play_backwards},
         'input|std-input=s'          => \$opt{std_input},
         'use-colors|colors|colored!' => \$opt{colors},
         'prefer-https|prefer_https!' => \$opt{prefer_https},
@@ -3302,18 +3304,26 @@ sub print_videos {
         }
     }
 
-    if ($opt{play_all}) {
+    if ($opt{play_all} || $opt{play_backwards}) {
         if (@{$videos}) {
-            if (play_videos($opt{shuffle} ? [List::Util::shuffle(@{$videos})] : $videos)) {
-                __SUB__->($yv_obj->next_page($url), auto => 1);
+            if (
+                play_videos(
+                              $opt{play_backwards} ? [reverse @{$videos}]
+                            : $opt{shuffle}        ? [List::Util::shuffle(@{$videos})]
+                            :                        $videos
+                           )
+              ) {
+                __SUB__->($opt{play_backwards} ? $yv_obj->previous_page($url) : $yv_obj->next_page($url), auto => 1);
             }
             else {
-                $opt{play_all} = 0;
+                $opt{play_all}       = 0;
+                $opt{play_backwards} = 0;
                 __SUB__->($results);
             }
         }
         else {
-            $opt{play_all} = 0;
+            $opt{play_all}       = 0;
+            $opt{play_backwards} = 0;
         }
     }
 
