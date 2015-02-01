@@ -1447,7 +1447,7 @@ HELP
                         press_enter_to_continue();
                     }
                     when (['r', 'return']) {
-                        return 1;
+                        return;
                     }
                     default {
                         warn_invalid('option', $_);
@@ -2185,7 +2185,7 @@ sub print_channels {
                     press_enter_to_continue();
                 }
                 when (['r', 'return']) {
-                    return 1;
+                    return;
                 }
                 default {
                     warn_invalid('option', $_);
@@ -2255,7 +2255,7 @@ sub print_show_seasons {
                   ) {
                 }
                 when (['r', 'return']) {
-                    return 1;
+                    return;
                 }
                 when (['h', 'help']) {
                     print $general_help;
@@ -2366,7 +2366,7 @@ sub print_shows {
                   ) {
                 }
                 when (['r', 'return']) {
-                    return 1;
+                    return;
                 }
                 when (['h', 'help']) {
                     print $general_help;
@@ -2459,7 +2459,7 @@ sub print_comments {
                     }
                 }
                 when (['r', 'return']) {
-                    return 1;
+                    return;
                 }
                 default {
                     warn_invalid('option', $_);
@@ -2528,7 +2528,7 @@ sub print_courses {
                     press_enter_to_continue();
                 }
                 when (['r', 'return']) {
-                    return 1;
+                    return;
                 }
                 default {
                     warn_invalid('option', $_);
@@ -2597,7 +2597,7 @@ sub print_categories {
                     press_enter_to_continue();
                 }
                 when (['r', 'return']) {
-                    return 1;
+                    return;
                 }
                 default {
                     warn_invalid('option', $_);
@@ -2658,7 +2658,7 @@ sub print_movies {
                     press_enter_to_continue();
                 }
                 when (['r', 'return']) {
-                    return 1;
+                    return;
                 }
                 default {
                     warn_invalid('option', $_);
@@ -2703,7 +2703,7 @@ sub print_video_tops {
                     press_enter_to_continue();
                 }
                 when (['r', 'return']) {
-                    return 1;
+                    return;
                 }
                 default {
                     warn_invalid('option', $_);
@@ -2830,7 +2830,7 @@ FORMAT
                     press_enter_to_continue();
                 }
                 when (['r', 'return']) {
-                    return 1;
+                    return;
                 }
                 when (/^i(?:nfo)?${digit_or_equal_re}(.*)/) {
                     if (my @ids = get_valid_numbers($#{$playlists}, $1)) {
@@ -3400,7 +3400,7 @@ sub print_videos {
                     }
                 }
                 when (['r', 'return']) {
-                    return 1;
+                    return;
                 }
                 when (/^(?:a(?:uthor)?|u)${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($#{$videos}, $1)) {
@@ -3429,8 +3429,9 @@ sub print_videos {
                             foreach my $i (@nums) {
                                 say "** Adding video `$videos->[$i]{title}' to the playlist selected...";
                                 $yv_obj->add_video_to_playlist($playlist_id, $videos->[$i]{videoID}, $opt{position} || 1)
-                                  || do {
+                                  or do {
                                     warn "[!] An error occurred!!!\n";
+                                    last;
                                   };
                             }
                         }
