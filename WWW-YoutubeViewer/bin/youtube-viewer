@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 06 January 2015
+#  Latest edit on: 01 February 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -26,6 +26,7 @@
 # youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
 #
 # [CHANGELOG]
+# - Added the stdin commands ":ps" and "s2p" to add one or more videos to a selected playlist  - NEW (v3.1.2)
 # - Added the `--std-input=s` option which can be used to specify the first standard input     - NEW (v3.1.1)
 # - Added input history support across sessions, with the 'save_input_history' config-key      - NEW (v3.1.1)
 # - Added support for more video players (--player=s) // Added support for shows (--us=author) - NEW (v3.1.0)
@@ -86,8 +87,10 @@
 # - gotbletu (for the great video review of youtube-viewer: http://www.youtube.com/watch?v=FnJ67oAxVQ4)
 # - Julian Ospald (for adding youtube-viewer in the gentoo portage tree: http://packages.gentoo.org/package/net-misc/youtube-viewer)
 # - 666philb (for packaging gtk-youtube-viewer for Puppy Linux: http://www.murga-linux.com/puppy/viewtopic.php?t=76835)
-# - Kevin Lemonnier (for adding proxy support - https://github.com/Ulrar)
+# - Kevin Lemonnier (for adding proxy support - https://github.com/trizen/youtube-viewer/pull/18)
 # - Georgo (for adding the 'Watch Later' feature - https://github.com/trizen/youtube-viewer/pull/44)
+# - Daniel Wallace (for adding youtube-viewer in the Arch Official Community repository - https://www.archlinux.org/packages/community/any/youtube-viewer/)
+# - NTmatter (for adding reverse range support - https://github.com/trizen/youtube-viewer/pull/2)
 
 =head1 NAME
 
@@ -542,6 +545,7 @@ usage: $execname [options] ([url] | [keywords])
        --playlist=s  : list a playlist of videos by playlistID
        --pp=s,s      : play the videos from the given playlist IDs
        --disco       : YouTube discovery - search and display a disco playlist
+       --pos=i       : the position in a playlist where to add a video
    -up --user-pl=s   : list the playlists created by a specific user
 
  * Channels
@@ -1305,6 +1309,7 @@ sub parse_arguments {
         'gdata-url=s'                       => \$opt{get_gdata_url},
         'gcap=s'                            => \$opt{gcap},
         'combine-multiple-videos|combine!'  => \$opt{combine_multiple_videos},
+        'pos|position'                      => \$opt{position},
 
         'quiet|q!'      => \$opt{quiet},
         'really-quiet!' => \$opt{really_quiet},
@@ -2862,6 +2867,9 @@ FORMAT
             given ($key) {
                 when (\&youtube_urls) { }    # do nothing
                 when (valid_num($_, $playlists) and not $contains_keywords) {
+                    if ($args{return_playlist_id}) {
+                        return $playlists->[$_ - 1]{playlistID};
+                    }
                     get_and_print_videos_from_playlist($playlists->[$_ - 1]{playlistID});
                 }
                 default {
@@ -3405,6 +3413,29 @@ sub print_videos {
                             else {
                                 warn_no_results('video');
                             }
+                        }
+                    }
+                    else {
+                        warn_no_thing_selected('video');
+                    }
+                }
+                when (/^(?:ps|s2p)${digit_or_equal_re}(.*)/) {
+                    if (my @nums = get_valid_numbers($#{$videos}, $1)) {
+
+                        my $request = $yv_obj->get_playlists_from_username('default') // last;
+                        my $playlist_id = print_playlists($request, return_playlist_id => 1);
+
+                        if (defined($playlist_id)) {
+                            foreach my $i (@nums) {
+                                say "** Adding video `$videos->[$i]{title}' to the playlist selected...";
+                                $yv_obj->add_video_to_playlist($playlist_id, $videos->[$i]{videoID}, $opt{position} || 1)
+                                  || do {
+                                    warn "[!] An error occurred!!!\n";
+                                  };
+                            }
+                        }
+                        else {
+                            warn_no_thing_selected('playlist');
                         }
                     }
                     else {

@@ -1445,6 +1445,28 @@ sub full_gdata_arguments {
     return $self->list_to_gdata_arguments(%hash);
 }
 
+=head2 add_video_to_playlist($playlistID, $videoID; $position=1)
+
+Add a video to given playlist ID, at position 1 (by default)
+
+=cut
+
+sub add_video_to_playlist {
+    my ($self, $playlist_id, $video_id, $position) = @_;
+
+    $position //= 1;
+    my $uri = $self->get_feeds_url() . "/playlists/$playlist_id";
+
+    return $self->_save('POST', $uri, <<"XML_HEADER");
+<?xml version="1.0" encoding="UTF-8"?>
+<entry xmlns="http://www.w3.org/2005/Atom"
+       xmlns:yt="http://gdata.youtube.com/schemas/2007">
+    <id>$video_id</id>
+    <yt:position>$position</yt:position>
+</entry>
+XML_HEADER
+}
+
 =head2 send_rating_to_video($videoID, $rating)
 
 Send rating to a video. $rating can be either 'like' or 'dislike'.
@@ -1682,6 +1704,14 @@ sub get_video_info {
 
         *{__PACKAGE__ . '::get_' . $method->[0]} = sub {
             my ($self, $id) = @_;
+
+            if (    $id eq 'default'
+                and $method->[0] ~~ [qw(playlists_from_username shows_from_username videos_from_username)]
+                and not defined $self->get_access_token) {
+                warn "\n[!] The method 'get_$method->[0]' requires authentication!\n";
+                return;
+            }
+
             my $url = $self->_prepare_feed_url(sprintf($method->[1], $id));
             return {
                     url     => $url,

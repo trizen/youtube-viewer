@@ -361,6 +361,7 @@ local $SIG{__DIE__} = sub {
             if ($error =~ m{^Can't locate (.+?)\.pm\b}) {
                 my $module = $1;
                 $module =~ s{[/\\]+}{::}g;
+                return 1 if $module eq 'XML::Fast';
                 "\nThe module $module is required!\n\nTo install the module, just type in terminal:\n\tsudo cpan $module\n";
             }
           }

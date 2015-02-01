@@ -4,7 +4,7 @@
       "Daniel \"Trizen\" Șuteu <trizenx@gmail.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.421",
+   "generated_by" : "Module::Build version 0.4211",
    "license" : [
       "perl_5"
    ],
