@@ -1,5 +1,6 @@
 #!perl -T
 
+use 5.014;
 use Test::More tests => 1;
 
 BEGIN {
