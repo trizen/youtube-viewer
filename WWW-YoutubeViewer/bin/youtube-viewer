@@ -542,10 +542,11 @@ usage: $execname [options] ([url] | [keywords])
 
  * Playlists
    -p  --playlists   : search for playlists of videos
-       --playlist=s  : list a playlist of videos by playlistID
+       --pid=s       : list a playlist of videos by playlistID
        --pp=s,s      : play the videos from the given playlist IDs
        --disco       : YouTube discovery - search and display a disco playlist
-       --pos=i       : the position in a playlist where to add a video
+       --ps=s        : add a video by ID or URL to a post-selected playlist
+       --position=i  : the position in a playlist where to add a video
    -up --user-pl=s   : list the playlists created by a specific user
 
  * Channels
@@ -663,7 +664,7 @@ usage: $execname [options] ([url] | [keywords])
    -C  --colorful!      : use colors to delimit the video results
    -D  --details!       : a new look for the results, with more details
    -W  --fixed-width!   : adjust the results to fit inside the term width
-   -i  --info=ID/URL    : show video informations for a videoID or URL
+   -i  --info=s         : show video informations for a videoID or URL
    -q  --quiet          : do not display any warning
        --really-quiet   : do not display any warning or output
        --use-colors!    : use ANSI colors for text
@@ -1033,6 +1034,16 @@ sub apply_configuration {
         favorite_videos(split(/[,\s]+/, delete $opt->{favorite_video}));
     }
 
+    if (defined $opt->{playlist_save}) {
+        my @ids = split(/[,\s]+/, delete $opt->{playlist_save});
+        if (defined $opt->{search_playlists}) {
+            save_to_playlist(delete $opt->{search_playlists}, @ids);
+        }
+        else {
+            select_and_save_to_playlist(@ids);
+        }
+    }
+
     if (defined $opt->{like_video}) {
         rating_videos('like', split(/[,\s]+/, delete $opt->{like_video}));
     }
@@ -1264,17 +1275,17 @@ sub parse_arguments {
         'prefer-https|prefer_https!' => \$opt{prefer_https},
         'use-xml-fast|use_xml_fast!' => \$opt{use_xml_fast},
 
-        'playlists|p|pl:s'         => \$opt{search_playlists},
-        'course|course-id=s'       => \$opt{course_id},
-        'play-playlists|pp=s'      => \$opt{play_playlists},
-        'debug:1'                  => \$opt{debug},
-        'download|dl|d!'           => \$opt{download_video},
-        'safe-search|safeSearch=s' => \$opt{safe_search},
-        'hd|high-definition!'      => \$opt{hd},
-        'I|interactive!'           => \$opt{interactive},
-        'convert-to|convert_to=s'  => \$opt{convert_to},
-        'ffmpeg-command=s'         => \$opt{ffmpeg_command},
-        'keep-original-video!'     => \$opt{keep_original_video},
+        'playlists|p|pl|pid|playlist:s' => \$opt{search_playlists},
+        'course|course-id=s'            => \$opt{course_id},
+        'play-playlists|pp=s'           => \$opt{play_playlists},
+        'debug:1'                       => \$opt{debug},
+        'download|dl|d!'                => \$opt{download_video},
+        'safe-search|safeSearch=s'      => \$opt{safe_search},
+        'hd|high-definition!'           => \$opt{hd},
+        'I|interactive!'                => \$opt{interactive},
+        'convert-to|convert_to=s'       => \$opt{convert_to},
+        'ffmpeg-command=s'              => \$opt{ffmpeg_command},
+        'keep-original-video!'          => \$opt{keep_original_video},
 
         # MPlayer
         'player|vplayer|video-player|video_player=s'  => \$opt{video_player_selected},
@@ -1309,7 +1320,8 @@ sub parse_arguments {
         'gdata-url=s'                       => \$opt{get_gdata_url},
         'gcap=s'                            => \$opt{gcap},
         'combine-multiple-videos|combine!'  => \$opt{combine_multiple_videos},
-        'pos|position'                      => \$opt{position},
+        'pos|position=i'                    => \$opt{position},
+        'ps|playlist-save=s'                => \$opt{playlist_save},
 
         'quiet|q!'      => \$opt{quiet},
         'really-quiet!' => \$opt{really_quiet},
@@ -1644,9 +1656,10 @@ sub authenticated {
 }
 
 sub favorite_videos {
+    my (@videoIDs) = @_;
     return if not authenticated();
 
-    foreach my $id (@_) {
+    foreach my $id (@videoIDs) {
         my $videoID = get_valid_video_id($id) // next;
 
         if ($yv_obj->favorite_video($videoID)) {
@@ -1654,6 +1667,39 @@ sub favorite_videos {
         }
         else {
             warn_cant_do('favorite', $videoID);
+        }
+    }
+    return 1;
+}
+
+sub select_and_save_to_playlist {
+    return if not authenticated();
+
+    my $request = $yv_obj->get_playlists_from_username('default') // last;
+    my $playlist_id = print_playlists($request, return_playlist_id => 1);
+
+    if (defined($playlist_id)) {
+        return save_to_playlist($playlist_id, @_);
+    }
+
+    warn_no_thing_selected('playlist');
+    return;
+
+}
+
+sub save_to_playlist {
+    my ($playlistID, @videoIDs) = @_;
+    return if not authenticated();
+
+    foreach my $id (@videoIDs) {
+        my $videoID = get_valid_video_id($id) // next;
+
+        if ($yv_obj->add_video_to_playlist($playlistID, $videoID, $opt{position} || 1)) {
+            printf("\n** Video %s has been successfully added to playlistID: %s\n",
+                   sprintf($CONFIG{youtube_video_url}, $videoID), $playlistID);
+        }
+        else {
+            warn_cant_do("add to playlist", $videoID);
         }
     }
     return 1;
@@ -3421,23 +3467,7 @@ sub print_videos {
                 }
                 when (/^(?:ps|s2p)${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($#{$videos}, $1)) {
-
-                        my $request = $yv_obj->get_playlists_from_username('default') // last;
-                        my $playlist_id = print_playlists($request, return_playlist_id => 1);
-
-                        if (defined($playlist_id)) {
-                            foreach my $i (@nums) {
-                                say "** Adding video `$videos->[$i]{title}' to the playlist selected...";
-                                $yv_obj->add_video_to_playlist($playlist_id, $videos->[$i]{videoID}, $opt{position} || 1)
-                                  or do {
-                                    warn "[!] An error occurred!!!\n";
-                                    last;
-                                  };
-                            }
-                        }
-                        else {
-                            warn_no_thing_selected('playlist');
-                        }
+                        select_and_save_to_playlist(map $videos->[$_]{videoID}, @nums);
                     }
                     else {
                         warn_no_thing_selected('video');
