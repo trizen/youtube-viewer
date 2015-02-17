@@ -640,7 +640,7 @@ usage: $execname [options] ([url] | [keywords])
    --keep-original!     : keep the original video after converting
 
 
-== Oher Options ==
+== Other Options ==
 
  * Behavior
    -A  --all!            : play all the video results in order
