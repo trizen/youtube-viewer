@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 01 February 2015
+#  Latest edit on: 17 February 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -26,6 +26,7 @@
 # youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
 #
 # [CHANGELOG]
+# - Added the the options `--ps` and `--pid` to add videos by URL or ID to a given playlistID  - NEW (v3.1.2)
 # - Added the stdin commands ":ps" and "s2p" to add one or more videos to a selected playlist  - NEW (v3.1.2)
 # - Added the `--std-input=s` option which can be used to specify the first standard input     - NEW (v3.1.1)
 # - Added input history support across sessions, with the 'save_input_history' config-key      - NEW (v3.1.1)
@@ -545,7 +546,8 @@ usage: $execname [options] ([url] | [keywords])
        --pid=s       : list a playlist of videos by playlistID
        --pp=s,s      : play the videos from the given playlist IDs
        --disco       : YouTube discovery - search and display a disco playlist
-       --ps=s        : add a video by ID or URL to a post-selected playlist
+       --ps=s        : add videos by ID or URL to a post-selected playlist
+                       or in a given playlistID specified with `--pid`
        --position=i  : the position in a playlist where to add a video
    -up --user-pl=s   : list the playlists created by a specific user
 
@@ -1036,8 +1038,8 @@ sub apply_configuration {
 
     if (defined $opt->{playlist_save}) {
         my @ids = split(/[,\s]+/, delete $opt->{playlist_save});
-        if (defined $opt->{search_playlists}) {
-            save_to_playlist(delete $opt->{search_playlists}, @ids);
+        if (defined $opt->{playlist_id}) {
+            save_to_playlist(delete $opt->{playlist_id}, @ids);
         }
         else {
             select_and_save_to_playlist(@ids);
@@ -1067,6 +1069,11 @@ sub apply_configuration {
         else {
             warn_no_results("disco video");
         }
+    }
+
+    if (defined $opt->{playlist_id}) {
+        my $playlistID = delete($opt{playlist_id});
+        get_and_print_videos_from_playlist($playlistID);
     }
 
     if (defined $opt->{search_playlists}) {
@@ -1275,17 +1282,18 @@ sub parse_arguments {
         'prefer-https|prefer_https!' => \$opt{prefer_https},
         'use-xml-fast|use_xml_fast!' => \$opt{use_xml_fast},
 
-        'playlists|p|pl|pid|playlist:s' => \$opt{search_playlists},
-        'course|course-id=s'            => \$opt{course_id},
-        'play-playlists|pp=s'           => \$opt{play_playlists},
-        'debug:1'                       => \$opt{debug},
-        'download|dl|d!'                => \$opt{download_video},
-        'safe-search|safeSearch=s'      => \$opt{safe_search},
-        'hd|high-definition!'           => \$opt{hd},
-        'I|interactive!'                => \$opt{interactive},
-        'convert-to|convert_to=s'       => \$opt{convert_to},
-        'ffmpeg-command=s'              => \$opt{ffmpeg_command},
-        'keep-original-video!'          => \$opt{keep_original_video},
+        'playlists|p|pl|playlist:s' => \$opt{search_playlists},
+        'pid|playlist-id=s'         => \$opt{playlist_id},
+        'course|course-id=s'        => \$opt{course_id},
+        'play-playlists|pp=s'       => \$opt{play_playlists},
+        'debug:1'                   => \$opt{debug},
+        'download|dl|d!'            => \$opt{download_video},
+        'safe-search|safeSearch=s'  => \$opt{safe_search},
+        'hd|high-definition!'       => \$opt{hd},
+        'I|interactive!'            => \$opt{interactive},
+        'convert-to|convert_to=s'   => \$opt{convert_to},
+        'ffmpeg-command=s'          => \$opt{ffmpeg_command},
+        'keep-original-video!'      => \$opt{keep_original_video},
 
         # MPlayer
         'player|vplayer|video-player|video_player=s'  => \$opt{video_player_selected},
@@ -1676,10 +1684,10 @@ sub select_and_save_to_playlist {
     return if not authenticated();
 
     my $request = $yv_obj->get_playlists_from_username('default') // last;
-    my $playlist_id = print_playlists($request, return_playlist_id => 1);
+    my $playlistID = print_playlists($request, return_playlist_id => 1);
 
-    if (defined($playlist_id)) {
-        return save_to_playlist($playlist_id, @_);
+    if (defined($playlistID)) {
+        return save_to_playlist($playlistID, @_);
     }
 
     warn_no_thing_selected('playlist');
