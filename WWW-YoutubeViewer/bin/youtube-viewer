@@ -26,8 +26,8 @@
 # youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
 #
 # [CHANGELOG]
-# - Added the the options `--ps` and `--pid` to add videos by URL or ID to a given playlistID  - NEW (v3.1.2)
-# - Added the stdin commands ":ps" and "s2p" to add one or more videos to a selected playlist  - NEW (v3.1.2)
+# - Added the options `--ps` and `--pid` to add videos by URL or ID to a given playlistID      - NEW (v3.1.2)
+# - Added the stdin commands ":ps" and ":s2p" to add one or more videos to a selected playlist - NEW (v3.1.2)
 # - Added the `--std-input=s` option which can be used to specify the first standard input     - NEW (v3.1.1)
 # - Added input history support across sessions, with the 'save_input_history' config-key      - NEW (v3.1.1)
 # - Added support for more video players (--player=s) // Added support for shows (--us=author) - NEW (v3.1.0)
@@ -571,7 +571,7 @@ usage: $execname [options] ([url] | [keywords])
    --caption=s          : only videos with/without closed captions
                           valid values are: true, false
    --category=s         : search only for videos in a specific category
-                          this option can also be used with the --tops argument
+                          this option can also be used with `--tops`
    --safe-search=s      : YouTube will skip restricted videos for your location
                           valid values are: none, moderate, strict
    --orderby=s          : order entries by: published, viewCount or rating
