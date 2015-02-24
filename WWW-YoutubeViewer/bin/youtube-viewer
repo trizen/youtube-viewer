@@ -355,6 +355,7 @@ $action_options
 :r(elated)=i      : display related videos
 :a(uthor)=i       : display latest author's uploads
 :p(laylists)=i    : display author's playlists
+:ps=i, :s2p=i,i   : save videos to a post-selected playlist
 :subscribe=i      : subscribe to author's channel
 :(dis)like=i      : like or dislike a video
 :fav(orite)=i     : favorite a video
@@ -366,7 +367,7 @@ $action_options
 8 2 12 4 6 5 1    : play the videos in your order
 :q(ueue)=i,i,...  : enqueue videos for playing them later
 :pq, :play-queue  : play the enqueued videos (if any)
-:anp :nnp         : auto-next-page, no-next-page
+:anp, :nnp        : auto-next-page, no-next-page
 :play=i,i,...     : play a group of selected videos
 :regex=my?[regex] : play videos matched by a regex (/i)
 :kregex=KEY,RE    : play videos if the value of KEY matches the RE
