@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2010-2014 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
+# Copyright (C) 2010-2015 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 04 May 2014
+#  Latest edit on: 01 March 2015
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -69,7 +69,7 @@ foreach my $dir ($config_dir) {
     }
 }
 
-## Backwards compatibility
+## Backwards compatibility for moving the configuration files in the new directory
 {
     my $old_config_dir = catdir($xdg_config_home, $execname);
     my $old_config_file        = catfile($old_config_dir, "$execname.conf");
@@ -132,28 +132,25 @@ my %CONFIG = (
 
     video_players => {
                       mplayer => {
-                                  cmd => q{mplayer},
-                                  srt => q{-sub '%s'},
-                                  fs  => q{-fs},
-                                  arg => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d},
+                                  cmd   => q{mplayer},
+                                  srt   => q{-sub '%s'},
+                                  audio => q{-audiofile '%s'},
+                                  fs    => q{-fs},
+                                  arg   => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d},
                                  },
-                      smplayer => {
-                                   cmd => q{smplayer},
-                                   srt => q{-sub '%s'},
-                                   fs  => q{-fullscreen},
-                                   arg => q{-close-at-end},
-                                  },
                       vlc => {
-                              cmd => q{vlc},
-                              srt => q{--sub-file '%s'},
-                              fs  => q{--fullscreen},
-                              arg => q{--quiet --play-and-exit --no-video-title-show},
+                              cmd   => q{vlc},
+                              srt   => q{--sub-file '%s'},
+                              audio => q{--input-slave '%s'},
+                              fs    => q{--fullscreen},
+                              arg   => q{--quiet --play-and-exit --no-video-title-show},
                              },
                       mpv => {
-                              cmd => q{mpv},
-                              srt => q{--sub-file '%s'},
-                              fs  => q{--fullscreen},
-                              arg => q{--really-quiet},
+                              cmd   => q{mpv},
+                              srt   => q{--sub-file '%s'},
+                              audio => q{--audio-file '%s'},
+                              fs    => q{--fullscreen},
+                              arg   => q{--really-quiet},
                              },
                      },
     video_player_selected => undef,    # autodetect it later
@@ -175,6 +172,7 @@ my %CONFIG = (
 
     # Youtube options
     prefer_https        => 0,
+    dash_support        => 1,
     results             => 10,
     resolution          => 'original',
     hd                  => undef,
@@ -279,7 +277,7 @@ my (
     $search_entry,          $from_author_entry,     $gif_spinner,          $hbox2,                  $feeds_window,
     $feeds_treeview,        $feeds_liststore,       $feeds_statusbar,      $safesearch_combobox,    $hd_combobox,
     $caption_combobox,      $duration_combobox,     $warnings_window,      $warnings_textview,      $errors_textview,
-    $category_id_entry,     $more_options_expander, $cat_treeview,         $cats_liststore,
+    $category_id_entry,     $more_options_expander, $cat_treeview,         $cats_liststore,         $dash_checkbutton,
    );
 
 sub get_objects {
@@ -330,6 +328,7 @@ sub get_objects {
         'thumbs_checkbutton'     => \$thumbs_checkbutton,
         'search_for_combobox'    => \$search_for_combobox,
         'fullscreen_checkbutton' => \$fullscreen_checkbutton,
+        'dash_checkbutton'       => \$dash_checkbutton,
         'gif_spinner'            => \$gif_spinner,
         'hbox2'                  => \$hbox2,
     );
@@ -393,6 +392,14 @@ if (ref $CONFIG ne 'HASH') {
     die "ERROR: Invalid configuration file!\n\t\$CONFIG is not an HASH ref!";
 }
 
+# Add audio support to players
+while (my ($player, $data) = each %{$CONFIG->{video_players}}) {
+    if (not exists $data->{audio} and exists $CONFIG{video_players}{$player}) {
+        $data->{audio} = $CONFIG{video_players}{$player}{audio};
+    }
+}
+
+# Get valid config keys
 my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
 
@@ -417,7 +424,7 @@ if (not $CONFIG{prefer_https}) {
 
 # Locating a video player
 if (not defined $CONFIG{video_player_selected}) {
-    foreach my $key (reverse sort keys %{$CONFIG{video_players}}) {
+    foreach my $key (sort keys %{$CONFIG{video_players}}) {
         if (defined(my $abs_player_path = which_command($CONFIG{video_players}{$key}{cmd}))) {
             $CONFIG{video_players}{$key}{cmd} = $abs_player_path;
             $CONFIG{video_player_selected} = $key;
@@ -484,8 +491,11 @@ my $yv_utils = WWW::YoutubeViewer::Utils->new(thousand_separator => $CONFIG{thou
 # Set config file to $CONFIG hash ref
 sub apply_configuration {
 
-    # Menu items
+    # Fullscreen mode
     $fullscreen_checkbutton->set_active($CONFIG{fullscreen});
+
+    # DASH mode
+    $dash_checkbutton->set_active($CONFIG{dash_support});
 
     # Others
     foreach my $option_name (
@@ -1086,9 +1096,14 @@ sub spin_start_with_page_changed {
     $yv_obj->set_page($CONFIG{page} = $spin_start_with_page->get_value);
 }
 
-# Menu items
+# Fullscreen mode
 sub toggled_mplayer_fullscreen {
     $CONFIG{fullscreen} = $fullscreen_checkbutton->get_active() || 0;
+}
+
+# DASH mode
+sub toggled_dash_support {
+    $CONFIG{dash_support} = $dash_checkbutton->get_active() || 0;
 }
 
 # Check buttons toggles
@@ -1727,8 +1742,6 @@ sub get_streaming_url {
     my @urls = $yv_obj->get_streaming_urls($video_id)
       or die "Can't get the streaming URLs for videoID: $video_id.\n";
 
-    my $srt_file;
-
     my $has_cc;
     foreach my $url (@urls) {
         if (exists $url->{has_cc} and $url->{has_cc} =~ /^(?:true|yes)$/i) {
@@ -1738,6 +1751,7 @@ sub get_streaming_url {
     }
 
     # Download the closed-captions
+    my $srt_file;
     if ($has_cc and $CONFIG{get_captions} and defined $CONFIG{gcap}) {
         require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
@@ -1751,21 +1765,40 @@ sub get_streaming_url {
     require WWW::YoutubeViewer::Itags;
     state $yv_itags = WWW::YoutubeViewer::Itags->new();
 
-    my $streaming = $yv_itags->find_streaming_url(\@urls, $CONFIG{resolution});
+    # Include DASH itags
+    my $dash = 1;
+
+    # Exclude DASH itags if the support is disabled
+    if (not $CONFIG{dash_support}) {
+        $dash = 0;
+    }
+
+    my ($streaming, $resolution) = $yv_itags->find_streaming_url(\@urls, $CONFIG{resolution}, $dash);
     my $info = @urls && ref $urls[-1] eq 'HASH' && exists $urls[-1]{status} ? $urls[-1] : {};
 
     return {
-            streaming => $streaming,
-            srt_file  => $srt_file,
-            info      => $info,
+            streaming  => $streaming,
+            srt_file   => $srt_file,
+            info       => $info,
+            resolution => $resolution,
            };
 }
 
 sub update_mplayer_arguments {
     my ($resolution) = @_;
 
-    if ($CONFIG{use_lower_cache}
-        or not $resolution ~~ [qw(original 1080 720)]) {
+    if (
+        $CONFIG{use_lower_cache}
+        or not $resolution ~~ [
+            qw(
+              original
+              2160
+              1440
+              1080
+              720
+              )
+        ]
+      ) {
         set_mplayer_arguments($CONFIG{lower_cache}, $CONFIG{lower_cache_min});
     }
     else {
@@ -1779,6 +1812,37 @@ sub get_quotewords {
 }
 
 #---------------------- PLAY AN YOUTUBE VIDEO ----------------------#
+sub get_player_command {
+    my ($streaming) = @_;
+
+    update_mplayer_arguments($streaming->{resolution});
+
+    join(
+        q{ },
+        (
+           # Video player
+           $CONFIG{video_players}{$CONFIG{video_player_selected}}{cmd},
+
+           (    # Audio file (http)
+              ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
+              ? sprintf(
+                        $CONFIG{video_players}{$CONFIG{video_player_selected}}{audio}, $streaming->{streaming}{__AUDIO__}{url}
+                       )
+              : ()
+           ),
+
+           (    # Caption file (srt)
+              defined($streaming->{srt_file})
+              ? sprintf($CONFIG{video_players}{$CONFIG{video_player_selected}}{srt}, $streaming->{srt_file})
+              : ()
+           ),
+
+           # Rest of the arguments
+           grep({ defined($_) and /\S/ } values %MPLAYER),
+        )
+    );
+}
+
 sub play_videos {
     my ($videos) = @_;
 
@@ -1794,26 +1858,18 @@ sub play_videos {
             next;
         }
 
-        update_mplayer_arguments($streaming->{resolution});
+        my $command = get_player_command($streaming);
 
-        my $command = join(
-                           q{ },
-                           (
-                            $CONFIG{video_players}{$CONFIG{video_player_selected}}{cmd},
-                            (
-                             defined($streaming->{srt_file})
-                             ? sprintf($CONFIG{video_players}{$CONFIG{video_player_selected}}{srt}, $streaming->{srt_file})
-                             : ()
-                            ),
-                            grep({ defined($_) and /\S/ } values %MPLAYER),
-                            quotemeta($streaming->{streaming}{url})
-                           )
-                          );
+        if ($yv_obj->get_debug) {
+            say "-> Video itag: $streaming->{streaming}{itag}";
+            say "-> Audio itag: $streaming->{streaming}{__AUDIO__}{itag}" if exists $streaming->{streaming}{__AUDIO__};
+            say "-> Video type: $streaming->{streaming}{type}";
+            say "-> Audio type: $streaming->{streaming}{__AUDIO__}{type}" if exists $streaming->{streaming}{__AUDIO__};
+            say "-> Command: $command";
+        }
 
-        say $command if $yv_obj->get_debug;
-
-        my $code = execute_external_program($command);
-        warn "Can't play video - MPlayer exit code: $code\n" if $code != 0;
+        my $code = execute_external_program(join(q{ }, $command, quotemeta($streaming->{streaming}{url})));
+        warn "Can't play this video -- player exited with code: $code\n" if $code != 0;
     }
 
     return 1;

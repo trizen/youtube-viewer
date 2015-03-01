@@ -493,6 +493,7 @@ default = standard results</property>
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
                                                 <property name="tooltip_text" translatable="yes">videos - Search for videos (default)
+channels - Search for YouTube channels
 playlists - Search for playlists of videos</property>
                                                 <property name="model">liststore10</property>
                                                 <property name="active">0</property>
@@ -542,7 +543,7 @@ playlists - Search for playlists of videos</property>
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
                                                     <property name="tooltip_text" translatable="yes">**  Entries are ordered:
-relevance – by  their relevance to a search query. (default)
+relevance – by their relevance to a search query. (default)
 rating –  from highest rating to lowest rating.
 viewCount –  from most views to least views.
 published –  in reverse chronological order.</property>
@@ -669,8 +670,8 @@ long – longer than 20 minutes</property>
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
                                                 <property name="tooltip_text" translatable="yes">default - Ignore this option
-true - Show only videos with closed captions (subtitles)
-false - Opposite of true</property>
+true - Show only videos with closed captions
+false - Show only videos without closed captions</property>
                                                 <property name="model">liststore13</property>
                                                 <property name="active">0</property>
                                                 <signal name="changed" handler="combobox_caption_changed" swapped="no"/>
@@ -760,7 +761,7 @@ true - Show only videos available in at least 720p</property>
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
                                                 <property name="tooltip_text" translatable="yes">none - YouTube will not perform any filtering.
-moderate - YouTube will filter some content  that is restricted in your locale (default).
+moderate - YouTube will filter some content that is restricted in your country (default).
 strict - YouTube will try to exclude all restricted content.</property>
                                                 <property name="model">liststore15</property>
                                                 <property name="active">1</property>
@@ -814,7 +815,7 @@ strict - YouTube will try to exclude all restricted content.</property>
                                                       <object class="GtkSpinButton" id="spinbutton1">
                                                         <property name="visible">True</property>
                                                         <property name="can_focus">True</property>
-                                                        <property name="tooltip_text" translatable="yes">The maximimum number of results per page.
+                                                        <property name="tooltip_text" translatable="yes">The maximum number of results per page.
 Recommended: 10</property>
                                                         <property name="max_length">2</property>
                                                         <property name="invisible_char">•</property>
@@ -1029,6 +1030,21 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                             <property name="position">1</property>
                                                           </packing>
                                                         </child>
+                                                        <child>
+                                                          <object class="GtkCheckButton" id="dash_checkbutton">
+                                                            <property name="label" translatable="yes">DASH support</property>
+                                                            <property name="visible">True</property>
+                                                            <property name="can_focus">True</property>
+                                                            <property name="receives_default">False</property>
+                                                            <property name="draw_indicator">True</property>
+                                                            <signal name="toggled" handler="toggled_dash_support" swapped="no"/>
+                                                          </object>
+                                                          <packing>
+                                                            <property name="expand">False</property>
+                                                            <property name="fill">False</property>
+                                                            <property name="position">2</property>
+                                                          </packing>
+                                                        </child>
                                                       </object>
                                                     </child>
                                                   </object>
@@ -1037,7 +1053,7 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                   <object class="GtkLabel" id="label4">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
-                                                    <property name="label" translatable="yes">&lt;b&gt;Search options&lt;/b&gt;</property>
+                                                    <property name="label" translatable="yes">&lt;b&gt;Other options&lt;/b&gt;</property>
                                                     <property name="use_markup">True</property>
                                                   </object>
                                                 </child>
@@ -3185,9 +3201,6 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
       <row>
         <col id="0" translatable="yes">playlists</col>
       </row>
-      <row>
-        <col id="0" translatable="yes">disco_videos</col>
-      </row>
     </data>
   </object>
   <object class="GtkListStore" id="liststore11">
@@ -3367,6 +3380,12 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
     <data>
       <row>
         <col id="0" translatable="yes">original</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">2160p</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">1440p</col>
       </row>
       <row>
         <col id="0" translatable="yes">1080p</col>

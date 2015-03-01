@@ -13,12 +13,12 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 17 February 2015
+#  Latest edit on: 01 March 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -26,6 +26,7 @@
 # youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
 #
 # [CHANGELOG]
+# - Added support for playing DASH videos and the `--no-dash` option to deactivate it at will  - NEW (v3.1.2)
 # - Added the options `--ps` and `--pid` to add videos by URL or ID to a given playlistID      - NEW (v3.1.2)
 # - Added the stdin commands ":ps" and ":s2p" to add one or more videos to a selected playlist - NEW (v3.1.2)
 # - Added the `--std-input=s` option which can be used to specify the first standard input     - NEW (v3.1.1)
@@ -189,6 +190,7 @@ my %CONFIG = (
                       mplayer => {
                                   cmd     => get_mplayer(),
                                   srt     => q{-sub '%s'},
+                                  audio   => q{-audiofile '%s'},
                                   fs      => q{-fs},
                                   arg     => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d},
                                   novideo => q{-novideo},
@@ -196,6 +198,7 @@ my %CONFIG = (
                       vlc => {
                               cmd     => q{vlc},
                               srt     => q{--sub-file '%s'},
+                              audio   => q{--input-slave '%s'},
                               fs      => q{--fullscreen},
                               arg     => q{--quiet --play-and-exit --no-video-title-show},
                               novideo => q{--intf dummy --novideo},
@@ -203,6 +206,7 @@ my %CONFIG = (
                       mpv => {
                               cmd     => q{mpv},
                               srt     => q{--sub-file '%s'},
+                              audio   => q{--audio-file '%s'},
                               fs      => q{--fullscreen},
                               arg     => q{--really-quiet},
                               novideo => q{--no-video},
@@ -219,6 +223,7 @@ my %CONFIG = (
 
     # YouTube options
     prefer_https        => 0,
+    dash_support        => 1,
     results             => 20,
     resolution          => 'original',
     hd                  => undef,
@@ -412,6 +417,14 @@ if (ref $CONFIG ne 'HASH') {
     die "[ERROR] Invalid configuration file!\n\t\$CONFIG is not an HASH ref!";
 }
 
+# Add audio support to players
+while (my ($player, $data) = each %{$CONFIG->{video_players}}) {
+    if (not exists $data->{audio} and exists $CONFIG{video_players}{$player}) {
+        $data->{audio} = $CONFIG{video_players}{$player}{audio};
+    }
+}
+
+# Get valid config keys
 my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
 
@@ -582,8 +595,8 @@ usage: $execname [options] ([url] | [keywords])
    --page=i             : get results starting with a specific page
    --results=i          : how many results to display per page (max: 50)
    -2  -3  -4  -7  -1   : resolutions: 240p, 360p, 480p, 720p and 1080p
-   --resolution=s       : available resolutions: original, 1080p, 720p,
-                          480p, 360p, 240p, 144p, audio
+   --resolution=s       : supported resolutions: original, 2160p, 1440p,
+                          1080p, 720p, 480p, 360p, 240p, 144p, audio.
 
  * Account
    --login              : will prompt you for login
@@ -677,6 +690,7 @@ usage: $execname [options] ([url] | [keywords])
                           If authentication required,
                           use 'http://user:pass\@domain.tld:port/'
    --prefer-https!      : use the HTTPS protocol instead of the HTTP protocol
+   --dash!              : include or exclude the DASH itags
 
 
 Help options:
@@ -1314,6 +1328,7 @@ sub parse_arguments {
         'fixed-width|W|fw!' => \$opt{results_fixed_width},
         'caption=s'         => \$opt{caption},
         'fullscreen|fs|f!'  => \$opt{fullscreen},
+        'dash!'             => \$opt{dash_support},
 
         'wget-dl|wget-download!'            => \$opt{download_with_wget},
         'dp|downl-play|download_and_play!'  => \$opt{download_and_play},
@@ -2981,9 +2996,8 @@ sub get_valid_numbers {
 
 sub get_streaming_url {
     my ($video_id) = @_;
-    my @urls = $yv_obj->get_streaming_urls($video_id);
 
-    my $srt_file;
+    my @urls = $yv_obj->get_streaming_urls($video_id);
 
     my $has_cc;
     foreach my $url (@urls) {
@@ -2994,6 +3008,7 @@ sub get_streaming_url {
     }
 
     # Download the closed-captions
+    my $srt_file;
     if ($has_cc and $opt{get_captions} and defined $opt{gcap} and not $opt{novideo}) {
         require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
@@ -3007,7 +3022,15 @@ sub get_streaming_url {
     require WWW::YoutubeViewer::Itags;
     state $yv_itags = WWW::YoutubeViewer::Itags->new();
 
-    my ($streaming, $resolution) = $yv_itags->find_streaming_url(\@urls, $opt{resolution});
+    # Include DASH itags
+    my $dash = 1;
+
+    # Exclude DASH itags while downloading or no video output is required
+    if ($opt{download_video} or $opt{novideo} or not $opt{dash_support}) {
+        $dash = 0;
+    }
+
+    my ($streaming, $resolution) = $yv_itags->find_streaming_url(\@urls, $opt{resolution}, $dash);
     my $info = @urls && ref $urls[-1] eq 'HASH' && exists $urls[-1]{status} ? $urls[-1] : {};
 
     return {
@@ -3021,8 +3044,18 @@ sub get_streaming_url {
 sub update_mplayer_arguments {
     my ($resolution) = @_;
 
-    if ($opt{use_lower_cache}
-        or not $resolution ~~ [qw(original 1080 720)]) {
+    if (
+        $opt{use_lower_cache}
+        or not $resolution ~~ [
+            qw(
+              original
+              2160
+              1440
+              1080
+              720
+              )
+        ]
+      ) {
         set_mplayer_arguments($opt{nocache} ? (32, 0) : ($opt{lower_cache}, $opt{lower_cache_min}));
     }
     else {
@@ -3158,17 +3191,27 @@ sub get_player_command {
     update_mplayer_arguments($streaming->{resolution});
 
     join(
-         q{ },
-         (
-          $opt{video_players}{$opt{video_player_selected}}{cmd},
-          (
-           defined($streaming->{srt_file})
-           ? sprintf($opt{video_players}{$opt{video_player_selected}}{srt}, $streaming->{srt_file})
-           : ()
-          ),
-          grep({ defined($_) and /\S/ } values %MPLAYER)
-         )
-        );
+        q{ },
+        (
+           # Video player
+           $opt{video_players}{$opt{video_player_selected}}{cmd},
+
+           (    # Audio file (http)
+              ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
+              ? sprintf($opt{video_players}{$opt{video_player_selected}}{audio}, $streaming->{streaming}{__AUDIO__}{url})
+              : ()
+           ),
+
+           (    # Caption file (srt)
+              defined($streaming->{srt_file})
+              ? sprintf($opt{video_players}{$opt{video_player_selected}}{srt}, $streaming->{srt_file})
+              : ()
+           ),
+
+           # Rest of the arguments
+           grep({ defined($_) and /\S/ } values %MPLAYER)
+        )
+    );
 }
 
 sub play_videos {
@@ -3209,7 +3252,14 @@ sub play_videos {
         }
         else {
             my $command = get_player_command($streaming);
-            say $command if $yv_obj->get_debug;
+
+            if ($yv_obj->get_debug) {
+                say "-> Video itag: $streaming->{streaming}{itag}";
+                say "-> Audio itag: $streaming->{streaming}{__AUDIO__}{itag}" if exists $streaming->{streaming}{__AUDIO__};
+                say "-> Video type: $streaming->{streaming}{type}";
+                say "-> Audio type: $streaming->{streaming}{__AUDIO__}{type}" if exists $streaming->{streaming}{__AUDIO__};
+                say "-> Command: $command";
+            }
 
             system join(q{ }, $command, quotemeta($streaming->{streaming}{url}));
             if ($? and $? != 512) {

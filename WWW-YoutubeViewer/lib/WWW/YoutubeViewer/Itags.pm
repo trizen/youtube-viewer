@@ -10,11 +10,11 @@ WWW::YoutubeViewer::Itags - Get the YouTube itags.
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -35,35 +35,112 @@ Return the blessed object.
 
 sub new {
     my ($class) = @_;
-    return scalar bless {}, $class;
+    bless {}, $class;
 }
 
 =head2 get_itags()
 
-Get a HASH ref with the YouTube itags. {resolution => {type => itag}}.
+Get a HASH ref with the YouTube itags. {resolution => [itags]}.
 
-Reference: http://en.wikipedia.org/wiki/YouTube#Quality_and_codecs
+Reference: http://en.wikipedia.org/wiki/YouTube#Quality_and_formats
 
 =cut
 
 sub get_itags {
-    return scalar {
+    scalar {
 
-        # WebM formats first
-        'original' => [38],
-        '1080'     => [46, 37],                    # 137 -- no audio
-        '720'      => [45, 22, 120],               # 136 -- no audio
-        '480'      => [44, 35],                    # 135 -- no audio
-        '360'      => [43, 34, 18],                # 134 -- no audio
-        '240'      => [6,  5, 36, 13],             # 133 -- no audio
-        '144'      => [17],                        # 160 -- no audio
-        'audio'    => [141, 140, 172, 171, 139],
-    };
+        'original' => [
+            38,    # mp4 (3072p) (v-a)
+            [138,    # mp4 (2160p-4320p) (v)
+             266,    # mp4 (2160p-2304p) (v)
+            ],
+        ],
+
+        '2160' => [
+            [272,    # webm (v)
+             313,    # mp4 (v)
+            ],
+        ],
+
+        '1440' => [
+            [271,    # webm (v)
+             264,    # mp4 (v)
+            ],
+        ],
+
+        '1080' => [
+            46,      # webm (v-a)
+            37,      # mp4 (v-a)
+            [248,    # webm (v)
+             137,    # mp4 (v)
+             303,    # webm HFR (v)
+             299,    # mp4 HFR (v)
+            ],
+            96,      # ts (live) (v-a)
+                  ],
+
+        '720' => [
+            45,      # webm (v-a)
+            [247,    # webm (v)
+            ],
+            22,      # mp4 (v-a)
+
+            [136,    # mp4 (v)
+            ],
+            [302,    # webm HFR (v)
+             298,    # mp4 HFR (v)
+            ],
+            120,     # flv (live) (v-a)
+            95,      # ts (live) (v-a)
+                 ],
+
+        '480' => [
+            44,      # webm (v-a)
+            35,      # flv (v-a)
+            [244,    # webm (v)
+             135,    # mp4 (v)
+            ],
+            94,      # ts (live) (v-a)
+                 ],
+
+        '360' => [
+            43,      # webm (v-a)
+            34,      # flv (v-a)
+            18,      # mp4 (v-a)
+            [243,    # webm (v)
+             134,    # mp4 (v)
+            ],
+        ],
+
+        '240' => [
+            6,       # flv (270p) (v-a)
+            5,       # flv (v-a)
+            36,      # 3gp (v-a)
+            13,      # 3gp (v-a)
+            [242,    # webm (v)
+             133,    # mp4 (v)
+            ],
+        ],
+
+        '144' => [
+            17,      # 3gp (v-a)
+            [278,    # webm (v)
+             160,    # mp4 (v)
+            ],
+        ],
+
+        'audio' => [172,     # webm (192 kbps)
+                    171,     # webm (128 kbps)
+                    141,     # m4a (256 kbps)
+                    140,     # m4a (128 kbps)
+                    139,     # m4a (48 kbps)
+                   ],
+           };
 }
 
 =head2 get_resolutions()
 
-Get a HASH ref with the itags as keys and resolutions as values.
+Get an ARRAY ref with the supported resolutions ordered from highest to lowest.
 
 =cut
 
@@ -71,12 +148,46 @@ sub get_resolutions {
     my ($self) = @_;
 
     state $itags = $self->get_itags();
-    return scalar {
-        map {
-            my $res = $_;
-            map { $itags->{$res}[$_] => $res } 0 .. $#{$itags->{$_}}
-          } keys %{$itags}
-    };
+    return [
+        grep { exists $itags->{$_} }
+          qw(
+          original
+          2160
+          1440
+          1080
+          720
+          480
+          360
+          240
+          144
+          audio
+          )
+    ];
+}
+
+sub _find_streaming_url {
+    my ($self, $stream, $itags, $resolution, $dash) = @_;
+
+    foreach my $itag (@{$itags->{$resolution}}) {
+        if (ref($itag) eq 'ARRAY') {
+            $dash || next;
+            foreach my $i (@{$itag}) {
+                if (exists $stream->{$i}) {
+                    my $video_info = $stream->{$i};
+                    my $audio_info = $self->_find_streaming_url($stream, $itags, 'audio', 0);
+                    if (defined $audio_info) {
+                        $video_info->{__AUDIO__} = $audio_info;
+                        return $video_info;
+                    }
+                }
+            }
+        }
+        elsif (exists $stream->{$itag}) {
+            return $stream->{$itag};
+        }
+    }
+
+    return;
 }
 
 =head2 find_streaming_url($urls_ref, $resolution)
@@ -86,16 +197,13 @@ Return the streaming URL which corresponds with the $resolution.
 =cut
 
 sub find_streaming_url {
-    my ($self, $urls_ref, $resolution) = @_;
+    my ($self, $urls_ref, $resolution, $dash) = @_;
 
-    state $itags       = $self->get_itags();
-    state $resolutions = $self->get_resolutions($itags);
+    state $itags = $self->get_itags();
 
     if (defined($resolution) and $resolution =~ /^([0-9]+)/) {
         $resolution = $1;
     }
-
-    my $wanted_itag = defined $resolution ? $itags->{$resolution} : undef;
 
     my %stream;
     foreach my $info_ref (@{$urls_ref}) {
@@ -104,29 +212,23 @@ sub find_streaming_url {
         }
     }
 
-    my $streaming;
-    if (defined $wanted_itag) {
-        foreach my $itag (@{$wanted_itag}) {
-            if (exists $stream{$itag}) {
-                $streaming = $stream{$itag};
+    my ($streaming, $found_resolution);
+    if (defined($resolution) and exists $itags->{$resolution}) {
+        $streaming = $self->_find_streaming_url(\%stream, $itags, $resolution, $dash);
+        $found_resolution = $resolution;
+    }
+
+    if (not defined $streaming) {
+        state $resolutions = $self->get_resolutions();
+        foreach my $res (@{$resolutions}) {
+            if (defined($streaming = $self->_find_streaming_url(\%stream, $itags, $res, $dash))) {
+                $found_resolution = $res;
                 last;
             }
         }
     }
 
-    if (not defined $streaming) {
-        foreach my $res (qw(original 1080 720 480 360 240 144 audio)) {
-            foreach my $itag (@{$itags->{$res}}) {
-                if (exists $stream{$itag}) {
-                    $streaming = $stream{$itag};
-                    last;
-                }
-            }
-            last if defined $streaming;
-        }
-    }
-
-    return wantarray ? ($streaming, $resolutions->{$streaming->{itag}}) : $streaming;
+    wantarray ? ($streaming, $found_resolution) : $streaming;
 }
 
 =head1 AUTHOR
@@ -143,7 +245,7 @@ You can find documentation for this module with the perldoc command.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012-2013 Trizen.
+Copyright 2012-2015 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
