@@ -125,7 +125,7 @@ use File::Spec::Functions qw(catdir catfile curdir path rel2abs tmpdir);
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.1.1';
+my $version  = '3.1.2';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
@@ -3254,6 +3254,7 @@ sub play_videos {
             my $command = get_player_command($streaming);
 
             if ($yv_obj->get_debug) {
+                say "-> Resolution: $streaming->{resolution}";
                 say "-> Video itag: $streaming->{streaming}{itag}";
                 say "-> Audio itag: $streaming->{streaming}{__AUDIO__}{itag}" if exists $streaming->{streaming}{__AUDIO__};
                 say "-> Video type: $streaming->{streaming}{type}";

@@ -55,7 +55,7 @@
       },
       "WWW::YoutubeViewer::Itags" : {
          "file" : "lib/WWW/YoutubeViewer/Itags.pm",
-         "version" : "0.03"
+         "version" : "0.04"
       },
       "WWW::YoutubeViewer::ParseXML" : {
          "file" : "lib/WWW/YoutubeViewer/ParseXML.pm",

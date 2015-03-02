@@ -81,11 +81,9 @@ sub get_itags {
 
         '720' => [
             45,      # webm (v-a)
-            [247,    # webm (v)
-            ],
             22,      # mp4 (v-a)
-
-            [136,    # mp4 (v)
+            [247,    # webm (v)
+             136,    # mp4 (v)
             ],
             [302,    # webm HFR (v)
              298,    # mp4 HFR (v)
@@ -174,6 +172,7 @@ sub _find_streaming_url {
             foreach my $i (@{$itag}) {
                 if (exists $stream->{$i}) {
                     my $video_info = $stream->{$i};
+                    exists($video_info->{s}) && next;    # skip videos with encoded signatures
                     my $audio_info = $self->_find_streaming_url($stream, $itags, 'audio', 0);
                     if (defined $audio_info) {
                         $video_info->{__AUDIO__} = $audio_info;
