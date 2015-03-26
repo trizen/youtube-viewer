@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 01 March 2015
+#  Latest edit on: 26 March 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -93,6 +93,8 @@
 # - Georgo (for adding the 'Watch Later' feature - https://github.com/trizen/youtube-viewer/pull/44)
 # - Daniel Wallace (for adding youtube-viewer in the Arch Official Community repository - https://www.archlinux.org/packages/community/any/youtube-viewer/)
 # - NTmatter (for adding reverse range support - https://github.com/trizen/youtube-viewer/pull/2)
+# - Andrew (for a nice review for (gtk-)youtube-viewer: http://www.webupd8.org/2015/02/youtube-viewer-complete-youtube-client.html)
+# - AnyComputer (for a complete french review of gtk-youtube-viewer: https://www.youtube.com/watch?v=6-qbdDUlBqg)
 
 =head1 NAME
 
@@ -277,9 +279,12 @@ my %MPLAYER;
 # MPlayer variable arguments
 sub set_mplayer_arguments {
     my ($cache, $cache_min) = @_;
-    $MPLAYER{mplayer_arguments} = sprintf($opt{video_players}{$opt{video_player_selected}}{arg}, $cache, $cache_min);
-    $MPLAYER{fullscreen} = $opt{fullscreen} ? $opt{video_players}{$opt{video_player_selected}}{fs}      : q{};
-    $MPLAYER{novideo}    = $opt{novideo}    ? $opt{video_players}{$opt{video_player_selected}}{novideo} : q{};
+    $MPLAYER{fullscreen} = $opt{fullscreen} ? $opt{video_players}{$opt{video_player_selected}}{fs}      // '' : q{};
+    $MPLAYER{novideo}    = $opt{novideo}    ? $opt{video_players}{$opt{video_player_selected}}{novideo} // '' : q{};
+    $MPLAYER{mplayer_arguments} =
+      exists($opt{video_players}{$opt{video_player_selected}}{arg})
+      ? sprintf($opt{video_players}{$opt{video_player_selected}}{arg}, $cache, $cache_min)
+      : '';
     return 1;
 }
 
@@ -3186,7 +3191,7 @@ sub download_video {
 }
 
 sub get_player_command {
-    my ($streaming, $url) = @_;
+    my ($streaming, $video) = @_;
 
     update_mplayer_arguments($streaming->{resolution});
 
@@ -3198,12 +3203,14 @@ sub get_player_command {
 
             (    # Audio file (http)
                ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
+                 && exists($opt{video_players}{$opt{video_player_selected}}{audio})
                ? sprintf($opt{video_players}{$opt{video_player_selected}}{audio}, $streaming->{streaming}{__AUDIO__}{url})
                : ()
             ),
 
             (    # Caption file (srt)
                defined($streaming->{srt_file})
+                 && exists($opt{video_players}{$opt{video_player_selected}}{srt})
                ? sprintf($opt{video_players}{$opt{video_player_selected}}{srt}, $streaming->{srt_file})
                : ()
             ),
@@ -3214,19 +3221,38 @@ sub get_player_command {
     );
 
     my %special_tokens = (
-                          '%URL%'   => \$url,
-                          '%SRT%'   => \$streaming->{srt_file},
-                          '%AUDIO%' => \$streaming->{streaming}{__AUDIO__}{url},
-                          '%RES%'   => \$streaming->{resolution},
+        '*ID*'       => $video->{videoID},
+        '*AUTHOR*'   => $video->{author},
+        '*CATEGORY*' => $video->{category},
+        '*VIEWS*'    => $video->{views},
+        '*LIKES*'    => $video->{likes},
+        '*DISLIKES*' => $video->{dislikes},
+        '*DURATION*' => $video->{duration},
+        '*RATING*'   => $video->{rating},
+        '*TITLE*'    => $video->{title},
+
+        '*FPS*'    => $streaming->{streaming}{fps},
+        '*ITAG*'   => $streaming->{streaming}{itag},
+        '*FORMAT*' => $streaming->{streaming}{type} =~ m{^video/(\w+)} ? $1 : 'webm',
+        '*SIZE*'   => $streaming->{streaming}{size},
+
+        '*SRT*'   => $streaming->{srt_file},
+        '*AUDIO*' => $streaming->{streaming}{__AUDIO__}{url},
+        '*VIDEO*' => $streaming->{streaming}{url},
+
+        '*URL*' => sprintf($opt{youtube_video_url}, $video->{videoID}),
                          );
 
+    my $video_consumed;
     while (my ($key, $value) = each %special_tokens) {
-        if ($cmd =~ s/\Q$key\E/\Q$$value\E/g) {
-            undef($$value);
+        if ($cmd =~ s/\Q$key\E/\Q$value\E/g) {
+            if ($key eq '*VIDEO*') {
+                $video_consumed = 1;
+            }
         }
     }
 
-    defined($url) ? join(' ', $cmd, $url) : $cmd;
+    $video_consumed ? $cmd : join(' ', $cmd, $streaming->{streaming}{url});
 }
 
 sub play_videos {
@@ -3266,7 +3292,7 @@ sub play_videos {
             push @streaming_urls, $streaming;
         }
         else {
-            my $command = get_player_command($streaming, $streaming->{streaming}{url});
+            my $command = get_player_command($streaming, $video);
 
             if ($yv_obj->get_debug) {
                 say "-> Resolution: $streaming->{resolution}";
