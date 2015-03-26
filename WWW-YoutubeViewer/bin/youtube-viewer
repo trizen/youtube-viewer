@@ -191,24 +191,24 @@ my %CONFIG = (
     video_players => {
                       mplayer => {
                                   cmd     => get_mplayer(),
-                                  srt     => q{-sub '%s'},
-                                  audio   => q{-audiofile '%s'},
+                                  srt     => q{-sub *SRT*},
+                                  audio   => q{-audiofile *AUDIO*},
                                   fs      => q{-fs},
                                   arg     => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d},
                                   novideo => q{-novideo},
                                  },
                       vlc => {
                               cmd     => q{vlc},
-                              srt     => q{--sub-file '%s'},
-                              audio   => q{--input-slave '%s'},
+                              srt     => q{--sub-file *SRT*},
+                              audio   => q{--input-slave *AUDIO*},
                               fs      => q{--fullscreen},
                               arg     => q{--quiet --play-and-exit --no-video-title-show},
                               novideo => q{--intf dummy --novideo},
                              },
                       mpv => {
                               cmd     => q{mpv},
-                              srt     => q{--sub-file '%s'},
-                              audio   => q{--audio-file '%s'},
+                              srt     => q{--sub-file *SRT*},
+                              audio   => q{--audio-file *AUDIO*},
                               fs      => q{--fullscreen},
                               arg     => q{--really-quiet},
                               novideo => q{--no-video},
@@ -818,6 +818,44 @@ NOTE: Categories and region IDs are case sensitive!
     the 'gcap' program. See: http://gcap.googlecode.com
     After it is installed, put it into the configuration file as:
         gcap => '/path/to/gcap'
+
+** Special tokens for player commands:
+
+  *ID*       : youtube video ID
+  *AUTHOR*   : author name of the video
+  *CATEGORY* : video category
+  *VIEWS*    : the number of video views
+  *LIKES*    : the number of video likes
+  *DISLIKES* : the number of video dislikes
+  *DURATION* : the duration of the video in seconds
+  *RATING*   : the rating score of the video (from 1 to 5)
+  *TITLE*    : the title of the video
+
+  *FPS*      : the fps of the video
+  *ITAG*     : the itag value of the video
+  *FORMAT*   : the format type of the video (without the dot)
+  *SIZE*     : the resolution of the video (such as: 1920x1080)
+
+  *SRT*      : the local .srt file (if any)
+  *AUDIO*    : the audio URL of the video (in DASH-mode only; if any)
+  *VIDEO*    : the video URL of the video (in DASH-mode it might contain only the video without any audio)
+
+  *URL*      : the youtube URL of the video
+
+Usage examples:
+    video_players => {
+        mpg123 => {
+            # get URL with youtube-dl
+            # download it using wget
+            # convert it to mp3 using ffmpeg
+            # and play it with mpg123
+            cmd => 'wget -q -O - \$(youtube-dl -g *URL*) | ffmpeg -i - -f mp3 -vn -acodec libmp3lame - | mpg123 -',
+        },
+        wget => {
+            # download video with wget with a custom name (title-id.format)
+            cmd => 'wget -O *TITLE*-*ID*.*FORMAT* *VIDEO*',
+        },
+    },
 
 ** Configuration file: $config_file
 
