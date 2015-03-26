@@ -3186,32 +3186,47 @@ sub download_video {
 }
 
 sub get_player_command {
-    my ($streaming) = @_;
+    my ($streaming, $url) = @_;
 
     update_mplayer_arguments($streaming->{resolution});
 
-    join(
+    my $cmd = join(
         q{ },
         (
-           # Video player
-           $opt{video_players}{$opt{video_player_selected}}{cmd},
+            # Video player
+            $opt{video_players}{$opt{video_player_selected}}{cmd},
 
-           (    # Audio file (http)
-              ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
-              ? sprintf($opt{video_players}{$opt{video_player_selected}}{audio}, $streaming->{streaming}{__AUDIO__}{url})
-              : ()
-           ),
+            (    # Audio file (http)
+               ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
+               ? sprintf($opt{video_players}{$opt{video_player_selected}}{audio}, $streaming->{streaming}{__AUDIO__}{url})
+               : ()
+            ),
 
-           (    # Caption file (srt)
-              defined($streaming->{srt_file})
-              ? sprintf($opt{video_players}{$opt{video_player_selected}}{srt}, $streaming->{srt_file})
-              : ()
-           ),
+            (    # Caption file (srt)
+               defined($streaming->{srt_file})
+               ? sprintf($opt{video_players}{$opt{video_player_selected}}{srt}, $streaming->{srt_file})
+               : ()
+            ),
 
-           # Rest of the arguments
-           grep({ defined($_) and /\S/ } values %MPLAYER)
+            # Rest of the arguments
+            grep({ defined($_) and /\S/ } values %MPLAYER)
         )
     );
+
+    my %special_tokens = (
+                          '%URL%'   => \$url,
+                          '%SRT%'   => \$streaming->{srt_file},
+                          '%AUDIO%' => \$streaming->{streaming}{__AUDIO__}{url},
+                          '%RES%'   => \$streaming->{resolution},
+                         );
+
+    while (my ($key, $value) = each %special_tokens) {
+        if ($cmd =~ s/\Q$key\E/\Q$$value\E/g) {
+            undef($$value);
+        }
+    }
+
+    defined($url) ? join(' ', $cmd, $url) : $cmd;
 }
 
 sub play_videos {
@@ -3251,7 +3266,7 @@ sub play_videos {
             push @streaming_urls, $streaming;
         }
         else {
-            my $command = get_player_command($streaming);
+            my $command = get_player_command($streaming, $streaming->{streaming}{url});
 
             if ($yv_obj->get_debug) {
                 say "-> Resolution: $streaming->{resolution}";
@@ -3262,7 +3277,7 @@ sub play_videos {
                 say "-> Command: $command";
             }
 
-            system join(q{ }, $command, quotemeta($streaming->{streaming}{url}));
+            system $command;    # execute the video player
             if ($? and $? != 512) {
                 return;
             }
