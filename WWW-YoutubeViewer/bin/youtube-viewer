@@ -3252,7 +3252,7 @@ sub get_player_command {
         }
     }
 
-    $video_consumed ? $cmd : join(' ', $cmd, $streaming->{streaming}{url});
+    $video_consumed ? $cmd : join(' ', $cmd, quotemeta($streaming->{streaming}{url}));
 }
 
 sub play_videos {
