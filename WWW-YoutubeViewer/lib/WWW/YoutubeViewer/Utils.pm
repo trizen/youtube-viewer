@@ -69,9 +69,26 @@ sub new {
     return $self;
 }
 
+=head video_extension($type)
+
+Returns the video extension format from a video type.
+
+From a string like 'video/webm;+codecs="vp9"', it returns 'webm'.
+
+=cut
+
+sub video_extension {
+    my ($self, $type) = @_;
+        $type =~ /\bflv\b/i      ? q{flv}
+      : $type =~ /\bwebm\b/i     ? q{webm}
+      : $type =~ /\b3gpp?\b/i    ? q{3gp}
+      : $type =~ m{^video/(\w+)} ? $1
+      :                            q{mp4};
+}
+
 =head2 format_time($sec)
 
-Return time from seconds.
+Returns time from seconds.
 
 =cut
 

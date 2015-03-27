@@ -133,21 +133,21 @@ my %CONFIG = (
     video_players => {
                       mplayer => {
                                   cmd   => q{mplayer},
-                                  srt   => q{-sub *SRT*},
+                                  srt   => q{-sub *SUB*},
                                   audio => q{-audiofile *AUDIO*},
                                   fs    => q{-fs},
                                   arg   => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d},
                                  },
                       vlc => {
                               cmd   => q{vlc},
-                              srt   => q{--sub-file *SRT*},
+                              srt   => q{--sub-file *SUB*},
                               audio => q{--input-slave *AUDIO*},
                               fs    => q{--fullscreen},
                               arg   => q{--quiet --play-and-exit --no-video-title-show},
                              },
                       mpv => {
                               cmd   => q{mpv},
-                              srt   => q{--sub-file *SRT*},
+                              srt   => q{--sub-file *SUB*},
                               audio => q{--audio-file *AUDIO*},
                               fs    => q{--fullscreen},
                               arg   => q{--really-quiet},

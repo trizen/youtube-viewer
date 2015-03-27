@@ -2142,7 +2142,6 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
     <property name="default_height">200</property>
     <property name="type_hint">dialog</property>
     <property name="transient_for">__MAIN__</property>
-    <property name="has_separator">True</property>
     <signal name="close" handler="hide_errors_window" swapped="no"/>
     <signal name="destroy" handler="hide_errors_window" swapped="no"/>
     <signal name="delete-event" handler="hide_errors_window" swapped="no"/>

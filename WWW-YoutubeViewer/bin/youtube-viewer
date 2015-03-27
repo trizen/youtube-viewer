@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 26 March 2015
+#  Latest edit on: 27 March 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -26,6 +26,8 @@
 # youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
 #
 # [CHANGELOG]
+# - Added support for specifying the filename format when downloading videos (--filename=s)    - NEW (v3.1.3)
+# - Added support for special tokens and for extracting information about videos (--extract=s) - NEW (v3.1.3)
 # - Added support for playing DASH videos and the `--no-dash` option to deactivate it at will  - NEW (v3.1.2)
 # - Added the options `--ps` and `--pid` to add videos by URL or ID to a given playlistID      - NEW (v3.1.2)
 # - Added the stdin commands ":ps" and ":s2p" to add one or more videos to a selected playlist - NEW (v3.1.2)
@@ -191,7 +193,7 @@ my %CONFIG = (
     video_players => {
                       mplayer => {
                                   cmd     => get_mplayer(),
-                                  srt     => q{-sub *SRT*},
+                                  srt     => q{-sub *SUB*},
                                   audio   => q{-audiofile *AUDIO*},
                                   fs      => q{-fs},
                                   arg     => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d},
@@ -199,7 +201,7 @@ my %CONFIG = (
                                  },
                       vlc => {
                               cmd     => q{vlc},
-                              srt     => q{--sub-file *SRT*},
+                              srt     => q{--sub-file *SUB*},
                               audio   => q{--input-slave *AUDIO*},
                               fs      => q{--fullscreen},
                               arg     => q{--quiet --play-and-exit --no-video-title-show},
@@ -207,7 +209,7 @@ my %CONFIG = (
                              },
                       mpv => {
                               cmd     => q{mpv},
-                              srt     => q{--sub-file *SRT*},
+                              srt     => q{--sub-file *SUB*},
                               audio   => q{--audio-file *AUDIO*},
                               fs      => q{--fullscreen},
                               arg     => q{--really-quiet},
@@ -268,8 +270,10 @@ my %CONFIG = (
     use_xml_fast         => 1,
     save_input_history   => 0,
     history_size_limit   => 1_000,
-    ffmpeg_command       => 'ffmpeg -i %s %s',
+    ffmpeg_command       => q{ffmpeg -i %s %s},
     convert_to           => undef,
+
+    video_filename_format => q{*FTITLE*.*FORMAT*},
 );
 
 local $SIG{__WARN__} = sub { warn @_; ++$opt{_error} };
@@ -652,6 +656,7 @@ usage: $execname [options] ([url] | [keywords])
        --skip-if-exists! : don't download videos which already exists (with -d)
        --copy-caption!   : copy and rename the caption for downloaded videos
        --downloads-dir=s : downloads directory (set: '$opt{downloads_folder}')
+       --filename=s      : set a custom format for the video filename (see: -T)
 
  * Convert
    --ffmpeg-command=s   : ffmpeg command for converting videos after download
@@ -685,10 +690,12 @@ usage: $execname [options] ([url] | [keywords])
    -C  --colorful!      : use colors to delimit the video results
    -D  --details!       : a new look for the results, with more details
    -W  --fixed-width!   : adjust the results to fit inside the term width
-   -i  --info=s         : show video informations for a videoID or URL
+   -i  --info=s         : show some info for a videoID or URL
+   -e  --extract=s      : extract information from videos (see: -T)
    -q  --quiet          : do not display any warning
        --really-quiet   : do not display any warning or output
-       --use-colors!    : use ANSI colors for text
+       --escape-info!   : quotemeta() the fields of the `--extract`
+       --use-colors!    : enable or disable the ANSI colors for text
 
  * Other
    --http_proxy=s       : HTTP proxy to use, format 'http://domain.tld:port/'.
@@ -759,107 +766,111 @@ sub tricks {
     );
 
     print <<"TRICKS";
-** Valid categories:
+-> Valid categories:
 $cat_ids
 
-** Valid region IDs:
+-> Valid region IDs:
 $region_ids
 
 NOTE: Categories and region IDs are case sensitive!
       [orderby, time, duration]'s values are also case sensitive!
 
-** Playing videos
-1. To stream the videos in other players, you need to change the
-   configuration file. Where it says 'video_player_selected', change it
-   to any player which is defined inside the 'video_players' tree.
+-> Playing videos
+ > To stream the videos in other players, you need to change the
+   configuration file. Where it says "video_player_selected", change it
+   to any player which is defined inside the "video_players" hash.
 
-2. lower_cache and lower_cache_min values are used when -l (--use-lower-cache)
+ > lower_cache and lower_cache_min values are used when -l (--use-lower-cache)
    is specified as argument, or if the resolution of a video is lower than 720p.
 
-** Arguments
-1. Almost all boolean arguments can be negated with a '--no-' prefix.
-2. Arguments that require an ID/URL, you can specify more than one,
+-> Arguments
+ > Almost all boolean arguments can be negated with a "--no-" prefix.
+ > Arguments that require an ID/URL, you can specify more than one,
    separated by whitespace (quoted), or separated by commas.
 
-** More STDIN help:
-1. ':r', ':return' will return to the previous section.
-   For example, if you search for playlists, then list a playlist
-   of videos, inserting ':r' will return back to the playlist results.
+-> More STDIN help:
+ > ":r", ":return" will return to the previous section.
+   For example, if you search for playlists, then select a playlist
+   of videos, inserting ":r" will return back to the playlist results.
    Also, for the previous page, you can insert ':b', but ':r' is faster!
 
-2. "6" (quoted) or -V=6 will search for videos with the keyword '6'.
+ > "6" (quoted) or -V=6 will search for videos with the keyword '6'.
 
-3. If a stdin option is followed by one or more digits, the equal sign,
+ > If a stdin option is followed by one or more digits, the equal sign,
    which separates the option from value, can be omited.
    For example:
         :i2,4  is equivalent with :i=2,4
         :d1-5  is equivalent with :d=1,2,3,4,5
         :c10   is equivalent with :c=10
 
-4. When more videos are selected to play, you can stop them by
+ > When more videos are selected to play, you can stop them by
    pressing CTRL+C. $appname will return to the previous section.
 
-5. For the option ':kregex', the valid keys are:
+ > For the option ':kregex', the valid keys are:
    $valid_keys
 
-6. Space inside the values of the STDIN options, can be either quoted
+ > Space inside the values of STDIN options, can be either quoted
    or backslashed.
    For example:
         :re=video\\ title     ==     :re="video title"
 
-7. ':anp' stands for the "Auto Next Page". How do we use it?
+ > ":anp" stands for the "Auto Next Page". How do we use it?
    Well, let's search for some videos. Now, if we'd want to play
    only the videos matched by a regex, we'd say :re="REGEX".
    But, what if we'd want to play the videos from the next pages too?
-   In this case, ':anp' is your friend. Use it wisely!
+   In this case, ":anp" is your friend. Use it wisely!
 
-** Closed-Captions
+-> Closed-Captions
     To get the closed-captions (subtitles) for videos, you need to install
-    the 'gcap' program. See: http://gcap.googlecode.com
-    After it is installed, put it into the configuration file as:
-        gcap => '/path/to/gcap'
+    the "gcap" program which will download the closed captions in .srt format.
+    See: http://gcap.googlecode.com
 
-** Special tokens for player commands:
+-> Special tokens:
 
-  *ID*       : youtube video ID
-  *AUTHOR*   : author name of the video
-  *CATEGORY* : video category
-  *VIEWS*    : the number of video views
-  *LIKES*    : the number of video likes
-  *DISLIKES* : the number of video dislikes
-  *DURATION* : the duration of the video in seconds
-  *RATING*   : the rating score of the video (from 1 to 5)
-  *TITLE*    : the title of the video
-
-  *FPS*      : the fps of the video
-  *ITAG*     : the itag value of the video
-  *FORMAT*   : the format type of the video (without the dot)
-  *SIZE*     : the resolution of the video (such as: 1920x1080)
-
-  *SRT*      : the local .srt file (if any)
-  *AUDIO*    : the audio URL of the video (in DASH-mode only; if any)
-  *VIDEO*    : the video URL of the video (in DASH-mode it might contain only the video without any audio)
+  *ID*          : youtube video ID
+  *AUTHOR*      : author name of the video
+  *CATEGORY*    : the category of the video
+  *RESOLUTION*  : the resolution of the video
+  *VIEWS*       : the number of video views
+  *LIKES*       : the number of video likes
+  *DISLIKES*    : the number of video dislikes
+  *RATING*      : the rating score of the video (from 1 to 5)
+  *DURATION*    : the duration of the video in seconds
+  *TIME*        : the duration of the video in HH::MM::SS
+  *TITLE*       : the title of the video
+  *FTITLE*      : the title of the video (filename safe)
+  *DESCRIPTION* : the description of the video
 
   *URL*      : the youtube URL of the video
+  *ITAG*     : the itag value of the video
+  *FORMAT*   : the extension of the video (without the dot)
 
-Usage examples:
-    video_players => {
-        mpg123 => {
-            # get URL with youtube-dl
-            # download it using wget
-            # convert it to mp3 using ffmpeg
-            # and play it with mpg123
-            cmd => 'wget -q -O - \$(youtube-dl -g *URL*) | ffmpeg -i - -f mp3 -vn -acodec libmp3lame - | mpg123 -',
-        },
-        wget => {
-            # download video with wget with a custom name (title-id.format)
-            cmd => 'wget -O *TITLE*-*ID*.*FORMAT* *VIDEO*',
-        },
-    },
+  *SUB*      : the local subtitle file (if any)
+  *AUDIO*    : the audio URL of the video (in DASH-mode only)
+  *VIDEO*    : the video URL of the video (in DASH-mode, it might not contain audio)
+  *AOV*      : audio URL (if any) or video URL (in this order)
 
-** Configuration file: $config_file
+-> Special escapes:
+    \\t                  tab
+    \\n                  newline
+    \\r                  return
+    \\f                  form feed
+    \\b                  backspace
+    \\a                  alarm (bell)
+    \\e                  escape
 
-** Donations gladly accepted:
+-> Extracting information from videos:
+
+ > Extracting information can be achevied by using the "--extract" command-line option
+   which takes a given format as its argument, which is defined by using special tokens,
+   special escapes, or literals.
+
+   Example:
+     $appname --no-interactive --extract '*TITLE* (*URL*)\n\n*DESCRIPTION*' [URL]
+
+-> Configuration file: $config_file
+
+-> Donations gladly accepted:
     https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=75FUVBE6Q73T8
 
 TRICKS
@@ -1352,6 +1363,8 @@ sub parse_arguments {
         'convert-to|convert_to=s'   => \$opt{convert_to},
         'ffmpeg-command=s'          => \$opt{ffmpeg_command},
         'keep-original-video!'      => \$opt{keep_original_video},
+        'e|extract|extract-info=s'  => \$opt{extract_info},
+        'escape-info!'              => \$opt{escape_info},
 
         # MPlayer
         'player|vplayer|video-player|video_player=s'  => \$opt{video_player_selected},
@@ -1374,6 +1387,7 @@ sub parse_arguments {
         'dash!'             => \$opt{dash_support},
 
         'wget-dl|wget-download!'            => \$opt{download_with_wget},
+        'filename|filename-format=s'        => \$opt{video_filename_format},
         'dp|downl-play|download_and_play!'  => \$opt{download_and_play},
         'rp|rem-played|remove_played_file!' => \$opt{remove_played_file},
         'clobber!'                          => \$opt{clobber},
@@ -3106,10 +3120,8 @@ sub update_mplayer_arguments {
     }
 }
 
-sub download_video {
-    my ($streaming, $info) = @_;
-
-    my $title = join(q{ }, split(q{ }, $info->{title}));
+sub normalize_video_title {
+    my ($title) = @_;
 
     if ($^O ~~ [qw(linux freebsd openbsd)]) {
         $title =~ tr{/}{%};
@@ -3118,13 +3130,85 @@ sub download_video {
         $title =~ tr{:"*/?\\|}{;'+%$%%};    # "
     }
 
-    my $video_title = $title;
+    join(q{ }, split(q{ }, $title));
+}
 
-    $title .=
-        $streaming->{streaming}{type} =~ /\bflv\b/i   ? q{.flv}
-      : $streaming->{streaming}{type} =~ /\bwebm\b/i  ? q{.webm}
-      : $streaming->{streaming}{type} =~ /\b3gpp?\b/i ? q{.3gp}
-      :                                                 q{.mp4};
+sub format_text {
+    my ($streaming, $info, $text, $quotemeta) = @_;
+
+    my %special_tokens = (
+        ID          => $info->{videoID},
+        AUTHOR      => $info->{author},
+        CATEGORY    => $info->{category},
+        VIEWS       => $info->{views},
+        LIKES       => $info->{likes},
+        DISLIKES    => $info->{dislikes},
+        DURATION    => $info->{duration},
+        TIME        => $yv_utils->format_time($info->{duration}),
+        RATING      => $info->{rating},
+        TITLE       => $info->{title},
+        FTITLE      => normalize_video_title($info->{title}),
+        DESCRIPTION => $info->{description},
+
+        RESOLUTION => (
+                         $streaming->{resolution} =~ /^\d+\z/
+                       ? $streaming->{resolution} . 'p'
+                       : $streaming->{resolution}
+                      ),
+
+        ITAG   => $streaming->{streaming}{itag},
+        SIZE   => $streaming->{streaming}{size},
+        SUB    => $streaming->{srt_file},
+        VIDEO  => $streaming->{streaming}{url},
+        FORMAT => $yv_utils->video_extension($streaming->{streaming}{type}),
+
+        AUDIO => (
+                  ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
+                  ? $streaming->{streaming}{__AUDIO__}{url}
+                  : q{}
+                 ),
+
+        AOV => (
+                ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
+                ? $streaming->{streaming}{__AUDIO__}{url}
+                : $streaming->{streaming}{url}
+               ),
+
+        URL => sprintf($opt{youtube_video_url}, $info->{videoID}),
+                         );
+
+    my $tokens_re = do {
+        local $" = '|';
+        qr/\*(@{[map {quotemeta} keys %special_tokens]})\*/;
+    };
+
+    my %special_escapes = (
+                           a => "\a",
+                           b => "\b",
+                           e => "\e",
+                           f => "\f",
+                           n => "\n",
+                           r => "\r",
+                           t => "\t",
+                          );
+
+    my $escapes_re = do {
+        local $" = q{};
+        qr/\\([@{[keys %special_escapes]}])/;
+    };
+
+    $text =~ s/$escapes_re/$special_escapes{$1}/g;
+
+    $quotemeta
+      ? $text =~ s/$tokens_re/\Q$special_tokens{$1}\E/gr
+      : $text =~ s/$tokens_re/$special_tokens{$1}/gr;
+}
+
+sub download_video {
+    my ($streaming, $info) = @_;
+
+    my $title = format_text($streaming, $info, $opt{video_filename_format}, 0);
+    my $video_title = $title =~ s/\.\w+\z//r;
 
     if (not -d $opt{downloads_folder}) {
         require File::Path;
@@ -3239,14 +3323,14 @@ sub get_player_command {
             # Video player
             $opt{video_players}{$opt{video_player_selected}}{cmd},
 
-            (    # Audio file (http)
+            (    # Audio file (http://)
                ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
                  && exists($opt{video_players}{$opt{video_player_selected}}{audio})
                ? sprintf($opt{video_players}{$opt{video_player_selected}}{audio}, $streaming->{streaming}{__AUDIO__}{url})
                : ()
             ),
 
-            (    # Caption file (srt)
+            (    # Caption file (.srt)
                defined($streaming->{srt_file})
                  && exists($opt{video_players}{$opt{video_player_selected}}{srt})
                ? sprintf($opt{video_players}{$opt{video_player_selected}}{srt}, $streaming->{srt_file})
@@ -3258,39 +3342,9 @@ sub get_player_command {
         )
     );
 
-    my %special_tokens = (
-        '*ID*'       => $video->{videoID},
-        '*AUTHOR*'   => $video->{author},
-        '*CATEGORY*' => $video->{category},
-        '*VIEWS*'    => $video->{views},
-        '*LIKES*'    => $video->{likes},
-        '*DISLIKES*' => $video->{dislikes},
-        '*DURATION*' => $video->{duration},
-        '*RATING*'   => $video->{rating},
-        '*TITLE*'    => $video->{title},
-
-        '*FPS*'    => $streaming->{streaming}{fps},
-        '*ITAG*'   => $streaming->{streaming}{itag},
-        '*FORMAT*' => $streaming->{streaming}{type} =~ m{^video/(\w+)} ? $1 : 'webm',
-        '*SIZE*'   => $streaming->{streaming}{size},
-
-        '*SRT*'   => $streaming->{srt_file},
-        '*AUDIO*' => $streaming->{streaming}{__AUDIO__}{url},
-        '*VIDEO*' => $streaming->{streaming}{url},
-
-        '*URL*' => sprintf($opt{youtube_video_url}, $video->{videoID}),
-                         );
-
-    my $video_consumed;
-    while (my ($key, $value) = each %special_tokens) {
-        if ($cmd =~ s/\Q$key\E/\Q$value\E/g) {
-            if ($key eq '*VIDEO*') {
-                $video_consumed = 1;
-            }
-        }
-    }
-
-    $video_consumed ? $cmd : join(' ', $cmd, quotemeta($streaming->{streaming}{url}));
+    my $has_video = $cmd =~ /\*VIDEO\*/;
+    $cmd = format_text($streaming, $video, $cmd, 1);
+    $has_video ? $cmd : join(' ', $cmd, quotemeta($streaming->{streaming}{url}));
 }
 
 sub play_videos {
@@ -3319,17 +3373,21 @@ sub play_videos {
             next;
         }
 
-        print_video_info($video);
-
         if ($opt{download_video}) {
+            print_video_info($video);
             if (not download_video($streaming, $video)) {
                 return;
             }
         }
+        elsif (length($opt{extract_info})) {
+            say format_text($streaming, $video, $opt{extract_info}, $opt{escape_info});
+        }
         elsif ($opt{combine_multiple_videos}) {
+            print_video_info($video);
             push @streaming_urls, $streaming;
         }
         else {
+            print_video_info($video);
             my $command = get_player_command($streaming, $video);
 
             if ($yv_obj->get_debug) {
