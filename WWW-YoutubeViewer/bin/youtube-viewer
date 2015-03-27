@@ -860,7 +860,6 @@ NOTE: Categories and region IDs are case sensitive!
     \\e                  escape
 
 -> Extracting information from videos:
-
  > Extracting information can be achevied by using the "--extract" command-line
    option which takes a given format as its argument, which is defined by using
    special tokens, special escapes or literals.

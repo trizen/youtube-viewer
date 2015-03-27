@@ -1940,6 +1940,7 @@ sub get_options_as_arguments {
                    'resolution'     => $CONFIG{resolution},
                    'download-dir'   => rel2abs($CONFIG{downloads_folder}),
                    'fullscreen'     => $CONFIG{fullscreen} ? q{} : undef,
+                   'no-dash'        => $CONFIG{dash_support} ? undef : q{},
                   );
 
     while (my ($argv, $value) = each %options) {
