@@ -729,7 +729,7 @@ sub wrap_text {
     my (%args) = @_;
 
     require Text::Wrap;
-    ${Text::Wrap::columns} = $args{columns} || $term_width;
+    ${Text::Wrap::columns} = ($args{columns} || $term_width) - 8;
 
     my $text = "@{$args{text}}";
     $text =~ tr{\r}{}d;
@@ -846,8 +846,8 @@ NOTE: Categories and region IDs are case sensitive!
   *FORMAT*   : the extension of the video (without the dot)
 
   *SUB*      : the local subtitle file (if any)
-  *AUDIO*    : the audio URL of the video (in DASH-mode only)
-  *VIDEO*    : the video URL of the video (in DASH-mode, it might not contain audio)
+  *AUDIO*    : the audio URL of the video (only in DASH mode)
+  *VIDEO*    : the video URL of the video (it might not contain audio)
   *AOV*      : audio URL (if any) or video URL (in this order)
 
 -> Special escapes:
@@ -861,12 +861,12 @@ NOTE: Categories and region IDs are case sensitive!
 
 -> Extracting information from videos:
 
- > Extracting information can be achevied by using the "--extract" command-line option
-   which takes a given format as its argument, which is defined by using special tokens,
-   special escapes, or literals.
+ > Extracting information can be achevied by using the "--extract" command-line
+   option which takes a given format as its argument, which is defined by using
+   special tokens, special escapes or literals.
 
    Example:
-     $appname --no-interactive --extract '*TITLE* (*URL*)\n\n*DESCRIPTION*' [URL]
+     $appname --no-interactive --extract '*TITLE* (*ID*)' [URL]
 
 -> Configuration file: $config_file
 
