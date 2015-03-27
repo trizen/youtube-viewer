@@ -69,7 +69,7 @@ sub new {
     return $self;
 }
 
-=head video_extension($type)
+=head2 video_extension($type)
 
 Returns the video extension format from a video type.
 
