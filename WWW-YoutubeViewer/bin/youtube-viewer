@@ -698,9 +698,9 @@ usage: $execname [options] ([url] | [keywords])
 
 
 Help options:
-   -T  --tricks         : show more 'hidden' features of $appname
-   -E  --examples       : show some useful usage examples for $appname
-   -H  --stdin-help     : show the valid stdin options for $appname
+   -T  --tricks         : show more 'hidden' features of $execname
+   -E  --examples       : show some useful usage examples for $execname
+   -H  --stdin-help     : show the valid stdin options for $execname
    -v  --version        : print version and exit
    -h  --help           : print help and exit
        --debug:1,2      : see behind the scenes
@@ -796,7 +796,7 @@ NOTE: Categories and region IDs are case sensitive!
         :c10   is equivalent with :c=10
 
  > When more videos are selected to play, you can stop them by
-   pressing CTRL+C. $appname will return to the previous section.
+   pressing CTRL+C. $execname will return to the previous section.
 
  > For the option ':kregex', the valid keys are:
    $valid_keys
@@ -852,7 +852,7 @@ NOTE: Categories and region IDs are case sensitive!
    special tokens, special escapes or literals.
 
    Example:
-     $appname --no-interactive --extract '*TITLE* (*ID*)' [URL]
+     $execname --no-interactive --extract '*TITLE* (*ID*)' [URL]
 
 -> Configuration file: $config_file
 
