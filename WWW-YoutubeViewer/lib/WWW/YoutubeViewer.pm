@@ -1304,7 +1304,7 @@ sub _get_pairs_from_info_data {
 =head2 get_streaming_urls($videoID)
 
 Returns a list of streaming URLs for a videoID.
-({itag=>...}, {itag=>...}, {has_cc=>...})
+({itag=>..., url=>...}, {itag=>..., url=>....}, ...)
 
 =cut
 
@@ -1322,14 +1322,7 @@ sub get_streaming_urls {
         Data::Dump::pp(\@info);
     }
 
-    if (exists $info[0]->{status} and $info[0]->{status} eq q{fail}) {
-        warn "\n[!] Error occurred on getting info for video ID: $videoID\n";
-        my $reason = $info[0]->{reason};
-        $reason =~ tr/+/ /s;
-        warn "[*] Reason: $reason\n";
-        return;
-    }
-    return grep { (exists $_->{itag} and exists $_->{url} and exists $_->{type}) or exists $_->{has_cc} } @info;
+    return @info;
 }
 
 =head2 get_channel_suggestions()

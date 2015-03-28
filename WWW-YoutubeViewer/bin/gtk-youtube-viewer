@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 01 March 2015
+#  Latest edit on: 28 March 2015
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -190,10 +190,9 @@ my %CONFIG = (
     youtube_profile_url => 'http://www.youtube.com/user/%s',
 
     # Subtitle options
-    srt_languages => ['en', 'jp'],
+    srt_languages => ['en', 'es'],
     captions_dir  => tmpdir(),
     get_captions  => 1,
-    gcap          => undef,
 
     # Others
     http_proxy      => undef,
@@ -407,13 +406,6 @@ if (not \%CONFIG ~~ $CONFIG) {
     dump_configuration();
 }
 
-# Locating gcap
-if (not defined $CONFIG{gcap}) {
-    if (defined(my $gcap = which_command('gcap'))) {
-        $CONFIG{gcap} = $gcap;
-    }
-}
-
 # Check for HTTPS support
 if (not $CONFIG{prefer_https}) {
     eval { require LWP::Protocol::https };
@@ -486,7 +478,8 @@ else {
 }
 
 require WWW::YoutubeViewer::Utils;
-my $yv_utils = WWW::YoutubeViewer::Utils->new(thousand_separator => $CONFIG{thousand_separator},);
+my $yv_utils = WWW::YoutubeViewer::Utils->new(thousand_separator => $CONFIG{thousand_separator},
+                                              youtube_url_format => $CONFIG{youtube_video_url},);
 
 # Set config file to $CONFIG hash ref
 sub apply_configuration {
@@ -779,11 +772,8 @@ show_thumbs
 clear_list
     1 to clean the treeview list before each search
 
-gcap
-    full path to the gcap application ( see https://code.google.com/p/gcap/ )
-
 srt_languages
-    preferred subtitle languages (requires: gcap)
+    a list with the preferred subtitle languages
 
 captions_dir
     the directory where to store the closed captions from YouTube (.srt files)
@@ -1739,27 +1729,28 @@ sub _strip_edge_spaces {
 sub get_streaming_url {
     my ($video_id) = @_;
 
-    my @urls = $yv_obj->get_streaming_urls($video_id)
-      or die "Can't get the streaming URLs for videoID: $video_id.\n";
+    my @info = $yv_obj->get_streaming_urls($video_id);
 
-    my $has_cc;
-    foreach my $url (@urls) {
-        if (exists $url->{has_cc} and $url->{has_cc} =~ /^(?:true|yes)$/i) {
-            $has_cc = 1;
-            last;
+    my (@urls, @captions);
+    foreach my $entry (@info) {
+        if (exists $entry->{url} and exists $entry->{itag}) {
+            push @urls, $entry;
+        }
+        elsif (exists $entry->{lc} and exists $entry->{u}) {
+            push @captions, $entry;
         }
     }
 
     # Download the closed-captions
     my $srt_file;
-    if ($has_cc and $CONFIG{get_captions} and defined $CONFIG{gcap}) {
+    if (@captions and $CONFIG{get_captions}) {
         require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
                                                          captions_dir => $CONFIG{captions_dir},
-                                                         gcap         => $CONFIG{gcap},
+                                                         captions     => \@captions,
                                                          languages    => $CONFIG{srt_languages},
                                                         );
-        $srt_file = $yv_cap->get_caption($video_id);
+        $srt_file = $yv_cap->save_caption($video_id);
     }
 
     require WWW::YoutubeViewer::Itags;
@@ -1774,7 +1765,11 @@ sub get_streaming_url {
     }
 
     my ($streaming, $resolution) = $yv_itags->find_streaming_url(\@urls, $CONFIG{resolution}, $dash);
-    my $info = @urls && ref $urls[-1] eq 'HASH' && exists $urls[-1]{status} ? $urls[-1] : {};
+
+    my $info = {};
+    if (not @urls) {
+        %{$info} = map { ref($_) eq 'HASH' ? %{$_} : () } @info;
+    }
 
     return {
             streaming  => $streaming,
@@ -1813,34 +1808,41 @@ sub get_quotewords {
 
 #---------------------- PLAY AN YOUTUBE VIDEO ----------------------#
 sub get_player_command {
-    my ($streaming) = @_;
+    my ($streaming, $video) = @_;
 
     update_mplayer_arguments($streaming->{resolution});
 
-    join(
+    my $cmd = join(
         q{ },
         (
-           # Video player
-           $CONFIG{video_players}{$CONFIG{video_player_selected}}{cmd},
+            # Video player
+            $CONFIG{video_players}{$CONFIG{video_player_selected}}{cmd},
 
-           (    # Audio file (http)
-              ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
-              ? sprintf(
-                        $CONFIG{video_players}{$CONFIG{video_player_selected}}{audio}, $streaming->{streaming}{__AUDIO__}{url}
-                       )
-              : ()
-           ),
+            (    # Audio file (http://)
+               ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
+                 && exists($CONFIG{video_players}{$CONFIG{video_player_selected}}{audio})
+               ? sprintf(
+                         $CONFIG{video_players}{$CONFIG{video_player_selected}}{audio},
+                         $streaming->{streaming}{__AUDIO__}{url}
+                        )
+               : ()
+            ),
 
-           (    # Caption file (srt)
-              defined($streaming->{srt_file})
-              ? sprintf($CONFIG{video_players}{$CONFIG{video_player_selected}}{srt}, $streaming->{srt_file})
-              : ()
-           ),
+            (    # Caption file (.srt)
+               defined($streaming->{srt_file})
+                 && exists($CONFIG{video_players}{$CONFIG{video_player_selected}}{srt})
+               ? sprintf($CONFIG{video_players}{$CONFIG{video_player_selected}}{srt}, $streaming->{srt_file})
+               : ()
+            ),
 
-           # Rest of the arguments
-           grep({ defined($_) and /\S/ } values %MPLAYER),
+            # Rest of the arguments
+            grep({ defined($_) and /\S/ } values %MPLAYER)
         )
     );
+
+    my $has_video = $cmd =~ /\*VIDEO\*/;
+    $cmd = $yv_utils->format_text($streaming, $video, $cmd, 1);
+    $has_video ? $cmd : join(' ', $cmd, quotemeta($streaming->{streaming}{url}));
 }
 
 sub play_videos {
@@ -1849,16 +1851,16 @@ sub play_videos {
     foreach my $video (@{$videos}) {
         my $streaming = get_streaming_url($video->{videoID});
 
-        if (defined $streaming->{info}{status} and not $streaming->{info}{status} =~ /^(?:ok|success)/i) {
-            die "(x_x) Can't stream: " . sprintf($CONFIG{youtube_video_url}, $video->{videoID}) . "\n",
-              "(x_x) Status: $streaming->{info}{status}", 'bold red' . "\n\n";
+        if (defined $streaming->{info}{status} and $streaming->{info}{status} =~ /\bfail/i) {
+            die "[x_x] Error on: " . sprintf($CONFIG{youtube_video_url}, $video->{videoID}) . "\n",
+              "[x_x] Reason: " . $streaming->{info}{reason} =~ s/\+/ /gr . "\n";
         }
 
-        if (not defined $streaming->{streaming}) {
+        if (ref($streaming->{streaming}) ne 'HASH') {
             next;
         }
 
-        my $command = get_player_command($streaming);
+        my $command = get_player_command($streaming, $video);
 
         if ($yv_obj->get_debug) {
             say "-> Resolution: $streaming->{resolution}";

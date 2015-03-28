@@ -2,6 +2,8 @@ package WWW::YoutubeViewer::Utils;
 
 use strict;
 
+no if $] >= 5.018, warnings => 'experimental::smartmatch';
+
 =head1 NAME
 
 WWW::YoutubeViewer::Utils - Various utils.
@@ -38,6 +40,10 @@ Character used as thousand separator.
 
 Month names for I<format_date()>
 
+=item youtube_url_format => ""
+
+A youtube URL format for sprintf(format, videoID).
+
 =back
 
 =cut
@@ -45,8 +51,10 @@ Month names for I<format_date()>
 sub new {
     my ($class, %opts) = @_;
 
-    my $self = bless {}, $class;
-    $self->{thousand_separator} = q{,};
+    my $self = bless {
+                      thousand_separator => q{,},
+                      youtube_url_format => 'https://www.youtube.com/watch?v=%s',
+                     }, $class;
 
     $self->{months} = [
         qw(
@@ -141,6 +149,102 @@ sub format_date {
     return $date;
 }
 
+=head2 normalize_video_title($title)
+
+Replace file-unsafe characters and trim spaces.
+
+=cut
+
+sub normalize_video_title {
+    my ($self, $title) = @_;
+
+    if ($^O ~~ [qw(linux freebsd openbsd)]) {
+        $title =~ tr{/}{%};
+    }
+    else {
+        $title =~ tr{:"*/?\\|}{;'+%$%%};    # "
+    }
+
+    join(q{ }, split(q{ }, $title));
+}
+
+=head2 format_text($streaming=HASH, $video_info=HASH, $text=STRING, $escape=BOOL)
+
+Format a text with information from streaming and video info.
+
+=cut
+
+sub format_text {
+    my ($self, $streaming, $info, $text, $quotemeta) = @_;
+
+    my %special_tokens = (
+        ID          => $info->{videoID},
+        AUTHOR      => $info->{author},
+        CATEGORY    => $info->{category},
+        VIEWS       => $info->{views},
+        LIKES       => $info->{likes},
+        DISLIKES    => $info->{dislikes},
+        DURATION    => $info->{duration},
+        TIME        => $self->format_time($info->{duration}),
+        RATING      => $info->{rating},
+        TITLE       => $info->{title},
+        FTITLE      => $self->normalize_video_title($info->{title}),
+        DESCRIPTION => $info->{description},
+
+        RESOLUTION => (
+                         $streaming->{resolution} =~ /^\d+\z/
+                       ? $streaming->{resolution} . 'p'
+                       : $streaming->{resolution}
+                      ),
+
+        ITAG   => $streaming->{streaming}{itag},
+        SIZE   => $streaming->{streaming}{size},
+        SUB    => $streaming->{srt_file},
+        VIDEO  => $streaming->{streaming}{url},
+        FORMAT => $self->video_extension($streaming->{streaming}{type}),
+
+        AUDIO => (
+                  ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
+                  ? $streaming->{streaming}{__AUDIO__}{url}
+                  : q{}
+                 ),
+
+        AOV => (
+                ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
+                ? $streaming->{streaming}{__AUDIO__}{url}
+                : $streaming->{streaming}{url}
+               ),
+
+        URL => sprintf($self->{youtube_url_format}, $info->{videoID}),
+                         );
+
+    my $tokens_re = do {
+        local $" = '|';
+        qr/\*(@{[map {quotemeta} keys %special_tokens]})\*/;
+    };
+
+    my %special_escapes = (
+                           a => "\a",
+                           b => "\b",
+                           e => "\e",
+                           f => "\f",
+                           n => "\n",
+                           r => "\r",
+                           t => "\t",
+                          );
+
+    my $escapes_re = do {
+        local $" = q{};
+        qr/\\([@{[keys %special_escapes]}])/;
+    };
+
+    $text =~ s/$escapes_re/$special_escapes{$1}/g;
+
+    $quotemeta
+      ? $text =~ s/$tokens_re/\Q$special_tokens{$1}\E/gr
+      : $text =~ s/$tokens_re/$special_tokens{$1}/gr;
+}
+
 =head2 set_thousands($num)
 
 Return the number with thousand separators.
@@ -179,7 +283,7 @@ You can find documentation for this module with the perldoc command.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012-2013 Trizen.
+Copyright 2012-2015 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

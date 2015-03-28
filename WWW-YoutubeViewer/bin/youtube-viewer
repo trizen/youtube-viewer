@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 27 March 2015
+#  Latest edit on: 28 March 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -26,6 +26,7 @@
 # youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
 #
 # [CHANGELOG]
+# - Added built-in support for [auto-generated] closed-captions (gcap is no longer required)   - NEW (v3.1.3)
 # - Added support for specifying the filename format when downloading videos (--filename=s)    - NEW (v3.1.3)
 # - Added support for special tokens and for extracting information about videos (--extract=s) - NEW (v3.1.3)
 # - Added support for playing DASH videos and the `--no-dash` option to deactivate it at will  - NEW (v3.1.2)
@@ -95,7 +96,7 @@
 # - Georgo (for adding the 'Watch Later' feature - https://github.com/trizen/youtube-viewer/pull/44)
 # - Daniel Wallace (for adding youtube-viewer in the Arch Official Community repository - https://www.archlinux.org/packages/community/any/youtube-viewer/)
 # - NTmatter (for adding reverse range support - https://github.com/trizen/youtube-viewer/pull/2)
-# - Andrew (for a nice review for (gtk-)youtube-viewer: http://www.webupd8.org/2015/02/youtube-viewer-complete-youtube-client.html)
+# - Andrew (for a nice review of (gtk-)youtube-viewer: http://www.webupd8.org/2015/02/youtube-viewer-complete-youtube-client.html)
 # - AnyComputer (for a complete french review of gtk-youtube-viewer: https://www.youtube.com/watch?v=6-qbdDUlBqg)
 
 =head1 NAME
@@ -242,11 +243,10 @@ my %CONFIG = (
     youtube_video_url => 'http://www.youtube.com/watch?v=%s',
 
     # Subtitle options
-    srt_languages => ['en', 'jp'],
+    srt_languages => ['en', 'es'],
     captions_dir  => tmpdir(),
     get_captions  => 1,
     copy_caption  => 0,
-    gcap          => undef,
 
     # Others
     http_proxy           => undef,
@@ -441,14 +441,6 @@ if (not \%CONFIG ~~ $CONFIG) {
     dump_configuration();
 }
 
-# Locating gcap
-if (not defined $CONFIG{gcap}) {
-    if (defined(my $gcap = which_command('gcap'))) {
-        $CONFIG{gcap} = $gcap;
-        dump_configuration();
-    }
-}
-
 # Check for HTTPS support
 if (not $CONFIG{prefer_https}) {
     eval { require LWP::Protocol::https };
@@ -518,7 +510,8 @@ my $yv_obj = WWW::YoutubeViewer->new(
 }
 
 require WWW::YoutubeViewer::Utils;
-my $yv_utils = WWW::YoutubeViewer::Utils->new(thousand_separator => $opt{thousand_separator});
+my $yv_utils = WWW::YoutubeViewer::Utils->new(youtube_url_format => $opt{youtube_video_url},
+                                              thousand_separator => $opt{thousand_separator},);
 
 {    # Apply the configuration file
     my %temp = %CONFIG;
@@ -679,8 +672,7 @@ usage: $execname [options] ([url] | [keywords])
        --use-xml-fast!   : use XML::Fast to parse the GData XML content
 
  * Closed-captions
-   --gcap=s             : set the full path to the gcap script
-   --get-captions!      : download the closed captions (with gcap)
+   --get-captions!      : download the closed captions for videos
    --captions-dir=s     : the directory where to download the .srt files
 
  * Config
@@ -819,11 +811,6 @@ NOTE: Categories and region IDs are case sensitive!
    only the videos matched by a regex, we'd say :re="REGEX".
    But, what if we'd want to play the videos from the next pages too?
    In this case, ":anp" is your friend. Use it wisely!
-
--> Closed-Captions
-    To get the closed-captions (subtitles) for videos, you need to install
-    the "gcap" program which will download the closed captions in .srt format.
-    See: http://gcap.googlecode.com
 
 -> Special tokens:
 
@@ -1398,7 +1385,6 @@ sub parse_arguments {
         'shuffle|s!'                        => \$opt{shuffle_playlist},
         'more|m!'                           => \$opt{more_results},
         'gdata-url=s'                       => \$opt{get_gdata_url},
-        'gcap=s'                            => \$opt{gcap},
         'combine-multiple-videos|combine!'  => \$opt{combine_multiple_videos},
         'pos|position=i'                    => \$opt{position},
         'ps|playlist-save=s'                => \$opt{playlist_save},
@@ -3053,26 +3039,28 @@ sub get_valid_numbers {
 sub get_streaming_url {
     my ($video_id) = @_;
 
-    my @urls = $yv_obj->get_streaming_urls($video_id);
+    my @info = $yv_obj->get_streaming_urls($video_id);
 
-    my $has_cc;
-    foreach my $url (@urls) {
-        if (exists $url->{has_cc} and $url->{has_cc} =~ /^(?:true|yes)$/i) {
-            $has_cc = 1;
-            last;
+    my (@urls, @captions);
+    foreach my $entry (@info) {
+        if (exists $entry->{url} and exists $entry->{itag}) {
+            push @urls, $entry;
+        }
+        elsif (exists $entry->{lc} and exists $entry->{u}) {
+            push @captions, $entry;
         }
     }
 
     # Download the closed-captions
     my $srt_file;
-    if ($has_cc and $opt{get_captions} and defined $opt{gcap} and not $opt{novideo}) {
+    if (@captions and $opt{get_captions} and not $opt{novideo}) {
         require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
                                                          captions_dir => $opt{captions_dir},
-                                                         gcap         => $opt{gcap},
+                                                         captions     => \@captions,
                                                          languages    => $CONFIG{srt_languages},
                                                         );
-        $srt_file = $yv_cap->get_caption($video_id);
+        $srt_file = $yv_cap->save_caption($video_id);
     }
 
     require WWW::YoutubeViewer::Itags;
@@ -3081,13 +3069,17 @@ sub get_streaming_url {
     # Include DASH itags
     my $dash = 1;
 
-    # Exclude DASH itags while downloading or no video output is required
+    # Exclude DASH itags in download-mode or when no video output is required
     if ($opt{download_video} or $opt{novideo} or not $opt{dash_support}) {
         $dash = 0;
     }
 
     my ($streaming, $resolution) = $yv_itags->find_streaming_url(\@urls, $opt{resolution}, $dash);
-    my $info = @urls && ref $urls[-1] eq 'HASH' && exists $urls[-1]{status} ? $urls[-1] : {};
+
+    my $info = {};
+    if (not @urls) {
+        %{$info} = map { ref($_) eq 'HASH' ? %{$_} : () } @info;
+    }
 
     return {
             streaming  => $streaming,
@@ -3119,95 +3111,11 @@ sub update_mplayer_arguments {
     }
 }
 
-sub normalize_video_title {
-    my ($title) = @_;
-
-    if ($^O ~~ [qw(linux freebsd openbsd)]) {
-        $title =~ tr{/}{%};
-    }
-    else {
-        $title =~ tr{:"*/?\\|}{;'+%$%%};    # "
-    }
-
-    join(q{ }, split(q{ }, $title));
-}
-
-sub format_text {
-    my ($streaming, $info, $text, $quotemeta) = @_;
-
-    my %special_tokens = (
-        ID          => $info->{videoID},
-        AUTHOR      => $info->{author},
-        CATEGORY    => $info->{category},
-        VIEWS       => $info->{views},
-        LIKES       => $info->{likes},
-        DISLIKES    => $info->{dislikes},
-        DURATION    => $info->{duration},
-        TIME        => $yv_utils->format_time($info->{duration}),
-        RATING      => $info->{rating},
-        TITLE       => $info->{title},
-        FTITLE      => normalize_video_title($info->{title}),
-        DESCRIPTION => $info->{description},
-
-        RESOLUTION => (
-                         $streaming->{resolution} =~ /^\d+\z/
-                       ? $streaming->{resolution} . 'p'
-                       : $streaming->{resolution}
-                      ),
-
-        ITAG   => $streaming->{streaming}{itag},
-        SIZE   => $streaming->{streaming}{size},
-        SUB    => $streaming->{srt_file},
-        VIDEO  => $streaming->{streaming}{url},
-        FORMAT => $yv_utils->video_extension($streaming->{streaming}{type}),
-
-        AUDIO => (
-                  ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
-                  ? $streaming->{streaming}{__AUDIO__}{url}
-                  : q{}
-                 ),
-
-        AOV => (
-                ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
-                ? $streaming->{streaming}{__AUDIO__}{url}
-                : $streaming->{streaming}{url}
-               ),
-
-        URL => sprintf($opt{youtube_video_url}, $info->{videoID}),
-                         );
-
-    my $tokens_re = do {
-        local $" = '|';
-        qr/\*(@{[map {quotemeta} keys %special_tokens]})\*/;
-    };
-
-    my %special_escapes = (
-                           a => "\a",
-                           b => "\b",
-                           e => "\e",
-                           f => "\f",
-                           n => "\n",
-                           r => "\r",
-                           t => "\t",
-                          );
-
-    my $escapes_re = do {
-        local $" = q{};
-        qr/\\([@{[keys %special_escapes]}])/;
-    };
-
-    $text =~ s/$escapes_re/$special_escapes{$1}/g;
-
-    $quotemeta
-      ? $text =~ s/$tokens_re/\Q$special_tokens{$1}\E/gr
-      : $text =~ s/$tokens_re/$special_tokens{$1}/gr;
-}
-
 sub download_video {
     my ($streaming, $info) = @_;
 
-    my $title = format_text($streaming, $info, $opt{video_filename_format}, 0);
-    my $video_title = $title =~ s/\.\w+\z//r;
+    my $title = $yv_utils->format_text($streaming, $info, $opt{video_filename_format}, 0);
+    my $naked_title = $title =~ s/\.\w+\z//r;
 
     if (not -d $opt{downloads_folder}) {
         require File::Path;
@@ -3243,7 +3151,7 @@ sub download_video {
     }
 
     if (defined $opt{convert_to}) {
-        my $new_file = "$video_title.$opt{convert_to}";
+        my $new_file = "$naked_title.$opt{convert_to}";
 
         my @ffmpeg;
         my @titles = ($title, $new_file);
@@ -3266,7 +3174,7 @@ sub download_video {
     }
     elsif ($opt{download_and_play}) {
 
-        my $command = get_player_command($streaming);
+        my $command = get_player_command($streaming, $info);
         say $command if $yv_obj->get_debug;
 
         system join(q{ }, $command, quotemeta($title));
@@ -3275,37 +3183,13 @@ sub download_video {
         }
     }
 
-    if ($opt{copy_caption} and -e $title) {
+    # Copy the .srt file from captions dir to downloads dir
+    if ($opt{copy_caption} and -e $title and defined($streaming->{srt_file})) {
+        my $from = $streaming->{srt_file};
+        my $to = catfile($opt{downloads_folder}, "$naked_title.srt");
 
-        opendir(my $dir_h, $opt{captions_dir})
-          or do {
-            warn "[!] Can't open dir `$opt{captions_dir}': $!\n";
-            return 1;    # it's OK, video is successfully downloaded
-          };
-
-        my @srt_files;
-        while (defined(my $file = readdir($dir_h))) {
-            if ($file =~ /\.srt\z/i and $file =~ /^$info->{videoID}_/) {
-                push @srt_files, $file;
-            }
-        }
-        closedir $dir_h;
-
-        foreach my $lang (@{$opt{srt_languages}}) {
-            my @matches = grep { substr($_, length($info->{videoID}) + 1, length($lang)) eq $lang } @srt_files;
-
-            if ($#matches != -1) {
-
-                my $from = catfile($opt{captions_dir},     $matches[0]);
-                my $to   = catfile($opt{downloads_folder}, $video_title . '.srt');
-
-                require File::Copy;
-                File::Copy::copy($from, $to)
-                  or warn "[!] Can't copy the caption file from `$opt{captions_dir}' into `$opt{downloads_folder}': $!\n";
-
-                last;
-            }
-        }
+        require File::Copy;
+        File::Copy::cp($from, $to);
     }
 
     return 1;
@@ -3342,7 +3226,7 @@ sub get_player_command {
     );
 
     my $has_video = $cmd =~ /\*VIDEO\*/;
-    $cmd = format_text($streaming, $video, $cmd, 1);
+    $cmd = $yv_utils->format_text($streaming, $video, $cmd, 1);
     $has_video ? $cmd : join(' ', $cmd, quotemeta($streaming->{streaming}{url}));
 }
 
@@ -3362,13 +3246,13 @@ sub play_videos {
 
         my $streaming = get_streaming_url($video->{videoID});
 
-        if (defined $streaming->{info}{status} and not $streaming->{info}{status} =~ /^(?:ok|success)/i) {
-            warn colored("(x_x) Can't stream: " . sprintf($CONFIG{youtube_video_url}, $video->{videoID}), 'bold red') . "\n";
-            warn colored("(x_x) Status: $streaming->{info}{status}", 'bold red') . "\n\n";
+        if (defined $streaming->{info}{status} and $streaming->{info}{status} =~ /\bfail/i) {
+            warn colored("[x_x] Error on: ", 'bold red') . sprintf($CONFIG{youtube_video_url}, $video->{videoID}) . "\n";
+            warn colored("[x_x] Reason: ", 'bold red') . $streaming->{info}{reason} =~ s/\+/ /gr . "\n\n";
         }
 
         if (ref($streaming->{streaming}) ne 'HASH') {
-            warn colored("(x_x) No streaming URL found...", 'bold red') . "\n\n";
+            warn colored("[x_x] No streaming URL has been found...", 'bold red') . "\n";
             next;
         }
 
@@ -3379,7 +3263,7 @@ sub play_videos {
             }
         }
         elsif (length($opt{extract_info})) {
-            say format_text($streaming, $video, $opt{extract_info}, $opt{escape_info});
+            say $yv_utils->format_text($streaming, $video, $opt{extract_info}, $opt{escape_info});
         }
         elsif ($opt{combine_multiple_videos}) {
             print_video_info($video);
@@ -3408,7 +3292,7 @@ sub play_videos {
     if ($opt{combine_multiple_videos} && @streaming_urls) {
         my $streaming = $streaming_urls[0];
 
-        my $command = get_player_command($streaming);
+        my $command = get_player_command($streaming, $videos->[0]);
         say $command if $yv_obj->get_debug;
 
         system join(q{ }, $command, map { quotemeta($_->{streaming}{url}) } @streaming_urls);

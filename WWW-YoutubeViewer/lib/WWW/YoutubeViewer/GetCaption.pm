@@ -4,15 +4,15 @@ use strict;
 
 =head1 NAME
 
-WWW::YoutubeViewer::GetCaption - Get the YouTube closed captions (.srt files) for a videoID.
+WWW::YoutubeViewer::GetCaption - Save the YouTube closed captions as .srt files for a videoID.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -30,17 +30,29 @@ Options:
 
 =over 4
 
-=item captions_dir => ""
+=item captions => []
+
+The captions data.
+
+ [
+  # ...
+  {
+    lc => "da",
+    n  => "Danish",
+    t  => 1,
+    u  => 'https://...',
+    v  => ".da",
+  },
+  # ...
+ ]
+
+=item captions_dir => "."
 
 Where to save the closed captions.
 
-=item gcap => ""
+=item languages => [qw(en es ro jp)]
 
-Full path to the gcap program.
-
-=item languages => []
-
-Prefered languages.
+Prefered languages. First found is saved and returned.
 
 =back
 
@@ -50,8 +62,8 @@ sub new {
     my ($class, %opts) = @_;
 
     my $self = bless {}, $class;
-    $self->{captions_dir} = q{.};
-    $self->{gcap}         = "/usr/bin/gcap";
+    $self->{captions_dir} = undef;
+    $self->{captions}     = [];
     $self->{languages}    = [qw(en es ro jp)];
 
     foreach my $key (keys %{$self}) {
@@ -66,66 +78,150 @@ sub new {
     return $self;
 }
 
-=head2 get_caption($video_ID)
+=head2 find_caption_data()
 
-Return the subtitle file path.
+Find a caption data, based on the prefered languages.
 
 =cut
 
-sub get_caption {
-    my ($self, $code) = @_;
+sub find_caption_data {
+    my ($self) = @_;
 
-    require File::Spec;
-    my $main_cwd = File::Spec->rel2abs(File::Spec->curdir());
-
-    if (not -d $self->{captions_dir}) {
-        require File::Path;
-        File::Path::make_path($self->{captions_dir}) or do {
-            warn "[!] Can't create directory $self->{captions_dir}: $!\n";
-            return;
-        };
-    }
-    elsif (not -w _) {
-        warn "[!] Can't write into directory: $self->{captions_dir}\n";
-    }
-
-    chdir $self->{captions_dir};
-
-    my $i = 0;
-    my $srt_file;
-    {
-        foreach my $lang (@{$self->{languages}}) {
-            my $name = "${code}_${lang}.srt";
-            if (-e $name) {
-                $srt_file = File::Spec->rel2abs($name);
-                last;
-            }
-        }
-
-        if (not defined $srt_file) {
-            if (opendir(my $dir_h, File::Spec->curdir)) {
-                while (defined(my $file = readdir $dir_h)) {
-                    if ($file =~ /^\Q$code\E[\w-]*+[.](?i:srt)\z/) {
-                        $srt_file = File::Spec->rel2abs($file);
-                        last;
+    my @found;
+    foreach my $caption (@{$self->{captions}}) {
+        if (exists $caption->{lc} and exists $caption->{u}) {
+            foreach my $i (0 .. $#{$self->{languages}}) {
+                my $lang = $self->{languages}[$i];
+                if (lc($caption->{lc}) eq lc($lang)) {
+                    if (exists $caption->{k}) {    # auto-generated
+                        $found[$i + @{$self->{languages}}] = $caption;
+                    }
+                    else {
+                        $i == 0 and return $caption;
+                        $found[$i] = $caption;
                     }
                 }
-                closedir $dir_h;
-            }
-
-            if (not defined $srt_file) {
-                system $self->{gcap}, "http://youtube.com/v/$code";
-                if ($? == 0 and not $i++) {
-                    redo;
-                }
             }
         }
     }
 
-    # Change directory back to the main working directory
-    chdir $main_cwd;
+    foreach my $caption (@found) {
+        return $caption if defined($caption);
+    }
 
-    return $srt_file // ();
+    return;
+}
+
+=head2 sec2time(@seconds)
+
+Convert a list of seconds to .srt times.
+
+=cut
+
+sub sec2time {
+    my $self = shift;
+
+    my @out;
+    foreach my $sec (map { sprintf '%.3f', $_ } @_) {
+        push @out,
+          sprintf('%02d:%02d:%02d,%03d', ($sec / 3600 % 24, $sec / 60 % 60, $sec % 60, substr($sec, index($sec, '.') + 1)));
+    }
+
+    return @out;
+}
+
+=head2 xml2srt($xml_string)
+
+Convert the XML data to SubRip format.
+
+=cut
+
+sub xml2srt {
+    my ($self, $xml) = @_;
+
+    require WWW::YoutubeViewer::ParseXML;
+    my $hash = eval { WWW::YoutubeViewer::ParseXML::xml2hash($xml) } // return;
+
+    my $sections;
+    if (    exists $hash->{transcript}
+        and ref($hash->{transcript}) eq 'ARRAY'
+        and ref($hash->{transcript}[0]) eq 'HASH'
+        and exists $hash->{transcript}[0]{text}) {
+        $sections = $hash->{transcript}[0]{text};
+    }
+    else {
+        return;
+    }
+
+    require HTML::Entities;
+
+    my @text;
+    foreach my $i (0 .. $#{$sections}) {
+        my $line  = $sections->[$i];
+        my $start = $line->{'-start'};
+        my $end   = $start + $line->{'-dur'};
+
+        push @text,
+          join("\n", $i + 1, join(' --> ', $self->sec2time($start, $end)), HTML::Entities::decode_entities($line->{'#text'}));
+    }
+
+    return join("\n\n", @text);
+}
+
+=head2 get_xml_data($caption_data)
+
+Get the XML content for a given caption data.
+
+=cut
+
+sub get_xml_data {
+    my ($self, $info) = @_;
+
+    require LWP::UserAgent;
+    my $lwp = LWP::UserAgent->new(
+          timeout   => 30,
+          env_proxy => 1,
+          agent => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36',
+    );
+
+    my $req = $lwp->get($info->{u});
+    if ($req->is_success) {
+        return $req->decoded_content;
+    }
+
+    return;
+}
+
+=head2 save_caption($video_ID)
+
+Save the caption in a .srt file and return its file path.
+
+=cut
+
+sub save_caption {
+    my ($self, $video_id) = @_;
+
+    # Find one of the prefered languages
+    my $info = $self->find_caption_data() // return;
+
+    require File::Spec;
+    my $filename = "${video_id}_$info->{lc}.srt";
+    my $srt_file = File::Spec->catfile($self->{captions_dir} // File::Spec->tmpdir, $filename);
+
+    # Return the srt file if it already exists
+    return $srt_file if (-e $srt_file);
+
+    # Get XML data, then tranform it to SubRip data
+    my $xml = $self->get_xml_data($info) // return;
+    my $srt = $self->xml2srt($xml)       // return;
+
+    # Write the SubRib data to the $srt_file
+    open(my $fh, '>:utf8', $srt_file) or return;
+    print {$fh} $srt, "\n";
+    close $fh;
+
+    # Return the .srt file path
+    return $srt_file;
 }
 
 =head1 AUTHOR
@@ -142,7 +238,7 @@ You can find documentation for this module with the perldoc command.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012-2013 Trizen.
+Copyright 2012-2015 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
