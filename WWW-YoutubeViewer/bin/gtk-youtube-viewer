@@ -1373,8 +1373,8 @@ sub get_next_page_spaces {
 sub get_code {
     my ($code, $iter) = get_selected_video_code(force => 1) or return;
 
-    $code =~ /$valid_playlist_id_re/
-      ? do { list_playlist($code) }
+        $code =~ /$valid_video_id_re/ ? play_videos([{videoID => $code}])
+      : $code =~ /$valid_playlist_id_re/ ? do { list_playlist($code) }
       : $code =~ m{^https?://} ? do {
 
         my $search_type = $liststore->get($iter, 5);
@@ -1410,9 +1410,8 @@ sub get_code {
           : $args{channel_suggestions} ? print_channels($results)
           :                              print_videos($results);
       }
-      : $code =~ /^username=(.+)/     ? videos_from_username($1)
-      : $code =~ /$valid_video_id_re/ ? play_videos([{videoID => $code}])
-      :                                 return;
+      : $code =~ /^username=(.+)/ ? videos_from_username($1)
+      :                             return;
 }
 
 sub _make_row_description {
@@ -1486,7 +1485,7 @@ sub print_videos {
                           . "<b>$symbols{category}\t</b> "
                           . encode_entities($video->{category} // 'Unknown') . "\n"
                           . "<b>$symbols{face}\t</b> "
-                          . $video->{author} . "\n" . "<i>"
+                          . encode_entities($video->{author}) . "\n" . "<i>"
                           . encode_entities($row_description) . "</i>"
                        );
 
@@ -1551,7 +1550,7 @@ sub print_channels {
                           . encode_entities($channel->{title})
                           . "</b></big>\n\n"
                           . "<b>$symbols{face}\t</b> "
-                          . $channel->{name} . "\n"
+                          . encode_entities($channel->{name}) . "\n"
                           . "<b>$symbols{heart}\t</b> "
                           . $yv_utils->set_thousands($channel->{subscribers}) . "\n"
                           . (
@@ -1607,7 +1606,7 @@ sub print_playlists {
                           . encode_entities($playlist->{'title'})
                           . "</b></big>\n\n"
                           . "<b>$symbols{face}\t</b> "
-                          . $playlist->{name} . "\n"
+                          . encode_entities($playlist->{name}) . "\n"
                           . "<b>$symbols{right_arrow}\t</b> "
                           . $yv_utils->format_date($playlist->{published}) . "\n"
                           . "<b>$symbols{crazy_arrow}\t</b> "
