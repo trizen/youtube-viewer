@@ -51,7 +51,7 @@
       },
       "WWW::YoutubeViewer::GetCaption" : {
          "file" : "lib/WWW/YoutubeViewer/GetCaption.pm",
-         "version" : "0.01"
+         "version" : "0.02"
       },
       "WWW::YoutubeViewer::Itags" : {
          "file" : "lib/WWW/YoutubeViewer/Itags.pm",

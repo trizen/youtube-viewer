@@ -32,7 +32,7 @@ our $digit_or_equal_re   = qr{(?(?=[1-9])|=)};
 our $non_digit_or_opt_re = qr{^(?!$range_num_re)(?>[0-9]{1,2}[^0-9]|[0-9]{3}|[^0-9$opt_begin_chars])};
 
 # Generic name
-my $generic_name_re = qr{[a-zA-Z0-9_.\-]{15,34}};
+my $generic_name_re = qr{[a-zA-Z0-9_.\-]{11,34}};
 our $valid_username_re = qr{^(?:\w+(?:[-.]++\w++)*|$generic_name_re)\z};
 
 # Video ID

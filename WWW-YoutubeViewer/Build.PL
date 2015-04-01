@@ -51,8 +51,8 @@ my $builder = Module::Build->new(
 
     auto_features => {
 
-        shuffle_playlists_support => {
-                                      description => "To shuffle the playlists (--shuffle, -s)",
+        shuffle_results_support => {
+                                      description => "To shuffle the results (--shuffle, -s)",
                                       requires    => {
                                                    'List::Util' => 0,
                                                   },

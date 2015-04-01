@@ -662,7 +662,7 @@ usage: $execname [options] ([url] | [keywords])
  * Behavior
    -A  --all!            : play all the video results in order
    -B  --backwards!      : play all video results in reverse order
-   -s  --shuffle!        : shuffle the playlist before playing (with -A)
+   -s  --shuffle!        : shuffle the results of videos and playlists
    -I  --interactive!    : prompt for the first user input
        --std-input=s     : use this value as the first standard input
        --max-seconds=i   : don't play videos longer than i seconds
@@ -1879,7 +1879,7 @@ sub get_and_print_videos_from_course {
 sub get_and_print_clips_from_season_id {
     my ($season_id) = @_;
 
-    if ($season_id =~ /$valid_video_id_re/) {
+    if ($season_id =~ /$valid_playlist_id_re/) {
         my $info = $yv_obj->get_clips_from_season_id($season_id);
 
         if (@{$info->{results}}) {
@@ -1899,7 +1899,7 @@ sub get_and_print_clips_from_season_id {
 sub get_and_print_episodes_from_season_id {
     my ($season_id) = @_;
 
-    if ($season_id =~ /$valid_video_id_re/) {
+    if ($season_id =~ /$valid_playlist_id_re/) {
         my $info = $yv_obj->get_episodes_from_season_id($season_id);
 
         if (@{$info->{results}}) {
@@ -1919,7 +1919,7 @@ sub get_and_print_episodes_from_season_id {
 sub get_and_print_content_from_show {
     my ($show_id) = @_;
 
-    if ($show_id =~ /$valid_video_id_re/) {
+    if ($show_id =~ /$valid_playlist_id_re/) {
         my $info = $yv_obj->get_shows_content_from_id($show_id);
 
         if (@{$info->{results}}) {
@@ -2850,6 +2850,10 @@ sub print_playlists {
     my $url       = $results->{url};
     my $playlists = $results->{results};
 
+    if ($opt{shuffle}) {
+        $playlists = [List::Util::shuffle(@{$playlists})];
+    }
+
     state $info_format = <<"FORMAT";
 
 TITLE: %s
@@ -3382,6 +3386,10 @@ sub print_videos {
     my $url    = $results->{url};
     my $videos = $results->{results};
 
+    if ($opt{shuffle}) {
+        $videos = [List::Util::shuffle(@{$videos})];
+    }
+
     if ($opt{get_term_width} and $opt{results_fixed_width}) {
         get_term_width();
     }
@@ -3442,9 +3450,9 @@ sub print_videos {
         if (@{$videos}) {
             if (
                 play_videos(
-                              $opt{play_backwards} ? [reverse @{$videos}]
-                            : $opt{shuffle}        ? [List::Util::shuffle(@{$videos})]
-                            :                        $videos
+                            $opt{play_backwards}
+                            ? [reverse @{$videos}]
+                            : $videos
                            )
               ) {
                 __SUB__->($opt{play_backwards} ? $yv_obj->previous_page($url) : $yv_obj->next_page($url), auto => 1);
