@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 28 March 2015
+#  Latest edit on: 03 April 2015
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -173,6 +173,7 @@ my %CONFIG = (
     # Youtube options
     prefer_https        => 0,
     dash_support        => 1,
+    dash_mp4_audio      => 0,
     results             => 10,
     resolution          => 'original',
     hd                  => undef,
@@ -1755,15 +1756,13 @@ sub get_streaming_url {
     require WWW::YoutubeViewer::Itags;
     state $yv_itags = WWW::YoutubeViewer::Itags->new();
 
-    # Include DASH itags
-    my $dash = 1;
-
-    # Exclude DASH itags if the support is disabled
-    if (not $CONFIG{dash_support}) {
-        $dash = 0;
-    }
-
-    my ($streaming, $resolution) = $yv_itags->find_streaming_url(\@urls, $CONFIG{resolution}, $dash);
+    my ($streaming, $resolution) =
+      $yv_itags->find_streaming_url(
+                                    urls           => \@urls,
+                                    resolution     => $CONFIG{resolution},
+                                    dash           => $CONFIG{dash_support},
+                                    dash_mp4_audio => $CONFIG{dash_mp4_audio},
+                                   );
 
     my $info = {};
     if (not @urls) {

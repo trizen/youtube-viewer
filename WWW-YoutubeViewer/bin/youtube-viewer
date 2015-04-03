@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 28 March 2015
+#  Latest edit on: 03 April 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -229,6 +229,7 @@ my %CONFIG = (
     # YouTube options
     prefer_https        => 0,
     dash_support        => 1,
+    dash_mp4_audio      => 0,
     results             => 20,
     resolution          => 'original',
     hd                  => undef,
@@ -695,6 +696,7 @@ usage: $execname [options] ([url] | [keywords])
                           use 'http://user:pass\@domain.tld:port/'
    --prefer-https!      : use the HTTPS protocol instead of the HTTP protocol
    --dash!              : include or exclude the DASH itags
+   --dash-m4a!          : include or exclude the itags for MP4 audio URLs
 
 
 Help options:
@@ -1372,6 +1374,7 @@ sub parse_arguments {
         'fullscreen|fs|f!'  => \$opt{fullscreen},
         'dash!'             => \$opt{dash_support},
 
+        'dash-m4a|dash-mp4-audio!'          => \$opt{dash_mp4_audio},
         'wget-dl|wget-download!'            => \$opt{download_with_wget},
         'filename|filename-format=s'        => \$opt{video_filename_format},
         'dp|downl-play|download_and_play!'  => \$opt{download_and_play},
@@ -3078,7 +3081,13 @@ sub get_streaming_url {
         $dash = 0;
     }
 
-    my ($streaming, $resolution) = $yv_itags->find_streaming_url(\@urls, $opt{resolution}, $dash);
+    my ($streaming, $resolution) =
+      $yv_itags->find_streaming_url(
+                                    urls           => \@urls,
+                                    resolution     => $opt{resolution},
+                                    dash           => $dash,
+                                    dash_mp4_audio => $opt{dash_mp4_audio},
+                                   );
 
     my $info = {};
     if (not @urls) {

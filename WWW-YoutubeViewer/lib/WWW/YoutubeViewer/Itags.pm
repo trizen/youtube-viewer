@@ -164,16 +164,21 @@ sub get_resolutions {
 }
 
 sub _find_streaming_url {
-    my ($self, $stream, $itags, $resolution, $dash) = @_;
+    my ($self, $stream, $itags, $resolution, $dash, $mp4_audio) = @_;
 
     foreach my $itag (@{$itags->{$resolution}}) {
         if (ref($itag) eq 'ARRAY') {
             $dash || next;
             foreach my $i (@{$itag}) {
+                if ($resolution eq 'audio' and not $mp4_audio) {
+                    if ($i == 140 or $i == 141 or $i == 139) {
+                        next;    # skip mp4 audio urls
+                    }
+                }
                 if (exists $stream->{$i}) {
                     my $video_info = $stream->{$i};
                     exists($video_info->{s}) && next;    # skip videos with encoded signatures
-                    my $audio_info = $self->_find_streaming_url($stream, $itags, 'audio', 0);
+                    my $audio_info = $self->_find_streaming_url($stream, $itags, 'audio', 0, $mp4_audio);
                     if (defined $audio_info) {
                         $video_info->{__AUDIO__} = $audio_info;
                         return $video_info;
@@ -189,14 +194,26 @@ sub _find_streaming_url {
     return;
 }
 
-=head2 find_streaming_url($urls_ref, $resolution)
+=head2 find_streaming_url(%options)
 
-Return the streaming URL which corresponds with the $resolution.
+Return the streaming URL which corresponds with the specified resolution.
+
+    (
+        urls           => \@streaming_urls,
+        resolution     => 'resolution_name',     # from $obj->get_resolutions(),
+        dash           => 1/0,                   # include or exclude dash itags
+        dash_mp4_audio => 1/0,                   # include or exclude dash videos with MP4 audio
+    )
 
 =cut
 
 sub find_streaming_url {
-    my ($self, $urls_ref, $resolution, $dash) = @_;
+    my ($self, %args) = @_;
+
+    my $urls_ref   = $args{urls};
+    my $resolution = $args{resolution};
+    my $dash       = $args{dash};
+    my $mp4_audio  = $args{dash_mp4_audio};
 
     state $itags = $self->get_itags();
 
@@ -213,14 +230,14 @@ sub find_streaming_url {
 
     my ($streaming, $found_resolution);
     if (defined($resolution) and exists $itags->{$resolution}) {
-        $streaming = $self->_find_streaming_url(\%stream, $itags, $resolution, $dash);
+        $streaming = $self->_find_streaming_url(\%stream, $itags, $resolution, $dash, $mp4_audio);
         $found_resolution = $resolution;
     }
 
     if (not defined $streaming) {
         state $resolutions = $self->get_resolutions();
         foreach my $res (@{$resolutions}) {
-            if (defined($streaming = $self->_find_streaming_url(\%stream, $itags, $res, $dash))) {
+            if (defined($streaming = $self->_find_streaming_url(\%stream, $itags, $res, $dash, $mp4_audio))) {
                 $found_resolution = $res;
                 last;
             }
