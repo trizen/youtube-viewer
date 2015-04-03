@@ -267,6 +267,7 @@ my %CONFIG = (
     downloads_folder     => curdir(),
     keep_original_video  => 0,
     download_and_play    => 0,
+    autohide_watched     => 0,
     remove_played_file   => 0,
     use_xml_fast         => 1,
     save_input_history   => 0,
@@ -320,6 +321,7 @@ CONTROL
 my $other_options = <<'OTHER';
 # Others
 :r(eturn)         : return to previous section
+:refresh          : refresh the current list of results
 :dv=i             : dump result as key=>value pairs
 -argv -argv2=v    : apply some arguments (e.g.: -u=google)
 :reset, :reload   : restart the application
@@ -671,6 +673,7 @@ usage: $execname [options] ([url] | [keywords])
        --combine-multi!  : combine multiple videos into one play instance
        --get-term-width! : allow $execname to read your terminal width
        --use-xml-fast!   : use XML::Fast to parse the GData XML content
+       --autohide!       : automatically hide watched videos
 
  * Closed-captions
    --get-captions!      : download the closed captions for videos
@@ -1384,6 +1387,7 @@ sub parse_arguments {
         'get-term-width!'                   => \$opt{get_term_width},
         'page=i'                            => \$opt{page},
         'novideo|n!'                        => \$opt{novideo},
+        'autohide!'                         => \$opt{autohide_watched},
         'results=i'                         => \$opt{results},
         'shuffle|s!'                        => \$opt{shuffle_playlist},
         'more|m!'                           => \$opt{more_results},
@@ -2040,6 +2044,9 @@ sub general_options {
             else {
                 warn_last_page();
             }
+        }
+        when ($_ ~~ ['R', 'refresh'] and defined $url) {
+            @{$results} = @{$yv_obj->get_content($url, defined($mode) ? ($mode => 1) : ())};
         }
         when ($_ ~~ ['b', 'back', 'p', 'prev', 'previous'] and defined $url) {
             if ($yv_obj->back_page_is_available($url)) {
@@ -3542,6 +3549,9 @@ sub print_videos {
                         warn_first_page();
                     }
                 }
+                when (['R', 'refresh']) {
+                    @{$videos} = @{$yv_obj->get_content($url)};
+                }
                 when (['r', 'return']) {
                     return;
                 }
@@ -3722,6 +3732,9 @@ sub print_videos {
                     }
                     if (not play_videos([@{$videos}[@for_play]])) {
                         __SUB__->($results);
+                    }
+                    if ($opt{autohide_watched}) {
+                        splice(@{$videos}, $_, 1) for @for_play;
                     }
                 }
                 default {
