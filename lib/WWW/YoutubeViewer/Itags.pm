@@ -69,25 +69,27 @@ sub get_itags {
         ],
 
         '1080' => [
+            [303,    # webm HFR (v)
+             299,    # mp4 HFR (v)
+            ],
             46,      # webm (v-a)
             37,      # mp4 (v-a)
             [248,    # webm (v)
              137,    # mp4 (v)
-             303,    # webm HFR (v)
-             299,    # mp4 HFR (v)
             ],
             96,      # ts (live) (v-a)
                   ],
 
         '720' => [
+            [302,    # webm HFR (v)
+             298,    # mp4 HFR (v)
+            ],
             45,      # webm (v-a)
             22,      # mp4 (v-a)
             [247,    # webm (v)
              136,    # mp4 (v)
             ],
-            [302,    # webm HFR (v)
-             298,    # mp4 HFR (v)
-            ],
+
             120,     # flv (live) (v-a)
             95,      # ts (live) (v-a)
                  ],

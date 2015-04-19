@@ -1,6 +1,8 @@
 package WWW::YoutubeViewer::Utils;
 
-use strict;
+use utf8;
+use 5.014;
+use warnings;
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
@@ -107,21 +109,26 @@ sub format_time {
       : join q{:}, map { sprintf '%02d', $_ } $sec / 60 % 60, $sec % 60;
 }
 
-=head2 basic_json_parser($json_string)
+=head2 format_duration($duration)
 
-Parse and get key/value pairs from a basic JSON string.
+Return time (01:20:10) from duration (PT1H20M10S).
 
 =cut
 
-sub basic_json_parser {
-    my ($self, $json) = @_;
+# PT5M3S     -> 05:03
+# PT1H20M10S -> 01:20:10
+# PT16S      -> 00:16
 
-    my %pairs;
-    while ($json =~ /^\h*"(.*?)"\h*:\h*(?>"(.*?)"|(\d+))\h*,?\h*$/mg) {
-        $pairs{$1} = $+;
-    }
+sub format_duration {
+    my ($self, $duration) = @_;
 
-    return \%pairs;
+    my ($hour, $min, $sec) = (0, 0, 0);
+
+    $hour = $1 if ($duration =~ /(\d+)H/);
+    $min  = $1 if ($duration =~ /(\d+)M/);
+    $sec  = $1 if ($duration =~ /(\d+)S/);
+
+    $hour * 60 * 60 + $min * 60 + $sec;
 }
 
 =head2 format_date($date)
@@ -147,6 +154,17 @@ sub format_date {
     {$+{day} $self->{months}[$+{month} - 1] $+{year}}x;
 
     return $date;
+}
+
+=head2 has_entries($request)
+
+Returns true if a given request has entries.
+
+=cut
+
+sub has_entries {
+    my ($self, $req) = @_;
+    !!$req->{results}{pageInfo}{totalResults};
 }
 
 =head2 normalize_video_title($title)
@@ -178,44 +196,47 @@ sub format_text {
     my ($self, $streaming, $info, $text, $quotemeta) = @_;
 
     my %special_tokens = (
-        ID          => $info->{videoID},
-        AUTHOR      => $info->{author},
-        CATEGORY    => $info->{category},
-        VIEWS       => $info->{views},
-        LIKES       => $info->{likes},
-        DISLIKES    => $info->{dislikes},
-        DURATION    => $info->{duration},
-        TIME        => $self->format_time($info->{duration}),
-        RATING      => $info->{rating},
-        TITLE       => $info->{title},
-        FTITLE      => $self->normalize_video_title($info->{title}),
-        DESCRIPTION => $info->{description},
+        ID          => sub { $self->get_video_id($info) },
+        AUTHOR      => sub { $self->get_channel_title($info) },
+        CHANNELID   => sub { $self->get_channel_id($info) },
+        DEFINITION  => sub { $self->get_definition($info) },
+        DIMENSION   => sub { $self->get_dimension($info) },
+        VIEWS       => sub { $self->get_views($info) },
+        LIKES       => sub { $self->get_likes($info) },
+        DISLIKES    => sub { $self->get_dislikes($info) },
+        COMMENTS    => sub { $self->get_comments($info) },
+        DURATION    => sub { $self->get_duration($info) },
+        TIME        => sub { $self->format_time($self->get_duration($info)) },
+        TITLE       => sub { $self->get_title($info) },
+        FTITLE      => sub { $self->normalize_video_title($self->get_title($info)) },
+        CAPTION     => sub { $self->get_caption($info) },
+        DESCRIPTION => sub { $self->get_description($info) },
 
-        RESOLUTION => (
-                         $streaming->{resolution} =~ /^\d+\z/
-                       ? $streaming->{resolution} . 'p'
-                       : $streaming->{resolution}
-                      ),
+        RESOLUTION => sub {
+            $streaming->{resolution} =~ /^\d+\z/
+              ? $streaming->{resolution} . 'p'
+              : $streaming->{resolution};
+        },
 
-        ITAG   => $streaming->{streaming}{itag},
-        SIZE   => $streaming->{streaming}{size},
-        SUB    => $streaming->{srt_file},
-        VIDEO  => $streaming->{streaming}{url},
-        FORMAT => $self->video_extension($streaming->{streaming}{type}),
+        ITAG   => sub { $streaming->{streaming}{itag} },
+        SIZE   => sub { $streaming->{streaming}{size} },
+        SUB    => sub { $streaming->{srt_file} },
+        VIDEO  => sub { $streaming->{streaming}{url} },
+        FORMAT => sub { $self->video_extension($streaming->{streaming}{type}) },
 
-        AUDIO => (
-                  ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
-                  ? $streaming->{streaming}{__AUDIO__}{url}
-                  : q{}
-                 ),
+        AUDIO => sub {
+            ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
+              ? $streaming->{streaming}{__AUDIO__}{url}
+              : q{};
+        },
 
-        AOV => (
-                ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
-                ? $streaming->{streaming}{__AUDIO__}{url}
-                : $streaming->{streaming}{url}
-               ),
+        AOV => sub {
+            ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
+              ? $streaming->{streaming}{__AUDIO__}{url}
+              : $streaming->{streaming}{url};
+        },
 
-        URL => sprintf($self->{youtube_url_format}, $info->{videoID}),
+        URL => sub { sprintf($self->{youtube_url_format}, $self->get_video_id($info)) },
                          );
 
     my $tokens_re = do {
@@ -241,8 +262,8 @@ sub format_text {
     $text =~ s/$escapes_re/$special_escapes{$1}/g;
 
     $quotemeta
-      ? $text =~ s/$tokens_re/\Q$special_tokens{$1}\E/gr
-      : $text =~ s/$tokens_re/$special_tokens{$1}/gr;
+      ? $text =~ s/$tokens_re/\Q${\$special_tokens{$1}()}\E/gr
+      : $text =~ s/$tokens_re/${\$special_tokens{$1}()}/gr;
 }
 
 =head2 set_thousands($num)
@@ -267,6 +288,163 @@ sub set_thousands {    # ugly, but fast
     }
 
     return $x . substr($n, $i);
+}
+
+=head2 get_video_id($info)
+
+Get videoID.
+
+=cut
+
+sub get_video_id {
+    my ($self, $info) = @_;
+
+    ref($info->{id}) eq 'HASH'                        ? $info->{id}{videoId}
+      : exists($info->{snippet}{resourceId}{videoId}) ? $info->{snippet}{resourceId}{videoId}
+      : exists($info->{contentDetails}{videoId})      ? $info->{contentDetails}{videoId}
+      :                                                 $info->{id};
+}
+
+sub get_playlist_id {
+    my ($self, $info) = @_;
+    ref($info->{id}) eq 'HASH'
+      ? $info->{id}{playlistId}
+      : $info->{id};
+}
+
+=head2 get_description($info)
+
+Get description.
+
+=cut
+
+sub get_description {
+    my ($self, $info) = @_;
+    $info->{snippet}{description} || 'No description available...';
+}
+
+=head2 get_title($info)
+
+Get title.
+
+=cut
+
+sub get_title {
+    my ($self, $info) = @_;
+    $info->{snippet}{title} || $self->get_video_id($info);
+}
+
+=head2 get_thumbnail_url($info;$type='default')
+
+Get thumbnail URL.
+
+=cut
+
+sub get_thumbnail_url {
+    my ($self, $info, $type) = @_;
+    $info->{snippet}{thumbnails}{$type}{url} // $info->{snippet}{thumbnails}{default}{url};
+}
+
+sub get_channel_title {
+    my ($self, $info) = @_;
+    $info->{snippet}{channelTitle} || $self->get_channel_id($info);
+}
+
+sub get_channel_id {
+    my ($self, $info) = @_;
+    $info->{snippet}{channelId};
+}
+
+sub get_publication_date {
+    my ($self, $info) = @_;
+    $self->format_date($info->{snippet}{publishedAt});
+}
+
+sub get_duration {
+    my ($self, $info) = @_;
+    $self->format_duration($info->{contentDetails}{duration});
+}
+
+sub get_definition {
+    my ($self, $info) = @_;
+    uc($info->{contentDetails}{definition});
+}
+
+sub get_dimension {
+    my ($self, $info) = @_;
+    uc($info->{contentDetails}{dimension});
+}
+
+sub get_caption {
+    my ($self, $info) = @_;
+    $info->{contentDetails}{caption};
+}
+
+sub get_views {
+    my ($self, $info) = @_;
+    $info->{statistics}{viewCount};
+}
+
+sub get_likes {
+    my ($self, $info) = @_;
+    $info->{statistics}{likeCount};
+}
+
+sub get_dislikes {
+    my ($self, $info) = @_;
+    $info->{statistics}{dislikeCount};
+}
+
+sub get_comments {
+    my ($self, $info) = @_;
+    $info->{statistics}{commentCount};
+}
+
+{
+    no strict 'refs';
+    foreach my $pair ([playlist => {'youtube#playlist' => 1}],
+                      [channel => {'youtube#channel' => 1}],
+                      [video   => {'youtube#video'   => 1, 'youtube#playlistItem' => 1}],
+      ) {
+
+        *{__PACKAGE__ . '::' . 'is_' . $pair->[0]} = sub {
+            my ($self, $item) = @_;
+
+            if (ref($item->{id}) eq 'HASH') {
+                if (exists $pair->[1]{$item->{id}{kind}}) {
+                    return 1;
+                }
+            }
+            elsif (exists $item->{kind}) {
+                if (exists $pair->[1]{$item->{kind}}) {
+                    return 1;
+                }
+            }
+
+            return;
+        };
+
+    }
+}
+
+sub period_to_date {
+    my ($self, $amount, $period) = @_;
+
+    state $day   = 60 * 60 * 24;
+    state $month = $day * 30.4368;
+    state $year  = $day * 365.242;
+
+    my $time = $amount * (
+                            $period =~ /^d/i ? $day
+                          : $period =~ /^m/i ? $month
+                          : $period =~ /^y/i ? $year
+                          : 0
+                         );
+
+    my $now  = time;
+    my @time = gmtime($now - $time);
+    join('-', $time[5] + 1900, sprintf('%02d', $time[4] + 1), sprintf('%02d', $time[3])) . 'T'
+      . join(':', sprintf('%02d', $time[2]), sprintf('%02d', $time[1]), sprintf('%02d', $time[0])) . 'Z';
 }
 
 =head1 AUTHOR

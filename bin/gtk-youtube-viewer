@@ -18,16 +18,18 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 05 April 2015
+#  Latest edit on: 19 April 2015
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
 use utf8;
-use 5.010;
-use strict;
+use 5.014;
 
-#use lib qw(../lib);    # devel only
-#use warnings;          # debug only
+use warnings;
+no warnings 'once';
+
+my $DEVEL;    # true in devel mode
+use if ($DEVEL = 0), lib => qw(../lib);    # devel only
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
@@ -44,15 +46,21 @@ use File::Spec::Functions qw(
   );
 
 my $appname  = 'GTK Youtube Viewer';
-my $version  = '3.1.3';
+my $version  = '3.1.4';
 my $execname = 'gtk-youtube-viewer';
 
+# Share directory
+my $share_dir = $DEVEL ? '../share' : dist_dir('WWW-YoutubeViewer');
+
+sub VIDEO_PART () { 'contentDetails,statistics' }
+sub EXTRA_VIDEO_PART () { join(',', 'snippet', VIDEO_PART()) }
+
 # Developer key
-my $key = 'eTj9NtCyOsGMliTTwz-T85muGT-ARAwVREslfB_giHP3X339Jkpn5Xf71pQXY96xWtFY1oFHt530ct5uZZJk5YTghbNm2IrwZ4';
+my $key = 'aXalQYmzI8gPkMSLyMhpApfMAiU2b23Qz2nE3mq';
 
 # Configuration dir/file
 my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
-  || catdir(($ENV{HOME} || $ENV{LOGDIR} || (getpwuid($<))[7] || `echo -n ~`), '.config');
+  || catdir((my $home_dir = $ENV{HOME} || $ENV{LOGDIR} || (getpwuid($<))[7] || `echo -n ~`), '.config');
 
 # Configuration dir/file
 my $config_dir = catdir($xdg_config_home, 'youtube-viewer');
@@ -89,9 +97,6 @@ foreach my $dir ($config_dir) {
 }
 ## end of compatibility
 
-# Share directory
-my $share_dir = dist_dir('WWW-YoutubeViewer');
-
 sub which_command {
     my ($cmd) = @_;
     state $paths = [path()];
@@ -109,6 +114,7 @@ my %symbols = (
                category    => '❖',
                face        => '☺',
                average     => 'x̄',
+               ellipsis    => '…',
                play        => '▶',
                views       => '◈',
                heart       => '❤',
@@ -120,15 +126,17 @@ my %symbols = (
 my %CONFIG = (
 
     # Combobox values
-    active_sort_by_combobox      => 0,
-    active_time_sort_by_combobox => 0,
-    active_resolution_combobox   => 0,
-    active_search_for            => 0,
-    active_hd_combobox           => 0,
-    active_caption_combobox      => 0,
-    active_duration_combobox     => 0,
-    active_safe_search_combobox  => 1,
-    active_more_options_expander => 0,
+    active_order_combobox      => 0,
+    active_resolution_combobox => 0,
+
+    #active_search_for            => 0,
+    active_definition_combobox    => 0,
+    active_caption_combobox       => 0,
+    active_duration_combobox      => 0,
+    active_safeSearch_combobox    => 1,
+    active_more_options_expander  => 0,
+    active_panel_account_combobox => 0,
+    active_channel_type_combobox  => 0,
 
     video_players => {
                       mplayer => {
@@ -164,27 +172,36 @@ my %CONFIG = (
     # GUI options
     clean_text_entries_on_click => 1,
     show_thumbs                 => 1,
-    clear_list                  => 1,
+    clear_search_list           => 0,
     default_notebook_page       => 1,
     mainw_size                  => '700x400',
     mainw_maximized             => 0,
     mainw_fullscreen            => 0,
 
     # Youtube options
-    prefer_https        => 0,
-    dash_support        => 1,
-    dash_mp4_audio      => 0,
-    results             => 10,
-    resolution          => 'original',
-    hd                  => undef,
-    safe_search         => undef,
-    caption             => undef,
-    duration            => undef,
-    time                => undef,
-    orderby             => undef,
-    categories_language => 'en-US',
+    dash_support    => 1,
+    dash_mp4_audio  => 0,
+    maxResults      => 10,
+    resolution      => 'original',
+    videoDefinition => undef,
+    videoDimension  => undef,
+    videoLicense    => undef,
+    safeSearch      => undef,
+    videoCaption    => undef,
+    videoDuration   => undef,
+    videoSyndicated => undef,
+    publishedBefore => undef,
+    publishedAfter  => undef,
+    order           => undef,
+    hl              => 'en_US',
+    cat_region      => 'us',
+
+    search_for_videos    => 1,
+    search_for_channels  => 0,
+    search_for_playlists => 0,
 
     # URI options
+    thumbnail_type      => 'medium',
     thumb_url           => 'http://i1.ytimg.com/vi/%s/%s.jpg',
     youtube_video_url   => 'http://www.youtube.com/watch?v=%s',
     playlists_url       => 'http://www.youtube.com/playlist?list=%s',
@@ -194,6 +211,7 @@ my %CONFIG = (
     srt_languages => ['en', 'es'],
     captions_dir  => tmpdir(),
     get_captions  => 1,
+    cache_dir     => undef, # define it later
 
     # Others
     http_proxy      => undef,
@@ -203,19 +221,19 @@ my %CONFIG = (
     use_lower_cache => 0,
 
     use_threads            => 0,
-    use_threads_for_thumbs => 0,    # not very stable
+    use_threads_for_thumbs => 0,    # this is unstable
 
     hpaned_position    => 420,
     search_channels    => 0,
     search_playlists   => 0,
     thousand_separator => q{,},
-    default_thumb      => 'mqdefault',
+
+    #default_thumb      => 'mqdefault',
     downloads_folder   => curdir(),
-    browser            => undef,
+    web_browser        => undef,                 # defaults to $ENV{WEBBROWSER} or xdg-open
     terminal           => undef,                 # autodetect it later
     terminal_exec      => q{-e '%s'},
     youtube_viewer     => undef,
-    use_xml_fast       => 1,
     youtube_users_file => $youtube_users_file,
 );
 
@@ -269,15 +287,24 @@ $gui->connect_signals(undef);
 
 # -------------  Get GUI objects ------------- #
 my (
-    $mainw,                 $users_list_window,     $help_window,          $prefernces_window,      $login_to_youtube,
-    $errors_window,         $details_window,        $about_window,         $treeview,               $liststore,
-    $config_view,           $statusbar,             $thumbs_column,        $textview_help,          $sort_combobox,
-    $sort_by_time_combobox, $resolution_combobox,   $spin_results,         $users_treeview,         $users_liststore,
-    $thumbs_checkbutton,    $search_for_combobox,   $spin_start_with_page, $fullscreen_checkbutton, $notebook,
-    $search_entry,          $from_author_entry,     $gif_spinner,          $hbox2,                  $feeds_window,
-    $feeds_treeview,        $feeds_liststore,       $feeds_statusbar,      $safesearch_combobox,    $hd_combobox,
-    $caption_combobox,      $duration_combobox,     $warnings_window,      $warnings_textview,      $errors_textview,
-    $category_id_entry,     $more_options_expander, $cat_treeview,         $cats_liststore,         $dash_checkbutton,
+    $mainw,                        $users_list_window,          $help_window,
+    $prefernces_window,            $login_to_youtube,           $errors_window,
+    $details_window,               $about_window,               $treeview,
+    $liststore,                    $config_view,                $statusbar,
+    $thumbs_column,                $textview_help,              $order_combobox,
+    $resolution_combobox,          $spin_results,               $users_treeview,
+    $users_liststore,              $thumbs_checkbutton,         $search_for_combobox,
+    $spin_start_with_page,         $fullscreen_checkbutton,     $notebook,
+    $search_entry,                 $from_author_entry,          $gif_spinner,
+    $hbox2,                        $feeds_window,               $feeds_treeview,
+    $feeds_liststore,              $feeds_statusbar,            $safesearch_combobox,
+    $definition_combobox,          $caption_combobox,           $duration_combobox,
+    $warnings_window,              $warnings_textview,          $errors_textview,
+    $category_id_entry,            $more_options_expander,      $cat_treeview,
+    $cats_liststore,               $dash_checkbutton,           $spin_published_within,
+    $published_within_combobox,    $search_for_videos_checkbox, $search_for_playlists_checkbox,
+    $search_for_channels_checkbox, $clear_search_list_checkbox, $panel_account_type_combobox,
+    $panel_user_entry,             $channel_type_combobox,
    );
 
 sub get_objects {
@@ -316,18 +343,26 @@ sub get_objects {
         'category_id_entry'      => \$category_id_entry,
         'more_options_expander'  => \$more_options_expander,
         'notebook1'              => \$notebook,
-        'combobox1'              => \$sort_combobox,
-        'combobox2'              => \$sort_by_time_combobox,
         'combobox3'              => \$resolution_combobox,
         'combobox4'              => \$duration_combobox,
-        'combobox5'              => \$caption_combobox,
-        'combobox6'              => \$hd_combobox,
-        'combobox7'              => \$safesearch_combobox,
+        'comboboxtext3'          => \$caption_combobox,
+        'comboboxtext4'          => \$definition_combobox,
+        'comboboxtext5'          => \$safesearch_combobox,
+        'comboboxtext1'          => \$published_within_combobox,
+        'panel_user_entry'       => \$panel_user_entry,
+        'comboboxtext6'          => \$panel_account_type_combobox,
+        'comboboxtext2'          => \$order_combobox,
+        'comboboxtext7'          => \$channel_type_combobox,
+        'videos_checkbox'        => \$search_for_videos_checkbox,
+        'playlists_checkbox'     => \$search_for_playlists_checkbox,
+        'channels_checkbox'      => \$search_for_channels_checkbox,
         'spinbutton1'            => \$spin_results,
         'spinbutton2'            => \$spin_start_with_page,
+        'spinbutton3'            => \$spin_published_within,
         'thumbs_checkbutton'     => \$thumbs_checkbutton,
         'search_for_combobox'    => \$search_for_combobox,
         'fullscreen_checkbutton' => \$fullscreen_checkbutton,
+        'clear_list_checkbutton' => \$clear_search_list_checkbox,
         'dash_checkbutton'       => \$dash_checkbutton,
         'gif_spinner'            => \$gif_spinner,
         'hbox2'                  => \$hbox2,
@@ -352,7 +387,10 @@ local $SIG{__WARN__} = sub {
 
 # __DIE__ handle
 local $SIG{__DIE__} = sub {
-    return if not [caller]->[0] ~~ [qw(main WWW::YoutubeViewer)];
+    if (not [caller]->[0] ~~ [qw(main WWW::YoutubeViewer)]) {
+        print STDERR "@_\n";
+        return;
+    }
     my $error = join('', @_);
     set_text(
         $errors_textview,
@@ -360,8 +398,7 @@ local $SIG{__DIE__} = sub {
             if ($error =~ m{^Can't locate (.+?)\.pm\b}) {
                 my $module = $1;
                 $module =~ s{[/\\]+}{::}g;
-                return 1 if $module eq 'XML::Fast';
-                "\nThe module $module is required!\n\nTo install the module, just type in terminal:\n\tsudo cpan $module\n";
+                "\nThe module $module is required!\n\nTo install it, just type in terminal:\n\tsudo cpan $module\n";
             }
           }
           . "\n=>> Previous warnings:\n" . get_text($warnings_textview)
@@ -403,31 +440,34 @@ while (my ($player, $data) = each %{$CONFIG->{video_players}}) {
 my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
 
-if (not \%CONFIG ~~ $CONFIG) {
-    dump_configuration();
+# Define the cache directory
+if (not defined $CONFIG{cache_dir}) {
+    $CONFIG{cache_dir} = catdir($home_dir, '.cache', 'youtube-viewer');
 }
 
-# Check for HTTPS support
-if (not $CONFIG{prefer_https}) {
-    eval { require LWP::Protocol::https };
-    if (not $@) {
-        $CONFIG{prefer_https} = 1;
-    }
+# Create the cache directory (if needed)
+if (not -d $CONFIG{cache_dir}) {
+    require File::Path;
+    File::Path::make_path($CONFIG{cache_dir})
+      or warn "[!] Can't create dir `$CONFIG{cache_dir}': $!";
 }
 
-# Locating a video player
+# Locate video player
 if (not defined $CONFIG{video_player_selected}) {
     foreach my $key (sort keys %{$CONFIG{video_players}}) {
         if (defined(my $abs_player_path = which_command($CONFIG{video_players}{$key}{cmd}))) {
             $CONFIG{video_players}{$key}{cmd} = $abs_player_path;
             $CONFIG{video_player_selected} = $key;
-            dump_configuration();
             last;
         }
     }
 }
 
-# Locating a terminal
+if (not \%CONFIG ~~ $CONFIG) {
+    dump_configuration();
+}
+
+# Locate a terminal
 if (not defined $CONFIG{terminal}) {
     foreach my $term (
                       'gnome-terminal', 'lxterminal', 'terminal', 'xfce4-terminal',
@@ -450,7 +490,7 @@ if (not defined $CONFIG{terminal}) {
     $key =~ s/(.{$i})(.)/$2$1/g while $i--;
 }
 
-# Locating youtube-viewer
+# Locate youtube-viewer
 $CONFIG{youtube_viewer} //= which_command('youtube-viewer') // 'youtube-viewer';
 
 require WWW::YoutubeViewer;
@@ -458,6 +498,7 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      escape_utf8         => 1,
                                      key                 => $key,
                                      config_dir          => $config_dir,
+                                     cache_dir           => $CONFIG{cache_dir},
                                      authentication_file => $authentication_file,
                                     );
 
@@ -469,8 +510,8 @@ else {
 }
 
 {
-    my $client_id     = '991455593101.apps.googleusercontent.com';
-    my $client_secret = 'YcxxWCCbBwIr-IhUDCanrp41';
+    my $client_id     = '923751928481.apps.googleusercontent.com';
+    my $client_secret = 'twr0nZewhZ-wBSVW1apRauq1';
     my $redirect_uri  = 'urn:ietf:wg:oauth:2.0:oob';
 
     $yv_obj->set_client_id($client_id);
@@ -491,15 +532,29 @@ sub apply_configuration {
     # DASH mode
     $dash_checkbutton->set_active($CONFIG{dash_support});
 
+    $search_for_channels_checkbox->set_active($CONFIG{search_for_channels});
+    $search_for_playlists_checkbox->set_active($CONFIG{search_for_playlists});
+    $search_for_videos_checkbox->set_active($CONFIG{search_for_videos});
+    $clear_search_list_checkbox->set_active($CONFIG{clear_search_list});
+    $panel_account_type_combobox->set_active($CONFIG{active_panel_account_combobox});
+    $channel_type_combobox->set_active($CONFIG{active_channel_type_combobox});
+
+    $published_within_combobox->set_active(0);
+
     # Others
     foreach my $option_name (
                              qw(
-                             caption results duration
-                             author orderby region category
-                             categories_language safe_search
-                             page debug time prefer_https http_proxy
+                             videoCaption maxResults order
+                             videoDefinition videoCategoryId
+                             videoDimension videoDuration
+                             videoEmbeddable videoLicense
+                             videoSyndicated channelId
+                             publishedAfter publishedBefore
+                             regionCode videoCategoryId
+                             page debug http_proxy
                              )
       ) {
+
         if (defined $CONFIG{$option_name}) {
             my $code      = \&{"WWW::YoutubeViewer::set_$option_name"};
             my $value     = $CONFIG{$option_name};
@@ -511,12 +566,8 @@ sub apply_configuration {
         }
     }
 
-    if (defined $CONFIG{use_xml_fast}) {
-        $yv_obj->set_use_internal_xml_parser(not $CONFIG{use_xml_fast});
-    }
-
     # Spin button results setting config value
-    $spin_results->set_value($CONFIG{results});
+    $spin_results->set_value($CONFIG{maxResults});
 
     # Spin button start with page
     $spin_start_with_page->set_value($CONFIG{page});
@@ -533,14 +584,17 @@ sub apply_configuration {
     $more_options_expander->set_expanded($CONFIG{active_more_options_expander});
 
     # Combo boxes setting config value
-    $sort_combobox->set_active($CONFIG{active_sort_by_combobox});
-    $sort_by_time_combobox->set_active($CONFIG{active_time_sort_by_combobox});
+    #$sort_combobox->set_active($CONFIG{active_sort_by_combobox});
+    $order_combobox->set_active($CONFIG{active_order_combobox});
+
+    #$sort_by_time_combobox->set_active($CONFIG{active_time_sort_by_combobox});
     $resolution_combobox->set_active($CONFIG{active_resolution_combobox});
-    $search_for_combobox->set_active($CONFIG{active_search_for});
-    $hd_combobox->set_active($CONFIG{active_hd_combobox});
+
+    #$search_for_combobox->set_active($CONFIG{active_search_for});
+    $definition_combobox->set_active($CONFIG{active_definition_combobox});
     $caption_combobox->set_active($CONFIG{active_caption_combobox});
     $duration_combobox->set_active($CONFIG{active_duration_combobox});
-    $safesearch_combobox->set_active($CONFIG{active_safe_search_combobox});
+    $safesearch_combobox->set_active($CONFIG{active_safeSearch_combobox});
 
     # Resize the main window
     $mainw->set_default_size(split(/x/i, $CONFIG{mainw_size}, 2));
@@ -661,7 +715,7 @@ sub new_image_from_pixbuf {
 # Setting application icons
 {
     $gui->get_object('username_list')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
-    $gui->get_object('channels_button')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
+    $gui->get_object('uploads_button')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
     $gui->get_object('button6')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
     $gui->get_object('button23')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
 }
@@ -757,21 +811,6 @@ use_threads
 
 use_threads_for_thumbs
     1 to use threads when getting the thumbnails (not recommended!)
-
-cache & cache_min
-    this cache values are used for resolutions higher than 480p
-
-lower_cache & lower_cache_min
-    this cache values are used for resolutions lower than 720p
-
-use_lower_cache
-    1 to always use the lower_cache (for slow connections)
-
-show_thumbs
-    1 to show YouTube video thumbnails (may be slow)
-
-clear_list
-    1 to clean the treeview list before each search
 
 srt_languages
     a list with the preferred subtitle languages
@@ -983,7 +1022,8 @@ sub show_feeds_window {
     $feeds_window->show;
     $feeds_statusbar->pop(0);
 
-    print_comments($yv_obj->get_video_comments($videoID));
+    ## NEEDS WORK!!!
+    #print_comments($yv_obj->get_video_comments($videoID));
 
     return 1;
 }
@@ -1032,14 +1072,9 @@ sub delete_selected_row {
 }
 
 # Combo boxes changes
-sub combobox_sort_by_changed {
-    $CONFIG{active_sort_by_combobox} = $sort_combobox->get_active;
-    $yv_obj->set_orderby($CONFIG{orderby} = $sort_combobox->get_active_text);
-}
-
-sub combobox_time_sort_by_changed {
-    $CONFIG{active_time_sort_by_combobox} = $sort_by_time_combobox->get_active;
-    $yv_obj->set_time($CONFIG{time_sort} = $sort_by_time_combobox->get_active_text);
+sub combobox_order_changed {
+    $CONFIG{active_order_combobox} = $order_combobox->get_active;
+    $yv_obj->set_order($CONFIG{order} = $order_combobox->get_active_text);
 }
 
 sub combobox_resolution_changed {
@@ -1048,43 +1083,67 @@ sub combobox_resolution_changed {
     $CONFIG{resolution} = $res =~ /^(\d+)p\z/ ? $1 : $res;
 }
 
-sub combobox_search_for_changed {
-    state $labels = [qw(videos playlists channels disco_videos)];
-    $CONFIG{active_search_for} = $search_for_combobox->get_active;
-    $CONFIG{"search_$_"} = 0 for @{$labels};
-    $CONFIG{"search_" . $search_for_combobox->get_active_text} = 1;
-}
-
 sub combobox_safesearch_changed {
-    $CONFIG{active_safe_search_combobox} = $safesearch_combobox->get_active;
-    $yv_obj->set_safe_search($CONFIG{safe_search} = $safesearch_combobox->get_active_text);
+    $CONFIG{active_safeSearch_combobox} = $safesearch_combobox->get_active;
+    $yv_obj->set_safeSearch($CONFIG{safeSearch} = $safesearch_combobox->get_active_text);
 }
 
 sub combobox_duration_changed {
     my $text = $duration_combobox->get_active_text;
     $CONFIG{active_duration_combobox} = $duration_combobox->get_active;
-    $yv_obj->set_duration($CONFIG{duration} = $text eq 'default' ? undef : $text);
+    $yv_obj->set_videoDuration($CONFIG{videoDuration} = $text);
 }
 
 sub combobox_caption_changed {
     my $text = $caption_combobox->get_active_text;
     $CONFIG{active_caption_combobox} = $caption_combobox->get_active;
-    $yv_obj->set_caption($CONFIG{only_videos_with_caption} = $text eq 'default' ? undef : $text);
+    $yv_obj->set_videoCaption($CONFIG{videoCaption} = $text);
 }
 
-sub combobox_hd_changed {
-    my $text = $hd_combobox->get_active_text;
-    $CONFIG{active_hd_combobox} = $hd_combobox->get_active;
-    $yv_obj->set_hd($CONFIG{only_hd_videos} = $text eq 'default' ? undef : $text);
+sub combobox_panel_account_changed {
+    my $text = $panel_account_type_combobox->get_active_text;
+    $CONFIG{active_panel_account_combobox} = $panel_account_type_combobox->get_active;
+    if (not $text =~ /^(?:user|channel)/i) {
+        $panel_user_entry->hide;
+    }
+    else {
+        $panel_user_entry->show;
+    }
+}
+
+sub combobox_channel_type_changed {
+    $CONFIG{active_channel_type_combobox} = $channel_type_combobox->get_active;
+}
+
+sub combobox_definition_changed {
+    my $text = $definition_combobox->get_active_text;
+    $CONFIG{active_definition_combobox} = $definition_combobox->get_active;
+    $yv_obj->set_videoDefinition($CONFIG{videoDefinition} = $text);
+}
+
+sub combobox_published_within_changed {
+    my $text = $published_within_combobox->get_active_text;
+
+    if ($text eq 'any') {
+        $spin_published_within->hide;
+        $yv_obj->set_publishedAfter(undef);
+    }
+    else {
+        $spin_published_within->show;
+    }
 }
 
 # Spin buttons changes
 sub spin_results_per_page_changed {
-    $yv_obj->set_results($CONFIG{results} = $spin_results->get_value);
+    $yv_obj->set_maxResults($CONFIG{maxResults} = $spin_results->get_value);
 }
 
 sub spin_start_with_page_changed {
     $yv_obj->set_page($CONFIG{page} = $spin_start_with_page->get_value);
+}
+
+sub toggled_clear_search_list {
+    $CONFIG{clear_search_list} = $clear_search_list_checkbox->get_active() || 0;
 }
 
 # Fullscreen mode
@@ -1095,6 +1154,18 @@ sub toggled_mplayer_fullscreen {
 # DASH mode
 sub toggled_dash_support {
     $CONFIG{dash_support} = $dash_checkbutton->get_active() || 0;
+}
+
+sub toggled_search_for_channels {
+    $CONFIG{search_for_channels} = $search_for_channels_checkbox->get_active() || 0;
+}
+
+sub toggled_search_for_playlists {
+    $CONFIG{search_for_playlists} = $search_for_playlists_checkbox->get_active() || 0;
+}
+
+sub toggled_search_for_videos {
+    $CONFIG{search_for_videos} = $search_for_videos_checkbox->get_active() || 0;
 }
 
 # Check buttons toggles
@@ -1135,17 +1206,21 @@ sub add_category_header {
 sub append_categories {
     my ($categories, $type) = @_;
 
-    return if ref $categories ne 'ARRAY';
+    return if ref($categories) ne 'HASH';
 
-    foreach my $category (@{$categories}) {
-        my $label = $category->{label};
-        my $term  = $category->{term};
+    foreach my $category (@{$categories->{items}}) {
+
+        # Ignore unassignable categories
+        $category->{snippet}{assignable} || next;
+
+        my $label = $yv_utils->get_title($category);
+        my $id    = $category->{id};
 
         $label =~ s{&}{&amp;}g;
 
         my $iter = $cats_liststore->append;
         $cats_liststore->set($iter, 0, $label);
-        $cats_liststore->set($iter, 1, $term);
+        $cats_liststore->set($iter, 1, $id);
         $cats_liststore->set($iter, 2, $feed_icon_pixbuf);
         $cats_liststore->set($iter, 3, $type);
     }
@@ -1155,12 +1230,11 @@ sub append_categories {
 {
     # Standard categories:
     add_category_header("Categories");
-    append_categories($yv_obj->get_categories(), 'cat');
-    append_categories([{label => 'Movies', term => 'Movies'}, {label => 'Trailers', term => 'Trailers'}], 'cat');
+    append_categories($yv_obj->video_categories($CONFIG{cat_region}), 'cat');
 
     # EDU categories:
-    add_category_header("EDU Categories");
-    append_categories($yv_obj->get_educategories(), 'edu-cat');
+    #add_category_header("EDU Categories");
+    #append_categories($yv_obj->get_educategories(), 'edu-cat');
 }
 
 my $tops_liststore = $gui->get_object('liststore6');
@@ -1232,7 +1306,7 @@ sub add_username {
 }
 
 sub add_user_to_favorites {
-    my $user = get_username_for_selected_video() or return;
+    my $user = get_channel_id_for_selected_video() or return;
     $gui->get_object('username_entry')->set_text($user);
     add_username();
     $feeds_statusbar->push(0, "Successfully added '${user}' into the username list (see: Menu->Users)");
@@ -1276,18 +1350,64 @@ sub change_subscription_page {
     return 1;
 }
 
+sub subscriptions_button {
+    my $type     = $panel_account_type_combobox->get_active_text;
+    my $username = $panel_user_entry->get_text;
+
+    # NEEDS WORK...
+}
+
+sub favorites_button {
+    my $type     = $panel_account_type_combobox->get_active_text;
+    my $username = $panel_user_entry->get_text;
+    favorites($type, $username);
+}
+
+sub uploads_button {
+    my $type     = $panel_account_type_combobox->get_active_text;
+    my $username = $panel_user_entry->get_text;
+    uploads($type, $username);
+}
+
+sub likes_button {
+    my $type     = $panel_account_type_combobox->get_active_text;
+    my $username = $panel_user_entry->get_text;
+    likes($type, $username);
+}
+
+sub dislikes_button {
+    my $type     = $panel_account_type_combobox->get_active_text;
+    my $username = $panel_user_entry->get_text;
+    dislikes($type, $username);
+}
+
 {
     no strict 'refs';
-    foreach my $feed_name (@{WWW::YoutubeViewer::feed_methods}) {
-        *{__PACKAGE__ . '::' . $feed_name} = sub {
-            my $user   = (@_ && !ref $_[0]) ? shift() : $gui->get_object('news_users')->get_text;
-            my $code   = \&{"WWW::YoutubeViewer::get_$feed_name"};
-            my $videos = $yv_obj->$code($user);
+    foreach my $name (qw(favorites uploads likes dislikes playlists)) {
+        *{__PACKAGE__ . '::' . $name} = sub {
+            my ($type, $channel) = @_;
 
-            if (defined $videos) {
-                $liststore->clear if $CONFIG{clear_list};
-                print_videos($videos);
+            my $method = $type =~ /^user/i ? ($name . '_from_username') : $name;
+
+            if ($name eq 'likes' and not $type =~ /^(?:user|channel)/i) {
+                $method = 'my_likes';
             }
+
+            if ($name eq 'dislikes') {
+                $method = 'my_dislikes';
+            }
+
+            my $request = $yv_obj->$method($type =~ /^(?:user|channel)/i ? $channel : ());
+
+            if ($yv_utils->has_entries($request)) {
+                $liststore->clear if $CONFIG{clear_search_list};
+                display_results($request);
+            }
+            else {
+                die "No $name results" . ($channel ? " for channel: <$channel>\n" : "\n");
+            }
+
+            return 1;
         };
     }
 }
@@ -1295,7 +1415,7 @@ sub change_subscription_page {
 sub get_selected_video_code {
     my (%options) = @_;
     my $iter = $treeview->get_selection->get_selected or return;
-    unless ($options{force}) {
+    if (not $options{force}) {
         return unless defined $liststore->get($iter, 4);
     }
     my $code = $liststore->get($iter, 3);
@@ -1313,7 +1433,7 @@ sub check_keywords {
             list_playlist($+{playlist_id});
         }
         when (/$get_course_id_re/) {
-            print_videos($yv_obj->get_video_lectures_from_course($+{course_id}));
+            display_results($yv_obj->get_video_lectures_from_course($+{course_id}));
         }
         default {
             return;
@@ -1326,28 +1446,45 @@ sub search {
     my $keywords = $search_entry->get_text();
 
     return if check_keywords($keywords);
+    $liststore->clear if $CONFIG{clear_search_list};
 
-    $liststore->clear if $CONFIG{clear_list};
-    $yv_obj->set_author($from_author_entry->get_text);
-    $yv_obj->set_category($category_id_entry->get_text);
+    if ((my $period = $published_within_combobox->get_active_text) ne 'any') {
+        my $amount = $spin_published_within->get_value;
+        my $date = $yv_utils->period_to_date($amount, $period);
+        $yv_obj->set_publishedAfter($date);
+    }
+
+    my @types;
+    if ($search_for_playlists_checkbox->get_active) {
+        push @types, 'playlist';
+    }
+
+    if ($search_for_channels_checkbox->get_active) {
+        push @types, 'channel';
+    }
+
+    if ($search_for_videos_checkbox->get_active) {
+        push @types, 'video';
+    }
+
+    my $type = @types ? join(',', @types) : 'video';
+    display_results($yv_obj->search_for($type, $keywords));
+
+=cut
+
+    #$yv_obj->set_author($from_author_entry->get_text);
+    #$yv_obj->set_category($category_id_entry->get_text);
 
     if ($CONFIG{search_playlists}) {
-        print_playlists($yv_obj->search_for_playlists($keywords));
+        print_playlists($yv_obj->search_playlists($keywords));
     }
     elsif ($CONFIG{search_channels}) {
         print_channels($yv_obj->search_channels($keywords));
     }
-    elsif ($CONFIG{search_disco_videos}) {
-        if (defined(my $videos = $yv_obj->get_disco_videos([$keywords]))) {
-            print_videos($videos);
-        }
-        else {
-            die "[!] No disco video results!\n";
-        }
-    }
     else {
-        print_videos($yv_obj->search($keywords));
+        display_results($yv_obj->search_videos($keywords));
     }
+=cut
 
     return 1;
 }
@@ -1374,31 +1511,18 @@ sub get_next_page_spaces {
 sub get_code {
     my ($code, $iter) = get_selected_video_code(force => 1) or return;
 
-        $code =~ /$valid_video_id_re/ ? play_videos([{videoID => $code}])
-      : $code =~ /$valid_playlist_id_re/ ? do { list_playlist($code) }
-      : $code =~ m{^https?://} ? do {
+    my $type = $liststore->get($iter, 7);
 
-        my $search_type = $liststore->get($iter, 5);
+        $type eq 'video' ? play_videos([{videoID => $code}])
+      : $type eq 'playlist' ? list_playlist($code)
+      : $type eq 'channel' ? uploads('channel', $code)
+      : $type eq 'next_page' && $code ne '' ? do {
 
-        if ($yv_obj->get_debug) {
-            say "** SEARCH TYPE: $search_type" if defined $search_type;
-        }
+        my $next_page_token = $liststore->get($iter, 5);
+        my $results = $yv_obj->next_page($code, $next_page_token);
 
-        my %args;
-        if (defined $search_type and $search_type ne q{}) {
-            $args{$search_type} = 1;
-        }
-
-        my $results = $yv_obj->next_page($code, %args);
-
-        if (@{$results->{results}}) {
-            $liststore->set(
-                $iter, 0,
-                get_next_page_spaces() . do {
-                    $code =~ /[&?]start-index=(\d+)/;
-                    '<big><b>Page: ' . ((($1 - 1) / $CONFIG{results}) + 2) . '</b></big>';
-                  }
-            );
+        if ($yv_utils->has_entries($results)) {
+            $liststore->set($iter, 0, get_next_page_spaces() . '<big><b>' . ('=' x 20) . '</b></big>');
             $liststore->set($iter, 3, q{});
         }
         else {
@@ -1406,13 +1530,9 @@ sub get_code {
             die "This is the last page!\n";
         }
 
-            $args{playlists}           ? print_playlists($results)
-          : $args{channels}            ? print_channels($results)
-          : $args{channel_suggestions} ? print_channels($results)
-          :                              print_videos($results);
+        display_results($results);
       }
-      : $code =~ /^username=(.+)/ ? videos_from_username($1)
-      :                             return;
+      : return;
 }
 
 sub _make_row_description {
@@ -1421,11 +1541,15 @@ sub _make_row_description {
 }
 
 sub _append_next_page {
-    my ($url, $search_type) = @_;
+    my ($url, $token) = @_;
+
+    $token // return;    # no next page is available
+
     my $iter = $liststore->append;
     $liststore->set($iter, 0, get_next_page_spaces() . "<big><b>NEXT PAGE</b></big>");
     $liststore->set($iter, 3, $url);
-    $liststore->set($iter, 5, $search_type);
+    $liststore->set($iter, 5, $token);
+    $liststore->set($iter, 7, 'next_page');
 }
 
 sub _get_pixbuf_thumbnail {
@@ -1451,188 +1575,189 @@ sub _get_pixbuf_thumbnail {
     return $pixbuf;
 }
 
-sub print_videos {
+sub display_results {
     my ($results) = @_;
 
-    my $url    = $results->{url};
-    my $videos = $results->{results};
-
-    unless (@{$videos}) {
-        die "No video results...\n";
+    if (not $yv_utils->has_entries($results)) {
+        die "No results...\n";
     }
 
+    my $url   = $results->{url};
+    my $info  = $results->{results} // {};
+    my $items = $info->{items} // [];
+
     hide_feeds_window();
-    $search_for_combobox->set_active(0);
 
-    foreach my $video (@{$videos}) {
-        my $iter = $liststore->append;
-
-        my $row_description = $video->{description} || 'No description available...';
-        $liststore->set($iter, 4, $row_description);
-        $liststore->set($iter, 6, $video->{author});
-        $row_description = _make_row_description($row_description);
-
-        $liststore->set($iter, 3, $video->{videoID});
-        $liststore->set(
-                        $iter,
-                        0,
-                        "<big><b>"
-                          . encode_entities($video->{title} // 'Unknown')
-                          . "</b></big>\n"
-                          . "<b>$symbols{up_arrow}\t</b> "
-                          . $yv_utils->set_thousands($video->{likes}) . "\n"
-                          . "<b>$symbols{down_arrow}\t</b> "
-                          . $yv_utils->set_thousands($video->{dislikes}) . "\n"
-                          . "<b>$symbols{category}\t</b> "
-                          . encode_entities($video->{category} // 'Unknown') . "\n"
-                          . "<b>$symbols{face}\t</b> "
-                          . encode_entities($video->{author}) . "\n" . "<i>"
-                          . encode_entities($row_description) . "</i>"
-                       );
-
-        $liststore->set(
-            $iter, 2,
-            "<b>$symbols{play}\t</b> "
-              . $yv_utils->format_time($video->{duration}) . "\n"
-              . "<b>$symbols{average}\t</b> "
-              . sprintf('%.2f', ($video->{rating} || 0)) . "\n"
-              . "<b>$symbols{views}\t</b> "
-              . $yv_utils->set_thousands($video->{views})
-              . do {
-                defined $video->{published}
-                  ? "\n" . "<b>$symbols{right_arrow}\t </b>" . $yv_utils->format_date($video->{published})
-                  : q{};
-              }
-        );
-
-        if ($CONFIG{show_thumbs}) {
-            my $thumb_url = sprintf($CONFIG{thumb_url}, $video->{videoID}, $CONFIG{default_thumb});
-            my $pixbuf = _get_pixbuf_thumbnail($thumb_url);
-            $liststore->set_value($iter, 1, $pixbuf);
+    my %pos;
+    my $pos = 0;
+    my @video_ids;
+    while (my ($i, $item) = each @{$items}) {
+        if ($yv_utils->is_video($item)) {
+            $pos{$i} = $pos++;
+            push @video_ids, $yv_utils->get_video_id($item);
         }
     }
 
-    _append_next_page($url);
+    my $video_details;
+    if (@video_ids) {
+        my $content_details = $yv_obj->video_details(join(',', @video_ids), VIDEO_PART);
+        $video_details = $content_details->{results}{items};
+    }
+
+    while (my ($i, $item) = each @{$items}) {
+        if ($yv_utils->is_playlist($item)) {
+            add_playlist_entry($item);
+        }
+        elsif ($yv_utils->is_channel($item)) {
+            add_channel_entry($item);
+        }
+        elsif ($yv_utils->is_video($item)) {
+            @{$item}{qw(contentDetails statistics)} = @{$video_details->[$pos{$i}]}{qw(contentDetails statistics)};
+            add_video_entry($item);
+        }
+    }
+
+    _append_next_page($url, $info->{nextPageToken});
+}
+
+sub add_video_entry {
+    my ($video) = @_;
+
+    my $iter = $liststore->append;
+
+    my $row_description = $yv_utils->get_description($video);
+    $liststore->set($iter, 4, $row_description);
+    $liststore->set($iter, 6, $yv_utils->get_channel_id($video));
+    $liststore->set($iter, 7, 'video');
+    $row_description = _make_row_description($row_description);
+
+    $liststore->set($iter, 3, $yv_utils->get_video_id($video));
+    $liststore->set(
+                    $iter,
+                    0,
+                    "<big><b>"
+                      . encode_entities($yv_utils->get_title($video))
+                      . "</b></big>\n"
+                      . "<b>$symbols{up_arrow}\t</b> "
+                      . $yv_utils->set_thousands($yv_utils->get_likes($video)) . "\n"
+                      . "<b>$symbols{down_arrow}\t</b> "
+                      . $yv_utils->set_thousands($yv_utils->get_dislikes($video)) . "\n"
+                      . "<b>$symbols{ellipsis}\t</b> "
+                      . $yv_utils->get_caption($video) . "\n"
+                      . "<b>$symbols{face}\t</b> "
+                      . encode_entities($yv_utils->get_channel_title($video)) . "\n" . "<i>"
+                      . encode_entities($row_description) . "</i>"
+                   );
+
+    $liststore->set(
+        $iter, 2,
+        "<b>$symbols{play}\t</b> "
+          . $yv_utils->format_time($yv_utils->get_duration($video)) . "\n"
+          . "<b>$symbols{category}\t</b> "
+          . $yv_utils->get_definition($video) . "\n"
+
+          . "<b>$symbols{views}\t</b> "
+          . $yv_utils->set_thousands($yv_utils->get_views($video)) . "\n"
+          . "<b>$symbols{right_arrow}\t </b>"
+          . $yv_utils->get_publication_date($video)
+    );
+
+    if ($CONFIG{show_thumbs}) {
+        my $thumb_url = $yv_utils->get_thumbnail_url($video, $CONFIG{thumbnail_type});
+        my $pixbuf = _get_pixbuf_thumbnail($thumb_url);
+        $liststore->set_value($iter, 1, $pixbuf);
+    }
+}
+
+sub add_channel_entry {
+    my ($channel) = @_;
+
+    my $iter            = $liststore->append;
+    my $row_description = $yv_utils->get_description($channel);
+
+    $liststore->set($iter, 4, $row_description);
+    $liststore->set($iter, 7, 'channel');
+    $row_description = _make_row_description($row_description);
+
+=cut
+  snippet => {
+    channelId            => "UCs7qhmGsWM-JAcPvMWRhBmQ",
+    channelTitle         => "",
+    description          => "\x{96D9}\x{8A9E}TED Android App: http://cdotchen-blog.tumblr.com/post/111064215021/ted-ted-app.",
+    liveBroadcastContent => "none",
+    publishedAt          => "2015-01-08T14:48:22.000Z",
+    thumbnails           => {
+=cut
+
+    $liststore->set($iter, 3, $yv_utils->get_channel_id($channel));
+    $liststore->set(
+                    $iter,
+                    0,
+                    '<big><b>'
+                      . encode_entities($yv_utils->get_title($channel))
+                      . "</b></big>\n\n"
+                      . "<b>$symbols{face}\t</b> "
+                      . encode_entities($yv_utils->get_channel_title($channel)) . "\n"
+                      . "<b>$symbols{crazy_arrow}\t</b> "
+                      . $yv_utils->get_publication_date($channel)
+                      . "\n\n<i>"
+                      . encode_entities($row_description) . '</i>'
+                   );
+
+    $liststore->set($iter, 2, "<b>$symbols{category}</b>  " . 'Channel' . "\n");
+
+    if ($CONFIG{show_thumbs}) {
+        my $pixbuf = _get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($channel, $CONFIG{thumbnail_type}));
+        $liststore->set_value($iter, 1, $pixbuf);
+    }
+}
+
+sub add_playlist_entry {
+    my ($playlist) = @_;
+
+    my $iter            = $liststore->append;
+    my $row_description = $yv_utils->get_description($playlist);
+
+    $liststore->set($iter, 4, $row_description);
+    $row_description = _make_row_description($row_description);
+
+    $liststore->set($iter, 6, $yv_utils->get_channel_id($playlist));
+    $liststore->set($iter, 7, 'playlist');
+    $liststore->set($iter, 3, $yv_utils->get_playlist_id($playlist));
+    $liststore->set(
+                    $iter,
+                    0,
+                    '<big><b>'
+                      . encode_entities($yv_utils->get_title($playlist))
+                      . "</b></big>\n\n"
+                      . "<b>$symbols{face}\t</b> "
+                      . encode_entities($yv_utils->get_channel_title($playlist)) . "\n"
+                      . "<b>$symbols{crazy_arrow}\t</b> "
+                      . $yv_utils->format_date($yv_utils->get_publication_date($playlist)) . "\n\n" . '<i>'
+                      . encode_entities($row_description) . '</i>'
+                   );
+
+    $liststore->set($iter, 2, "<b>$symbols{category}</b>  " . 'Playlist' . "\n");
+
+    if ($CONFIG{show_thumbs}) {
+        my $pixbuf = _get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($playlist, $CONFIG{thumbnail_type}));
+        $liststore->set_value($iter, 1, $pixbuf);
+    }
 }
 
 sub print_channel_suggestions {
     my $results = $yv_obj->get_channel_suggestions();
-    $liststore->clear if $CONFIG{clear_list};
-    print_channels($results, 'channel_suggestions');
-}
-
-sub print_channels {
-    my ($results, $type) = @_;
-
-    my $url      = $results->{url};
-    my $channels = $results->{results};
-
-    unless (@{$channels}) {
-        die "No channel results...\n";
-    }
-
-    $search_for_combobox->set_active(1);
-
-    foreach my $channel (@{$channels}) {
-        my $iter = $liststore->append;
-        my $row_description = $channel->{summary} || 'No description available...';
-
-        $liststore->set($iter, 4, $row_description);
-        $row_description = _make_row_description($row_description);
-
-        $channel->{title} =~ s{<.*?>}{}sg;
-        $channel->{title} = decode_entities($channel->{title})
-          if $channel->{title} =~ /&#?\w/;
-
-        $liststore->set($iter, 3, "username=$channel->{author}");
-        $liststore->set(
-                        $iter, 0,
-                        '<big><b>'
-                          . encode_entities($channel->{title})
-                          . "</b></big>\n\n"
-                          . "<b>$symbols{face}\t</b> "
-                          . encode_entities($channel->{name}) . "\n"
-                          . "<b>$symbols{heart}\t</b> "
-                          . $yv_utils->set_thousands($channel->{subscribers}) . "\n"
-                          . (
-                             exists($channel->{views})
-                             ? ("<b>$symbols{views}\t</b> " . $yv_utils->set_thousands($channel->{views}))
-                             : ("<b>$symbols{play}\t</b> " . $yv_utils->set_thousands($channel->{videos}))
-                            )
-                          . "\n\n<i>"
-                          . encode_entities($row_description) . '</i>'
-                       );
-
-        $liststore->set($iter, 2, "<b>$symbols{crazy_arrow}\t</b> " . $yv_utils->format_date($channel->{updated}) . "\n");
-
-        if ($CONFIG{show_thumbs}) {
-            my $pixbuf = _get_pixbuf_thumbnail($channel->{thumbnail});
-            $liststore->set_value($iter, 1, $pixbuf);
-        }
-    }
-
-    _append_next_page($url, $type // 'channels');
-}
-
-#---------------------- PRINT PLAYLISTS ----------------------#
-sub print_playlists {
-    my ($results) = @_;
-
-    my $url       = $results->{url};
-    my $playlists = $results->{results};
-
-    unless (@{$playlists}) {
-        die "No playlist results...\n";
-    }
-
-    hide_feeds_window();
-    $search_for_combobox->set_active(2);
-
-    foreach my $playlist (@{$playlists}) {
-
-        next if $playlist->{count} == 0;
-
-        my $iter = $liststore->append;
-        my $row_description = $playlist->{summary} || 'No description available...';
-
-        $liststore->set($iter, 4, $row_description);
-        $row_description = _make_row_description($row_description);
-
-        $liststore->set($iter, 6, $playlist->{author});
-        $liststore->set($iter, 3, $playlist->{playlistID});
-        $liststore->set(
-                        $iter,
-                        0,
-                        '<big><b>'
-                          . encode_entities($playlist->{'title'})
-                          . "</b></big>\n\n"
-                          . "<b>$symbols{face}\t</b> "
-                          . encode_entities($playlist->{name}) . "\n"
-                          . "<b>$symbols{right_arrow}\t</b> "
-                          . $yv_utils->format_date($playlist->{published}) . "\n"
-                          . "<b>$symbols{crazy_arrow}\t</b> "
-                          . $yv_utils->format_date($playlist->{updated}) . "\n\n" . '<i>'
-                          . encode_entities($row_description) . '</i>'
-                       );
-
-        $liststore->set($iter, 2, "<b>$symbols{play}\t</b> " . $yv_utils->set_thousands($playlist->{count}) . "\n");
-
-        if ($CONFIG{show_thumbs}) {
-            my $pixbuf = _get_pixbuf_thumbnail($playlist->{thumbnail});
-            $liststore->set_value($iter, 1, $pixbuf);
-        }
-    }
-
-    _append_next_page($url, 'playlists');
+    $liststore->clear if $CONFIG{clear_search_list};
+    display_results($results);
 }
 
 sub list_playlist {
-    my ($playlistID) = @_;
+    my ($playlist_id) = @_;
 
-    my $info = $yv_obj->get_videos_from_playlist($playlistID);
-    if (@{$info->{results}}) {
-        $liststore->clear if $CONFIG{clear_list};
-        print_videos($info);
+    my $results = $yv_obj->videos_from_playlist_id($playlist_id);
+    if ($yv_utils->has_entries($results)) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($results);
         return 1;
     }
     else {
@@ -1650,7 +1775,7 @@ sub playlists_from_selected_username {
 sub videos_from_selected_username {
     my $iter = $users_treeview->get_selection->get_selected;
     my $username = $users_liststore->get($iter, 0);
-    videos_from_username($username);
+    uploads('user', $username);
 }
 
 sub get_username_from_list {
@@ -1658,8 +1783,24 @@ sub get_username_from_list {
     videos_from_selected_username();
 }
 
-sub videos_from_text_entry_username {
-    videos_from_username($_[0]->get_text);
+sub favorites_from_text_entry {
+    my ($text_entry) = @_;
+    favorites($channel_type_combobox->get_active_text, $text_entry->get_text);
+}
+
+sub uploads_from_text_entry {
+    my ($text_entry) = @_;
+    uploads($channel_type_combobox->get_active_text, $text_entry->get_text);
+}
+
+sub playlists_from_text_entry {
+    my ($text_entry) = @_;
+    playlists($channel_type_combobox->get_active_text, $text_entry->get_text);
+}
+
+sub likes_from_text_entry {
+    my ($text_entry) = @_;
+    likes($channel_type_combobox->get_active_text, $text_entry->get_text);
 }
 
 # Get videos from username
@@ -1667,28 +1808,13 @@ sub videos_from_username {
     my ($username) = @_;
     is_valid_username($username) or return;
 
-    my $videos = $yv_obj->get_videos_from_username($username);
-    if (@{$videos->{results}}) {
-        $liststore->clear if $CONFIG{clear_list};
-        print_videos($videos);
+    my $results = $yv_obj->get_videos_from_username($username);
+    if ($yv_utils->has_entries($results)) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($results);
     }
     else {
         die "No video uploaded by: <$username>\n";
-    }
-    return 1;
-}
-
-sub favorited_videos_from_username {
-    my $username = ref $_[0] ? $_[0]->get_text : $_[0];
-
-    is_valid_username($username) or return;
-    my $videos = $yv_obj->get_favorited_videos_from_username($username);
-    if (@{$videos->{results}}) {
-        $liststore->clear if $CONFIG{clear_list};
-        print_videos($videos);
-    }
-    else {
-        die "No video favorited by username: <$username>\n";
     }
     return 1;
 }
@@ -1704,20 +1830,6 @@ sub is_valid_username {
     die "Invalid username: <$username>\n"
       unless $username =~ /$valid_username_re/;
     return 1;
-}
-
-sub playlists_from_username {
-    my $username = ref $_[0] ? $_[0]->get_text : $_[0];
-    is_valid_username($username) or return;
-
-    my $playlists = $yv_obj->get_playlists_from_username($username);
-    if (@{$playlists->{results}}) {
-        $liststore->clear if $CONFIG{clear_list};
-        print_playlists($playlists);
-    }
-    else {
-        die "No playlists found.\n";
-    }
 }
 
 sub _strip_edge_spaces {
@@ -1884,11 +1996,11 @@ sub list_category {
     my $videos =
         $type eq 'edu-cat'
       ? $yv_obj->get_video_lectures_from_category($cat_id)
-      : $yv_obj->get_videos_from_category($cat_id);
+      : $yv_obj->videos_from_category($cat_id);
 
-    if (@{$videos->{results}}) {
-        $liststore->clear if $CONFIG{clear_list};
-        print_videos($videos);
+    if ($yv_utils->has_entries($videos)) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($videos);
     }
     else {
         die "No video found for categoryID: <$cat_id>\n";
@@ -1914,12 +2026,12 @@ sub list_tops {
         $top_opts{cat_id} = $category;
     }
 
-    $liststore->clear if $CONFIG{clear_list};
-    print_videos(
-                   $top_type eq 'movies'
-                 ? $yv_obj->get_movies($top_opts{feed_id})
-                 : $yv_obj->get_video_tops(%top_opts)
-                );
+    $liststore->clear if $CONFIG{clear_search_list};
+    display_results(
+                      $top_type eq 'movies'
+                    ? $yv_obj->get_movies($top_opts{feed_id})
+                    : $yv_obj->get_video_tops(%top_opts)
+                   );
 }
 
 sub clear_text {
@@ -1935,7 +2047,7 @@ sub get_options_as_arguments {
     my @args;
     my %options = (
                    'no-interactive' => q{},
-                   'orderby'        => $CONFIG{orderby},
+                   'order'          => $CONFIG{order},
                    'time'           => $CONFIG{time_sort},
                    'resolution'     => $CONFIG{resolution},
                    'download-dir'   => rel2abs($CONFIG{downloads_folder}),
@@ -1974,7 +2086,7 @@ sub _make_youtube_url {
 
 sub open_youtube_url {
     my $url = _make_youtube_url(get_selected_video_code() or return);
-    my $code = execute_external_program(join(q{ }, $CONFIG{browser} // 'xdg-open', quotemeta($url)));
+    my $code = execute_external_program(join(q{ }, $CONFIG{web_browser} // $ENV{WEBBROWSER} // 'xdg-open', quotemeta($url)));
 
     warn "Can't open YouTube URL - exit code: $code\n" if $code != 0;
     return 1;
@@ -2049,9 +2161,9 @@ sub comments_row_activated {
 
     if (defined $value and $value =~ m{^https?://}) {
         $feeds_liststore->remove($iter);
-        my $comments = $yv_obj->next_page($value, comments => 1);
-        if (@{$comments->{results}}) {
-            print_comments($comments);
+        my $results = $yv_obj->next_page($value, comments => 1);
+        if ($yv_utils->has_entries($results)) {
+            print_comments($results);
         }
         else {
             die "This is the last page of comments.\n";
@@ -2062,11 +2174,11 @@ sub comments_row_activated {
 }
 
 sub get_user_favorited_videos {
-    my $username = get_username_for_selected_video() // return;
-    favorited_videos_from_username($username);
+    my $username = get_channel_id_for_selected_video() // return;
+    favorites('channel', $username);
 }
 
-sub get_username_for_selected_video {
+sub get_channel_id_for_selected_video {
     my $iter = $treeview->get_selection->get_selected() or return;
     return $liststore->get($iter, 6);
 }
@@ -2074,10 +2186,10 @@ sub get_username_for_selected_video {
 sub show_related_videos {
     my $code = get_selected_video_code() or return;
 
-    my $videos = $yv_obj->get_related_videos($code);
-    if (@{$videos->{results}}) {
-        $liststore->clear if $CONFIG{clear_list};
-        print_videos($videos);
+    my $results = $yv_obj->related_to_videoID($code);
+    if ($yv_utils->has_entries($results)) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($results);
     }
     else {
         die "No related video for videoID: <$code>\n";
@@ -2095,7 +2207,7 @@ sub favorite_video {
 }
 
 sub subscribe_channel {
-    my $user = get_username_for_selected_video();
+    my $user = get_channel_id_for_selected_video();
     $feeds_statusbar->push(
                            0, $yv_obj->subscribe_channel($user)
                            ? "Successfully subscribed to channel: $user."
@@ -2162,11 +2274,19 @@ sub print_comments {
 }
 
 sub show_more_videos_from_username {
-    videos_from_username(get_username_for_selected_video() or return);
+    uploads('channel', get_channel_id_for_selected_video() || return);
 }
 
 sub show_playlists_from_username {
-    playlists_from_username(get_username_for_selected_video() or return);
+    my $request = $yv_obj->playlists_from_channel_id(get_channel_id_for_selected_video() || return);
+    if ($yv_utils->has_entries($request)) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($request);
+    }
+    else {
+        die "No playlists found...\n";
+    }
+    return 1;
 }
 
 # Setting details to details_window
@@ -2215,6 +2335,7 @@ sub on_mainw_destroy {
     get_main_window_size();
     dump_configuration();
     save_usernames_to_file();
+
     'Gtk2'->main_quit;
     exit 0;
 }

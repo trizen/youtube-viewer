@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 05 April 2015
+#  Latest edit on: 19 April 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -120,17 +120,28 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
+use utf8;
 use 5.016;
 
-#use lib qw(../lib);    # devel only
-#use warnings;          # debug only
+use warnings;
+no warnings 'once';
 
-use File::Spec::Functions qw(catdir catfile curdir path rel2abs tmpdir);
+my $DEVEL;    # true in devel mode
+use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
+use File::Spec::Functions qw(
+  catdir
+  catfile
+  curdir
+  path
+  rel2abs
+  tmpdir
+  );
+
 my $appname  = 'Youtube Viewer';
-my $version  = '3.1.3';
+my $version  = '3.1.4';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
@@ -138,7 +149,11 @@ require Term::ReadLine;
 my $term = Term::ReadLine->new("$appname $version");
 
 # Developer key
-my $key = 'eTj9NtCyOsGMliTTwz-T85muGT-ARAwVREslfB_giHP3X339Jkpn5Xf71pQXY96xWtFY1oFHt530ct5uZZJk5YTghbNm2IrwZ4';
+#my $key = 'eTj9NtCyOsGMliTTwz-T85muGT-ARAwVREslfB_giHP3X339Jkpn5Xf71pQXY96xWtFY1oFHt530ct5uZZJk5YTghbNm2IrwZ4';
+my $key = 'aXalQYmzI8gPkMSLyMhpApfMAiU2b23Qz2nE3mq';
+
+sub VIDEO_PART () { 'contentDetails,statistics' }
+sub EXTRA_VIDEO_PART () { join(',', 'snippet', VIDEO_PART()) }
 
 # Options (key=>value) goes here
 my %opt;
@@ -150,6 +165,7 @@ my %constant = (win32 => $^O eq 'MSWin32');    # doh
 my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
   || catdir(
             (
+             my $home_dir =
                   $ENV{HOME}
                || $ENV{LOGDIR}
                || ($constant{win32} ? '\Local Settings\Application Data' : ((getpwuid($<))[7] || `echo -n ~`))
@@ -227,18 +243,23 @@ my %CONFIG = (
     combine_multiple_videos => 0,
 
     # YouTube options
-    prefer_https        => 0,
-    dash_support        => 1,
-    dash_mp4_audio      => 0,
-    results             => 20,
-    resolution          => 'original',
-    hd                  => undef,
-    safe_search         => undef,
-    caption             => undef,
-    duration            => undef,
-    time                => undef,
-    orderby             => undef,
-    categories_language => 'en-US',
+    dash_support    => 1,
+    dash_mp4_audio  => 0,
+    maxResults      => 20,
+    resolution      => 'original',
+    videoDefinition => undef,
+    videoDimension  => undef,
+    videoLicense    => undef,
+
+    #safe_search         => undef,
+    videoCaption    => undef,
+    videoDuration   => undef,
+    videoSyndicated => undef,
+    publishedBefore => undef,
+    publishedAfter  => undef,
+    order           => undef,
+    hl              => 'en_US',
+    cat_region      => 'us',
 
     # URI options
     youtube_video_url => 'http://www.youtube.com/watch?v=%s',
@@ -248,6 +269,7 @@ my %CONFIG = (
     captions_dir  => tmpdir(),
     get_captions  => 1,
     copy_caption  => 0,
+    cache_dir     => undef, # define it later
 
     # Others
     http_proxy           => undef,
@@ -271,6 +293,7 @@ my %CONFIG = (
     remove_played_file   => 0,
     use_xml_fast         => 1,
     save_input_history   => 0,
+    show_extra_info      => 1,
     history_size_limit   => 1_000,
     ffmpeg_command       => q{ffmpeg -i %s %s},
     convert_to           => undef,
@@ -440,29 +463,37 @@ while (my ($player, $data) = each %{$CONFIG->{video_players}}) {
 my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
 
-if (not \%CONFIG ~~ $CONFIG) {
-    dump_configuration();
-}
+{
+    my $update_config = 0;
 
-# Check for HTTPS support
-if (not $CONFIG{prefer_https}) {
-    eval { require LWP::Protocol::https };
-    if (not $@) {
-        $CONFIG{prefer_https} = 1;
+    # Define the cache directory
+    if (not defined $CONFIG{cache_dir}) {
+        $CONFIG{cache_dir} = catdir($home_dir, ".cache", "youtube-viewer");
+        $update_config = 1;
+    }
+
+    # Locating a video player
+    if (not defined $CONFIG{video_player_selected}) {
+        foreach my $key (sort keys %{$CONFIG{video_players}}) {
+            if (defined(my $abs_player_path = which_command($CONFIG{video_players}{$key}{cmd}))) {
+                $CONFIG{video_players}{$key}{cmd} = $abs_player_path;
+                $CONFIG{video_player_selected}    = $key;
+                $update_config                    = 1;
+                last;
+            }
+        }
+    }
+
+    if ($update_config or not \%CONFIG ~~ $CONFIG) {
         dump_configuration();
     }
 }
 
-# Locating a video player
-if (not defined $CONFIG{video_player_selected}) {
-    foreach my $key (sort keys %{$CONFIG{video_players}}) {
-        if (defined(my $abs_player_path = which_command($CONFIG{video_players}{$key}{cmd}))) {
-            $CONFIG{video_players}{$key}{cmd} = $abs_player_path;
-            $CONFIG{video_player_selected} = $key;
-            dump_configuration();
-            last;
-        }
-    }
+# Create the cache directory (if needed)
+if (not -d $CONFIG{cache_dir}) {
+    require File::Path;
+    File::Path::make_path($CONFIG{cache_dir})
+      or warn "[!] Can't create dir `$CONFIG{cache_dir}': $!";
 }
 
 @opt{keys %CONFIG} = values(%CONFIG);
@@ -473,7 +504,7 @@ if ($opt{save_input_history}) {
         select((select($opt{history_fh}), $| = 1)[0]);    # autoflush
     }
     else {
-        warn "Can't open history file `$history_file' for appending: $!";
+        warn "[!] Can't open history file `$history_file' for appending: $!";
     }
 
     $term->ReadHistory($history_file);
@@ -496,15 +527,16 @@ if ($opt{save_input_history}) {
 
 require WWW::YoutubeViewer;
 my $yv_obj = WWW::YoutubeViewer->new(
+                                     escape_utf8         => 1,
                                      key                 => $key,
                                      config_dir          => $config_dir,
-                                     escape_utf8         => 1,
+                                     cache_dir           => $opt{cache_dir},
                                      authentication_file => $authentication_file,
                                     );
 
 {
-    my $client_id     = '991455593101.apps.googleusercontent.com';
-    my $client_secret = 'YcxxWCCbBwIr-IhUDCanrp41';
+    my $client_id     = '923751928481.apps.googleusercontent.com';
+    my $client_secret = 'twr0nZewhZ-wBSVW1apRauq1';
     my $redirect_uri  = 'urn:ietf:wg:oauth:2.0:oob';
 
     $yv_obj->set_client_id($client_id);
@@ -550,14 +582,14 @@ usage: $execname [options] ([url] | [keywords])
    -c  --categories     : display the available YouTube categories
        --edu-categories : display the YouTube EDU categories
        --course-id=s    : list the video lectures from a course_ID
-   -hl --catlang=s      : language for categories (default: en-US)
+   -hl --catlang=s      : language for categories (default: en_US)
+       --cat-region=s   : region code for categories (default: us)
 
  * Videos
    -u  --user=s         : list videos uploaded by a specific user
    -uf --user-fav=s     : list the videos favorited by a specific user
    -id --videoids=s,s   : play YouTube videos by their IDs
    -rv --related=s      : show related videos for a video ID or URL
-       --gdata-url=s    : print video results from a valid GData URL
        --search=s       : search for YouTube videos (default mode)
 
  * Playlists
@@ -585,6 +617,7 @@ usage: $execname [options] ([url] | [keywords])
 
  * Filtering
    --author=s           : search in videos uploaded by a specific user
+   --channel-id=s       : search in videos belonging to a specific channel ID
    --duration=s         : filter search results based on video length
                           valid values are: short, medium, long
    --caption=s          : only videos with/without closed captions
@@ -593,7 +626,8 @@ usage: $execname [options] ([url] | [keywords])
                           this option can also be used with `--tops`
    --safe-search=s      : YouTube will skip restricted videos for your location
                           valid values are: none, moderate, strict
-   --orderby=s          : order entries by: published, viewCount or rating
+   --order=s            : order the results using a specific sorting method
+                          valid values: date rating viewCount title videoCount
    --time=s             : show only videos uploaded within the specified time
                           valid values are: today, this_week and this_month
    --hd!                : search only for videos available in at least 720p
@@ -612,14 +646,14 @@ usage: $execname [options] ([url] | [keywords])
    -R --recommended     : show the recommended videos for you *
    -S --subscriptions:s : show the new subscription videos *
    -w --watched         : show the latest watched videos on YouTube *
-   -L --later           : show the saved videos to watch at a later time *
+   -L --likes           : show the videos that you liked on YouTube *
+      --dislikes        : show the videos that you disliked on YouTube *
 
 * [POST] Personal
    --subscribe=s        : subscribe to a channel *
    --favorite=s         : favorite a YouTube video by URL or ID *
    --like=s             : send a 'like' rating to a video URL or ID *
    --dislike=s          : send a 'dislike' rating to a video URL or ID *
-
 
 == Player Options ==
 
@@ -672,7 +706,6 @@ usage: $execname [options] ([url] | [keywords])
        --min-seconds=i   : don't play videos shorter than i seconds
        --combine-multi!  : combine multiple videos into one play instance
        --get-term-width! : allow $execname to read your terminal width
-       --use-xml-fast!   : use XML::Fast to parse the GData XML content
        --autohide!       : automatically hide watched videos
 
  * Closed-captions
@@ -697,7 +730,6 @@ usage: $execname [options] ([url] | [keywords])
    --http_proxy=s       : HTTP proxy to use, format 'http://domain.tld:port/'.
                           If authentication required,
                           use 'http://user:pass\@domain.tld:port/'
-   --prefer-https!      : use the HTTPS protocol instead of the HTTP protocol
    --dash!              : include or exclude the DASH itags
    --dash-m4a!          : include or exclude the itags for MP4 audio URLs
 
@@ -819,24 +851,27 @@ NOTE: Categories and region IDs are case sensitive!
 
 -> Special tokens:
 
-  *ID*          : youtube video ID
-  *AUTHOR*      : author name of the video
-  *CATEGORY*    : the category of the video
+  *ID*          : the YouTube video ID
+  *AUTHOR*      : the author name of the video
+  *CHANNELID*   : the channel ID of the video
   *RESOLUTION*  : the resolution of the video
-  *VIEWS*       : the number of video views
-  *LIKES*       : the number of video likes
-  *DISLIKES*    : the number of video dislikes
-  *RATING*      : the rating score of the video (from 1 to 5)
+  *VIEWS*       : the number of views
+  *LIKES*       : the number of likes
+  *DISLIKES*    : the number of dislikes
+  *COMMENTS*    : the number of comments
   *DURATION*    : the duration of the video in seconds
+  *DIMENSION*   : the dimension of the video (2D or 3D)
+  *DEFINITION*  : the defintion of the video (HD or SD)
   *TIME*        : the duration of the video in HH::MM::SS
   *TITLE*       : the title of the video
   *FTITLE*      : the title of the video (filename safe)
   *DESCRIPTION* : the description of the video
 
-  *URL*      : the youtube URL of the video
+  *URL*      : the YouTube URL of the video
   *ITAG*     : the itag value of the video
   *FORMAT*   : the extension of the video (without the dot)
 
+  *CAPTION*  : true if the video has caption.
   *SUB*      : the local subtitle file (if any)
   *AUDIO*    : the audio URL of the video (only in DASH mode)
   *VIDEO*    : the video URL of the video (it might not contain audio)
@@ -1031,12 +1066,17 @@ sub apply_configuration {
     # ... YOUTUBE OPTIONS ... #
     foreach my $option_name (
                              qw(
-                             caption results duration
-                             author orderby region category
-                             categories_language safe_search
-                             page debug time prefer_https http_proxy
+                             videoCaption maxResults order
+                             videoDefinition videoCategoryId
+                             videoDimension videoDuration
+                             videoEmbeddable videoLicense
+                             videoSyndicated channelId
+                             publishedAfter publishedBefore
+                             regionCode videoCategoryId
+                             page debug http_proxy
                              )
       ) {
+
         if (defined $opt->{$option_name}) {
             my $code      = \&{"WWW::YoutubeViewer::set_$option_name"};
             my $value     = delete $opt->{$option_name};
@@ -1049,15 +1089,11 @@ sub apply_configuration {
     }
 
     if (defined $opt->{hd}) {
-        $yv_obj->set_hd(delete($opt->{hd}) ? 'true' : undef);
-    }
-
-    if (defined $opt->{use_xml_fast}) {
-        $yv_obj->set_use_internal_xml_parser(not delete $opt->{use_xml_fast});
+        $yv_obj->videoDefinition(delete($opt->{videoDefinition}) ? 'high' : 'any');
     }
 
     if (defined $opt->{more_results}) {
-        $yv_obj->set_results(delete($opt->{more_results}) ? 50 : $CONFIG{results});
+        $yv_obj->set_maxResults(delete($opt->{more_results}) ? 50 : $CONFIG{maxResults});
     }
 
     if (delete $opt->{authenticate}) {
@@ -1107,11 +1143,11 @@ sub apply_configuration {
     }
 
     if (defined $opt->{like_video}) {
-        rating_videos('like', split(/[,\s]+/, delete $opt->{like_video}));
+        rate_videos('like', split(/[,\s]+/, delete $opt->{like_video}));
     }
 
     if (defined $opt->{dislike_video}) {
-        rating_videos('dislike', split(/[,\s]+/, delete $opt->{like_video}));
+        rate_videos('dislike', split(/[,\s]+/, delete $opt->{like_video}));
     }
 
     if (defined $opt->{play_video_ids}) {
@@ -1142,7 +1178,7 @@ sub apply_configuration {
             get_and_print_videos_from_playlist($value);
         }
         else {
-            print_playlists($yv_obj->search_for_playlists($value, @{$keywords}));
+            print_playlists($yv_obj->search_playlists([$value, @{$keywords}]));
         }
     }
 
@@ -1152,7 +1188,7 @@ sub apply_configuration {
 
     if (defined $opt->{search_videos}) {
         my $value = delete $opt->{search_videos};
-        print_videos($yv_obj->search($value, @{$keywords}));
+        print_videos($yv_obj->search_videos([$value, @{$keywords}]));
     }
 
     if (defined $opt->{search_channels}) {
@@ -1169,11 +1205,7 @@ sub apply_configuration {
     }
 
     if (delete $opt->{categories}) {
-        print_categories(categories => $yv_obj->get_categories());
-    }
-
-    if (delete $opt->{educategories}) {
-        print_categories(categories => $yv_obj->get_educategories(), edu => 1);
+        print_categories($yv_obj->video_categories($opt{cat_region}));
     }
 
     if (defined $opt->{show_seasons}) {
@@ -1190,11 +1222,15 @@ sub apply_configuration {
 
     if (defined $opt->{user_videos}) {
         if ($opt->{user_videos} =~ /$valid_username_re/) {
-            print_videos($yv_obj->get_videos_from_username(delete $opt->{user_videos}));
+            print_videos($yv_obj->uploads_from_username(delete $opt->{user_videos}));
         }
         else {
             warn_invalid("username", $opt->{user_videos});
         }
+    }
+
+    if (defined $opt->{channel_id_videos}) {
+        print_videos($yv_obj->get_uploads(delete $opt->{channel_id_videos}));
     }
 
     if (defined $opt->{user_shows}) {
@@ -1211,17 +1247,49 @@ sub apply_configuration {
     }
 
     if (defined $opt->{user_playlists}) {
-        print_playlists($yv_obj->get_playlists_from_username(delete $opt->{user_playlists}));
+        print_playlists($yv_obj->playlists_from_username(delete $opt->{user_playlists}));
+    }
+
+    if (defined $opt->{favorites}) {
+        my $channel_id = delete($opt->{favorites});
+        print_videos(
+                       $channel_id
+                     ? $yv_obj->favorites($channel_id)
+                     : $yv_obj->favorites
+                    );
+    }
+
+    if (defined $opt->{likes}) {
+        my $channel_id = delete($opt->{likes});
+        print_videos(
+                       $channel_id
+                     ? $yv_obj->likes($channel_id)
+                     : $yv_obj->my_likes
+                    );
+    }
+
+    if (defined $opt->{dislikes}) {
+        delete $opt->{dislikes};
+        print_videos($yv_obj->my_dislikes);
     }
 
     if (defined $opt->{user_favorited_videos}) {
         my $username = delete $opt->{user_favorited_videos};
         if ($username =~ /$valid_username_re/) {
-            print_videos($yv_obj->get_favorited_videos_from_username($username));
+            print_videos($yv_obj->favorites_from_username($username));
         }
         else {
             warn_invalid("username", $username);
-            print STDERR "\n";
+        }
+    }
+
+    if (defined $opt->{user_liked_videos}) {
+        my $username = delete $opt->{user_liked_videos};
+        if ($username =~ /$valid_username_re/) {
+            print_videos($yv_obj->likes_from_username($username));
+        }
+        else {
+            warn_invalid("username", $username);
         }
     }
 
@@ -1233,34 +1301,19 @@ sub apply_configuration {
         print_movies();
     }
 
-    foreach my $feed_name (@{WWW::YoutubeViewer::feed_methods}) {
-        if (defined $opt->{$feed_name}) {
-            my $user   = delete $opt->{$feed_name};
-            my $code   = \&{"WWW::YoutubeViewer::get_$feed_name"};
-            my $videos = $yv_obj->$code($user);
-            if (defined $videos) {
-                print_videos($videos);
-            }
-        }
-    }
+    #~ foreach my $feed_name (@{WWW::YoutubeViewer::feed_methods}) {
+    #~ if (defined $opt->{$feed_name}) {
+    #~ my $user   = delete $opt->{$feed_name};
+    #~ my $code   = \&{"WWW::YoutubeViewer::get_$feed_name"};
+    #~ my $videos = $yv_obj->$code($user);
+    #~ if (defined $videos) {
+    #~ print_videos($videos);
+    #~ }
+    #~ }
+    #~ }
 
     if (defined $opt->{get_comments}) {
         get_and_print_comments(split(/[,\s]+/, delete($opt->{get_comments})));
-    }
-
-    if (defined $opt->{get_gdata_url}) {
-        my $url = delete $opt->{get_gdata_url};
-        if ($url =~ m{^https?://(?:www\.)?gdata\.youtube\.com/feeds/api/}i) {
-            print_videos(
-                         {
-                          url     => $url,
-                          results => $yv_obj->get_content($url)
-                         }
-                        );
-        }
-        else {
-            warn_invalid("GData url", $url);
-        }
     }
 
     if (defined $opt->{print_video_info}) {
@@ -1307,7 +1360,8 @@ sub parse_arguments {
         'favorites|fv|favorited-videos|F:s'       => \$opt{favorites},
         'recommended|recommendations|R:s'         => \$opt{recommendations},
         'watch_history|watched|w:s'               => \$opt{watch_history},
-        'watch_later|later|L:s'                   => \$opt{watch_later},
+        'likes|L:s'                               => \$opt{likes},
+        'dislikes'                                => \$opt{dislikes},
         'subscribe=s'                             => \$opt{subscribe_channel},
         'favorite|favorite-video|fav=s'           => \$opt{favorite_video},
         'channel-suggestions'                     => \$opt{channel_suggestions},
@@ -1315,18 +1369,21 @@ sub parse_arguments {
         'login|authenticate'     => \$opt{authenticate},
         'logout'                 => \$opt{logout},
         'user|username|u|uv=s'   => \$opt{user_videos},
+        'cv|channel-videos=s'    => \$opt{channel_id_videos},
         'shows|user-shows|us=s'  => \$opt{user_shows},
         'user-playlists|up=s'    => \$opt{user_playlists},
-        'user-favorited|uf=s'    => \$opt{user_favorited_videos},
+        'user-favorites|uf=s'    => \$opt{user_favorited_videos},
+        'user-likes|ul=s'        => \$opt{user_liked_videos},
         'related-videos|rl|rv=s' => \$opt{related_videos},
         'http_proxy=s'           => \$opt{http_proxy},
 
-        'catlang|cl|hl=s'              => \$opt{categories_language},
-        'category|cat=s'               => \$opt{category},
-        'r|region|region_id|country=s' => \$opt{region},
+        'catlang|cl|hl=s'        => \$opt{hl},
+        'category|cat=s'         => \$opt{category},
+        'cat-region=s'           => \$opt{cat_region},
+        'r|region|region-code=s' => \$opt{regionCode},
 
-        'orderby|order|order-by=s' => \$opt{orderby},
-        'duration=s'               => \$opt{duration},
+        'orderby|order|order-by=s' => \$opt{order},
+        'duration=s'               => \$opt{videoDuration},
         'time=s'                   => \$opt{time},
 
         'max-seconds|max_seconds=i' => \$opt{max_seconds},
@@ -1339,8 +1396,6 @@ sub parse_arguments {
         'backwards|B!'               => \$opt{play_backwards},
         'input|std-input=s'          => \$opt{std_input},
         'use-colors|colors|colored!' => \$opt{colors},
-        'prefer-https|prefer_https!' => \$opt{prefer_https},
-        'use-xml-fast|use_xml_fast!' => \$opt{use_xml_fast},
 
         'playlists|p|pl|playlist:s' => \$opt{search_playlists},
         'pid|playlist-id=s'         => \$opt{playlist_id},
@@ -1349,6 +1404,7 @@ sub parse_arguments {
         'debug:1'                   => \$opt{debug},
         'download|dl|d!'            => \$opt{download_video},
         'safe-search|safeSearch=s'  => \$opt{safe_search},
+        'vd|video-definition=s'     => \$opt{videoDefinition},
         'hd|high-definition!'       => \$opt{hd},
         'I|interactive!'            => \$opt{interactive},
         'convert-to|convert_to=s'   => \$opt{convert_to},
@@ -1373,7 +1429,7 @@ sub parse_arguments {
         'colorful|C!'       => \$opt{results_with_colors},
         'details|D!'        => \$opt{results_with_details},
         'fixed-width|W|fw!' => \$opt{results_fixed_width},
-        'caption=s'         => \$opt{caption},
+        'caption=s'         => \$opt{videoCaption},
         'fullscreen|fs|f!'  => \$opt{fullscreen},
         'dash!'             => \$opt{dash_support},
 
@@ -1388,10 +1444,9 @@ sub parse_arguments {
         'page=i'                            => \$opt{page},
         'novideo|n!'                        => \$opt{novideo},
         'autohide!'                         => \$opt{autohide_watched},
-        'results=i'                         => \$opt{results},
+        'results=i'                         => \$opt{maxResults},
         'shuffle|s!'                        => \$opt{shuffle_playlist},
         'more|m!'                           => \$opt{more_results},
-        'gdata-url=s'                       => \$opt{get_gdata_url},
         'combine-multiple-videos|combine!'  => \$opt{combine_multiple_videos},
         'pos|position=i'                    => \$opt{position},
         'ps|playlist-save=s'                => \$opt{playlist_save},
@@ -1426,7 +1481,7 @@ for (my $i = 0 ; $i <= $#ARGV ; $i++) {
 }
 
 if (my @keywords = grep chr ord ne q{-}, @ARGV) {
-    print_videos($yv_obj->search(@keywords));
+    print_videos($yv_obj->search_videos(\@keywords));
 }
 elsif ($opt{interactive} and -t) {
     first_user_input();
@@ -1552,7 +1607,7 @@ HELP
         }
 
         if (scalar(@for_search) > 0) {
-            print_videos($yv_obj->search(@for_search));
+            print_videos($yv_obj->search_videos(\@for_search));
         }
         else {
             __SUB__->();
@@ -1692,10 +1747,10 @@ INFO
 
     my $code = $term->readline(colored(q{Code: }, 'bold')) || return;
 
-    my $json_data = $yv_obj->oauth_login($code) // return;
-
-    say $json_data if $yv_obj->get_debug;
-    my $info = $yv_utils->basic_json_parser($json_data);
+    my $info = $yv_obj->oauth_login($code) // do {
+        warn "[WARNING] Can't login... That's all I know...\n";
+        return;
+    };
 
     if (defined $info->{access_token}) {
 
@@ -1715,6 +1770,9 @@ INFO
         }
 
         return 1;
+    }
+    else {
+        warn "[WARNING] There was a problem with the authentication...\n";
     }
 
     return;
@@ -1778,7 +1836,7 @@ sub save_to_playlist {
     return 1;
 }
 
-sub rating_videos {
+sub rate_videos {
     my $rating = shift;
     return if not authenticated();
 
@@ -1795,26 +1853,30 @@ sub rating_videos {
 }
 
 sub get_and_play_video_ids {
-    foreach my $id (@_) {
+    my @ids = grep { get_valid_video_id($_) } @_;
 
-        my $videoID = get_valid_video_id($id) // next;
-        my $info = $yv_obj->get_video_info($videoID);
+    if (not @ids) {
+        warn_invalid('video IDs', "@_");
+        return;
+    }
 
-        if (@{$info->{results}}) {
-            if (not play_videos($info->{results})) {
-                return;
-            }
-        }
-        else {
-            warn_cant_do('play', $videoID);
+    my $info = $yv_obj->video_details(join(',', @ids), EXTRA_VIDEO_PART);
+
+    if ($yv_utils->has_entries($info)) {
+        if (not play_videos($info->{results}{items})) {
+            return;
         }
     }
+    else {
+        warn_cant_do('get info about any', "@ids");
+    }
+
     return 1;
 }
 
 sub get_and_play_playlists {
     foreach my $id (@_) {
-        my $videos = $yv_obj->get_videos_from_playlist(get_valid_playlist_id($id) // next);
+        my $videos = $yv_obj->videos_from_playlist_id(get_valid_playlist_id($id) // next);
         local $opt{play_all} = 1;
         print_videos($videos, auto => 1);
     }
@@ -1825,10 +1887,10 @@ sub get_and_print_video_info {
     foreach my $id (@_) {
 
         my $videoID = get_valid_video_id($id) // next;
-        my $info = $yv_obj->get_video_info($videoID);
+        my $info = $yv_obj->video_details($videoID, EXTRA_VIDEO_PART);
 
-        if (@{$info->{results}}) {
-            print_video_info($info->{results}[0]);
+        if ($yv_utils->has_entries($info)) {
+            print_video_info($info->{results}{items}[0]);
         }
         else {
             warn_cant_get('information', $videoID);
@@ -1839,16 +1901,9 @@ sub get_and_print_video_info {
 
 sub get_and_print_related_videos {
     foreach my $id (@_) {
-
         my $videoID = get_valid_video_id($id) // next;
-        my $info = $yv_obj->get_related_videos($videoID);
-
-        if (@{$info->{results}}) {
-            print_videos($info);
-        }
-        else {
-            warn_cant_get('related videos', $videoID);
-        }
+        my $results = $yv_obj->related_to_videoID($videoID);
+        print_videos($results);
     }
     return 1;
 }
@@ -1868,7 +1923,7 @@ sub get_and_print_videos_from_course {
     if ($course_id =~ /$valid_course_id_re/) {
         my $info = $yv_obj->get_video_lectures_from_course($+{course_id});
 
-        if (@{$info->{results}}) {
+        if ($yv_utils->has_entries($info)) {
             print_videos($info);
         }
         else {
@@ -1889,7 +1944,7 @@ sub get_and_print_clips_from_season_id {
     if ($season_id =~ /$valid_playlist_id_re/) {
         my $info = $yv_obj->get_clips_from_season_id($season_id);
 
-        if (@{$info->{results}}) {
+        if ($yv_utils->has_entries($info)) {
             print_videos($info);
         }
         else {
@@ -1909,7 +1964,7 @@ sub get_and_print_episodes_from_season_id {
     if ($season_id =~ /$valid_playlist_id_re/) {
         my $info = $yv_obj->get_episodes_from_season_id($season_id);
 
-        if (@{$info->{results}}) {
+        if ($yv_utils->has_entries($info)) {
             print_videos($info);
         }
         else {
@@ -1929,7 +1984,7 @@ sub get_and_print_content_from_show {
     if ($show_id =~ /$valid_playlist_id_re/) {
         my $info = $yv_obj->get_shows_content_from_id($show_id);
 
-        if (@{$info->{results}}) {
+        if ($yv_utils->has_entries($info)) {
             print_show_seasons($info);
         }
         else {
@@ -1949,8 +2004,8 @@ sub get_and_print_videos_from_playlist {
     my ($playlistID) = @_;
 
     if ($playlistID =~ /$valid_playlist_id_re/) {
-        my $info = $yv_obj->get_videos_from_playlist($playlistID);
-        if (@{$info->{results}}) {
+        my $info = $yv_obj->videos_from_playlist_id($playlistID);
+        if ($yv_utils->has_entries($info)) {
             print_videos($info);
         }
         else {
@@ -1996,8 +2051,7 @@ sub quit_required { $_[0] ~~ ['q', 'quit', 'exit'] }
 sub youtube_urls {
     given (shift) {
         when (/$get_video_id_re/) {
-            my $info = $yv_obj->get_video_info($+{video_id});
-            play_videos($info->{results});
+            get_and_play_video_ids($+{video_id});
         }
         when (/$get_playlist_id_re/) {
             get_and_print_videos_from_playlist($+{playlist_id});
@@ -2033,7 +2087,7 @@ sub general_options {
         when ($_ ~~ ['n', 'next'] and defined $url) {
             if (not $url ~~ $opt{_last_page_urls}) {
                 my $request = $yv_obj->next_page($url, (defined($mode) ? ($mode => 1) : ()));
-                if (@{$request->{results}}) {
+                if ($yv_utils->has_entries($request)) {
                     $callback->($request, @{$callback_args});
                 }
                 else {
@@ -2674,21 +2728,20 @@ sub print_courses {
 }
 
 sub print_categories {
-    my %opts = @_;
+    my ($results) = @_;
 
-    my $track      = $opts{pos} || 0;
-    my $categories = $opts{categories};
-    my $edu_mode   = $opts{edu};
-
+    my $categories = $results->{items};
     return if ref $categories ne 'ARRAY';
 
     my $i = 0;
     print "\n" if @{$categories};
 
-    foreach my $category (@{$categories}[$track .. $track + $yv_obj->get_results() - 1]) {
-        last if not defined $category;
-        next unless ref $category eq 'HASH';
-        printf "%s. %-40s (id: %s)\n", colored(sprintf('%2d', ++$i), 'bold'), $category->{label}, $category->{term};
+    foreach my $category (@{$categories}) {
+
+        # Ignore unassignable categories
+        $category->{snippet}{assignable} || next;
+
+        printf "%s. %-40s (id: %s)\n", colored(sprintf('%2d', ++$i), 'bold'), $yv_utils->get_title($category), $category->{id};
     }
 
     my @keywords = get_input_for_categories();
@@ -2696,24 +2749,14 @@ sub print_categories {
     foreach my $key (@keywords) {
         if ($key =~ /$valid_opt_re/) {
             given ($1) {
-                when (['n', 'next']) {
-                    $track += $yv_obj->get_results();
-                    unless (exists $categories->[$track]) {
-                        warn_last_page();
-                        $track -= $yv_obj->get_results();
-                    }
-                    __SUB__->(pos => $track, categories => $categories, edu => $edu_mode);
+                when (
+                      general_options(
+                                      opt => $_,
+                                      sub => __SUB__,
+                                      res => $results,
+                                     )
+                  ) {
                 }
-                when (['b', 'back', 'p', 'prev', 'previous']) {
-                    if ($track >= $yv_obj->get_results()) {
-                        $track -= $yv_obj->get_results();
-                        __SUB__->(pos => $track, categories => $categories, edu => $edu_mode);
-                    }
-                    else {
-                        warn_first_page();
-                    }
-                }
-                when (general_options(opt => $_, res => $categories,)) { }
                 when (['h', 'help']) {
                     print $general_help;
                     press_enter_to_continue();
@@ -2730,24 +2773,8 @@ sub print_categories {
             given ($key) {
                 when (\&youtube_urls) { }    # do nothing
                 when (valid_num($_, $categories)) {
-                    my $cat_id = $categories->[$_ + $track - 1]{term};
-                    if ($edu_mode) {
-                        my $reply = get_reply(
-                                              prompt  => colored('=>> Courses or lectures?', 'bold'),
-                                              choices => [qw(courses lectures)],
-                                              default => 'lectures',
-                                             );
-
-                        if ($reply eq 'courses') {
-                            print_courses($yv_obj->get_courses_from_category($cat_id));
-                        }
-                        else {
-                            print_videos($yv_obj->get_video_lectures_from_category($cat_id));
-                        }
-                    }
-                    else {
-                        print_videos($yv_obj->get_videos_from_category($cat_id));
-                    }
+                    my $cat_id = $categories->[$_ - 1]{id};
+                    print_videos($yv_obj->videos_from_category($cat_id));
                 }
                 default {
                     warn_invalid('keyword', $_);
@@ -2853,14 +2880,20 @@ sub print_video_tops {
 sub print_playlists {
     my ($results, %args) = @_;
 
-    if (not @{$results->{results}}) {
-        warn_no_results('playlist');
+    if (not $yv_utils->has_entries($results)) {
+        warn_no_results("video");
+    }
+
+    if ($opt{get_term_width} and $opt{results_fixed_width}) {
+        get_term_width();
     }
 
     my $url       = $results->{url};
-    my $playlists = $results->{results};
+    my $info      = $results->{results} // {};
+    my $playlists = $info->{items} // [];
 
     if ($opt{shuffle}) {
+        require List::Util;
         $playlists = [List::Util::shuffle(@{$playlists})];
     }
 
@@ -2872,16 +2905,12 @@ TITLE: %s
 DESCR: %s
 FORMAT
 
-    if ($opt{get_term_width} and $opt{results_fixed_width}) {
-        get_term_width();
-    }
-
-    my $num = 0;
-    foreach my $playlist (@{$playlists}) {
+    foreach my $i (0 .. $#{$playlists}) {
+        my $playlist = $playlists->[$i];
         if ($opt{results_with_details}) {
             printf(
                    "\n%s. %s\n    %s: %-23s %s: %-7s %s: %s\n%s\n",
-                   colored(sprintf('%2d', ++$num), 'bold') => colored($playlist->{title}, 'bold blue'),
+                   colored(sprintf('%2d', $i + 1), 'bold') => colored($playlist->{title}, 'bold blue'),
                    colored('Updated' => 'bold') => $yv_utils->format_date($playlist->{updated}),
                    colored('Videos'  => 'bold') => $playlist->{count},
                    colored('Author'  => 'bold') => $playlist->{name},
@@ -2896,33 +2925,39 @@ FORMAT
 
             require List::Util;
 
-            my $max_author_len = List::Util::max(map { length($_->{name}) } @{$playlists});
-            my $count_width    = List::Util::max(map { length($_->{count}) } @{$playlists});
-            my $title_length = $term_width - ($max_author_len + $count_width + 2 + 3 + 1 + 2);
+            my @authors = map { $yv_utils->get_channel_title($_) } @{$playlists};
+            my @dates   = map { $yv_utils->get_publication_date($_) } @{$playlists};
 
-            print "\n" if $num == 0;
-            foreach my $vid (@{$playlists}) {
-                printf "%s. %s %*s [%*s]\n", colored(sprintf('%2d', ++$num), 'bold'),
-                  chop_title($vid->{title}, $title_length),
-                  $max_author_len, $vid->{name}, $count_width, $vid->{count};
+            my $author_width = List::Util::max(map { length($_) } @authors);
+            my $dates_width  = List::Util::max(map { length($_) } @dates);
+            my $title_length = $term_width - ($author_width + $dates_width + 2 + 3 + 1 + 2);
+
+            print "\n";
+            foreach my $i (0 .. $#{$playlists}) {
+                my $playlist = $playlists->[$i];
+                printf "%s. %s %*s [%*s]\n", colored(sprintf('%2d', $i + 1), 'bold'),
+                  chop_title($yv_utils->get_title($playlist), $title_length),
+                  $author_width, $authors[$i], $dates_width, $dates[$i];
             }
             last;
         }
         elsif ($opt{results_with_colors}) {
-            print "\n" if $num == 0;
+            print "\n" if $i == 0;
             printf(
-                   "%s. %s (%s) (%s)\n",
-                   colored(sprintf('%2d', ++$num), 'bold'),
-                   colored($playlist->{title},     'bold green'),
-                   colored("by $playlist->{name}", 'bold yellow'),
-                   colored($playlist->{count},     'bold blue'),
+                   "%s. %s (%s) [%s]\n",
+                   colored(sprintf('%2d', $i + 1), 'bold'),
+                   colored($yv_utils->get_title($playlist),                 'bold green'),
+                   colored("by " . $yv_utils->get_channel_title($playlist), 'bold yellow'),
+                   colored($yv_utils->get_publication_date($playlist),      'bold blue'),
                   );
         }
         else {
-            print "\n" if $num == 0;
-            printf("%s. %s (by %s) (%s)\n",
-                   colored(sprintf('%2d', ++$num), 'bold'),
-                   $playlist->{title}, $playlist->{name}, $playlist->{count});
+            print "\n" if $i == 0;
+            printf(
+                   "%s. %s (by %s) [%s]\n",
+                   colored(sprintf('%2d', $i + 1), 'bold'), $yv_utils->get_title($playlist),
+                   $yv_utils->get_channel_title($playlist), $yv_utils->get_publication_date($playlist)
+                  );
         }
     }
 
@@ -2964,10 +2999,11 @@ FORMAT
                             my $desc = wrap_text(
                                                  i_tab => q{ } x 7,
                                                  s_tab => q{ } x 7,
-                                                 text  => [$playlists->[$id]{summary} || 'No description available...']
+                                                 text  => [$yv_utils->get_description($playlists->[$id])]
                                                 );
                             $desc =~ s/^\s+//;
-                            printf $info_format, $playlists->[$id]{title}, ($playlists->[$id]{playlistID}) x 2, $desc;
+                            printf $info_format, $yv_utils->get_title($playlists->[$id]),
+                              ($yv_utils->get_playlist_id($playlists->[$id])) x 2, $desc;
                         }
                         press_enter_to_continue();
                     }
@@ -2977,7 +3013,7 @@ FORMAT
                 }
                 when (/^pp${digit_or_equal_re}(.*)/) {
                     if (my @ids = get_valid_numbers($#{$playlists}, $1)) {
-                        my $arg = "--pp=" . join(q{,}, map { $_->{playlistID} } @{$playlists}[@ids]);
+                        my $arg = "--pp=" . join(q{,}, map { $yv_utils->get_playlist_id($_) } @{$playlists}[@ids]);
                         apply_input_arguments([$arg]);
                     }
                     else {
@@ -2994,9 +3030,9 @@ FORMAT
                 when (\&youtube_urls) { }    # do nothing
                 when (valid_num($_, $playlists) and not $contains_keywords) {
                     if ($args{return_playlist_id}) {
-                        return $playlists->[$_ - 1]{playlistID};
+                        return $yv_utils->get_playlist_id($playlists->[$_ - 1]);
                     }
-                    get_and_print_videos_from_playlist($playlists->[$_ - 1]{playlistID});
+                    get_and_print_videos_from_playlist($yv_utils->get_playlist_id($playlists->[$_ - 1]));
                 }
                 default {
                     push @for_search, $_;
@@ -3006,7 +3042,7 @@ FORMAT
     }
 
     if (@for_search) {
-        __SUB__->($yv_obj->search_for_playlists(@for_search));
+        __SUB__->($yv_obj->search_playlists(\@for_search));
     }
 
     __SUB__->(@_);
@@ -3256,6 +3292,8 @@ sub play_videos {
     my @streaming_urls;
     foreach my $video (@{$videos}) {
 
+        my $video_id = $yv_utils->get_video_id($video);
+
         if (defined($opt{max_seconds})) {
             next if $video->{duration} > $opt{max_seconds};
         }
@@ -3264,10 +3302,10 @@ sub play_videos {
             next if $video->{duration} < $opt{min_seconds};
         }
 
-        my $streaming = get_streaming_url($video->{videoID});
+        my $streaming = get_streaming_url($video_id);
 
         if (defined $streaming->{info}{status} and $streaming->{info}{status} =~ /\bfail/i) {
-            warn colored("[x_x] Error on: ", 'bold red') . sprintf($CONFIG{youtube_video_url}, $video->{videoID}) . "\n";
+            warn colored("[x_x] Error on: ", 'bold red') . sprintf($CONFIG{youtube_video_url}, $video_id) . "\n";
             warn colored("[x_x] Reason: ", 'bold red') . $streaming->{info}{reason} =~ s/\+/ /gr . "\n\n";
         }
 
@@ -3329,22 +3367,21 @@ sub play_videos_matched_by_regex {
     my $regex  = $args{regex};
     my $videos = $args{videos};
 
+    my $sub = \&{'WWW::YoutubeViewer::Utils' . '::' . 'get_' . $key};
+
+    if (not defined &$sub) {
+        warn colored("\n[!] Invalid key: <$key>.", 'bold red') . "\n";
+        return;
+    }
+
     if (defined(my $re = compile_regex($regex))) {
-        if (exists $videos->[0]{$key}) {
-            if (my @nums = grep { $videos->[$_]{$key} =~ /$re/ } 0 .. $#{$videos}) {
-                if (not play_videos([@{$videos}[@nums]])) {
-                    return;
-                }
-            }
-            else {
-                warn colored("\n[!] No video <$key> matched by the regex: $re", 'bold red') . "\n";
+        if (my @nums = grep { $yv_utils->$sub($videos->[$_]) =~ /$re/ } 0 .. $#{$videos}) {
+            if (not play_videos([@{$videos}[@nums]])) {
                 return;
             }
         }
         else {
-            warn colored("\n[!] Invalid key: <$key>.", 'bold red'),
-              colored("\n[*] Valid keys are: ", 'bold red')
-              . colored(join(q{, }, sort keys %{$videos->[0]}), 'bold green') . "\n";
+            warn colored("\n[!] No video <$key> matched by the regex: $re", 'bold red') . "\n";
             return;
         }
     }
@@ -3353,7 +3390,7 @@ sub play_videos_matched_by_regex {
 }
 
 sub print_video_info {
-    my ($info) = @_;
+    my ($video) = @_;
 
     my $hr = '-' x ($opt{get_term_width} ? get_term_width() : $term_width);
 
@@ -3365,27 +3402,29 @@ sub print_video_info {
            wrap_text(
                      i_tab => q{},
                      s_tab => q{},
-                     text  => [$info->{description} || 'No description available...']
+                     text  => [$yv_utils->get_description($video) || 'No description available...']
                     ),
            $hr,
            _bold_color('* URL: ')
           );
 
-    print STDOUT sprintf($CONFIG{youtube_video_url}, $info->{videoID});
+    print STDOUT sprintf($CONFIG{youtube_video_url}, $yv_utils->get_video_id($video));
 
-    my $title_length = length($info->{title});
+    my $title        = $yv_utils->get_title($video);
+    my $title_length = length($title);
 
-    print "\n$hr\n", q{ } x (($term_width - $title_length) / 2 - 4) => (_bold_color("=>> $info->{title} <<=") . "\n\n"),
-      map(sprintf(q{** } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]),
+    print "\n$hr\n", q{ } x (($term_width - $title_length) / 2 - 4) => (_bold_color("=>> $title <<=") . "\n\n"),
+      map(sprintf(q{-> } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]),
           (
-           ['Author'   => $info->{author}],
-           ['Category' => $info->{category}],
-           ['Duration' => $yv_utils->format_time($info->{duration})],
-           ['Rating'   => sprintf('%.2f', $info->{rating})],
-           ['Likes'    => $yv_utils->set_thousands($info->{likes})],
-           ['Dislikes' => $yv_utils->set_thousands($info->{dislikes})],
-           ['Views'    => $yv_utils->set_thousands($info->{views})],
-           $info->{published} ? ['Published' => $yv_utils->format_date($info->{published})] : (),
+           ['Channel'    => $yv_utils->get_channel_title($video)],
+           ['ChannelID'  => $yv_utils->get_channel_id($video)],
+           ['Definition' => $yv_utils->get_definition($video)],
+           ['Duration'   => $yv_utils->format_time($yv_utils->get_duration($video))],
+           ['Likes'      => $yv_utils->set_thousands($yv_utils->get_likes($video))],
+           ['Dislikes'   => $yv_utils->set_thousands($yv_utils->get_dislikes($video))],
+           ['Comments'   => $yv_utils->set_thousands($yv_utils->get_comments($video))],
+           ['Views'      => $yv_utils->set_thousands($yv_utils->get_views($video))],
+           ['Published'  => $yv_utils->get_publication_date($video)],
             )),
       "$hr\n";
 
@@ -3395,70 +3434,92 @@ sub print_video_info {
 sub print_videos {
     my ($results, %args) = @_;
 
-    if (not @{$results->{results}}) {
+    if (not $yv_utils->has_entries($results)) {
         warn_no_results("video");
-    }
-
-    my $url    = $results->{url};
-    my $videos = $results->{results};
-
-    if ($opt{shuffle}) {
-        $videos = [List::Util::shuffle(@{$videos})];
     }
 
     if ($opt{get_term_width} and $opt{results_fixed_width}) {
         get_term_width();
     }
 
-    my $num = 0;
-    foreach my $video (@{$videos}) {
+    my $url    = $results->{url};
+    my $info   = $results->{results} // {};
+    my $videos = $info->{items} // [];
+
+    if ($opt{shuffle}) {
+        require List::Util;
+        $videos = [List::Util::shuffle(@{$videos})];
+    }
+
+    if (@{$videos} and not $results->{has_extra_info}) {
+        my $content_details = $yv_obj->video_details(join(',', map { $yv_utils->get_video_id($_) } @{$videos}), VIDEO_PART);
+        my $video_details = $content_details->{results}{items};
+        foreach my $i (0 .. $#{$videos}) {
+            @{$videos->[$i]}{qw(contentDetails statistics)} = @{$video_details->[$i]}{qw(contentDetails statistics)};
+        }
+        $results->{has_extra_info} = 1;
+    }
+
+    foreach my $i (0 .. $#{$videos}) {
+        my $video = $videos->[$i];
+
         if ($opt{results_with_details}) {
             printf(
-                   "\n%s. %s\n" . "    %s: %-16s %s: %-12s %s: %s\n" . "    %s: %-12s %s: %-10s %s: %s\n%s\n",
-                   colored(sprintf('%2d', ++$num), 'bold') => colored($video->{title}, 'bold blue'),
-                   colored('Views'     => 'bold') => $yv_utils->set_thousands($video->{views}),
-                   colored('Rating'    => 'bold') => sprintf('%.2f', $video->{rating}),
-                   colored('Category'  => 'bold') => $video->{category},
-                   colored('Published' => 'bold') => $yv_utils->format_date($video->{published}),
-                   colored('Duration'  => 'bold') => $yv_utils->format_time($video->{duration}),
-                   colored('Author'    => 'bold') => $video->{author},
+                   "\n%s. %s\n" . "    %s: %-16s %s: %-13s %s: %s\n" . "    %s: %-12s %s: %-10s %s: %s\n%s\n",
+                   colored(sprintf('%2d', $i + 1), 'bold') => colored($yv_utils->get_title($video), 'bold blue'),
+                   colored('Views'     => 'bold') => $yv_utils->set_thousands($yv_utils->get_views($video)),
+                   colored('Likes'     => 'bold') => $yv_utils->set_thousands($yv_utils->get_likes($video)),
+                   colored('Dislikes'  => 'bold') => $yv_utils->set_thousands($yv_utils->get_dislikes($video)),
+                   colored('Published' => 'bold') => $yv_utils->get_publication_date($video),
+                   colored('Duration'  => 'bold') => $yv_utils->format_time($yv_utils->get_duration($video)),
+                   colored('Author'    => 'bold') => $yv_utils->get_channel_title($video),
                    wrap_text(
                              i_tab => q{ } x 4,
                              s_tab => q{ } x 4,
-                             text  => [$video->{description} || 'No description available...']
+                             text  => [$yv_utils->get_description($video)]
                             ),
                   );
         }
         elsif ($opt{results_with_colors}) {
-            print "\n" if $num == 0;
-            printf("%s. %s (%s) (%s)\n",
-                   colored(sprintf('%2d', ++$num), 'bold'),
-                   colored($video->{title},                            'bold green'),
-                   colored("by $video->{author}",                      'bold yellow'),
-                   colored($yv_utils->format_time($video->{duration}), 'bold bright_blue'),
+            print "\n" if $i == 0;
+
+            my $definition = $yv_utils->get_definition($video);
+            printf(
+                   "%s. %s (%s) [%s]\n",
+                   colored(sprintf('%2d', $i + 1), 'bold'),
+                   colored($yv_utils->get_title($video),                            'bold green'),
+                   colored("by " . $yv_utils->get_channel_title($video),            'bold yellow'),
+                   colored($yv_utils->format_time($yv_utils->get_duration($video)), 'bold bright_blue'),
                   );
         }
         elsif ($opt{results_fixed_width}) {
 
             require List::Util;
 
-            my $max_author_len = List::Util::max(map { length($_->{author}) } @{$videos});
-            my $time_width = List::Util::first(sub { $_->{duration} >= 3600 }, @{$videos}) ? 8 : 6;
-            my $title_length = $term_width - ($max_author_len + $time_width + 2 + 3 + 1);
+            my @durations = map { $yv_utils->get_duration($_) } @{$videos};
+            my @authors   = map { $yv_utils->get_channel_title($_) } @{$videos};
 
-            print "\n" if $num == 0;
-            foreach my $vid (@{$videos}) {
-                printf "%s. %s %*s %*s\n", colored(sprintf('%2d', ++$num), 'bold'),
-                  chop_title($vid->{title}, $title_length),
-                  $max_author_len, $vid->{author}, $time_width, $yv_utils->format_time($vid->{duration});
+            my $author_width = List::Util::max(map { length($_) } @authors);
+            my $time_width = List::Util::first(sub { $_ >= 3600 }, @durations) ? 8 : 6;
+            my $title_length = $term_width - ($author_width + $time_width + 3 + 2 + 1);
+
+            print "\n";
+            foreach my $i (0 .. $#{$videos}) {
+                my $video = $videos->[$i];
+                printf "%s. %s %*s %*s\n", colored(sprintf('%2d', $i + 1), 'bold'),
+                  chop_title($yv_utils->get_title($video), $title_length),
+                  $author_width, $yv_utils->get_channel_title($video), $time_width, $yv_utils->format_time($durations[$i]);
             }
             last;
         }
         else {
-            print "\n" if $num == 0;
-            printf("%s. %s (by %s) (%s)\n",
-                   colored(sprintf('%2d', ++$num), 'bold'),
-                   $video->{title}, $video->{author}, $yv_utils->format_time($video->{duration}));
+            print "\n" if $i == 0;
+
+            printf(
+                   "%s. %s (by %s) [%s]\n",
+                   colored(sprintf('%2d', $i + 1), 'bold'), $yv_utils->get_title($video),
+                   $yv_utils->get_channel_title($video), $yv_utils->format_time($yv_utils->get_duration($video)),
+                  );
         }
     }
 
@@ -3471,7 +3532,12 @@ sub print_videos {
                             : $videos
                            )
               ) {
-                __SUB__->($opt{play_backwards} ? $yv_obj->previous_page($url) : $yv_obj->next_page($url), auto => 1);
+                __SUB__->(
+                            $opt{play_backwards}
+                          ? $yv_obj->previous_page($url, $info->{prevPageToken})
+                          : $yv_obj->next_page($url, $info->{nextPageToken}),
+                          auto => 1
+                         );
             }
             else {
                 $opt{play_all}       = 0;
@@ -3518,8 +3584,8 @@ sub print_videos {
                 }
                 when (['n', 'next']) {
                     if (not $url ~~ $opt{_last_page_urls}) {
-                        my $request = $yv_obj->next_page($url);
-                        if (@{$request->{results}}) {
+                        if (exists $info->{nextPageToken}) {
+                            my $request = $yv_obj->next_page($url, $info->{nextPageToken});
                             __SUB__->($request, @keywords ? (auto => 1) : ());
                         }
                         else {
@@ -3542,8 +3608,8 @@ sub print_videos {
                     }
                 }
                 when (['b', 'back', 'p', 'prev', 'previous']) {
-                    if ($yv_obj->back_page_is_available($url)) {
-                        __SUB__->($yv_obj->previous_page($url), @keywords ? (auto => 1) : ());
+                    if (exists $info->{prevPageToken}) {
+                        __SUB__->($yv_obj->previous_page($url, $info->{prevPageToken}), @keywords ? (auto => 1) : ());
                     }
                     else {
                         warn_first_page();
@@ -3558,9 +3624,9 @@ sub print_videos {
                 when (/^(?:a(?:uthor)?|u)${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                         foreach my $id (@nums) {
-                            my $username = $videos->[$id]{author};
-                            my $request  = $yv_obj->get_videos_from_username($username);
-                            if (@{$request->{results}}) {
+                            my $channel_id = $videos->[$id]{snippet}{channelId};
+                            my $request    = $yv_obj->uploads($channel_id);
+                            if ($yv_utils->has_entries($request)) {
                                 __SUB__->($request);
                             }
                             else {
@@ -3574,7 +3640,7 @@ sub print_videos {
                 }
                 when (/^(?:ps|s2p)${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($#{$videos}, $1)) {
-                        select_and_save_to_playlist(map $videos->[$_]{videoID}, @nums);
+                        select_and_save_to_playlist(map { $yv_utils->get_video_id($videos->[$_]) } @nums);
                     }
                     else {
                         warn_no_thing_selected('video');
@@ -3583,9 +3649,8 @@ sub print_videos {
                 when (/^(?:p(?:laylists?)?|up)${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                         foreach my $id (@nums) {
-                            my $username = $videos->[$id]{author};
-                            my $request  = $yv_obj->get_playlists_from_username($username);
-                            if (@{$request->{results}}) {
+                            my $request = $yv_obj->playlists_from_channel_id($yv_utils->get_channel_id($videos->[$id]));
+                            if ($yv_utils->has_entries($request)) {
                                 print_playlists($request);
                             }
                             else {
@@ -3600,7 +3665,7 @@ sub print_videos {
                 when (/^((?:dis)?like)${digit_or_equal_re}(.*)/) {
                     my $rating = $1;
                     if (my @nums = get_valid_numbers($#{$videos}, $2)) {
-                        rating_videos($rating, map $videos->[$_]{videoID}, @nums);
+                        rate_videos($rating, map { $yv_utils->get_video_id($videos->[$_]) } @nums);
                     }
                     else {
                         warn_no_thing_selected('video');
@@ -3608,7 +3673,7 @@ sub print_videos {
                 }
                 when (/^(?:fav(?:orite)?|F)${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($#{$videos}, $1)) {
-                        favorite_videos(map $videos->[$_]{videoID}, @nums);
+                        favorite_videos(map { $yv_utils->get_video_id($videos->[$_]) } @nums);
                     }
                     else {
                         warn_no_thing_selected('video');
@@ -3616,7 +3681,7 @@ sub print_videos {
                 }
                 when (/^(?:subscribe|S)${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($#{$videos}, $1)) {
-                        subscribe_to_channels(map $videos->[$_]{author}, @nums);
+                        subscribe_to_channels(map { $yv_utils->get_channel_id($videos->[$_]) } @nums);
                     }
                     else {
                         warn_no_thing_selected('video');
@@ -3624,7 +3689,7 @@ sub print_videos {
                 }
                 when (/^(?:en)?q(?:ueue)?+${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($#{$videos}, $1)) {
-                        push @{$opt{_queue_play}}, map $_->{videoID}, @{$videos}[@nums];
+                        push @{$opt{_queue_play}}, map { $yv_utils->get_video_id($videos->[$_]) } @nums;
                     }
                     else {
                         warn_no_thing_selected('video');
@@ -3641,7 +3706,7 @@ sub print_videos {
                 }
                 when (/^c(?:omments?)?${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($#{$videos}, $1)) {
-                        get_and_print_comments(map $videos->[$_]{videoID}, @nums);
+                        get_and_print_comments(map { $yv_utils->get_video_id($videos->[$_]) } @nums);
                     }
                     else {
                         warn_no_thing_selected('video');
@@ -3649,7 +3714,7 @@ sub print_videos {
                 }
                 when (/^r(?:elated)?${digit_or_equal_re}(.*)/) {
                     if (my ($id) = get_valid_numbers($#{$videos}, $1)) {
-                        get_and_print_related_videos($videos->[$id]{videoID});
+                        get_and_print_related_videos($yv_utils->get_video_id($videos->[$id]));
                     }
                     else {
                         warn_no_thing_selected('video');
@@ -3745,7 +3810,7 @@ sub print_videos {
     }
 
     if (@for_search) {
-        __SUB__->($yv_obj->search(splice(@for_search)));
+        __SUB__->($yv_obj->search_videos([splice(@for_search)]));
     }
     elsif ($opt{auto_next_page}) {
         @keywords = (':next', grep { not $_ ~~ [qw(:n :next :anp)] } @copy_of_keywords);

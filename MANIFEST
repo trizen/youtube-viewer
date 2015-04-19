@@ -3,16 +3,27 @@ bin/youtube-viewer
 Build.PL
 Changes
 lib/WWW/YoutubeViewer.pm
+lib/WWW/YoutubeViewer/Activities.pm
+lib/WWW/YoutubeViewer/Authentication.pm
+lib/WWW/YoutubeViewer/Channels.pm
 lib/WWW/YoutubeViewer/GetCaption.pm
+lib/WWW/YoutubeViewer/GuideCategories.pm
 lib/WWW/YoutubeViewer/Itags.pm
+lib/WWW/YoutubeViewer/ParseJSON.pm
 lib/WWW/YoutubeViewer/ParseXML.pm
+lib/WWW/YoutubeViewer/PlaylistItems.pm
+lib/WWW/YoutubeViewer/Playlists.pm
 lib/WWW/YoutubeViewer/RegularExpressions.pm
+lib/WWW/YoutubeViewer/Search.pm
+lib/WWW/YoutubeViewer/Subscriptions.pm
 lib/WWW/YoutubeViewer/Utils.pm
+lib/WWW/YoutubeViewer/VideoCategories.pm
+lib/WWW/YoutubeViewer/Videos.pm
 Makefile.PL
 MANIFEST			This list of files
 META.json
 META.yml
-README
+README.md
 share/gtk-youtube-viewer.desktop
 share/gtk-youtube-viewer.glade
 share/icons/default_thumb.jpg
@@ -21,5 +32,5 @@ share/icons/gtk-youtube-viewer.png
 share/icons/spinner.gif
 share/icons/user.png
 t/00-load.t
-t/pod-coverage.t
+t/kwalitee.t
 t/pod.t

@@ -26,8 +26,8 @@
       },
       "runtime" : {
          "recommends" : {
-            "Term::ReadLine::Gnu::XS" : "0",
-            "XML::Fast" : "0"
+            "JSON::XS" : "0",
+            "Term::ReadLine::Gnu::XS" : "0"
          },
          "requires" : {
             "Data::Dump" : "0",
@@ -35,7 +35,9 @@
             "File::Spec::Functions" : "0",
             "Getopt::Long" : "0",
             "HTTP::Request" : "0",
+            "JSON" : "0",
             "LWP::UserAgent" : "0",
+            "LWP::UserAgent::Cached" : "0",
             "Term::ANSIColor" : "0",
             "Term::ReadLine" : "0",
             "Text::ParseWords" : "0",
@@ -47,27 +49,71 @@
    "provides" : {
       "WWW::YoutubeViewer" : {
          "file" : "lib/WWW/YoutubeViewer.pm",
-         "version" : "0.06"
+         "version" : "0.05"
+      },
+      "WWW::YoutubeViewer::Activities" : {
+         "file" : "lib/WWW/YoutubeViewer/Activities.pm",
+         "version" : "0.01"
+      },
+      "WWW::YoutubeViewer::Authentication" : {
+         "file" : "lib/WWW/YoutubeViewer/Authentication.pm",
+         "version" : "0.01"
+      },
+      "WWW::YoutubeViewer::Channels" : {
+         "file" : "lib/WWW/YoutubeViewer/Channels.pm",
+         "version" : "0.01"
       },
       "WWW::YoutubeViewer::GetCaption" : {
          "file" : "lib/WWW/YoutubeViewer/GetCaption.pm",
          "version" : "0.02"
       },
+      "WWW::YoutubeViewer::GuideCategories" : {
+         "file" : "lib/WWW/YoutubeViewer/GuideCategories.pm",
+         "version" : "0.01"
+      },
       "WWW::YoutubeViewer::Itags" : {
          "file" : "lib/WWW/YoutubeViewer/Itags.pm",
          "version" : "0.04"
+      },
+      "WWW::YoutubeViewer::ParseJSON" : {
+         "file" : "lib/WWW/YoutubeViewer/ParseJSON.pm",
+         "version" : "0.01"
       },
       "WWW::YoutubeViewer::ParseXML" : {
          "file" : "lib/WWW/YoutubeViewer/ParseXML.pm",
          "version" : "0.04"
       },
+      "WWW::YoutubeViewer::PlaylistItems" : {
+         "file" : "lib/WWW/YoutubeViewer/PlaylistItems.pm",
+         "version" : "0.01"
+      },
+      "WWW::YoutubeViewer::Playlists" : {
+         "file" : "lib/WWW/YoutubeViewer/Playlists.pm",
+         "version" : "0.01"
+      },
       "WWW::YoutubeViewer::RegularExpressions" : {
          "file" : "lib/WWW/YoutubeViewer/RegularExpressions.pm",
+         "version" : "0.01"
+      },
+      "WWW::YoutubeViewer::Search" : {
+         "file" : "lib/WWW/YoutubeViewer/Search.pm",
+         "version" : "0.01"
+      },
+      "WWW::YoutubeViewer::Subscriptions" : {
+         "file" : "lib/WWW/YoutubeViewer/Subscriptions.pm",
          "version" : "0.01"
       },
       "WWW::YoutubeViewer::Utils" : {
          "file" : "lib/WWW/YoutubeViewer/Utils.pm",
          "version" : "0.02"
+      },
+      "WWW::YoutubeViewer::VideoCategories" : {
+         "file" : "lib/WWW/YoutubeViewer/VideoCategories.pm",
+         "version" : "0.01"
+      },
+      "WWW::YoutubeViewer::Videos" : {
+         "file" : "lib/WWW/YoutubeViewer/Videos.pm",
+         "version" : "0.01"
       }
    },
    "release_status" : "stable",
@@ -76,5 +122,5 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "0.06"
+   "version" : "0.05"
 }

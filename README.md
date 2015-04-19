@@ -1,48 +1,50 @@
-WWW-YoutubeViewer
+## youtube-viewer
 
-INSTALLATION
+### INSTALLATION
 
 To install this application, run the following commands:
 
+```console
     perl Build.PL
     ./Build
     ./Build test
     sudo ./Build install
+```
 
-PACKAGING
+### PACKAGING
 
 To package this application, run the following commands:
 
+```console
     perl Build.PL --destdir "/my/package/path" --installdirs vendor
     ./Build
     ./Build test
     ./Build install --install_path script=/usr/bin
+```
 
-GTK-YOUTUBE-VIEWER
+## GTK-YOUTUBE-VIEWER
 
-To install GTK Youtube Viewer, run Build.PL with the '--gtk-youtube-viewer' argument.
+To install GTK Youtube Viewer, run `Build.PL` with the `--gtk-youtube-viewer` argument.
 
+```console
     perl Build.PL --gtk-youtube-viewer
+```
+
 or:
+```console
     perl Build.PL --destdir "/my/path" --installdirs vendor --gtk-youtube-viewer
+```
 
+### SUPPORT AND DOCUMENTATION
 
-SUPPORT AND DOCUMENTATION
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! If you're using a version of perl < 5.16.0, youtube-viewer (CLI) will need some changes;
-!! Please, consider: https://code.google.com/p/trizen/downloads/detail?name=yv_5.16_to_5.10.pl
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-After installing, you can find documentation for this module with the
-perldoc command.
+After installing, you can find documentation with the following commands:
 
     man youtube-viewer
     perldoc WWW::YoutubeViewer
 
 LICENSE AND COPYRIGHT
 
-Copyright (C) 2012-2014 Daniel "Trizen" Șuteu
+Copyright (C) 2012-2015 Daniel "Trizen" Șuteu
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

@@ -1,13 +1,12 @@
-package WWW::YoutubeViewer::RegularExpressions;
+package WWW::YoutubeViewer::ParseJSON;
 
-use strict;
-
-require Exporter;
-our @ISA = qw(Exporter);
+use utf8;
+use 5.014;
+use warnings;
 
 =head1 NAME
 
-WWW::YoutubeViewer::RegularExpressions - Various utils.
+WWW::YoutubeViewer::ParseJSON - Parse JSON content.
 
 =head1 VERSION
 
@@ -19,67 +18,42 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-    use WWW::YoutubeViewer::RegularExpressions;
-    use WWW::YoutubeViewer::RegularExpressions ($get_video_id_re);
+    use WWW::YoutubeViewer::ParseJSON;
+    my $obj = WWW::YoutubeViewer::ParseJSON->new(%opts);
+
+=head1 SUBROUTINES/METHODS
 
 =cut
 
-my $opt_begin_chars = q{:;=};    # stdin option valid begin chars
+=head2 parse_json_string($json_string)
 
-# Options
-our $range_num_re        = qr{^([0-9]{1,2}+)(?>-|\.\.)([0-9]{1,2}+)\z};
-our $digit_or_equal_re   = qr{(?(?=[1-9])|=)};
-our $non_digit_or_opt_re = qr{^(?!$range_num_re)(?>[0-9]{1,2}[^0-9]|[0-9]{3}|[^0-9$opt_begin_chars])};
+Parse a JSON string and return a HASH ref.
 
-# Generic name
-my $generic_name_re = qr{[a-zA-Z0-9_.\-]{11,34}};
-our $valid_username_re = qr{^(?:\w+(?:[-.]++\w++)*|$generic_name_re)\z};
+=cut
 
-# Video ID
-my $video_id_re = qr{[0-9A-Za-z_\-]{11}};
-our $valid_video_id_re = qr{^$video_id_re\z};
-our $get_video_id_re   = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)(?<video_id>$video_id_re)};
-
-# Course ID
-my $course_id_re = qr{EC(?<course_id>$generic_name_re)|(?<course_id>$generic_name_re)};
-our $valid_course_id_re = qr{^$course_id_re\z};
-our $get_course_id_re   = qr{/course\?list=$course_id_re};
-
-# Playlist ID
-our $valid_playlist_id_re = qr{^$generic_name_re\z};
-our $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)(?<playlist_id>$generic_name_re)\b};
-
-our $valid_opt_re = qr{^[$opt_begin_chars]([A-Za-z]++(?:-[A-Za-z]++)?(?>${digit_or_equal_re}.*)?)$};
-
-our @EXPORT = qw(
-  $range_num_re
-  $digit_or_equal_re
-  $non_digit_or_opt_re
-  $valid_username_re
-  $valid_video_id_re
-  $get_video_id_re
-  $valid_course_id_re
-  $get_course_id_re
-  $valid_playlist_id_re
-  $get_playlist_id_re
-  $valid_opt_re
-  );
+sub parse_json_string {
+    my ($self, $json) = @_;
+    $json // return {};
+    state $x = require JSON;
+    my $hash = eval { JSON::decode_json($json) };
+    return $@ ? do { warn "[JSON::XS]: $@\n"; {} } : $hash;
+}
 
 =head1 AUTHOR
 
-Trizen, C<< <trizenx at gmail.com> >>
+Suteu "Trizen" Daniel, C<< <trizenx at gmail.com> >>
 
 
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc WWW::YoutubeViewer::RegularExpressions
+    perldoc WWW::YoutubeViewer::ParseJSON
 
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012-2013 Trizen.
+Copyright 2013 Suteu "Trizen" Daniel.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
@@ -120,4 +94,4 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =cut
 
-1;    # End of WWW::YoutubeViewer::RegularExpressions
+1;    # End of WWW::YoutubeViewer::ParseJSON

@@ -31,32 +31,34 @@ my $builder = Module::Build->new(
                    },
 
     requires => {
-                 'Data::Dump'            => 0,
-                 'File::Spec::Functions' => 0,
-                 'File::Path'            => 0,
-                 'Getopt::Long'          => 0,
-                 'HTTP::Request'         => 0,
-                 'LWP::UserAgent'        => 0,
-                 'Term::ANSIColor'       => 0,
-                 'Term::ReadLine'        => 0,
-                 'Text::ParseWords'      => 0,
-                 'Text::Wrap'            => 0,
-                 'URI::Escape'           => 0,
+                 'Data::Dump'             => 0,
+                 'File::Spec::Functions'  => 0,
+                 'File::Path'             => 0,
+                 'Getopt::Long'           => 0,
+                 'HTTP::Request'          => 0,
+                 'JSON'                   => 0,
+                 'LWP::UserAgent'         => 0,
+                 'LWP::UserAgent::Cached' => 0,
+                 'Term::ANSIColor'        => 0,
+                 'Term::ReadLine'         => 0,
+                 'Text::ParseWords'       => 0,
+                 'Text::Wrap'             => 0,
+                 'URI::Escape'            => 0,
                 },
 
     recommends => {
-                   'Term::ReadLine::Gnu::XS' => 0,   # for a better user input support
-                   'XML::Fast'               => 0,   # faster XML to HASH conversion.
+                   'Term::ReadLine::Gnu::XS' => 0,    # for a better user input support
+                   'JSON::XS'                => 0,    # faster JSON to HASH conversion
                   },
 
     auto_features => {
 
         shuffle_results_support => {
-                                      description => "To shuffle the results (--shuffle, -s)",
-                                      requires    => {
-                                                   'List::Util' => 0,
-                                                  },
-                                     },
+                                    description => "To shuffle the results (--shuffle, -s)",
+                                    requires    => {
+                                                 'List::Util' => 0,
+                                                },
+                                   },
 
         authentication_support => {
                                    description => "HTTPS protocol support and authentication support",
@@ -73,13 +75,6 @@ my $builder = Module::Build->new(
                                                'LWP::Protocol::https' => 0,
                                               },
                                  },
-
-        channel_search_support => {
-                                   description => "Search for YouTube channels",
-                                   requires    => {
-                                                'HTML::Entities' => 0,
-                                               },
-                                  },
 
         fixed_width_support => {
                                 description => "Print the results in a fixed-width format (--fixed-width, -W)",
