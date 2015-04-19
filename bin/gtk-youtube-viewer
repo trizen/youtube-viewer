@@ -1743,7 +1743,7 @@ sub list_playlist {
 # Get playlists from username
 sub playlists_from_selected_username {
     my $iter = $users_treeview->get_selection->get_selected;
-    playlists_from_username($users_liststore->get($iter, 0));
+    playlists('username', $users_liststore->get($iter, 0));
 }
 
 sub videos_from_selected_username {
@@ -1796,7 +1796,8 @@ sub videos_from_username {
 sub subscription_videos_from_username {
     my $username = ref $_[0] ? $_[0]->get_text : $_[0];
     is_valid_username($username) or return;
-    newsubscriptionvideos($username);
+
+    ### NEEDS WORK!!!
 }
 
 sub is_valid_username {
@@ -2222,10 +2223,6 @@ sub print_comments {
 
     my $url      = $results->{url};
     my $comments = $results->{results};
-
-    if (not @{$comments}) {
-        return;
-    }
 
     my $i = 0;
     foreach my $comment (@{$comments}) {

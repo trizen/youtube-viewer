@@ -1172,6 +1172,7 @@
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">True</property>
                                                     <property name="image">image53</property>
+                                                    <property name="image_position">top</property>
                                                     <signal name="clicked" handler="subscriptions_button" swapped="no"/>
                                                   </object>
                                                   <packing>
@@ -1187,6 +1188,7 @@
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">True</property>
                                                     <property name="image">image51</property>
+                                                    <property name="image_position">top</property>
                                                     <signal name="clicked" handler="favorites_button" swapped="no"/>
                                                   </object>
                                                   <packing>
@@ -1202,6 +1204,7 @@
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">True</property>
                                                     <property name="image">image59</property>
+                                                    <property name="image_position">top</property>
                                                     <signal name="clicked" handler="likes_button" swapped="no"/>
                                                   </object>
                                                   <packing>
@@ -1217,6 +1220,7 @@
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">True</property>
                                                     <property name="image">image54</property>
+                                                    <property name="image_position">top</property>
                                                     <signal name="clicked" handler="dislikes_button" swapped="no"/>
                                                   </object>
                                                   <packing>
@@ -1232,6 +1236,7 @@
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">True</property>
                                                     <property name="image">icon_from_pixbuf</property>
+                                                    <property name="image_position">top</property>
                                                     <signal name="clicked" handler="uploads_button" swapped="no"/>
                                                   </object>
                                                   <packing>
@@ -1247,6 +1252,7 @@
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">True</property>
                                                     <property name="image">image52</property>
+                                                    <property name="image_position">top</property>
                                                     <signal name="clicked" handler="log_out" swapped="no"/>
                                                   </object>
                                                   <packing>
@@ -1913,20 +1919,6 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                           </packing>
                                                         </child>
                                                         <child>
-                                                          <object class="GtkCheckButton" id="checkbutton1">
-                                                            <property name="label" translatable="yes">Get captions</property>
-                                                            <property name="visible">True</property>
-                                                            <property name="can_focus">True</property>
-                                                            <property name="receives_default">False</property>
-                                                            <property name="draw_indicator">True</property>
-                                                          </object>
-                                                          <packing>
-                                                            <property name="expand">True</property>
-                                                            <property name="fill">True</property>
-                                                            <property name="position">3</property>
-                                                          </packing>
-                                                        </child>
-                                                        <child>
                                                           <object class="GtkCheckButton" id="clear_list_checkbutton">
                                                             <property name="label" translatable="yes">Clear search list</property>
                                                             <property name="visible">True</property>
@@ -1938,7 +1930,7 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                           <packing>
                                                             <property name="expand">True</property>
                                                             <property name="fill">True</property>
-                                                            <property name="position">4</property>
+                                                            <property name="position">3</property>
                                                           </packing>
                                                         </child>
                                                       </object>
