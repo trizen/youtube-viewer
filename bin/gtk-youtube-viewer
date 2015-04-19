@@ -1470,22 +1470,6 @@ sub search {
     my $type = @types ? join(',', @types) : 'video';
     display_results($yv_obj->search_for($type, $keywords));
 
-=cut
-
-    #$yv_obj->set_author($from_author_entry->get_text);
-    #$yv_obj->set_category($category_id_entry->get_text);
-
-    if ($CONFIG{search_playlists}) {
-        print_playlists($yv_obj->search_playlists($keywords));
-    }
-    elsif ($CONFIG{search_channels}) {
-        print_channels($yv_obj->search_channels($keywords));
-    }
-    else {
-        display_results($yv_obj->search_videos($keywords));
-    }
-=cut
-
     return 1;
 }
 
@@ -1678,16 +1662,6 @@ sub add_channel_entry {
     $liststore->set($iter, 4, $row_description);
     $liststore->set($iter, 7, 'channel');
     $row_description = _make_row_description($row_description);
-
-=cut
-  snippet => {
-    channelId            => "UCs7qhmGsWM-JAcPvMWRhBmQ",
-    channelTitle         => "",
-    description          => "\x{96D9}\x{8A9E}TED Android App: http://cdotchen-blog.tumblr.com/post/111064215021/ted-ted-app.",
-    liveBroadcastContent => "none",
-    publishedAt          => "2015-01-08T14:48:22.000Z",
-    thumbnails           => {
-=cut
 
     $liststore->set($iter, 3, $yv_utils->get_channel_id($channel));
     $liststore->set(
