@@ -250,16 +250,16 @@ my %CONFIG = (
     videoDefinition => undef,
     videoDimension  => undef,
     videoLicense    => undef,
-
-    #safe_search         => undef,
+    safeSearch      => undef,
     videoCaption    => undef,
     videoDuration   => undef,
     videoSyndicated => undef,
     publishedBefore => undef,
     publishedAfter  => undef,
     order           => undef,
-    hl              => 'en_US',
-    cat_region      => 'us',
+
+    hl         => 'en_US',
+    cat_region => 'us',
 
     # URI options
     youtube_video_url => 'http://www.youtube.com/watch?v=%s',
@@ -269,7 +269,7 @@ my %CONFIG = (
     captions_dir  => tmpdir(),
     get_captions  => 1,
     copy_caption  => 0,
-    cache_dir     => undef, # define it later
+    cache_dir     => undef, # will be defined later
 
     # Others
     http_proxy           => undef,
@@ -291,9 +291,7 @@ my %CONFIG = (
     download_and_play    => 0,
     autohide_watched     => 0,
     remove_played_file   => 0,
-    use_xml_fast         => 1,
     save_input_history   => 0,
-    show_extra_info      => 1,
     history_size_limit   => 1_000,
     ffmpeg_command       => q{ffmpeg -i %s %s},
     convert_to           => undef,
@@ -1072,8 +1070,9 @@ sub apply_configuration {
                              videoEmbeddable videoLicense
                              videoSyndicated channelId
                              publishedAfter publishedBefore
-                             regionCode videoCategoryId
-                             page debug http_proxy
+                             safeSearch regionCode
+                             videoCategoryId debug
+                             http_proxy hl
                              )
       ) {
 
@@ -1403,7 +1402,7 @@ sub parse_arguments {
         'play-playlists|pp=s'       => \$opt{play_playlists},
         'debug:1'                   => \$opt{debug},
         'download|dl|d!'            => \$opt{download_video},
-        'safe-search|safeSearch=s'  => \$opt{safe_search},
+        'safe-search|safeSearch=s'  => \$opt{safeSearch},
         'vd|video-definition=s'     => \$opt{videoDefinition},
         'hd|high-definition!'       => \$opt{hd},
         'I|interactive!'            => \$opt{interactive},

@@ -59,11 +59,9 @@ our @feed_methods = qw(newsubscriptionvideos recommendations favorites watch_his
 my %valid_options = (
 
     # Main options
-    v          => {valid => q[],                        default => 3},
-    page       => {valid => [qr/^(?!0+\z)\d+\z/],       default => 1},
-    http_proxy => {valid => [qr{^https?://}],           default => undef},
-    hl         => {valid => [qr/^[a-z]{2}-[A-Z]{2}\z/], default => undef},
-
+    v               => {valid => q[],                                                    default => 3},
+    http_proxy      => {valid => [qr{^https?://}],                                       default => undef},
+    hl              => {valid => [qr/^[a-z]{2}-[A-Z]{2}\z/],                             default => undef},
     maxResults      => {valid => [1 .. 50],                                              default => 10},
     topicId         => {valid => [qr/^./],                                               default => undef},
     order           => {valid => [qw(relevance date rating viewCount title videoCount)], default => undef},
@@ -71,6 +69,8 @@ my %valid_options = (
     publishedBefore => {valid => [qr/^\d+/],                                             default => undef},
     channelId       => {valid => [qr/^[-\w]{2,}\z/],                                     default => undef},
     channelType     => {valid => [qw(any show)],                                         default => undef},
+
+    #page       => {valid => [qr/^(?!0+\z)\d+\z/],       default => 1},
 
     # Video only options
     videoCaption    => {valid => [qw(any closedCaption none)],     default => undef},
@@ -84,19 +84,10 @@ my %valid_options = (
     eventType       => {valid => [qw(completed live upcoming)],    default => undef},
     chart           => {valid => [qw(mostPopular)],                default => 'mostPopular'},
 
-    #categories_region => {valid => [qr/^[A-Z]{2}\z/i], default => 'us'},
-    #categories_language => {valid => [qr/^[a-z]+-\w/], default => 'en-US'},
-
     regionCode        => {valid => [qr/^[A-Z]{2}\z/i],         default => undef},
     relevanceLanguage => {valid => [qr/^[a-z](?:\-\w+)?\z/i],  default => undef},
     safeSearch        => {valid => [qw(none moderate strict)], default => undef},
     videoType         => {valid => [qw(any episode movie)],    default => undef},
-
-    #category    => {valid => \@categories_IDs,                           default => undef},
-    #region      => {valid => \@region_IDs,                               default => undef},
-    #order       => {valid => [qw(date rating relevance viewCount)],      default => undef},
-    #time        => {valid => [qw(today this_week this_month all_time)],  default => undef},
-    #safe_search => {valid => [qw(strict moderate none)],                 default => undef},
 
     # Others
     debug       => {valid => [0 .. 2],     default => 0},
@@ -122,7 +113,6 @@ my %valid_options = (
     #categories_url    => {valid => q[], default => 'http://gdata.youtube.com/schemas/2007/categories.cat'},
     #educategories_url => {valid => q[], default => 'http://gdata.youtube.com/schemas/2007/educategories.cat'},
 
-    #feeds_url         => {valid => q[], default => 'http://gdata.youtube.com/feeds/api'},
     feeds_url        => {valid => q[], default => 'https://www.googleapis.com/youtube/v3/'},
     video_info_url   => {valid => q[], default => 'https://www.youtube.com/get_video_info'},
     oauth_url        => {valid => q[], default => 'https://accounts.google.com/o/oauth2/'},
@@ -703,15 +693,15 @@ sub get_video_comments {
 
 =head1 AUTHOR
 
-Suteu "Trizen" Daniel, C<< <trizenx at gmail.com> >>
+Trizen, C<< <trizenx at gmail.com> >>
 
 =head1 SEE ALSO
 
-https://developers.google.com/youtube/2.0/developers_guide_protocol_api_query_parameters
+https://developers.google.com/youtube/v3/docs/
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012-2013 Trizen.
+Copyright 2012-2015 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
