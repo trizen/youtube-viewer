@@ -28,7 +28,11 @@ our $VERSION = '0.01';
 
 sub _make_playlists_url {
     my ($self, %opts) = @_;
-    $self->_make_feed_url('playlists', %opts,);
+    $self->_make_feed_url(
+                          'playlists',
+                          pageToken => $self->page_token,
+                          %opts,
+                         );
 }
 
 sub get_playlist_id {

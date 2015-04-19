@@ -60,6 +60,7 @@ my %valid_options = (
 
     # Main options
     v               => {valid => q[],                                                    default => 3},
+    page            => {valid => [qr/^(?!0+\z)\d+\z/],                                   default => 1},
     http_proxy      => {valid => [qr{^https?://}],                                       default => undef},
     hl              => {valid => [qr/^[a-z]{2}-[A-Z]{2}\z/],                             default => undef},
     maxResults      => {valid => [1 .. 50],                                              default => 10},
@@ -69,8 +70,6 @@ my %valid_options = (
     publishedBefore => {valid => [qr/^\d+/],                                             default => undef},
     channelId       => {valid => [qr/^[-\w]{2,}\z/],                                     default => undef},
     channelType     => {valid => [qw(any show)],                                         default => undef},
-
-    #page       => {valid => [qr/^(?!0+\z)\d+\z/],       default => 1},
 
     # Video only options
     videoCaption    => {valid => [qw(any closedCaption none)],     default => undef},
@@ -178,6 +177,35 @@ sub new {
     }
 
     return $self;
+}
+
+#
+## This function is experimental and it's subject to change
+#
+sub number2token {
+    my ($self, $num) = @_;
+
+    state $table = ["A" .. "Z", "a" .. "z", 0 .. 9];
+
+    my $token  = 'CAAQAA';
+    my $cycles = int($num / 16);
+
+    my $quatre = ($num * 4 % $#{$table}) - ($cycles != int $num * 4 / $#{$table}) - ($cycles * 4 - $cycles);
+
+    if (abs($quatre) - 1 > $#{$table}) {
+        ++$quatre, $quatre %= $#{$table};
+    }
+
+    substr($token, 1, 1, $table->[$cycles]);
+    substr($token, 2, 1, $table->[$quatre]);
+
+    return $token;
+}
+
+sub page_token {
+    my ($self) = @_;
+    my $number = ($self->get_maxResults * $self->get_page) - $self->get_maxResults;
+    $number > 1 ? $self->number2token($number) : undef;
 }
 
 =head2 escape_string($string)
@@ -683,12 +711,17 @@ sub get_video_comments {
     foreach my $name ('next_page', 'previous_page') {
         *{__PACKAGE__ . '::' . $name} = sub {
             my ($self, $url, $token) = @_;
-            my $res = $self->_get_results($self->_concat_args($url, {pageToken => $token}));
-            $res->{url} = $url;
+
+            my $pt_url =
+                $url =~ s/[?&]pageToken=\K\w+/$token/
+              ? $url
+              : $self->_concat_args($url, {pageToken => $token});
+
+            my $res = $self->_get_results($pt_url);
+            $res->{url} = $pt_url;
             return $res;
         };
     }
-
 }
 
 =head1 AUTHOR

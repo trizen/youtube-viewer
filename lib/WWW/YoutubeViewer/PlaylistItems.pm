@@ -28,7 +28,12 @@ our $VERSION = '0.01';
 
 sub _make_playlistItems_url {
     my ($self, %opts) = @_;
-    return $self->_make_feed_url('playlistItems', %opts,);
+    return
+      $self->_make_feed_url(
+                            'playlistItems',
+                            pageToken => $self->page_token,
+                            %opts
+                           );
 }
 
 =head2 videos_from_playlist_id($playlist_id)

@@ -274,6 +274,7 @@ my %CONFIG = (
     # Others
     http_proxy           => undef,
     debug                => 0,
+    page                 => 1,
     colors               => $constant{win32} ^ 1,
     clobber              => 0,
     skip_if_exists       => 0,
@@ -1072,7 +1073,7 @@ sub apply_configuration {
                              publishedAfter publishedBefore
                              safeSearch regionCode
                              videoCategoryId debug
-                             http_proxy hl
+                             http_proxy hl page
                              )
       ) {
 
@@ -2084,15 +2085,9 @@ sub general_options {
             return;
         }
         when ($_ ~~ ['n', 'next'] and defined $url) {
-            if (not $url ~~ $opt{_last_page_urls}) {
-                my $request = $yv_obj->next_page($url, (defined($mode) ? ($mode => 1) : ()));
-                if ($yv_utils->has_entries($request)) {
-                    $callback->($request, @{$callback_args});
-                }
-                else {
-                    push @{$opt{_last_page_urls}}, $url;
-                    warn_last_page();
-                }
+            my $request = $yv_obj->next_page($url, (defined($mode) ? ($mode => 1) : ()));
+            if ($yv_utils->has_entries($request)) {
+                $callback->($request, @{$callback_args});
             }
             else {
                 warn_last_page();
@@ -3582,20 +3577,9 @@ sub print_videos {
                     press_enter_to_continue();
                 }
                 when (['n', 'next']) {
-                    if (not $url ~~ $opt{_last_page_urls}) {
-                        if (exists $info->{nextPageToken}) {
-                            my $request = $yv_obj->next_page($url, $info->{nextPageToken});
-                            __SUB__->($request, @keywords ? (auto => 1) : ());
-                        }
-                        else {
-                            push @{$opt{_last_page_urls}}, $url;
-                            warn_last_page();
-                            if ($opt{auto_next_page}) {
-                                $opt{auto_next_page} = 0;
-                                @copy_of_keywords = ();
-                                last;
-                            }
-                        }
+                    if (exists $info->{nextPageToken}) {
+                        my $request = $yv_obj->next_page($url, $info->{nextPageToken});
+                        __SUB__->($request, @keywords ? (auto => 1) : ());
                     }
                     else {
                         warn_last_page();

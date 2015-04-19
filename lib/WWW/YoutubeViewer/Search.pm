@@ -44,6 +44,7 @@ sub _make_search_url {
         safeSearch        => $self->get_safeSearch,
         channelId         => $self->get_channelId,
         channelType       => $self->get_channelType,
+        pageToken         => $self->page_token,
 
         (
          $opts{type} eq 'video'

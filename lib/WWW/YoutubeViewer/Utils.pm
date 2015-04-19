@@ -122,6 +122,7 @@ Return time (01:20:10) from duration (PT1H20M10S).
 sub format_duration {
     my ($self, $duration) = @_;
 
+    $duration // return 0;
     my ($hour, $min, $sec) = (0, 0, 0);
 
     $hour = $1 if ($duration =~ /(\d+)H/);
