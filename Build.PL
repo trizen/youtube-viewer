@@ -32,13 +32,17 @@ my $builder = Module::Build->new(
 
     requires => {
                  'Data::Dump'             => 0,
+                 'File::Spec'             => 0,
                  'File::Spec::Functions'  => 0,
                  'File::Path'             => 0,
                  'Getopt::Long'           => 0,
                  'HTTP::Request'          => 0,
                  'JSON'                   => 0,
+                 'MIME::Base64'           => 0,
+                 'List::Util'             => 0,
                  'LWP::UserAgent'         => 0,
                  'LWP::UserAgent::Cached' => 0,
+                 'LWP::Protocol::https'   => 0,
                  'Term::ANSIColor'        => 0,
                  'Term::ReadLine'         => 0,
                  'Text::ParseWords'       => 0,
@@ -52,30 +56,6 @@ my $builder = Module::Build->new(
                   },
 
     auto_features => {
-
-        shuffle_results_support => {
-                                    description => "To shuffle the results (--shuffle, -s)",
-                                    requires    => {
-                                                 'List::Util' => 0,
-                                                },
-                                   },
-
-        authentication_support => {
-                                   description => "HTTPS protocol support and authentication support",
-                                   requires    => {
-                                                'MIME::Base64'         => 0,
-                                                'LWP::Protocol::https' => 0,
-                                               },
-                                  },
-
-        post_comments_support => {
-                                  description => "For posting comments to videos",
-                                  requires    => {
-                                               'File::Temp'           => 0,
-                                               'LWP::Protocol::https' => 0,
-                                              },
-                                 },
-
         fixed_width_support => {
                                 description => "Print the results in a fixed-width format (--fixed-width, -W)",
                                 requires    => {
