@@ -1501,7 +1501,7 @@ elsif ($opt{interactive} and -t STDOUT and not -t) {
     print_videos($yv_obj->search(<>));
 }
 else {
-    main_quit($opt{_error});
+    main_quit($opt{_error} || 0);
 }
 
 sub require_getopt_long {
@@ -3851,7 +3851,7 @@ sub press_enter_to_continue {
 }
 
 sub main_quit {
-    exit $_[0];
+    exit($_[0] // 0);
 }
 
 main_quit(0);
