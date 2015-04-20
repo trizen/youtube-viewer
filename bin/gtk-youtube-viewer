@@ -616,9 +616,12 @@ apply_configuration();
 
 # YouTube usernames
 my %users_table = map { lc($_) => $_ } (
-                        'KhanAcademy',  'VSauce',       'Gotbletu',      'ScienceChannel', 'SpaceRip',      'TEDtalksDirector',
-                        'MIT',          'SixtySymbols', 'SciShow',       'NumberPhile',    'ComputerPhile', 'UCBerkeley',
-                        'UCTelevision', 'BigThink',     'ProfessorFink', 'UCTVSeminars',   '1Veritasium',   'MinutePhysics'
+                                        'KhanAcademy',         'VSauce',           'Gotbletu',      'ScienceChannel',
+                                        'SpaceRip',            'TEDtalksDirector', 'MIT',           'SixtySymbols',
+                                        'SciShow',             'NumberPhile',      'ComputerPhile', 'UCBerkeley',
+                                        'UCTelevision',        'BigThink',         'ProfessorFink', 'UCTVSeminars',
+                                        '1Veritasium',         'MinutePhysics',    'BrianTWill',    'SingingBanana',
+                                        'TheRoyalInstitution', 'ItsOkayToBeSmart', 'CrashCourse',   'MyCodeSchool'
                                        );
 set_usernames();
 
