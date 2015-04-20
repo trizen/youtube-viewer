@@ -22,7 +22,7 @@ To package this application, run the following commands:
     ./Build install --install_path script=/usr/bin
 ```
 
-## GTK-YOUTUBE-VIEWER
+## gtk-youtube-viewer
 
 To install GTK Youtube Viewer, run `Build.PL` with the `--gtk-youtube-viewer` argument.
 
@@ -42,7 +42,7 @@ After installing, you can find documentation with the following commands:
     man youtube-viewer
     perldoc WWW::YoutubeViewer
 
-LICENSE AND COPYRIGHT
+### LICENSE AND COPYRIGHT
 
 Copyright (C) 2012-2015 Daniel "Trizen" Șuteu
 
