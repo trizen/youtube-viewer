@@ -1,7 +1,7 @@
 package WWW::YoutubeViewer::Itags;
 
-use 5.010;
-use strict;
+use utf8;
+use 5.014;
 use warnings;
 
 =head1 NAME

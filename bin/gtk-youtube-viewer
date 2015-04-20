@@ -126,10 +126,8 @@ my %symbols = (
 my %CONFIG = (
 
     # Combobox values
-    active_order_combobox      => 0,
-    active_resolution_combobox => 0,
-
-    #active_search_for            => 0,
+    active_order_combobox         => 0,
+    active_resolution_combobox    => 0,
     active_definition_combobox    => 0,
     active_caption_combobox       => 0,
     active_duration_combobox      => 0,
@@ -227,8 +225,6 @@ my %CONFIG = (
     search_channels    => 0,
     search_playlists   => 0,
     thousand_separator => q{,},
-
-    #default_thumb      => 'mqdefault',
     downloads_folder   => curdir(),
     web_browser        => undef,                 # defaults to $ENV{WEBBROWSER} or xdg-open
     terminal           => undef,                 # autodetect it later
@@ -287,24 +283,24 @@ $gui->connect_signals(undef);
 
 # -------------  Get GUI objects ------------- #
 my (
-    $mainw,                        $users_list_window,          $help_window,
-    $prefernces_window,            $login_to_youtube,           $errors_window,
-    $details_window,               $about_window,               $treeview,
-    $liststore,                    $config_view,                $statusbar,
-    $thumbs_column,                $textview_help,              $order_combobox,
-    $resolution_combobox,          $spin_results,               $users_treeview,
-    $users_liststore,              $thumbs_checkbutton,         $search_for_combobox,
-    $spin_start_with_page,         $fullscreen_checkbutton,     $notebook,
-    $search_entry,                 $from_author_entry,          $gif_spinner,
-    $hbox2,                        $feeds_window,               $feeds_treeview,
-    $feeds_liststore,              $feeds_statusbar,            $safesearch_combobox,
-    $definition_combobox,          $caption_combobox,           $duration_combobox,
-    $warnings_window,              $warnings_textview,          $errors_textview,
-    $category_id_entry,            $more_options_expander,      $cat_treeview,
-    $cats_liststore,               $dash_checkbutton,           $spin_published_within,
-    $published_within_combobox,    $search_for_videos_checkbox, $search_for_playlists_checkbox,
-    $search_for_channels_checkbox, $clear_search_list_checkbox, $panel_account_type_combobox,
-    $panel_user_entry,             $channel_type_combobox,
+    $mainw,                      $users_list_window,             $help_window,
+    $prefernces_window,          $login_to_youtube,              $errors_window,
+    $details_window,             $about_window,                  $treeview,
+    $liststore,                  $config_view,                   $statusbar,
+    $thumbs_column,              $textview_help,                 $order_combobox,
+    $resolution_combobox,        $spin_results,                  $users_treeview,
+    $users_liststore,            $thumbs_checkbutton,            $spin_start_with_page,
+    $fullscreen_checkbutton,     $notebook,                      $search_entry,
+    $from_author_entry,          $gif_spinner,                   $hbox2,
+    $feeds_window,               $feeds_treeview,                $feeds_liststore,
+    $feeds_statusbar,            $safesearch_combobox,           $definition_combobox,
+    $caption_combobox,           $duration_combobox,             $warnings_window,
+    $warnings_textview,          $errors_textview,               $category_id_entry,
+    $more_options_expander,      $cat_treeview,                  $cats_liststore,
+    $dash_checkbutton,           $spin_published_within,         $published_within_combobox,
+    $search_for_videos_checkbox, $search_for_playlists_checkbox, $search_for_channels_checkbox,
+    $clear_search_list_checkbox, $panel_account_type_combobox,   $panel_user_entry,
+    $channel_type_combobox,
    );
 
 sub get_objects {
@@ -360,7 +356,6 @@ sub get_objects {
         'spinbutton2'            => \$spin_start_with_page,
         'spinbutton3'            => \$spin_published_within,
         'thumbs_checkbutton'     => \$thumbs_checkbutton,
-        'search_for_combobox'    => \$search_for_combobox,
         'fullscreen_checkbutton' => \$fullscreen_checkbutton,
         'clear_list_checkbutton' => \$clear_search_list_checkbox,
         'dash_checkbutton'       => \$dash_checkbutton,
@@ -369,7 +364,13 @@ sub get_objects {
     );
 
     while (my ($key, $value) = each %objects) {
-        ${$value} = $gui->get_object($key);
+        my $object = $gui->get_object($key);
+        if (defined $object) {
+            ${$value} = $object;
+        }
+        else {
+            print STDERR "[WARN] undefined object: $key\n";
+        }
     }
 }
 get_objects();
@@ -584,13 +585,8 @@ sub apply_configuration {
     $more_options_expander->set_expanded($CONFIG{active_more_options_expander});
 
     # Combo boxes setting config value
-    #$sort_combobox->set_active($CONFIG{active_sort_by_combobox});
     $order_combobox->set_active($CONFIG{active_order_combobox});
-
-    #$sort_by_time_combobox->set_active($CONFIG{active_time_sort_by_combobox});
     $resolution_combobox->set_active($CONFIG{active_resolution_combobox});
-
-    #$search_for_combobox->set_active($CONFIG{active_search_for});
     $definition_combobox->set_active($CONFIG{active_definition_combobox});
     $caption_combobox->set_active($CONFIG{active_caption_combobox});
     $duration_combobox->set_active($CONFIG{active_duration_combobox});
@@ -1124,7 +1120,7 @@ sub combobox_definition_changed {
 sub combobox_published_within_changed {
     my $text = $published_within_combobox->get_active_text;
 
-    if ($text eq 'any') {
+    if ($text =~ /^any/) {
         $spin_published_within->hide;
         $yv_obj->set_publishedAfter(undef);
     }
@@ -1448,7 +1444,7 @@ sub search {
     return if check_keywords($keywords);
     $liststore->clear if $CONFIG{clear_search_list};
 
-    if ((my $period = $published_within_combobox->get_active_text) ne 'any') {
+    if ((my $period = $published_within_combobox->get_active_text) !~ /^any/i) {
         my $amount = $spin_published_within->get_value;
         my $date = $yv_utils->period_to_date($amount, $period);
         $yv_obj->set_publishedAfter($date);

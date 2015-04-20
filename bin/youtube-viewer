@@ -149,7 +149,6 @@ require Term::ReadLine;
 my $term = Term::ReadLine->new("$appname $version");
 
 # Developer key
-#my $key = 'eTj9NtCyOsGMliTTwz-T85muGT-ARAwVREslfB_giHP3X339Jkpn5Xf71pQXY96xWtFY1oFHt530ct5uZZJk5YTghbNm2IrwZ4';
 my $key = 'aXalQYmzI8gPkMSLyMhpApfMAiU2b23Qz2nE3mq';
 
 sub VIDEO_PART () { 'contentDetails,statistics' }
@@ -627,8 +626,8 @@ usage: $execname [options] ([url] | [keywords])
                           valid values are: none, moderate, strict
    --order=s            : order the results using a specific sorting method
                           valid values: date rating viewCount title videoCount
-   --time=s             : show only videos uploaded within the specified time
-                          valid values are: today, this_week and this_month
+   --within=s           : show only videos uploaded within the specified time
+                          valid values are: Nd, Nm, Ny, where N is a number
    --hd!                : search only for videos available in at least 720p
    --page=i             : get results starting with a specific page
    --results=i          : how many results to display per page (max: 50)
@@ -941,7 +940,7 @@ Results: show all time tops for the Japan country.
 Command: $execname --tops --region=RU --category=Music
 Results: show today tops of RUssian Music
 
-Command: $execname cats -order-by=viewCount -duration=short
+Command: $execname cats -order=viewCount -duration=short
 Results: search for 'cats' videos, ordered by ViewCount and short length.
 
 Command: $execname --channels russian music
@@ -1090,6 +1089,18 @@ sub apply_configuration {
 
     if (defined $opt->{hd}) {
         $yv_obj->videoDefinition(delete($opt->{videoDefinition}) ? 'high' : 'any');
+    }
+
+    if (defined $opt->{within}) {
+        my $value = delete $opt->{within};
+
+        if ($value =~ /^\s*(\d+(?:\.\d+)?)([dmy])/i) {
+            my $date = $yv_utils->period_to_date($1, $2);
+            $yv_obj->set_publishedAfter($date);
+        }
+        else {
+            warn "\n[!] Invalid value <$value> for option `--within`!\n";
+        }
     }
 
     if (defined $opt->{more_results}) {
@@ -1384,7 +1395,7 @@ sub parse_arguments {
 
         'orderby|order|order-by=s' => \$opt{order},
         'duration=s'               => \$opt{videoDuration},
-        'time=s'                   => \$opt{time},
+        'within=s'                 => \$opt{within},
 
         'max-seconds|max_seconds=i' => \$opt{max_seconds},
         'min-seconds|min_seconds=i' => \$opt{min_seconds},

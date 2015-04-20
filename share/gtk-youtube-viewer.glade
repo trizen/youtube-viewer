@@ -1735,7 +1735,7 @@ Recommended: 10</property>
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">False</property>
                                                             <items>
-                                                            <item translatable="yes">any</item>
+                                                            <item translatable="yes">anytime</item>
                                                             <item translatable="yes">days</item>
                                                             <item translatable="yes">months</item>
                                                             <item translatable="yes">years</item>

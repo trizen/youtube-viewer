@@ -1,6 +1,8 @@
 package WWW::YoutubeViewer::GetCaption;
 
-use strict;
+use utf8;
+use 5.014;
+use warnings;
 
 =head1 NAME
 

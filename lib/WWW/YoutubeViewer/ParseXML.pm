@@ -1,6 +1,8 @@
 package WWW::YoutubeViewer::ParseXML;
 
+use utf8;
 use 5.014;
+use warnings;
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
