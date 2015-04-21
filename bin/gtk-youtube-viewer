@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 19 April 2015
+#  Latest edit on: 21 April 2015
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -1352,8 +1352,7 @@ sub change_subscription_page {
 sub subscriptions_button {
     my $type     = $panel_account_type_combobox->get_active_text;
     my $username = $panel_user_entry->get_text;
-
-    # NEEDS WORK...
+    subscription_videos($type, $username);
 }
 
 sub favorites_button {
@@ -1382,21 +1381,23 @@ sub dislikes_button {
 
 {
     no strict 'refs';
-    foreach my $name (qw(favorites uploads likes dislikes playlists)) {
+    foreach my $name (qw(favorites uploads likes dislikes playlists subscription_videos)) {
         *{__PACKAGE__ . '::' . $name} = sub {
             my ($type, $channel) = @_;
 
             my $method = $type =~ /^user/i ? ($name . '_from_username') : $name;
 
-            if ($name eq 'likes' and not $type =~ /^(?:user|channel)/i) {
-                $method = 'my_likes';
+            if (not $type =~ /^(?:user|channel)/i) {
+                if ($name eq 'likes') {
+                    $method = 'my_likes';
+                }
             }
 
             if ($name eq 'dislikes') {
                 $method = 'my_dislikes';
             }
 
-            my $request = $yv_obj->$method($type =~ /^(?:user|channel)/i ? $channel : ());
+            my $request = $yv_obj->$method($type =~ /^(?:user|channel)/i && $channel =~ /^\S+\z/ ? $channel : ());
 
             if ($yv_utils->has_entries($request)) {
                 $liststore->clear if $CONFIG{clear_search_list};
@@ -1776,6 +1777,11 @@ sub likes_from_text_entry {
     likes($channel_type_combobox->get_active_text, $text_entry->get_text);
 }
 
+sub subscriptions_from_text_entry {
+    my ($text_entry) = @_;
+    subscription_videos($channel_type_combobox->get_active_text, $text_entry->get_text);
+}
+
 # Get videos from username
 sub videos_from_username {
     my ($username) = @_;
@@ -1790,13 +1796,6 @@ sub videos_from_username {
         die "No video uploaded by: <$username>\n";
     }
     return 1;
-}
-
-sub subscription_videos_from_username {
-    my $username = ref $_[0] ? $_[0]->get_text : $_[0];
-    is_valid_username($username) or return;
-
-    ### NEEDS WORK!!!
 }
 
 sub is_valid_username {

@@ -44,7 +44,7 @@ sub subscribe_channel {
 
 =head2 subscriptions_mine(%args)
 
-Retrieve a feed of the authenticated user's subscriptions.
+Retrieve the subscriptions for the authenticated user.
 
 =cut
 
@@ -52,6 +52,71 @@ sub subscriptions_mine {
     my ($self, %args) = @_;
     $self->get_access_token() // return;
     return $self->_get_results($self->_make_subscriptions_url(mine => 'true', %args));
+}
+
+=head2 subscription_videos(;$channel_id)
+
+Retrieve the video subscriptions for a channel ID or for the current authenticated user.
+
+=cut
+
+sub subscription_videos {
+    my ($self, $channel_id) = @_;
+
+    my $url = $self->_make_subscriptions_url(
+                                             maxResults => 2,
+                                             order      => 'unread',
+                                             maxResults => 50,
+                                             part       => 'snippet,contentDetails',
+                                             defined($channel_id)
+                                             ? (channelId => $channel_id)
+                                             : (mine => 'true'),
+                                            );
+
+    my $max_results   = $self->get_maxResults();
+    my $subscriptions = $self->_get_results($url)->{results};
+
+    my @videos;
+    foreach my $channel (@{$subscriptions->{items}}) {
+
+        my $new_items = $channel->{contentDetails}{newItemCount};
+
+        # Ignore channels with zero new items
+        $new_items > 0 || next;
+
+        # Set the number of results
+        $self->set_maxResults(1);    # don't load more than 1 video from each channel
+                                     # maybe, this value should be configurable (?)
+
+        # Get and store the video uploads from each channel
+        push @videos, @{$self->uploads($channel->{snippet}{resourceId}{channelId})->{results}{items}};
+
+        # Stop when the limit is reached
+        last if (@videos >= $max_results);
+    }
+
+    # When there are no new videos, load one from each channel
+    if ($#videos == -1) {
+        foreach my $channel (@{$subscriptions->{items}}) {
+            $self->set_maxResults(1);
+            push @videos, @{$self->uploads($channel->{snippet}{resourceId}{channelId})->{results}{items}};
+            last if (@videos >= $max_results);
+        }
+    }
+
+    $self->set_maxResults($max_results);
+    return {results => {pageInfo => {totalResults => $#videos + 1}, items => \@videos}};
+}
+
+=head2 subscription_videos_from_username($username)
+
+Retrieve the video subscriptions for a username.
+
+=cut
+
+sub subscription_videos_from_username {
+    my ($self, $username) = @_;
+    $self->subscription_videos($self->channel_id_from_username($username) // $username);
 }
 
 =head2 subscriptions_from_channelID(%args)

@@ -1627,6 +1627,7 @@ Recommended: 10</property>
                                                         <property name="climb_rate">1</property>
                                                         <property name="numeric">True</property>
                                                         <property name="update_policy">if-valid</property>
+                                                        <signal name="activate" handler="search" swapped="no"/>
                                                         <signal name="value-changed" handler="spin_results_per_page_changed" swapped="no"/>
                                                       </object>
                                                     </child>
@@ -1674,6 +1675,7 @@ Recommended: 10</property>
                                                         <property name="climb_rate">1</property>
                                                         <property name="numeric">True</property>
                                                         <property name="update_policy">if-valid</property>
+                                                        <signal name="activate" handler="search" swapped="no"/>
                                                         <signal name="value-changed" handler="spin_start_with_page_changed" swapped="no"/>
                                                       </object>
                                                     </child>
@@ -1723,6 +1725,7 @@ Recommended: 10</property>
                                                             <property name="climb_rate">1</property>
                                                             <property name="numeric">True</property>
                                                             <property name="update_policy">if-valid</property>
+                                                            <signal name="activate" handler="search" swapped="no"/>
                                                           </object>
                                                           <packing>
                                                             <property name="expand">True</property>
@@ -2170,7 +2173,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
                                                 <property name="secondary_icon_activatable">False</property>
                                                 <property name="primary_icon_sensitive">True</property>
                                                 <property name="secondary_icon_sensitive">True</property>
-                                                <signal name="activate" handler="subscription_videos_from_username" swapped="no"/>
+                                                <signal name="activate" handler="subscriptions_from_text_entry" swapped="no"/>
                                               </object>
                                             </child>
                                           </object>

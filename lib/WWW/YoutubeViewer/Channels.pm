@@ -106,6 +106,18 @@ sub channels_my_subscribers {
     return $self->_get_results($self->_make_channels_url(mySubscribers => 'true'));
 }
 
+=head2 channel_id_from_username($username)
+
+Return the channel id for an username.
+
+=cut
+
+sub channel_id_from_username {
+    my ($self, $username) = @_;
+    my $channel = $self->channels_from_username($username) // return;
+    $channel->{results}{items}[0]{id} // return;
+}
+
 =head2 channels_contentDetails($channelID)
 
   {

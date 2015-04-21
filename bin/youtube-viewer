@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 19 April 2015
+#  Latest edit on: 21 April 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -1253,6 +1253,11 @@ sub apply_configuration {
         }
     }
 
+    if (defined $opt->{subscription_videos}) {
+        my $username = delete $opt->{subscription_videos};
+        print_videos($username ? $yv_obj->subscription_videos_from_username($username) : $yv_obj->subscription_videos);
+    }
+
     if (defined $opt->{related_videos}) {
         get_and_print_related_videos(split(/[,\s]+/, delete($opt->{related_videos})));
     }
@@ -1312,17 +1317,6 @@ sub apply_configuration {
         print_movies();
     }
 
-    #~ foreach my $feed_name (@{WWW::YoutubeViewer::feed_methods}) {
-    #~ if (defined $opt->{$feed_name}) {
-    #~ my $user   = delete $opt->{$feed_name};
-    #~ my $code   = \&{"WWW::YoutubeViewer::get_$feed_name"};
-    #~ my $videos = $yv_obj->$code($user);
-    #~ if (defined $videos) {
-    #~ print_videos($videos);
-    #~ }
-    #~ }
-    #~ }
-
     if (defined $opt->{get_comments}) {
         get_and_print_comments(split(/[,\s]+/, delete($opt->{get_comments})));
     }
@@ -1367,15 +1361,15 @@ sub parse_arguments {
         'season-clips|season_clips|clips=s'          => \$opt{season_clips},
         'channels|search-channels|search_channels:s' => \$opt{search_channels},
 
-        'subscriptions|newsubscriptionvideos|S:s' => \$opt{newsubscriptionvideos},
-        'favorites|fv|favorited-videos|F:s'       => \$opt{favorites},
-        'recommended|recommendations|R:s'         => \$opt{recommendations},
-        'watch_history|watched|w:s'               => \$opt{watch_history},
-        'likes|L:s'                               => \$opt{likes},
-        'dislikes'                                => \$opt{dislikes},
-        'subscribe=s'                             => \$opt{subscribe_channel},
-        'favorite|favorite-video|fav=s'           => \$opt{favorite_video},
-        'channel-suggestions'                     => \$opt{channel_suggestions},
+        'subscriptions|S:s'                 => \$opt{subscription_videos},
+        'favorites|fv|favorited-videos|F:s' => \$opt{favorites},
+        'recommended|recommendations|R:s'   => \$opt{recommendations},
+        'watch_history|watched|w:s'         => \$opt{watch_history},
+        'likes|L:s'                         => \$opt{likes},
+        'dislikes'                          => \$opt{dislikes},
+        'subscribe=s'                       => \$opt{subscribe_channel},
+        'favorite|favorite-video|fav=s'     => \$opt{favorite_video},
+        'channel-suggestions'               => \$opt{channel_suggestions},
 
         'login|authenticate'     => \$opt{authenticate},
         'logout'                 => \$opt{logout},
