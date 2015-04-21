@@ -62,7 +62,7 @@ my %valid_options = (
     v               => {valid => q[],                                                    default => 3},
     page            => {valid => [qr/^(?!0+\z)\d+\z/],                                   default => 1},
     http_proxy      => {valid => [qr{^https?://}],                                       default => undef},
-    hl              => {valid => [qr/^[a-z]{2}-[A-Z]{2}\z/],                             default => undef},
+    hl              => {valid => [qr/^\w+(?:[-_]\w+)?\z/],                               default => undef},
     maxResults      => {valid => [1 .. 50],                                              default => 10},
     topicId         => {valid => [qr/^./],                                               default => undef},
     order           => {valid => [qw(relevance date rating viewCount title videoCount)], default => undef},
@@ -109,9 +109,6 @@ my %valid_options = (
     authentication_file => {valid => [qr/^./], default => undef},
 
     # No input value alowed
-    #categories_url    => {valid => q[], default => 'http://gdata.youtube.com/schemas/2007/categories.cat'},
-    #educategories_url => {valid => q[], default => 'http://gdata.youtube.com/schemas/2007/educategories.cat'},
-
     feeds_url        => {valid => q[], default => 'https://www.googleapis.com/youtube/v3/'},
     video_info_url   => {valid => q[], default => 'https://www.youtube.com/get_video_info'},
     oauth_url        => {valid => q[], default => 'https://accounts.google.com/o/oauth2/'},
@@ -229,38 +226,6 @@ sub escape_string {
       : URI::Escape::uri_escape($string);
 
     return $escaped;
-}
-
-=head2 list_to_gdata_arguments(\%options)
-
-Returns a valid string of arguments, with defined values.
-
-=cut
-
-sub list_to_gdata_arguments {
-    my ($self, $opts) = @_;
-    return join(q{&} => map "$_=$opts->{$_}", grep defined $opts->{$_}, sort keys %{$opts});
-}
-
-=head2 default_gdata_arguments()
-
-Returns a string with the default gdata arguments.
-
-=cut
-
-sub default_gdata_arguments {
-    my ($self, $args) = @_;
-
-    my %defaults = (
-                    key         => $self->get_key,
-                    part        => 'snippet',
-                    prettyPrint => 'false',
-                    maxResults  => $self->get_maxResults,
-                   );
-
-    delete @defaults{keys %{$args}};    # delete already specified pairs (if any)
-
-    $self->list_to_gdata_arguments(\%defaults);
 }
 
 =head2 set_lwp_useragent()
@@ -461,34 +426,52 @@ sub _get_results {
              };
 }
 
-sub _prepare_feed_url {
-    my ($self, $suburl, @args) = @_;
+=head2 list_to_url_arguments(\%options)
 
-    my $url = $self->get_feeds_url() . $suburl . '?' . $self->default_gdata_arguments();
-    return $self->_concat_args($url, {@args});
+Returns a valid string of arguments, with defined values.
+
+=cut
+
+sub list_to_url_arguments {
+    my ($self, %args) = @_;
+    join(q{&}, map { "$_=$args{$_}" } grep { defined $args{$_} } sort keys %args);
+}
+
+sub _append_url_args {
+    my ($self, $url, %args) = @_;
+    %args
+      ? ($url . ($url =~ /\?/ ? '&' : '?') . $self->list_to_url_arguments(%args))
+      : $url;
 }
 
 sub _simple_feeds_url {
     my ($self, $suburl, %args) = @_;
-    $self->_concat_args($self->get_feeds_url() . $suburl, {%args, key => $self->get_key});
+    $self->get_feeds_url() . $suburl . '?' . $self->list_to_url_arguments(%args, key => $self->get_key);
 }
 
-=head2 prepare_url($url)
+=head2 default_arguments(%args)
 
-Accepts a URL without arguments, appends the
-C<default_arguments()> to it, and returns it.
+Merge the default arguments with %args and concatenate them together.
 
 =cut
 
-sub prepare_url {
-    my ($self, $url, $args) = @_;
-    $url . '?' . $self->default_gdata_arguments($args);
+sub default_arguments {
+    my ($self, %args) = @_;
+
+    my %defaults = (
+                    key         => $self->get_key,
+                    part        => 'snippet',
+                    prettyPrint => 'false',
+                    maxResults  => $self->get_maxResults,
+                    %args,
+                   );
+
+    $self->list_to_url_arguments(%defaults);
 }
 
 sub _make_feed_url {
     my ($self, $path, %args) = @_;
-    my $url = $self->prepare_url($self->get_feeds_url() . $path, \%args);
-    return $self->_concat_args($url, \%args);
+    $self->get_feeds_url() . $path . '?' . $self->default_arguments(%args);
 }
 
 =head2 get_videos_from_category($cat_id)
@@ -564,21 +547,6 @@ sub get_video_tops {
     my ($self, %opts) = @_;
 
     ...    # NEEDS WORK!!!
-}
-
-sub _concat_args {
-    my ($self, $url, $opts) = @_;
-
-    return $url if keys(%{$opts}) == 0;
-    my $args = $self->list_to_gdata_arguments($opts);
-
-    if (not defined($args) or $args eq q{}) {
-        return $url;
-    }
-
-    $url =~ s/[&?]+$//;
-    $url .= ($url =~ /[&?]/ ? '&' : '?') . $args;
-    return $url;
 }
 
 sub _get_pairs_from_info_data {
@@ -712,10 +680,11 @@ sub get_video_comments {
         *{__PACKAGE__ . '::' . $name} = sub {
             my ($self, $url, $token) = @_;
 
-            my $pt_url =
-                $url =~ s/[?&]pageToken=\K\w+/$token/
-              ? $url
-              : $self->_concat_args($url, {pageToken => $token});
+            my $pt_url = (
+                            $url =~ s/[?&]pageToken=\K\w+/$token/
+                          ? $url
+                          : $self->_append_url_args($url, pageToken => $token)
+                         );
 
             my $res = $self->_get_results($pt_url);
             $res->{url} = $pt_url;

@@ -192,7 +192,7 @@ my %CONFIG = (
     publishedAfter  => undef,
     order           => undef,
     hl              => 'en_US',
-    cat_region      => 'us',
+    cats_region     => 'us',
 
     search_for_videos    => 1,
     search_for_channels  => 0,
@@ -1229,7 +1229,7 @@ sub append_categories {
 {
     # Standard categories:
     add_category_header("Categories");
-    append_categories($yv_obj->video_categories($CONFIG{cat_region}), 'cat');
+    append_categories($yv_obj->video_categories($CONFIG{cats_region}), 'cat');
 
     # EDU categories:
     #add_category_header("EDU Categories");

@@ -257,8 +257,8 @@ my %CONFIG = (
     publishedAfter  => undef,
     order           => undef,
 
-    hl         => 'en_US',
-    cat_region => 'us',
+    hl          => 'en_US',
+    cats_region => 'us',
 
     # URI options
     youtube_video_url => 'http://www.youtube.com/watch?v=%s',
@@ -581,7 +581,7 @@ usage: $execname [options] ([url] | [keywords])
        --edu-categories : display the YouTube EDU categories
        --course-id=s    : list the video lectures from a course_ID
    -hl --catlang=s      : language for categories (default: en_US)
-       --cat-region=s   : region code for categories (default: us)
+       --cats-region=s  : region code for categories (default: us)
 
  * Videos
    -u  --user=s         : list videos uploaded by a specific user
@@ -1082,7 +1082,7 @@ sub apply_configuration {
             my $set_value = $yv_obj->$code($value);
 
             if (not defined($set_value) or $set_value ne $value) {
-                warn "\n[!] Invalid value <$value> for option <$option_name>.\n";
+                warn "\n[!] Invalid value <$value> for option <$option_name>\n";
             }
         }
     }
@@ -1221,7 +1221,7 @@ sub apply_configuration {
     }
 
     if (delete $opt->{categories}) {
-        print_categories($yv_obj->video_categories($opt{cat_region}));
+        print_categories($yv_obj->video_categories($opt{cats_region}));
     }
 
     if (defined $opt->{show_seasons}) {
@@ -1387,10 +1387,10 @@ sub parse_arguments {
         'related-videos|rl|rv=s' => \$opt{related_videos},
         'http_proxy=s'           => \$opt{http_proxy},
 
-        'catlang|cl|hl=s'        => \$opt{hl},
-        'category|cat=s'         => \$opt{category},
-        'cat-region=s'           => \$opt{cat_region},
-        'r|region|region-code=s' => \$opt{regionCode},
+        'catlang|cl|hl=s'          => \$opt{hl},
+        'category|cat=s'           => \$opt{category},
+        'cats-region|cat-region=s' => \$opt{cats_region},
+        'r|region|region-code=s'   => \$opt{regionCode},
 
         'orderby|order|order-by=s' => \$opt{order},
         'duration=s'               => \$opt{videoDuration},
@@ -1878,7 +1878,7 @@ sub get_and_play_video_ids {
         }
     }
     else {
-        warn_cant_do('get info about any', "@ids");
+        warn_cant_do('get info about', "@ids");
     }
 
     return 1;

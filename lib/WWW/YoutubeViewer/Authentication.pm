@@ -61,16 +61,14 @@ Creates an OAuth URL with the 'code' response type. (Google's authorization serv
 sub get_accounts_oauth_url {
     my ($self) = @_;
 
-    my $url = $self->_concat_args(
-                                  ($self->get_oauth_url() . 'auth'),
-                                  {
-                                   response_type => 'code',
-                                   client_id     => $self->get_client_id() // return,
-                                   redirect_uri  => $self->get_redirect_uri() // return,
-                                   scope         => 'https://www.googleapis.com/auth/youtube',
-                                   access_type   => 'offline',
-                                  }
-                                 );
+    my $url = $self->_append_url_args(
+                                      ($self->get_oauth_url() . 'auth'),
+                                      response_type => 'code',
+                                      client_id     => $self->get_client_id() // return,
+                                      redirect_uri  => $self->get_redirect_uri() // return,
+                                      scope         => 'https://www.googleapis.com/auth/youtube',
+                                      access_type   => 'offline',
+                                     );
     return $url;
 }
 
