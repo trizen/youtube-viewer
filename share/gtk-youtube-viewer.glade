@@ -2900,9 +2900,6 @@ along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
                     <property name="position">0</property>
                   </packing>
                 </child>
-                <child>
-                  <placeholder/>
-                </child>
               </object>
               <packing>
                 <property name="expand">False</property>
