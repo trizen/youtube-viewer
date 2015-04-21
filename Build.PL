@@ -43,6 +43,7 @@ my $builder = Module::Build->new(
                  'LWP::UserAgent'         => 0,
                  'LWP::UserAgent::Cached' => 0,
                  'LWP::Protocol::https'   => 0,
+                 'Mozilla::CA'            => 0,
                  'Term::ANSIColor'        => 0,
                  'Term::ReadLine'         => 0,
                  'Text::ParseWords'       => 0,
