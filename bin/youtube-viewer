@@ -2104,7 +2104,7 @@ sub general_options {
             }
         }
         when ($_ ~~ ['R', 'refresh'] and defined $url) {
-            @{$results} = @{$yv_obj->get_content($url, defined($mode) ? ($mode => 1) : ())};
+            @{$results} = @{$yv_obj->_get_results($url)->{results}{items}};
         }
         when ($_ ~~ ['b', 'back', 'p', 'prev', 'previous'] and defined $url) {
             if ($yv_obj->back_page_is_available($url)) {
@@ -3609,7 +3609,7 @@ sub print_videos {
                     }
                 }
                 when (['R', 'refresh']) {
-                    @{$videos} = @{$yv_obj->get_content($url)};
+                    @{$videos} = @{$yv_obj->_get_results($url)->{results}{items}};
                 }
                 when (['r', 'return']) {
                     return;
