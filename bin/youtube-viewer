@@ -1091,6 +1091,11 @@ sub apply_configuration {
         $yv_obj->videoDefinition(delete($opt->{videoDefinition}) ? 'high' : 'any');
     }
 
+    if (defined $opt->{author}) {
+        my $username = delete $opt->{author};
+        $yv_obj->set_channelId($yv_obj->channel_id_from_username($username) // $username);
+    }
+
     if (defined $opt->{within}) {
         my $value = delete $opt->{within};
 

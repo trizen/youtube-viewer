@@ -1454,6 +1454,11 @@ sub search {
         $yv_obj->set_publishedAfter($date);
     }
 
+    my $username = $from_author_entry->get_text;
+    if ($username =~ /^[\w\-]+\z/) {
+        $yv_obj->set_channelId($yv_obj->channel_id_from_username($username) // $username);
+    }
+
     my @types;
     if ($search_for_playlists_checkbox->get_active) {
         push @types, 'playlist';
