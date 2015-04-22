@@ -241,12 +241,13 @@ sub set_lwp_useragent {
 
     require LWP::UserAgent::Cached;
     $self->{lwp} = LWP::UserAgent::Cached->new(
-        env_proxy => (defined($self->get_http_proxy) ? 0 : $self->get_lwp_env_proxy),
-        timeout => $self->get_lwp_timeout,
+
+        timeout       => $self->get_lwp_timeout,
         show_progress => $self->get_debug,
         agent         => $self->get_lwp_agent,
         cache_dir     => $self->get_cache_dir,
-        nocache_if    => sub {
+
+        nocache_if => sub {
             my ($response) = @_;
             my $code = $response->code;
             return 1 if ($code >= 500);                               # do not cache any bad response
@@ -254,10 +255,14 @@ sub set_lwp_useragent {
             return 1 if ($response->{_request}{_method} ne 'GET');    # cache only GET requests
             return;
         },
+
         recache_if => sub {
             my ($response, $path) = @_;
+            return 1 if $response->filename eq 'videoplayback';       # recache video downloads
             return ($response->code == 404 && -M $path > 1);          # recache any 404 response older than 1 day
         },
+
+        env_proxy => (defined($self->get_http_proxy) ? 0 : $self->get_lwp_env_proxy),
     );
 
     require LWP::ConnCache;

@@ -293,7 +293,7 @@ my %CONFIG = (
     remove_played_file   => 0,
     save_input_history   => 0,
     history_size_limit   => 1_000,
-    ffmpeg_command       => q{ffmpeg -i %s %s},
+    convert_cmd          => q{ffmpeg -i *IN* *OUT*},
     convert_to           => undef,
 
     video_filename_format => q{*FTITLE*.*FORMAT*},
@@ -687,7 +687,8 @@ usage: $execname [options] ([url] | [keywords])
        --filename=s      : set a custom format for the video filename (see: -T)
 
  * Convert
-   --ffmpeg-command=s   : ffmpeg command for converting videos after download
+   --convert-cmd=s      : command for converting videos after download
+                          which include the *IN* and *OUT* tokens
    --convert-to=s       : convert video to a specific format (with -d)
    --keep-original!     : keep the original video after converting
 
@@ -1418,7 +1419,6 @@ sub parse_arguments {
         'hd|high-definition!'       => \$opt{hd},
         'I|interactive!'            => \$opt{interactive},
         'convert-to|convert_to=s'   => \$opt{convert_to},
-        'ffmpeg-command=s'          => \$opt{ffmpeg_command},
         'keep-original-video!'      => \$opt{keep_original_video},
         'e|extract|extract-info=s'  => \$opt{extract_info},
         'escape-info!'              => \$opt{escape_info},
@@ -1443,6 +1443,7 @@ sub parse_arguments {
         'fullscreen|fs|f!'  => \$opt{fullscreen},
         'dash!'             => \$opt{dash_support},
 
+        'convert-command|convert-cmd=s'     => \$opt{convert_cmd},
         'dash-m4a|dash-mp4-audio!'          => \$opt{dash_mp4_audio},
         'wget-dl|wget-download!'            => \$opt{download_with_wget},
         'filename|filename-format=s'        => \$opt{video_filename_format},
@@ -3174,8 +3175,8 @@ sub update_mplayer_arguments {
 sub download_video {
     my ($streaming, $info) = @_;
 
-    my $title = $yv_utils->format_text($streaming, $info, $opt{video_filename_format}, 0);
-    my $naked_title = $title =~ s/\.\w+\z//r;
+    my $video_filename = $yv_utils->format_text($streaming, $info, $opt{video_filename_format}, 0);
+    my $naked_filename = $video_filename =~ s/\.\w+\z//r;
 
     if (not -d $opt{downloads_folder}) {
         require File::Path;
@@ -3189,64 +3190,72 @@ sub download_video {
         $opt{downloads_folder} = -w curdir() ? curdir() : return;
     }
 
-    $title = catfile($opt{downloads_folder}, $title);
+    $video_filename = catfile($opt{downloads_folder}, $video_filename);
 
-    if ($opt{skip_if_exists} and -e $title) {
-        print STDERR "** Video '$title' already exists. Skipping...\n";
+    if ($opt{skip_if_exists} and -e $video_filename) {
+        print "** Video '$video_filename' already exists. Skipping...\n";
     }
     else {
         my $i = 0;
-        while (-e $title and not $opt{clobber} and ++$i) {
+        while (-e $video_filename and not $opt{clobber} and ++$i) {
             my $last_i = $i > 1 ? $i - 1 : q{/};
-            $title =~ s{(?:_$last_i)?(\.\w{3,4})$}{_$i$1};
+            $video_filename =~ s{(?:_$last_i)?(\.\w{3,4})$}{_$i$1};
         }
 
         if ($opt{download_with_wget}) {
-            system "wget", ($opt{clobber} ? () : q{-nc}), $streaming->{streaming}{url}, q{-O}, $title;
+            system "wget", ($opt{clobber} ? () : q{-nc}), $streaming->{streaming}{url}, q{-O}, $video_filename;
             return if $?;
         }
         else {
-            $yv_obj->lwp_mirror($streaming->{streaming}{url}, $title);
+            $yv_obj->lwp_mirror($streaming->{streaming}{url}, $video_filename);
         }
     }
 
+    # Convert the downloaded video
     if (defined $opt{convert_to}) {
-        my $new_file = "$naked_title.$opt{convert_to}";
+        my $convert_filename = "$naked_filename.$opt{convert_to}";
+        my $convert_cmd      = $opt{convert_cmd};
 
-        my @ffmpeg;
-        my @titles = ($title, $new_file);
-        foreach my $arg (get_quotewords(qr/\s+/, 0, $opt{ffmpeg_command})) {
-            push @ffmpeg, $arg eq '%s' ? shift(@titles) : $arg;
-        }
+        my %table = (
+                     'IN'  => $video_filename,
+                     'OUT' => $convert_filename,
+                    );
 
-        say "@ffmpeg" if $yv_obj->get_debug;
+        my $regex = do {
+            local $" = '|';
+            qr/\*(@{[keys %table]})\*/;
+        };
 
-        if (@titles) {
-            warn "[WARN] Invalid ffmpeg_command: needs input and output file!\n";
-        }
+        $convert_cmd =~ s/$regex/\Q$table{$1}\E/g;
+        say $convert_cmd if $yv_obj->get_debug;
 
-        system @ffmpeg;
+        system $convert_cmd;
 
-        if (not $? and not $opt{keep_original_video}) {
-            unlink $title
-              or warn colored("\n[!] Can't unlink file '$title': $!", 'bold red') . "\n\n";
+        if ($? == 0 and not $opt{keep_original_video}) {
+            unlink $video_filename
+              or warn colored("\n[!] Can't unlink file '$video_filename': $!", 'bold red') . "\n\n";
         }
     }
+
+    # Play the download video
     elsif ($opt{download_and_play}) {
 
         my $command = get_player_command($streaming, $info);
         say $command if $yv_obj->get_debug;
 
-        system join(q{ }, $command, quotemeta($title));
+        system join(q{ }, $command, quotemeta($video_filename));
+
+        # Remove it afterwards
         if ($? == 0 and $opt{remove_played_file}) {
-            unlink $title;
+            unlink $video_filename
+              or warn colored("\n[!] Can't unlink file '$video_filename': $!", 'bold red') . "\n\n";
         }
     }
 
     # Copy the .srt file from captions dir to downloads dir
-    if ($opt{copy_caption} and -e $title and defined($streaming->{srt_file})) {
+    if ($opt{copy_caption} and -e $video_filename and defined($streaming->{srt_file})) {
         my $from = $streaming->{srt_file};
-        my $to = catfile($opt{downloads_folder}, "$naked_title.srt");
+        my $to = catfile($opt{downloads_folder}, "$naked_filename.srt");
 
         require File::Copy;
         File::Copy::cp($from, $to);
