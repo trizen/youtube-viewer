@@ -579,7 +579,7 @@ sub _get_pairs_from_info_data {
                 $hash_ref->{url} .= "&signature=$hash_ref->{sig}";
             }
             elsif (exists $hash_ref->{s}) {    # has an encrypted signature :(
-                if (system('youtube-dl', '--version') == 0) {    # check if youtube-dl is installed
+                if ((state $x = system('youtube-dl', '--version')) == 0) {    # check if youtube-dl is installed
 
                     # Unfortunately, this streaming URL doesn't work with 'mplayer', but it works with 'mpv' and 'vlc'
                     chomp(my $url = `youtube-dl --get-url "http://www.youtube.com/watch?v=$videoID"`);
