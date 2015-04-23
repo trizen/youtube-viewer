@@ -582,7 +582,7 @@ sub _get_pairs_from_info_data {
                 if ((state $x = system('youtube-dl', '--version')) == 0) {    # check if youtube-dl is installed
 
                     # Unfortunately, this streaming URL doesn't work with 'mplayer', but it works with 'mpv' and 'vlc'
-                    chomp(my $url = `youtube-dl --get-url "http://www.youtube.com/watch?v=$videoID"`);
+                    chomp(my $url = `youtube-dl --get-url --format best "http://www.youtube.com/watch?v=$videoID"`);
                     foreach my $item (@array) {
                         if (exists $item->{url}) {
                             $item->{url} = $url;
