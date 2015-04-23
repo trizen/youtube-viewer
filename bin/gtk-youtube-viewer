@@ -1956,7 +1956,6 @@ sub play_videos {
             say "-> Audio itag: $streaming->{streaming}{__AUDIO__}{itag}" if exists $streaming->{streaming}{__AUDIO__};
             say "-> Video type: $streaming->{streaming}{type}";
             say "-> Audio type: $streaming->{streaming}{__AUDIO__}{type}" if exists $streaming->{streaming}{__AUDIO__};
-            say "-> Command: $command";
         }
 
         my $code = execute_external_program(join(q{ }, $command, quotemeta($streaming->{streaming}{url})));
@@ -2047,7 +2046,19 @@ sub get_options_as_arguments {
 }
 
 sub execute_external_program {
-    system $_[0] . ' &';
+    my ($cmd) = @_;
+
+    my $pid = fork();
+    if (defined $pid) {
+        if ($pid == 0) {
+            say "** Forking process: $cmd" if $yv_obj->get_debug;
+            exec $cmd;
+        }
+    }
+    else {
+        say "** Backgrounding process: $cmd" if $yv_obj->get_debug;
+        system $cmd . ' &';
+    }
 }
 
 sub _make_youtube_url {
