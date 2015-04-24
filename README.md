@@ -34,6 +34,18 @@ or:
     perl Build.PL --destdir "/my/path" --installdirs vendor --gtk-youtube-viewer
 ```
 
+### Availability:
+
+* Arch Linux (community): https://www.archlinux.org/packages/community/any/youtube-viewer/
+* Arch Linux (AUR): https://aur.archlinux.org/packages/gtk-youtube-viewer/
+* Fedora: https://build.opensuse.org/package/show/home:zhonghuaren/youtube-viewer
+* Fresh ports: http://www.freshports.org/multimedia/gtk-youtube-viewer
+* Frugalware: http://frugalware.org/packages/203103
+* Gentoo: https://packages.gentoo.org/package/net-misc/youtube-viewer
+* Puppy Linux: http://www.murga-linux.com/puppy/viewtopic.php?t=76835
+* Slackware: http://slackbuilds.org/repository/14.1/multimedia/youtube-viewer/
+* Ubuntu/Linux Mint: `sudo add-apt-repository ppa:nilarimogard/webupd8`
+
 ### SUPPORT AND DOCUMENTATION
 
 After installing, you can find documentation with the following commands:
