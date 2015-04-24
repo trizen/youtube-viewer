@@ -6,7 +6,14 @@ use strict;
 use warnings;
 use Module::Build;
 
-my $gtk_youtube_viewer = 0;
+sub fuzzy_re {
+    my ($text, $min) = @_;
+    local $" = '|';
+    qr/(@{[ map {quotemeta(substr($text, 0, $_))} $min..length($text) ]})/;
+}
+
+my $gtk_re = fuzzy_re("gtk-youtube-viewer", 3);
+my $gtk_youtube_viewer = grep { /^--?$gtk_re\z/ } @ARGV;
 
 my $builder = Module::Build->new(
     module_name       => 'WWW::YoutubeViewer',
@@ -31,24 +38,31 @@ my $builder = Module::Build->new(
                    },
 
     requires => {
-                 'Data::Dump'             => 0,
-                 'File::Spec'             => 0,
-                 'File::Spec::Functions'  => 0,
-                 'File::Path'             => 0,
-                 'Getopt::Long'           => 0,
-                 'HTTP::Request'          => 0,
-                 'JSON'                   => 0,
-                 'MIME::Base64'           => 0,
-                 'List::Util'             => 0,
-                 'LWP::UserAgent'         => 0,
-                 'LWP::UserAgent::Cached' => 0,
-                 'LWP::Protocol::https'   => 0,
-                 'Term::ANSIColor'        => 0,
-                 'Term::ReadLine'         => 0,
-                 'Text::ParseWords'       => 0,
-                 'Text::Wrap'             => 0,
-                 'URI::Escape'            => 0,
-                },
+        'Data::Dump'             => 0,
+        'File::Spec'             => 0,
+        'File::Spec::Functions'  => 0,
+        'File::Path'             => 0,
+        'Getopt::Long'           => 0,
+        'HTTP::Request'          => 0,
+        'JSON'                   => 0,
+        'MIME::Base64'           => 0,
+        'List::Util'             => 0,
+        'LWP::UserAgent'         => 0,
+        'LWP::UserAgent::Cached' => 0,
+        'LWP::Protocol::https'   => 0,
+        'Term::ANSIColor'        => 0,
+        'Term::ReadLine'         => 0,
+        'Text::ParseWords'       => 0,
+        'Text::Wrap'             => 0,
+        'URI::Escape'            => 0,
+
+        $gtk_youtube_viewer
+        ? (
+           'Gtk2'           => 0,
+           'File::ShareDir' => 0,
+          )
+        : (),
+    },
 
     recommends => {
                    'Term::ReadLine::Gnu::XS' => 0,    # for a better user input support
@@ -82,13 +96,6 @@ my $builder = Module::Build->new(
     add_to_cleanup     => ['WWW-YoutubeViewer-*'],
     create_makefile_pl => 'traditional',
                                 );
-
-if ($gtk_youtube_viewer) {
-    if (ref($builder->{properties}) eq 'HASH' and ref($builder->{properties}{requires}) eq 'HASH') {
-        $builder->{properties}{requires}{'Gtk2'}           = 0;
-        $builder->{properties}{requires}{'File::ShareDir'} = 0;
-    }
-}
 
 $builder->script_files(['bin/youtube-viewer', ($gtk_youtube_viewer ? 'bin/gtk-youtube-viewer' : ())]);
 $builder->share_dir('share') if $gtk_youtube_viewer;

@@ -27,6 +27,7 @@
       "runtime" : {
          "recommends" : {
             "JSON::XS" : "0",
+            "Mozilla::CA" : "0",
             "Term::ReadLine::Gnu::XS" : "0"
          },
          "requires" : {
@@ -42,7 +43,6 @@
             "LWP::UserAgent::Cached" : "0",
             "List::Util" : "0",
             "MIME::Base64" : "0",
-            "Mozilla::CA" : "0",
             "Term::ANSIColor" : "0",
             "Term::ReadLine" : "0",
             "Text::ParseWords" : "0",

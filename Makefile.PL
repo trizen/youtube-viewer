@@ -17,7 +17,6 @@ WriteMakefile
                    'LWP::UserAgent::Cached' => 0,
                    'List::Util' => 0,
                    'MIME::Base64' => 0,
-                   'Mozilla::CA' => 0,
                    'Term::ANSIColor' => 0,
                    'Term::ReadLine' => 0,
                    'Test::More' => 0,
