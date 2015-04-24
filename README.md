@@ -6,7 +6,7 @@ To install this application, run the following commands:
 
 ```console
     perl Build.PL
-    ./Build
+    ./Build installdeps
     ./Build test
     sudo ./Build install
 ```
@@ -17,7 +17,6 @@ To package this application, run the following commands:
 
 ```console
     perl Build.PL --destdir "/my/package/path" --installdirs vendor
-    ./Build
     ./Build test
     ./Build install --install_path script=/usr/bin
 ```
