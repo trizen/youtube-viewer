@@ -43,7 +43,6 @@ my $builder = Module::Build->new(
                  'LWP::UserAgent'         => 0,
                  'LWP::UserAgent::Cached' => 0,
                  'LWP::Protocol::https'   => 0,
-                 'Mozilla::CA'            => 0,
                  'Term::ANSIColor'        => 0,
                  'Term::ReadLine'         => 0,
                  'Text::ParseWords'       => 0,
@@ -54,6 +53,7 @@ my $builder = Module::Build->new(
     recommends => {
                    'Term::ReadLine::Gnu::XS' => 0,    # for a better user input support
                    'JSON::XS'                => 0,    # faster JSON to HASH conversion
+                   'Mozilla::CA'             => 0,    # just in case if there are SSL problems
                   },
 
     auto_features => {
