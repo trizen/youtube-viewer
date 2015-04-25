@@ -83,7 +83,7 @@ sub playlists_from_username {
 
 =head1 AUTHOR
 
-Suteu "Trizen" Daniel, C<< <trizenx at gmail.com> >>
+Trizen, C<< <trizenx at gmail.com> >>
 
 
 =head1 SUPPORT
@@ -95,7 +95,7 @@ You can find documentation for this module with the perldoc command.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2013 Suteu "Trizen" Daniel.
+Copyright 2013-2015 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
