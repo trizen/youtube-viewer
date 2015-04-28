@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 21 April 2015
+#  Latest edit on: 28 April 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -26,6 +26,8 @@
 # youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
 #
 # [CHANGELOG]
+# - Added support for downloading multiple videos in parallel (--dl-parallel)                  - NEW (v3.1.4)
+# - Migration to APIv3; some features has been lost in the process, but nothing too critical.  - NEW (v3.1.4)
 # - Added built-in support for [auto-generated] closed-captions (gcap is no longer required)   - NEW (v3.1.3)
 # - Added support for specifying the filename format when downloading videos (--filename=s)    - NEW (v3.1.3)
 # - Added support for special tokens and for extracting information about videos (--extract=s) - NEW (v3.1.3)
@@ -285,8 +287,9 @@ my %CONFIG = (
     interactive          => 1,
     get_term_width       => $constant{win32} ^ 1,
     download_with_wget   => 0,
+    download_in_parallel => 0,
     thousand_separator   => q{,},
-    downloads_folder     => curdir(),
+    downloads_dir        => curdir(),
     keep_original_video  => 0,
     download_and_play    => 0,
     autohide_watched     => 0,
@@ -680,10 +683,11 @@ usage: $execname [options] ([url] | [keywords])
    -dp --downl-play!     : play the video after download (with -d)
    -rp --rem-played!     : delete a local video after played (with -dp)
        --wget-dl!        : download videos with wget (default: LWP)
+       --dl-parallel     : download multiple videos at once
        --clobber!        : overwrite an existent video (with -d)
        --skip-if-exists! : don't download videos which already exists (with -d)
        --copy-caption!   : copy and rename the caption for downloaded videos
-       --downloads-dir=s : downloads directory (set: '$opt{downloads_folder}')
+       --downloads-dir=s : downloads directory (set: '$opt{downloads_dir}')
        --filename=s      : set a custom format for the video filename (see: -T)
 
  * Convert
@@ -1446,9 +1450,10 @@ sub parse_arguments {
         'convert-command|convert-cmd=s'     => \$opt{convert_cmd},
         'dash-m4a|dash-mp4-audio!'          => \$opt{dash_mp4_audio},
         'wget-dl|wget-download!'            => \$opt{download_with_wget},
+        'dl-parallel|download-in-parallel!' => \$opt{download_in_parallel},
         'filename|filename-format=s'        => \$opt{video_filename_format},
-        'dp|downl-play|download_and_play!'  => \$opt{download_and_play},
-        'rp|rem-played|remove_played_file!' => \$opt{remove_played_file},
+        'dp|downl-play|download-and-play!'  => \$opt{download_and_play},
+        'rp|rem-played|remove-played-file!' => \$opt{remove_played_file},
         'clobber!'                          => \$opt{clobber},
         'info|i|video-info=s'               => \$opt{print_video_info},
         'get-term-width!'                   => \$opt{get_term_width},
@@ -1470,7 +1475,7 @@ sub parse_arguments {
         'copy-caption|copy_caption!'     => \$opt{copy_caption},
         'captions-dir|captions_dir=s'    => \$opt{captions_dir},
         'skip-if-exists|skip_if_exists!' => \$opt{skip_if_exists},
-        'downloads-dir|download-dir=s'   => \$opt{downloads_folder},
+        'downloads-dir|download-dir=s'   => \$opt{downloads_dir},
     );
 
     apply_configuration(\%opt, $keywords);
@@ -3178,19 +3183,19 @@ sub download_video {
     my $video_filename = $yv_utils->format_text($streaming, $info, $opt{video_filename_format}, 0);
     my $naked_filename = $video_filename =~ s/\.\w+\z//r;
 
-    if (not -d $opt{downloads_folder}) {
+    if (not -d $opt{downloads_dir}) {
         require File::Path;
-        unless (File::Path::make_path($opt{downloads_folder})) {
-            warn colored("\n[!] Can't create directory '$opt{downloads_folder}': $1", 'bold red') . "\n";
+        unless (File::Path::make_path($opt{downloads_dir})) {
+            warn colored("\n[!] Can't create directory '$opt{downloads_dir}': $1", 'bold red') . "\n";
         }
     }
 
-    if (not -w $opt{downloads_folder}) {
-        warn colored("\n[!] Can't write into directory '$opt{downloads_folder}': $!", 'bold red') . "\n";
-        $opt{downloads_folder} = -w curdir() ? curdir() : return;
+    if (not -w $opt{downloads_dir}) {
+        warn colored("\n[!] Can't write into directory '$opt{downloads_dir}': $!", 'bold red') . "\n";
+        $opt{downloads_dir} = -w curdir() ? curdir() : return;
     }
 
-    $video_filename = catfile($opt{downloads_folder}, $video_filename);
+    $video_filename = catfile($opt{downloads_dir}, $video_filename);
 
     if ($opt{skip_if_exists} and -e $video_filename) {
         print "** Video '$video_filename' already exists. Skipping...\n";
@@ -3202,12 +3207,51 @@ sub download_video {
             $video_filename =~ s{(?:_$last_i)?(\.\w{3,4})$}{_$i$1};
         }
 
+        # Download video with wget
         if ($opt{download_with_wget}) {
-            system "wget", ($opt{clobber} ? () : q{-nc}), $streaming->{streaming}{url}, q{-O}, $video_filename;
-            return if $?;
+            my @cmd = ("wget", ($opt{clobber} ? () : q{-nc}), $streaming->{streaming}{url}, q{-O}, $video_filename);
+
+            if ($opt{download_in_parallel}) {
+                my $pid = fork() // warn "[ERROR] Can't fork: $!";
+                if ($pid == 0) {
+                    exec @cmd, '--quiet';
+                }
+            }
+            else {
+                system @cmd;
+                return if $?;
+            }
         }
+
+        # Download video with LWP::UserAgent
         else {
-            $yv_obj->lwp_mirror($streaming->{streaming}{url}, $video_filename);
+
+            # Show progress while downloading
+            if (not $yv_obj->get_debug) {
+                $yv_obj->{lwp}->show_progress(1);
+            }
+
+            if ($opt{download_in_parallel}) {
+
+                # Don't show the progress while in parallel
+                if (not $yv_obj->get_debug) {
+                    $yv_obj->{lwp}->show_progress(0);
+                }
+
+                my $pid = fork() // warn "[ERROR] Can't fork: $!";
+                if ($pid == 0) {
+                    $yv_obj->lwp_mirror($streaming->{streaming}{url}, $video_filename);
+                    exit;
+                }
+            }
+            else {
+                $yv_obj->lwp_mirror($streaming->{streaming}{url}, $video_filename);
+            }
+
+            # No progress afterwards
+            if (not $yv_obj->get_debug) {
+                $yv_obj->{lwp}->show_progress(0);
+            }
         }
     }
 
@@ -3255,7 +3299,7 @@ sub download_video {
     # Copy the .srt file from captions dir to downloads dir
     if ($opt{copy_caption} and -e $video_filename and defined($streaming->{srt_file})) {
         my $from = $streaming->{srt_file};
-        my $to = catfile($opt{downloads_folder}, "$naked_filename.srt");
+        my $to = catfile($opt{downloads_dir}, "$naked_filename.srt");
 
         require File::Copy;
         File::Copy::cp($from, $to);
