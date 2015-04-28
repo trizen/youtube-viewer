@@ -52,8 +52,6 @@ or:
     * http://www.webupd8.org/2015/02/youtube-viewer-complete-youtube-client.html
 * [EN] A YouTube CLI for Mac
     * http://blog.johnkrauss.com/installing-youtube-viewer/
-* [EN] GTK YOUTUBE VIEWER - SEARCHING AND STREAMING VIDEOS FROM YOUTUBE ON LINUX MINT
-    * http://mintguide.org/video/334-gtk-youtube-viewer-searching-and-streaming-videos-from-youtube-on-linux-mint.html
 * [EN] Gtk Youtube Viewer
     * http://puppylinux.org/wikka/GtkYoutubeViewer
 * [GR] YOUTUBE VIEWER: ΤΟ YOUTUBE ΚΥΡΙΟΛΕΚΤΙΚΑ ΣΤΟ DESKTOP ΣΑΣ
