@@ -225,7 +225,7 @@ my %CONFIG = (
     search_channels    => 0,
     search_playlists   => 0,
     thousand_separator => q{,},
-    downloads_folder   => curdir(),
+    downloads_dir      => curdir(),
     web_browser        => undef,                 # defaults to $ENV{WEBBROWSER} or xdg-open
     terminal           => undef,                 # autodetect it later
     terminal_exec      => q{-e '%s'},
@@ -2027,7 +2027,7 @@ sub get_options_as_arguments {
                    'order'          => $CONFIG{order},
                    'time'           => $CONFIG{time_sort},
                    'resolution'     => $CONFIG{resolution},
-                   'download-dir'   => quotemeta(rel2abs($CONFIG{downloads_folder})),
+                   'download-dir'   => quotemeta(rel2abs($CONFIG{downloads_dir})),
                    'fullscreen'     => $CONFIG{fullscreen} ? q{} : undef,
                    'no-dash'        => $CONFIG{dash_support} ? undef : q{},
                   );
