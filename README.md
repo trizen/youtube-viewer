@@ -34,7 +34,7 @@ or:
     perl Build.PL --destdir "/my/path" --installdirs vendor --gtk-youtube-viewer
 ```
 
-### Availability:
+### AVAILABILITY
 
 * Arch Linux (community): https://www.archlinux.org/packages/community/any/youtube-viewer/
 * Arch Linux (AUR): https://aur.archlinux.org/packages/gtk-youtube-viewer/
@@ -46,7 +46,7 @@ or:
 * Slackware: http://slackbuilds.org/repository/14.1/multimedia/youtube-viewer/
 * Ubuntu/Linux Mint: `sudo add-apt-repository ppa:nilarimogard/webupd8`
 
-### Reviews:
+### REVIEWS
 
 * [EN] YOUTUBE VIEWER: A COMPLETE YOUTUBE CLIENT FOR LINUX [UBUNTU PPA]
     * http://www.webupd8.org/2015/02/youtube-viewer-complete-youtube-client.html
@@ -67,7 +67,7 @@ or:
 * [RU] Youtube Viewer / GTK Youtube Viewer
     * http://zenway.ru/page/gtk-youtube-viewer 
 
-### Video reviews:
+### VIDEO REVIEWS
 
 * [EN] Gentoo in Review - youtube-viewer CLI client
     * https://www.youtube.com/watch?v=YzN2scO025I
