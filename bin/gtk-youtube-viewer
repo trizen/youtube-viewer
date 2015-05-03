@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 21 April 2015
+#  Latest edit on: 03 May 2015
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -886,10 +886,10 @@ sub show_user_panel {
         hide_login_to_youtube_window();
 
         if ($code ne q{}) {
-            my $json_data = $yv_obj->oauth_login($code) // return;
-
-            say $json_data if $yv_obj->get_debug;
-            my $info = $yv_utils->basic_json_parser($json_data);
+            my $info = $yv_obj->oauth_login($code) // do {
+                warn "Can't login... That's all I know...\n";
+                return;
+            };
 
             if (defined $info->{access_token}) {
 
