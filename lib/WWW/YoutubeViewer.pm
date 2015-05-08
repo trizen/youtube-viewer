@@ -250,16 +250,22 @@ sub set_lwp_useragent {
         nocache_if => sub {
             my ($response) = @_;
             my $code = $response->code;
-            return 1 if ($code >= 500);                               # do not cache any bad response
-            return 1 if ($code == 401);                               # don't cache an unauthorized response
-            return 1 if ($response->{_request}{_method} ne 'GET');    # cache only GET requests
-            return;
+
+            $code >= 500                                # do not cache any bad response
+              or $code == 401                           # don't cache an unauthorized response
+              or $response->request->method ne 'GET'    # cache only GET requests
+
+              # don't cache if "cache-control" specifies "max-age=0" or "no-store"
+              or $response->header('cache-control') =~ /\b(?:max-age=0|no-store)\b/
+
+              # don't cache video or audio files
+              or $response->header('content-type') =~ /\b(?:video|audio)\b/;
         },
 
         recache_if => sub {
             my ($response, $path) = @_;
-            return 1 if $response->filename eq 'videoplayback';       # recache video downloads
-            return ($response->code == 404 && -M $path > 1);          # recache any 404 response older than 1 day
+            not($response->is_fresh)                    # recache if the response expired
+              or ($response->code == 404 && -M $path > 1);    # recache any 404 response older than 1 day
         },
 
         env_proxy => (defined($self->get_http_proxy) ? 0 : $self->get_lwp_env_proxy),
@@ -267,7 +273,7 @@ sub set_lwp_useragent {
 
     require LWP::ConnCache;
     my $cache = LWP::ConnCache->new;
-    $cache->total_capacity(undef);                                    # no limit
+    $cache->total_capacity(undef);                            # no limit
 
     $self->{lwp}->ssl_opts(Timeout => 30);
     $self->{lwp}->default_header('Accept-Encoding' => 'gzip');

@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 03 May 2015
+#  Latest edit on: 08 May 2015
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -209,7 +209,7 @@ my %CONFIG = (
     srt_languages => ['en', 'es'],
     captions_dir  => tmpdir(),
     get_captions  => 1,
-    cache_dir     => undef, # define it later
+    cache_dir     => $ENV{XDG_CACHE_HOME}, # will be defined later if not defined
 
     # Others
     http_proxy      => undef,
