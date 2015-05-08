@@ -1426,8 +1426,7 @@ sub get_selected_video_code {
 sub check_keywords {
     given ($_[0]) {
         when (/$get_video_id_re/o) {
-            my $info = $yv_obj->get_video_info($+{video_id});
-            play_videos($info->{results});
+            play_videos([{videoID => $+{video_id}}]);
         }
         when (/$get_playlist_id_re/o) {
             list_playlist($+{playlist_id});
