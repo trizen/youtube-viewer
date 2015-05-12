@@ -554,23 +554,6 @@
       <column type="gchararray"/>
     </columns>
   </object>
-  <object class="GtkListStore" id="liststore10">
-    <columns>
-      <!-- column-name gchararray1 -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">videos</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">channels</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">playlists</col>
-      </row>
-    </data>
-  </object>
   <object class="GtkListStore" id="liststore11">
     <columns>
       <!-- column-name comment -->
@@ -579,77 +562,6 @@
       <column type="gchararray"/>
     </columns>
   </object>
-  <object class="GtkListStore" id="liststore12">
-    <columns>
-      <!-- column-name duration -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">any</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">short</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">medium</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">long</col>
-      </row>
-    </data>
-  </object>
-  <object class="GtkListStore" id="liststore13">
-    <columns>
-      <!-- column-name captions -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">any</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">closedCaption</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">none</col>
-      </row>
-    </data>
-  </object>
-  <object class="GtkListStore" id="liststore14">
-    <columns>
-      <!-- column-name hd -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">any</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">high</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">standard</col>
-      </row>
-    </data>
-  </object>
-  <object class="GtkListStore" id="liststore15">
-    <columns>
-      <!-- column-name safeSearch -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">none</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">moderate</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">strict</col>
-      </row>
-    </data>
-  </object>
   <object class="GtkListStore" id="liststore2">
     <columns>
       <!-- column-name usernames -->
@@ -657,26 +569,6 @@
       <!-- column-name user_logo -->
       <column type="GdkPixbuf"/>
     </columns>
-  </object>
-  <object class="GtkListStore" id="liststore3">
-    <columns>
-      <!-- column-name combobox -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">relevance</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">rating</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">published</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">viewCount</col>
-      </row>
-    </data>
   </object>
   <object class="GtkListStore" id="liststore4">
     <columns>
@@ -690,7 +582,6 @@
       <column type="gchararray"/>
     </columns>
   </object>
-  <object class="GtkListStore" id="liststore5"/>
   <object class="GtkListStore" id="liststore6">
     <columns>
       <!-- column-name top_name -->
@@ -702,78 +593,6 @@
       <!-- column-name top_type -->
       <column type="gchararray"/>
     </columns>
-  </object>
-  <object class="GtkListStore" id="liststore7">
-    <columns>
-      <!-- column-name sort_by_time -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">relevance</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">rating</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">viewCount</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">published</col>
-      </row>
-    </data>
-  </object>
-  <object class="GtkListStore" id="liststore8">
-    <columns>
-      <!-- column-name sort_by_time -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">all_time</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">this_month</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">this_week</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">today</col>
-      </row>
-    </data>
-  </object>
-  <object class="GtkListStore" id="liststore9">
-    <columns>
-      <!-- column-name resolutions -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">original</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">2160p</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">1440p</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">1080p</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">720p</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">480p</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">360p</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">240p</col>
-      </row>
-    </data>
   </object>
   <object class="GtkImage" id="terminal_icon2">
     <property name="visible">True</property>
@@ -1431,22 +1250,20 @@
                                             <property name="can_focus">False</property>
                                             <property name="left_padding">12</property>
                                             <child>
-                                              <object class="GtkComboBox" id="combobox4">
+                                              <object class="GtkComboBoxText" id="comboboxtext8">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
-                                                <property name="tooltip_text" translatable="yes">default - Ignore this option
-short – less than 4 minutes long
+                                                <property name="tooltip_text" translatable="yes">short – less than 4 minutes long
 medium – 4 to 20 minutes (inclusive)
 long – longer than 20 minutes</property>
-                                                <property name="model">liststore12</property>
                                                 <property name="active">0</property>
+                                                <items>
+                                                  <item translatable="yes">any</item>
+                                                  <item translatable="yes">short</item>
+                                                  <item translatable="yes">medium</item>
+                                                  <item translatable="yes">long</item>
+                                                </items>
                                                 <signal name="changed" handler="combobox_duration_changed" swapped="no"/>
-                                                <child>
-                                                  <object class="GtkCellRendererText" id="cellrenderertext7"/>
-                                                  <attributes>
-                                                    <attribute name="text">0</attribute>
-                                                  </attributes>
-                                                </child>
                                               </object>
                                             </child>
                                           </object>
@@ -2012,20 +1829,23 @@ Unless the categoryID is valid, this field is ignored.</property>
                                             <property name="can_focus">False</property>
                                             <property name="left_padding">12</property>
                                             <child>
-                                              <object class="GtkComboBox" id="combobox3">
+                                              <object class="GtkComboBoxText" id="comboboxtext9">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
-                                                <property name="tooltip_text" translatable="yes">Video resolution (default: 1080p)
+                                                <property name="tooltip_text" translatable="yes">Video resolution (default: original)
 When the specified resolution is not found, it falls down to a lower resolution.</property>
-                                                <property name="model">liststore9</property>
                                                 <property name="active">0</property>
+                                                <items>
+                                                  <item translatable="yes">original</item>
+                                                  <item translatable="yes">2160p</item>
+                                                  <item translatable="yes">1440p</item>
+                                                  <item translatable="yes">1080p</item>
+                                                  <item translatable="yes">720p</item>
+                                                  <item translatable="yes">480p</item>
+                                                  <item translatable="yes">360p</item>
+                                                  <item translatable="yes">240p</item>
+                                                </items>
                                                 <signal name="changed" handler="combobox_resolution_changed" swapped="no"/>
-                                                <child>
-                                                  <object class="GtkCellRendererText" id="cellrenderertext4"/>
-                                                  <attributes>
-                                                    <attribute name="text">0</attribute>
-                                                  </attributes>
-                                                </child>
                                               </object>
                                             </child>
                                           </object>
