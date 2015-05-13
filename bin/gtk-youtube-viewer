@@ -46,7 +46,7 @@ use File::Spec::Functions qw(
   );
 
 my $appname  = 'GTK Youtube Viewer';
-my $version  = '3.1.4';
+my $version  = '3.1.5';
 my $execname = 'gtk-youtube-viewer';
 
 # Share directory

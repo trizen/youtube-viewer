@@ -143,7 +143,7 @@ use File::Spec::Functions qw(
   );
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.1.4';
+my $version  = '3.1.5';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
