@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 08 May 2015
+#  Latest edit on: 13 May 2015
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -442,7 +442,7 @@ my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
 
 # Define the cache directory
-if (not defined $CONFIG{cache_dir}) {
+if (not defined $CONFIG{cache_dir} or not -w $CONFIG{cache_dir}) {
     $CONFIG{cache_dir} = catdir($home_dir, '.cache', 'youtube-viewer');
 }
 
