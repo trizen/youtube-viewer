@@ -488,7 +488,7 @@ if (not defined $CONFIG{terminal}) {
 
 {
     my $i = length $key;
-    $key =~ s/(.{$i})(.)/$2$1/g while $i--;
+    $key =~ s/(.{$i})(.)/$2$1/g while --$i;
 }
 
 # Locate youtube-viewer
@@ -511,13 +511,9 @@ else {
 }
 
 {
-    my $client_id     = '923751928481.apps.googleusercontent.com';
-    my $client_secret = 'twr0nZewhZ-wBSVW1apRauq1';
-    my $redirect_uri  = 'urn:ietf:wg:oauth:2.0:oob';
-
-    $yv_obj->set_client_id($client_id);
-    $yv_obj->set_client_secret($client_secret);
-    $yv_obj->set_redirect_uri($redirect_uri);
+    $yv_obj->set_client_id('923751928481.apps.googleusercontent.com');
+    $yv_obj->set_client_secret("\26/Ae]3\b\6\x186a:*#0\32\t\f\n\27\17GC`" ^ substr($key, -24));
+    $yv_obj->set_redirect_uri('urn:ietf:wg:oauth:2.0:oob');
 }
 
 require WWW::YoutubeViewer::Utils;
