@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 13 May 2015
+#  Latest edit on: 18 May 2015
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -378,6 +378,8 @@ get_objects();
 # __WARN__ handle
 local $SIG{__WARN__} = sub {
     my $warning = _strip_edge_spaces(join('', @_));
+
+    return if $warning =~ / at \(eval /;
     return if $warning =~ m'\bunhandled exception in callback:';
 
     $warning = "[" . localtime(time) . "]: " . $warning . "\n";
@@ -388,11 +390,19 @@ local $SIG{__WARN__} = sub {
 
 # __DIE__ handle
 local $SIG{__DIE__} = sub {
-    if (not [caller]->[0] ~~ [qw(main WWW::YoutubeViewer)]) {
+    my $error = join('', @_);
+    my $caller = [caller]->[0];
+
+    # Ignore eval() errors
+    return if $error =~ / at \(eval /;
+
+    # Just print the third-party errors,
+    # without displaying them to the user.
+    if (not $caller =~ /^(?:main\z|WWW::YoutubeViewer\b)/) {
         print STDERR "@_\n";
         return;
     }
-    my $error = join('', @_);
+
     set_text(
         $errors_textview,
         $error . do {

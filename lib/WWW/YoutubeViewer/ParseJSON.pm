@@ -36,7 +36,7 @@ sub parse_json_string {
     $json // return {};
     state $x = require JSON;
     my $hash = eval { JSON::decode_json($json) };
-    return $@ ? do { warn "[JSON::XS]: $@\n"; {} } : $hash;
+    return $@ ? do { warn "[JSON]: $@\n"; {} } : $hash;
 }
 
 =head1 AUTHOR
