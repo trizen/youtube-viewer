@@ -2328,7 +2328,6 @@ sub on_mainw_destroy {
     save_usernames_to_file();
 
     'Gtk2'->main_quit;
-    exit 0;
 }
 
 $notebook->set_current_page($CONFIG{default_notebook_page});
