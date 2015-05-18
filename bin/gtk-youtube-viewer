@@ -409,6 +409,7 @@ local $SIG{__DIE__} = sub {
             if ($error =~ m{^Can't locate (.+?)\.pm\b}) {
                 my $module = $1;
                 $module =~ s{[/\\]+}{::}g;
+                return if $module eq 'LWP::UserAgent::Cached';
                 "\nThe module $module is required!\n\nTo install it, just type in terminal:\n\tsudo cpan $module\n";
             }
           }

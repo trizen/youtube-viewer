@@ -38,23 +38,22 @@ my $builder = Module::Build->new(
                    },
 
     requires => {
-        'Data::Dump'             => 0,
-        'File::Spec'             => 0,
-        'File::Spec::Functions'  => 0,
-        'File::Path'             => 0,
-        'Getopt::Long'           => 0,
-        'HTTP::Request'          => 0,
-        'JSON'                   => 0,
-        'MIME::Base64'           => 0,
-        'List::Util'             => 0,
-        'LWP::UserAgent'         => 0,
-        'LWP::UserAgent::Cached' => 0,
-        'LWP::Protocol::https'   => 0,
-        'Term::ANSIColor'        => 0,
-        'Term::ReadLine'         => 0,
-        'Text::ParseWords'       => 0,
-        'Text::Wrap'             => 0,
-        'URI::Escape'            => 0,
+        'Data::Dump'            => 0,
+        'File::Spec'            => 0,
+        'File::Spec::Functions' => 0,
+        'File::Path'            => 0,
+        'Getopt::Long'          => 0,
+        'HTTP::Request'         => 0,
+        'JSON'                  => 0,
+        'MIME::Base64'          => 0,
+        'List::Util'            => 0,
+        'LWP::UserAgent'        => 0,
+        'LWP::Protocol::https'  => 0,
+        'Term::ANSIColor'       => 0,
+        'Term::ReadLine'        => 0,
+        'Text::ParseWords'      => 0,
+        'Text::Wrap'            => 0,
+        'URI::Escape'           => 0,
 
         $gtk_youtube_viewer
         ? (
@@ -65,6 +64,7 @@ my $builder = Module::Build->new(
     },
 
     recommends => {
+                   'LWP::UserAgent::Cached'  => 0,    # cache support
                    'Term::ReadLine::Gnu::XS' => 0,    # for a better user input support
                    'JSON::XS'                => 0,    # faster JSON to HASH conversion
                    'Mozilla::CA'             => 0,    # just in case if there are SSL problems

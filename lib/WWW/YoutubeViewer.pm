@@ -93,7 +93,7 @@ my %valid_options = (
     lwp_timeout => {valid => [qr/^\d+\z/], default => 1},
     key         => {valid => [qr/^.{5}/],  default => undef},
     config_dir  => {valid => [qr/^./],     default => q{.}},
-    cache_dir   => {valid => [qr/^./],     default => qw{/tmp}},
+    cache_dir   => {valid => [qr/^./],     default => q{.}},
 
     # Booleans
     lwp_env_proxy => {valid => [1, 0], default => 1},
@@ -239,41 +239,49 @@ sub set_lwp_useragent {
 
     binmode(STDOUT, ':encoding(UTF-8)');
 
-    require LWP::UserAgent::Cached;
-    $self->{lwp} = LWP::UserAgent::Cached->new(
+    my $lwp = (
+        eval { require LWP::UserAgent::Cached; 'LWP::UserAgent::Cached' }
+          // do { require LWP::UserAgent; 'LWP::UserAgent' }
+    );
+
+    $self->{lwp} = $lwp->new(
 
         timeout       => $self->get_lwp_timeout,
         show_progress => $self->get_debug,
         agent         => $self->get_lwp_agent,
-        cache_dir     => $self->get_cache_dir,
 
-        nocache_if => sub {
-            my ($response) = @_;
-            my $code = $response->code;
+        $lwp eq 'LWP::UserAgent::Cached'
+        ? (
+           cache_dir  => $self->get_cache_dir,
+           nocache_if => sub {
+               my ($response) = @_;
+               my $code = $response->code;
 
-            $code >= 500                                # do not cache any bad response
-              or $code == 401                           # don't cache an unauthorized response
-              or $response->request->method ne 'GET'    # cache only GET requests
+               $code >= 500                                # do not cache any bad response
+                 or $code == 401                           # don't cache an unauthorized response
+                 or $response->request->method ne 'GET'    # cache only GET requests
 
-              # don't cache if "cache-control" specifies "max-age=0" or "no-store"
-              or $response->header('cache-control') =~ /\b(?:max-age=0|no-store)\b/
+                 # don't cache if "cache-control" specifies "max-age=0" or "no-store"
+                 or $response->header('cache-control') =~ /\b(?:max-age=0|no-store)\b/
 
-              # don't cache video or audio files
-              or $response->header('content-type') =~ /\b(?:video|audio)\b/;
-        },
+                 # don't cache video or audio files
+                 or $response->header('content-type') =~ /\b(?:video|audio)\b/;
+           },
 
-        recache_if => sub {
-            my ($response, $path) = @_;
-            not($response->is_fresh)                    # recache if the response expired
-              or ($response->code == 404 && -M $path > 1);    # recache any 404 response older than 1 day
-        },
+           recache_if => sub {
+               my ($response, $path) = @_;
+               not($response->is_fresh)                    # recache if the response expired
+                 or ($response->code == 404 && -M $path > 1);    # recache any 404 response older than 1 day
+           }
+          )
+        : (),
 
         env_proxy => (defined($self->get_http_proxy) ? 0 : $self->get_lwp_env_proxy),
     );
 
     require LWP::ConnCache;
     my $cache = LWP::ConnCache->new;
-    $cache->total_capacity(undef);                            # no limit
+    $cache->total_capacity(undef);                               # no limit
 
     $self->{lwp}->ssl_opts(Timeout => 30);
     $self->{lwp}->default_header('Accept-Encoding' => 'gzip');
