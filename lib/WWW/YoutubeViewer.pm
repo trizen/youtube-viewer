@@ -176,33 +176,21 @@ sub new {
     return $self;
 }
 
-#
-## This function is experimental and it's subject to change
-#
-sub number2token {
-    my ($self, $num) = @_;
-
-    state $table = ["A" .. "Z", "a" .. "z", 0 .. 9];
-
-    my $token  = 'CAAQAA';
-    my $cycles = int($num / 16);
-
-    my $quatre = ($num * 4 % $#{$table}) - ($cycles != int $num * 4 / $#{$table}) - ($cycles * 4 - $cycles);
-
-    if (abs($quatre) - 1 > $#{$table}) {
-        ++$quatre, $quatre %= $#{$table};
-    }
-
-    substr($token, 1, 1, $table->[$cycles]);
-    substr($token, 2, 1, $table->[$quatre]);
-
-    return $token;
-}
-
 sub page_token {
     my ($self) = @_;
-    my $number = ($self->get_maxResults * $self->get_page) - $self->get_maxResults;
-    $number > 1 ? $self->number2token($number) : undef;
+
+    my $page  = $self->get_page;
+    my $index = $page * $self->get_maxResults();
+    my $k     = int($index / 128) - 1;
+    $index -= 128 * $k;
+
+    my @f = (8, $index);
+    if ($k > 0 or $index > 127) {
+        push @f, $k + 1;
+    }
+
+    require MIME::Base64;
+    MIME::Base64::encode_base64(pack('C*', @f, 16, 0)) =~ tr/=//dr;
 }
 
 =head2 escape_string($string)
