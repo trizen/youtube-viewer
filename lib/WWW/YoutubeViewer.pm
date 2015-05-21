@@ -182,7 +182,7 @@ sub page_token {
     my $page  = $self->get_page;
 
     # Don't generate the token for the first page
-    return if $page == 1;
+    return undef if $page == 1;
 
     my $index = $page * $self->get_maxResults();
     my $k     = int($index / 128) - 1;
