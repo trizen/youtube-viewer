@@ -60,7 +60,7 @@ sub add_video_to_playlist {
                              }
                };
 
-    my $url = $self->_make_playlistItems_url(page_token => undef);
+    my $url = $self->_make_playlistItems_url(pageToken => undef);
     $self->post_as_json($url, $hash);
 }
 
