@@ -476,18 +476,6 @@ sub _make_feed_url {
     $self->get_feeds_url() . $path . '?' . $self->default_arguments(%args);
 }
 
-=head2 get_videos_from_category($cat_id)
-
-Returns a list of videos from a categoryID.
-
-=cut
-
-sub get_videos_from_category {
-    my ($self, $cat_id) = @_;
-
-    ...    # NEEDS WORK!!!
-}
-
 =head2 get_courses_from_category($cat_id)
 
 Get the courses from a specific category ID.

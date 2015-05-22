@@ -129,7 +129,7 @@ use warnings;
 no warnings 'once';
 
 my $DEVEL;    # true in devel mode
-use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
+use if ($DEVEL = 1), lib => qw(../lib);    # devel mode
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
@@ -2082,12 +2082,11 @@ sub youtube_urls {
 sub general_options {
     my %args = @_;
 
-    my $url           = $args{url};
-    my $option        = $args{opt};
-    my $callback      = $args{sub};
-    my $results       = $args{res};
-    my $mode          = $args{mode};
-    my $callback_args = ref $args{args} eq 'ARRAY' ? $args{args} : [];
+    my $url      = $args{url};
+    my $option   = $args{opt};
+    my $callback = $args{sub};
+    my $results  = $args{res};
+    my $info     = $args{info};
 
     given ($option) {
         when (\&quit_required) {
@@ -2097,9 +2096,9 @@ sub general_options {
             return;
         }
         when ($_ ~~ ['n', 'next'] and defined $url) {
-            my $request = $yv_obj->next_page($url, (defined($mode) ? ($mode => 1) : ()));
-            if ($yv_utils->has_entries($request)) {
-                $callback->($request, @{$callback_args});
+            if (defined $info->{nextPageToken}) {
+                my $request = $yv_obj->next_page($url, $info->{nextPageToken});
+                $callback->($request);
             }
             else {
                 warn_last_page();
@@ -2109,9 +2108,9 @@ sub general_options {
             @{$results} = @{$yv_obj->_get_results($url)->{results}{items}};
         }
         when ($_ ~~ ['b', 'back', 'p', 'prev', 'previous'] and defined $url) {
-            if ($yv_obj->back_page_is_available($url)) {
-                my $request = $yv_obj->previous_page($url, (defined($mode) ? ($mode => 1) : ()));
-                $callback->($request, @{$callback_args});
+            if (defined $info->{prevPageToken}) {
+                my $request = $yv_obj->previous_page($url, $info->{prevPageToken});
+                $callback->($request);
             }
             else {
                 warn_first_page();
@@ -2309,39 +2308,40 @@ sub chop_title {
 
 # ... PRINT SUBROUTINES ... #
 sub print_channels {
-    my ($results, $type) = @_;
+    my ($results) = @_;
 
-    if (not @{$results->{results}}) {
-        warn colored("\n[!] No channels found...", 'bold red') . "\n";
+    if (not $yv_utils->has_entries($results)) {
+        warn_no_results("channel");
+    }
+
+    if ($opt{get_term_width} and $opt{results_fixed_width}) {
+        get_term_width();
     }
 
     my $url      = $results->{url};
-    my $channels = $results->{results};
+    my $info     = $results->{results} // {};
+    my $channels = $info->{items} // [];
 
     my $i = 0;
     foreach my $channel (@{$channels}) {
 
-        $channel->{title} =~ s{<.*?>}{}sg;
-        $channel->{title} = decode_entities($channel->{title})
-          if $channel->{title} =~ /&#?\w/;
-
         if ($opt{results_with_details}) {
             printf(
-                   "\n%s. %s\n    %s: %-13s %s: %-7s %s: %-12s\n%s\n",
-                   colored(sprintf('%2d', ++$i), 'bold') => colored($channel->{title}, 'bold blue'),
-                   colored('Updated'     => 'bold') => $yv_utils->format_date($channel->{updated}),
-                   colored('Subscribers' => 'bold') => $channel->{subscribers},
-                   colored('Author'      => 'bold') => $channel->{name},
+                   "\n%s. %s\n    %s: %-23s %s: %-12s\n%s\n",
+                   colored(sprintf('%2d', ++$i), 'bold') => colored($yv_utils->get_title($channel), 'bold blue'),
+                   colored('Updated' => 'bold') => $yv_utils->get_publication_date($channel),
+                   colored('Author'  => 'bold') => $yv_utils->get_channel_title($channel),
                    wrap_text(
                              i_tab => q{ } x 4,
                              s_tab => q{ } x 4,
-                             text  => [$channel->{summary} || 'No description available...']
+                             text  => [$yv_utils->get_description($channel) || 'No description available...']
                             ),
                   );
         }
         else {
             print "\n" if $i == 0;
-            printf "%s. %s (by %s)\n", colored(sprintf('%2d', ++$i), 'bold'), $channel->{title}, $channel->{name};
+            printf "%s. %s (by %s)\n", colored(sprintf('%2d', ++$i), 'bold'), $yv_utils->get_title($channel),
+              $yv_utils->get_channel_title($channel);
         }
     }
 
@@ -2357,8 +2357,7 @@ sub print_channels {
                                       sub  => __SUB__,
                                       url  => $url,
                                       res  => $channels,
-                                      mode => ($type // 'channels'),
-                                      args => [$type],
+                                      info => $info,
                                      )
                   ) {
                 }
@@ -2378,7 +2377,7 @@ sub print_channels {
             given ($key) {
                 when (\&youtube_urls) { }    # do nothing
                 when (valid_num($_, $channels)) {
-                    print_videos($yv_obj->get_videos_from_username($channels->[$_ - 1]{author}));
+                    print_videos($yv_obj->uploads($yv_utils->get_channel_id($channels->[$_ - 1])));
                 }
                 default {
                     push @for_search, $_;
@@ -2396,6 +2395,8 @@ sub print_channels {
 
 sub print_show_seasons {
     my ($results) = @_;
+
+    # NEEDS WORK!!!
 
     if (not @{$results->{results}}) {
         warn colored("\n[!] No seasons found...", 'bold red') . "\n";
@@ -2488,6 +2489,8 @@ sub print_show_seasons {
 sub print_shows {
     my ($results) = @_;
 
+    # NEEDS WORK!!!
+
     if (not @{$results->{results}}) {
         warn colored("\n[!] No shows found...", 'bold red') . "\n";
     }
@@ -2578,6 +2581,8 @@ sub print_shows {
 sub print_comments {
     my ($results, $videoID) = @_;
 
+    # NEEDS WORK!!!
+
     if (not @{$results->{results}}) {
         warn colored("\n[!] No comments found...", 'bold red') . "\n";
     }
@@ -2666,6 +2671,8 @@ sub print_comments {
 
 sub print_courses {
     my ($results) = @_;
+
+    # NEEDS WORK!!!
 
     my $url     = $results->{url};
     my $courses = $results->{results};
@@ -2839,6 +2846,8 @@ sub print_movies {
 sub print_video_tops {
     my (%top_opts) = @_;
 
+    # NEEDS WORK!!!
+
     print "\n";
     my $i = 0;
     foreach my $id (@{WWW::YoutubeViewer::feeds_IDs}) {
@@ -2887,7 +2896,7 @@ sub print_playlists {
     my ($results, %args) = @_;
 
     if (not $yv_utils->has_entries($results)) {
-        warn_no_results("video");
+        warn_no_results("playlist");
     }
 
     if ($opt{get_term_width} and $opt{results_fixed_width}) {
