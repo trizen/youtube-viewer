@@ -81,6 +81,17 @@ sub playlists_from_username {
     $self->playlists_from_channel_id($channel_id);
 }
 
+=head2 my_playlists()
+
+Get and return your playlists.
+
+=cut
+
+sub my_playlists {
+    my ($self) = @_;
+    $self->_get_results($self->_make_playlists_url(mine => 'true'));
+}
+
 =head1 AUTHOR
 
 Trizen, C<< <trizenx at gmail.com> >>

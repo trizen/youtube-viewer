@@ -625,16 +625,51 @@ sub get_streaming_urls {
     return @info;
 }
 
-=head2 add_video_to_playlist($playlistID, $videoID; $position=1)
+sub _request {
+    my ($self, $req) = @_;
 
-Add a video to given playlist ID, at position 1 (by default)
+    $self->{lwp} // $self->set_lwp_useragent();
 
-=cut
+    my $res = $self->{lwp}->request($req);
 
-sub add_video_to_playlist {
-    my ($self, $playlist_id, $video_id, $position) = @_;
+    if ($res->is_success) {
+        return $res->content();
+    }
+    else {
+        warn 'Request error: ' . $res->status_line();
+    }
 
-    ...    # NEEDS WORK!!!
+    return;
+}
+
+sub _prepare_request {
+    my ($self, $req, $length) = @_;
+
+    $req->header('Content-Length' => $length) if ($length);
+
+    if (defined $self->get_access_token) {
+        $req->header('Authorization' => $self->prepare_access_token);
+    }
+
+    return 1;
+}
+
+sub _save {
+    my ($self, $method, $uri, $content) = @_;
+
+    require HTTP::Request;
+    my $req = HTTP::Request->new($method => $uri);
+    $req->content_type('application/json; charset=UTF-8');
+    $self->_prepare_request($req, length($content));
+    $req->content($content);
+
+    $self->_request($req);
+}
+
+sub post_as_json {
+    my ($self, $url, $ref) = @_;
+    my $json_str = $self->make_json_string($ref);
+    $self->_save('POST', $url, $json_str);
 }
 
 =head2 send_comment_to_video($videoID, $comment)
@@ -645,18 +680,6 @@ Send comment to a video. Returns true on success.
 
 sub send_comment_to_video {
     my ($self, $code, $comment) = @_;
-
-    ...    # NEEDS WORK!!!
-}
-
-=head2 favorite_video($videoID)
-
-Favorite a video. Returns true on success.
-
-=cut
-
-sub favorite_video {
-    my ($self, $code) = @_;
 
     ...    # NEEDS WORK!!!
 }

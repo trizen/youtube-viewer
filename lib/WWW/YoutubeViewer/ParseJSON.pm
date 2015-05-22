@@ -39,6 +39,19 @@ sub parse_json_string {
     return $@ ? do { warn "[JSON]: $@\n"; {} } : $hash;
 }
 
+=head2 make_json_string($ref)
+
+Create a JSON string from a HASH or ARRAY ref.
+
+=cut
+
+sub make_json_string {
+    my ($self, $ref) = @_;
+    state $x = require JSON;
+    my $str = eval { JSON::encode_json($ref) };
+    return $@ ? do { warn "[JSON]: $@\n"; '' } : $str;
+}
+
 =head1 AUTHOR
 
 Trizen, C<< <trizenx at gmail.com> >>

@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 13 May 2015
+#  Latest edit on: 22 May 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -1818,7 +1818,7 @@ sub favorite_videos {
 sub select_and_save_to_playlist {
     return if not authenticated();
 
-    my $request = $yv_obj->get_playlists_from_username('default') // last;
+    my $request = $yv_obj->my_playlists() // last;
     my $playlistID = print_playlists($request, return_playlist_id => 1);
 
     if (defined($playlistID)) {
