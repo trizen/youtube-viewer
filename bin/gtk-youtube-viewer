@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 18 May 2015
+#  Latest edit on: 23 May 2015
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -158,6 +158,12 @@ my %CONFIG = (
                               fs    => q{--fullscreen},
                               arg   => q{--really-quiet},
                              },
+                      mpv_native => {
+                                     cmd => q{mpv},
+                                     srt => q{--sub-file *SUB*},
+                                     fs  => q{--fullscreen},
+                                     arg => q{--really-quiet *URL*},
+                                    },
                      },
     video_player_selected => undef,    # autodetect it later
 
@@ -1433,7 +1439,16 @@ sub get_selected_video_code {
 sub check_keywords {
     given ($_[0]) {
         when (/$get_video_id_re/o) {
-            play_videos([{videoID => $+{video_id}}]);
+            my $info = $yv_obj->video_details($+{video_id}, EXTRA_VIDEO_PART);
+
+            if ($yv_utils->has_entries($info)) {
+                if (not play_video($info->{results}{items}[0])) {
+                    return;
+                }
+            }
+            else {
+                continue;
+            }
         }
         when (/$get_playlist_id_re/o) {
             list_playlist($+{playlist_id});
@@ -1506,12 +1521,12 @@ sub get_next_page_spaces {
 sub get_code {
     my ($code, $iter) = get_selected_video_code(force => 1) or return;
 
-    my $type = $liststore->get($iter, 7);
+    my $data = $liststore->get($iter, 7);
+    my $entry = $data =~ /^\{/ ? $yv_obj->parse_json_string($data) : $data;
 
-        $type eq 'video' ? play_videos([{videoID => $code}])
-      : $type eq 'playlist' ? list_playlist($code)
-      : $type eq 'channel' ? uploads('channel', $code)
-      : $type eq 'next_page' && $code ne '' ? do {
+        $entry eq 'playlist' ? list_playlist($code)
+      : $entry eq 'channel' ? uploads('channel', $code)
+      : $entry eq 'next_page' && $code ne '' ? do {
 
         my $next_page_token = $liststore->get($iter, 5);
         my $results = $yv_obj->next_page($code, $next_page_token);
@@ -1527,7 +1542,8 @@ sub get_code {
 
         display_results($results);
       }
-      : return;
+      : (ref($entry) eq 'HASH' && $yv_utils->is_video($entry)) ? play_video($entry)
+      :                                                          return;
 }
 
 sub _make_row_description {
@@ -1623,7 +1639,7 @@ sub add_video_entry {
     my $row_description = $yv_utils->get_description($video);
     $liststore->set($iter, 4, $row_description);
     $liststore->set($iter, 6, $yv_utils->get_channel_id($video));
-    $liststore->set($iter, 7, 'video');
+    $liststore->set($iter, 7, $yv_obj->make_json_string($video));
     $row_description = _make_row_description($row_description);
 
     $liststore->set($iter, 3, $yv_utils->get_video_id($video));
@@ -1934,39 +1950,37 @@ sub get_player_command {
         )
     );
 
-    my $has_video = $cmd =~ /\*VIDEO\*/;
+    my $has_video = $cmd =~ /\*(?:VIDEO|URL|ID)\*/;
     $cmd = $yv_utils->format_text($streaming, $video, $cmd, 1);
     $has_video ? $cmd : join(' ', $cmd, quotemeta($streaming->{streaming}{url}));
 }
 
-sub play_videos {
-    my ($videos) = @_;
+sub play_video {
+    my ($video) = @_;
 
-    foreach my $video (@{$videos}) {
-        my $streaming = get_streaming_url($video->{videoID});
+    my $streaming = get_streaming_url($yv_utils->get_video_id($video));
 
-        if (defined $streaming->{info}{status} and $streaming->{info}{status} =~ /\bfail/i) {
-            die "[x_x] Error on: " . sprintf($CONFIG{youtube_video_url}, $video->{videoID}) . "\n",
-              "[x_x] Reason: " . $streaming->{info}{reason} =~ s/\+/ /gr . "\n";
-        }
-
-        if (ref($streaming->{streaming}) ne 'HASH') {
-            next;
-        }
-
-        my $command = get_player_command($streaming, $video);
-
-        if ($yv_obj->get_debug) {
-            say "-> Resolution: $streaming->{resolution}";
-            say "-> Video itag: $streaming->{streaming}{itag}";
-            say "-> Audio itag: $streaming->{streaming}{__AUDIO__}{itag}" if exists $streaming->{streaming}{__AUDIO__};
-            say "-> Video type: $streaming->{streaming}{type}";
-            say "-> Audio type: $streaming->{streaming}{__AUDIO__}{type}" if exists $streaming->{streaming}{__AUDIO__};
-        }
-
-        my $code = execute_external_program(join(q{ }, $command, quotemeta($streaming->{streaming}{url})));
-        warn "Can't play this video -- player exited with code: $code\n" if $code != 0;
+    if (defined $streaming->{info}{status} and $streaming->{info}{status} =~ /\bfail/i) {
+        die "[x_x] Error on: " . sprintf($CONFIG{youtube_video_url}, $video->{videoID}) . "\n",
+          "[x_x] Reason: " . $streaming->{info}{reason} =~ s/\+/ /gr . "\n";
     }
+
+    if (ref($streaming->{streaming}) ne 'HASH') {
+        next;
+    }
+
+    my $command = get_player_command($streaming, $video);
+
+    if ($yv_obj->get_debug) {
+        say "-> Resolution: $streaming->{resolution}";
+        say "-> Video itag: $streaming->{streaming}{itag}";
+        say "-> Audio itag: $streaming->{streaming}{__AUDIO__}{itag}" if exists $streaming->{streaming}{__AUDIO__};
+        say "-> Video type: $streaming->{streaming}{type}";
+        say "-> Audio type: $streaming->{streaming}{__AUDIO__}{type}" if exists $streaming->{streaming}{__AUDIO__};
+    }
+
+    my $code = execute_external_program($command);
+    warn "Can't play this video -- player exited with code: $code\n" if $code != 0;
 
     return 1;
 }

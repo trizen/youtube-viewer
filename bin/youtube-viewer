@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 22 May 2015
+#  Latest edit on: 23 May 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -233,6 +233,13 @@ my %CONFIG = (
                               arg     => q{--really-quiet},
                               novideo => q{--no-video},
                              },
+                      mpv_native => {
+                                     cmd     => q{mpv},
+                                     srt     => q{--sub-file *SUB*},
+                                     fs      => q{--fullscreen},
+                                     arg     => q{--really-quiet *URL*},
+                                     novideo => q{--no-video},
+                                    },
                      },
 
     video_player_selected => (
@@ -3343,7 +3350,7 @@ sub get_player_command {
         )
     );
 
-    my $has_video = $cmd =~ /\*VIDEO\*/;
+    my $has_video = $cmd =~ /\*(?:VIDEO|URL|ID)\*/;
     $cmd = $yv_utils->format_text($streaming, $video, $cmd, 1);
     $has_video ? $cmd : join(' ', $cmd, quotemeta($streaming->{streaming}{url}));
 }
