@@ -277,7 +277,7 @@ my %CONFIG = (
     captions_dir  => tmpdir(),
     get_captions  => 1,
     copy_caption  => 0,
-    cache_dir     => $ENV{XDG_CACHE_HOME}, # will be defined later if not defined
+    cache_dir     => undef, # will be defined later
 
     # Others
     http_proxy           => undef,
@@ -460,13 +460,6 @@ if (ref $CONFIG ne 'HASH') {
     die "[ERROR] Invalid configuration file!\n\t\$CONFIG is not an HASH ref!";
 }
 
-# Add audio support to players
-while (my ($player, $data) = each %{$CONFIG->{video_players}}) {
-    if (not exists $data->{audio} and exists $CONFIG{video_players}{$player}) {
-        $data->{audio} = $CONFIG{video_players}{$player}{audio};
-    }
-}
-
 # Get valid config keys
 my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
@@ -475,8 +468,18 @@ my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
     my $update_config = 0;
 
     # Define the cache directory
-    if (not defined $CONFIG{cache_dir} or not -w $CONFIG{cache_dir}) {
-        $CONFIG{cache_dir} = catdir($home_dir, ".cache", "youtube-viewer");
+    if (not defined $CONFIG{cache_dir}) {
+
+        my $cache_dir =
+          (defined($ENV{XDG_CACHE_HOME}) and -w $ENV{XDG_CACHE_HOME})
+          ? $ENV{XDG_CACHE_HOME}
+          : catdir($home_dir, '.cache');
+
+        if (not -w $cache_dir) {
+            $cache_dir = '.cache';
+        }
+
+        $CONFIG{cache_dir} = catdir($cache_dir, 'youtube-viewer');
         $update_config = 1;
     }
 
