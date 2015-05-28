@@ -235,13 +235,6 @@ my %CONFIG = (
                               arg     => q{--really-quiet},
                               novideo => q{--no-video},
                              },
-                      mpv_native => {
-                                     cmd     => q{mpv},
-                                     srt     => q{--sub-file *SUB*},
-                                     fs      => q{--fullscreen},
-                                     arg     => q{--really-quiet *URL*},
-                                     novideo => q{--no-video},
-                                    },
                      },
 
     video_player_selected => (
@@ -460,6 +453,15 @@ require $config_file;    # Load the configuration file
 
 if (ref $CONFIG ne 'HASH') {
     die "[ERROR] Invalid configuration file!\n\t\$CONFIG is not an HASH ref!";
+}
+
+# Add audio support to players (backwards compatibility)
+while (my ($player, $data) = each %{$CONFIG->{video_players}}) {
+    if (    exists $CONFIG{video_players}{$player}
+        and not exists $data->{audio}
+        and exists $CONFIG{video_players}{$player}{audio}) {
+        $data->{audio} = $CONFIG{video_players}{$player}{audio};
+    }
 }
 
 # Get valid config keys
