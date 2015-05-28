@@ -94,10 +94,16 @@ sub find_caption_data {
         if (exists $caption->{lc} and exists $caption->{u}) {
             foreach my $i (0 .. $#{$self->{languages}}) {
                 my $lang = $self->{languages}[$i];
-                if (lc($caption->{lc}) eq lc($lang)) {
-                    if (exists $caption->{k}) {    # auto-generated
+                if ($caption->{lc} =~ /^\Q$lang\E(?:\z|[_-])/i) {
+
+                    # Fuzzy match or auto-generated caption
+                    # -- stored in the second half of the list --
+                    if (lc($caption->{lc}) ne lc($lang) or exists $caption->{k}) {
                         $found[$i + @{$self->{languages}}] = $caption;
                     }
+
+                    # Perfect match
+                    # -- stored in the first half of the list --
                     else {
                         $i == 0 and return $caption;
                         $found[$i] = $caption;

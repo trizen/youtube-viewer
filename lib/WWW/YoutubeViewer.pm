@@ -544,7 +544,7 @@ sub _get_pairs_from_info_data {
     my $i = 0;
 
     require URI::Escape;
-    foreach my $block (split(/,/, $content)) {
+    foreach my $block (split(/,/, URI::Escape::uri_unescape($content))) {
         foreach my $pair (split(/&/, $block)) {
             $pair =~ s{^url_encoded_fmt_stream_map=(?=\w+=)}{}im;
             my ($key, $value) = split(/=/, $pair);
@@ -598,10 +598,7 @@ sub get_streaming_urls {
     my ($self, $videoID) = @_;
 
     my $url = ($self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID));
-
-    require URI::Escape;
-    my $content = URI::Escape::uri_unescape($self->lwp_get($url) // return);
-    my @info = $self->_get_pairs_from_info_data($content, $videoID);
+    my @info = $self->_get_pairs_from_info_data($self->lwp_get($url) // return (), $videoID);
 
     if ($self->get_debug == 2) {
         require Data::Dump;
