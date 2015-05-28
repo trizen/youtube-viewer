@@ -229,8 +229,6 @@ Intializes the LWP::UserAgent module and returns it.
 sub set_lwp_useragent {
     my ($self) = @_;
 
-    binmode(STDOUT, ':encoding(UTF-8)');
-
     my $lwp = (
         eval { require LWP::UserAgent::Cached; 'LWP::UserAgent::Cached' }
           // do { require LWP::UserAgent; 'LWP::UserAgent' }

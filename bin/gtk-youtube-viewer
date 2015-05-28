@@ -519,6 +519,7 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      escape_utf8         => 1,
                                      key                 => $key,
                                      config_dir          => $config_dir,
+                                     hl                  => $CONFIG{hl},
                                      cache_dir           => $CONFIG{cache_dir},
                                      authentication_file => $authentication_file,
                                     );
