@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 23 May 2015
+#  Latest edit on: 28 May 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -3710,7 +3710,7 @@ sub print_videos {
                 when (/^(?:p(?:laylists?)?|up)${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                         foreach my $id (@nums) {
-                            my $request = $yv_obj->playlists_from_channel_id($yv_utils->get_channel_id($videos->[$id]));
+                            my $request = $yv_obj->playlists($yv_utils->get_channel_id($videos->[$id]));
                             if ($yv_utils->has_entries($request)) {
                                 print_playlists($request);
                             }

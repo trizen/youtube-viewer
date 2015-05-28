@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 23 May 2015
+#  Latest edit on: 28 May 2015
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -2286,7 +2286,7 @@ sub show_more_videos_from_username {
 }
 
 sub show_playlists_from_username {
-    my $request = $yv_obj->playlists_from_channel_id(get_channel_id_for_selected_video() || return);
+    my $request = $yv_obj->playlists(get_channel_id_for_selected_video() || return);
     if ($yv_utils->has_entries($request)) {
         $liststore->clear if $CONFIG{clear_search_list};
         display_results($request);

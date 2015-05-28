@@ -58,13 +58,13 @@ sub playlist_from_id {
     $self->_get_results($self->_make_playlists_url(id => $id));
 }
 
-=head2 playlists_from_channel_id($channel_id)
+=head2 playlists($channel_id)
 
-Get and return the specified channel's playlists.
+Get and return playlists from a channel ID.
 
 =cut
 
-sub playlists_from_channel_id {
+sub playlists {
     my ($self, $id) = @_;
     $self->_get_results($self->_make_playlists_url(channelId => $id));
 }
@@ -78,7 +78,7 @@ Get and return the playlists created for a given username.
 sub playlists_from_username {
     my ($self, $username) = @_;
     my $channel_id = $self->channel_id_from_username($username);
-    $self->playlists_from_channel_id($channel_id);
+    $self->playlists($channel_id);
 }
 
 =head2 my_playlists()
