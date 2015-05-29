@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 28 May 2015
+#  Latest edit on: 29 May 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -598,6 +598,7 @@ usage: $execname [options] ([url] | [keywords])
 
  * Videos
    -u  --user=s         : list videos uploaded by a specific user
+   -cv --channel-vid=s  : list videos uploaded to a specific channel
    -uf --user-fav=s     : list the videos favorited by a specific user
    -id --videoids=s,s   : play YouTube videos by their IDs
    -rv --related=s      : show related videos for a video ID or URL
@@ -1111,6 +1112,10 @@ sub apply_configuration {
         $yv_obj->set_channelId($yv_obj->channel_id_from_username($username) // $username);
     }
 
+    if (defined $opt->{channel_id}) {
+        $yv_obj->set_channelId(delete $opt->{channel_id});
+    }
+
     if (defined $opt->{within}) {
         my $value = delete $opt->{within};
 
@@ -1261,7 +1266,7 @@ sub apply_configuration {
     }
 
     if (defined $opt->{channel_id_videos}) {
-        print_videos($yv_obj->get_uploads(delete $opt->{channel_id_videos}));
+        print_videos($yv_obj->uploads(delete $opt->{channel_id_videos}));
     }
 
     if (defined $opt->{user_shows}) {
@@ -1390,11 +1395,11 @@ sub parse_arguments {
         'subscribe=s'                       => \$opt{subscribe_channel},
         'favorite|favorite-video|fav=s'     => \$opt{favorite_video},
         'channel-suggestions'               => \$opt{channel_suggestions},
+        'cv|channel|channel-videos=s'       => \$opt{channel_id_videos},
 
         'login|authenticate'     => \$opt{authenticate},
         'logout'                 => \$opt{logout},
         'user|username|u|uv=s'   => \$opt{user_videos},
-        'cv|channel-videos=s'    => \$opt{channel_id_videos},
         'shows|user-shows|us=s'  => \$opt{user_shows},
         'user-playlists|up=s'    => \$opt{user_playlists},
         'user-favorites|uf=s'    => \$opt{user_favorited_videos},
@@ -1417,6 +1422,7 @@ sub parse_arguments {
         'like=s'                     => \$opt{like_video},
         'dislike=s'                  => \$opt{dislike_video},
         'author=s'                   => \$opt{author},
+        'channel-id=s'               => \$opt{channel_id},
         'all|A|play-all!'            => \$opt{play_all},
         'backwards|B!'               => \$opt{play_backwards},
         'input|std-input=s'          => \$opt{std_input},
