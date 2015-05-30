@@ -282,6 +282,7 @@ sub set_lwp_useragent {
     my $http_proxy = $agent->proxy('http');
     if(defined($http_proxy)) {
       $agent->proxy('https', $http_proxy) if (!defined($agent->proxy('https')));
+      $agent->timeout(5);
     }
 
     push @{$self->{lwp}->requests_redirectable}, 'POST';
