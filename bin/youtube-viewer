@@ -2646,7 +2646,7 @@ sub print_comments {
                     if (authenticated()) {
                         require File::Temp;
                         my ($fh, $filename) = File::Temp::tempfile();
-                        system $ENV{EDITOR} // 'nano', $filename;
+                        $yv_obj->proxy_system($ENV{EDITOR} // 'nano', $filename);
                         if ($?) {
                             warn colored("\n[!] Editor exited with a non-zero code. Unable to continue!", 'bold red') . "\n";
                         }
@@ -3237,11 +3237,11 @@ sub download_video {
             if ($opt{download_in_parallel}) {
                 my $pid = fork() // warn "[ERROR] Can't fork: $!";
                 if ($pid == 0) {
-                    exec @cmd, '--quiet';
+                    $yv_obj->proxy_exec(@cmd, '--quiet');
                 }
             }
             else {
-                system @cmd;
+                $yv_obj->proxy_system(@cmd);
                 return if $?;
             }
         }
@@ -3296,7 +3296,7 @@ sub download_video {
         $convert_cmd =~ s/$regex/\Q$table{$1}\E/g;
         say $convert_cmd if $yv_obj->get_debug;
 
-        system $convert_cmd;
+        $yv_obj->proxy_system($convert_cmd);
 
         if ($? == 0 and not $opt{keep_original_video}) {
             unlink $video_filename
@@ -3310,7 +3310,7 @@ sub download_video {
         my $command = get_player_command($streaming, $info);
         say $command if $yv_obj->get_debug;
 
-        system join(q{ }, $command, quotemeta($video_filename));
+        $yv_obj->proxy_system(join(q{ }, $command, quotemeta($video_filename)));
 
         # Remove it afterwards
         if ($? == 0 and $opt{remove_played_file}) {
@@ -3420,7 +3420,7 @@ sub play_videos {
                 say "-> Command: $command";
             }
 
-            system $command;    # execute the video player
+            $yv_obj->proxy_system($command);    # execute the video player
             if ($? and $? != 512) {
                 return;
             }
@@ -3433,7 +3433,7 @@ sub play_videos {
         my $command = get_player_command($streaming, $videos->[0]);
         say $command if $yv_obj->get_debug;
 
-        system join(q{ }, $command, map { quotemeta($_->{streaming}{url}) } @streaming_urls);
+        $yv_obj->proxy_system(join(q{ }, $command, map { quotemeta($_->{streaming}{url}) } @streaming_urls));
         return if $?;
     }
 

@@ -2079,12 +2079,12 @@ sub execute_external_program {
     if (defined $pid) {
         if ($pid == 0) {
             say "** Forking process: $cmd" if $yv_obj->get_debug;
-            exec $cmd;
+            $yv_obj->proxy_exec($cmd);
         }
     }
     else {
         say "** Backgrounding process: $cmd" if $yv_obj->get_debug;
-        system $cmd . ' &';
+        $yv_obj->proxy_system($cmd . ' &');
     }
 }
 
