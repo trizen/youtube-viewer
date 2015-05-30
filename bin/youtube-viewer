@@ -348,7 +348,7 @@ my $other_options = <<'OTHER';
 # Others
 :r(eturn)         : return to previous section
 :refresh          : refresh the current list of results
-:dv=i             : dump result as key=>value pairs
+:dv=i             : dump the data structure of result i
 -argv -argv2=v    : apply some arguments (e.g.: -u=google)
 :reset, :reload   : restart the application
 :q, :quit, :exit  : close the application
@@ -2150,10 +2150,8 @@ sub general_options {
             if (my @nums = get_valid_numbers($#{$results}, $1)) {
                 print "\n";
                 foreach my $num (@nums) {
-                    foreach my $key (sort keys %{$results->[$num]}) {
-                        next if $key ~~ ['description', 'summary'];
-                        printf "=>> %-12s: %s\n", $key, $results->[$num]{$key} // q{};
-                    }
+                    require Data::Dump;
+                    say Data::Dump::pp($results->[$num]);
                 }
                 press_enter_to_continue();
             }

@@ -598,7 +598,8 @@ sub get_streaming_urls {
     my ($self, $videoID) = @_;
 
     my $url = ($self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID));
-    my @info = $self->_get_pairs_from_info_data($self->lwp_get($url) // return (), $videoID);
+    my $content = $self->lwp_get($url) // return;
+    my @info = $self->_get_pairs_from_info_data($content, $videoID);
 
     if ($self->get_debug == 2) {
         require Data::Dump;
