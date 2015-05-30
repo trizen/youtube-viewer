@@ -280,9 +280,9 @@ sub set_lwp_useragent {
     $agent->proxy('http', $self->get_http_proxy) if (defined($self->get_http_proxy));
 
     my $http_proxy = $agent->proxy('http');
-    if(defined($http_proxy)) {
-      $agent->proxy('https', $http_proxy) if (!defined($agent->proxy('https')));
-      $agent->timeout(5);
+    if (defined($http_proxy)) {
+        $agent->proxy('https', $http_proxy) if (!defined($agent->proxy('https')));
+        $agent->timeout(5);
     }
 
     push @{$self->{lwp}->requests_redirectable}, 'POST';
@@ -706,16 +706,16 @@ sub get_video_comments {
         *{__PACKAGE__ . '::proxy_' . $name} = sub {
             my ($self, @args) = @_;
 
-            $self->{lwp} // $self->set_lwp_useragent();
+            $self->{lwp} //= $self->set_lwp_useragent();
 
-            local $ENV{http_proxy} = $self->{lwp}->proxy('http');
+            local $ENV{http_proxy}  = $self->{lwp}->proxy('http');
             local $ENV{https_proxy} = $self->{lwp}->proxy('https');
 
-            if($name eq 'exec') {
-              exec @args;
+            if ($name eq 'exec') {
+                exec @args;
             }
-            elsif($name eq 'system') {
-              system @args;
+            elsif ($name eq 'system') {
+                system @args;
             }
         };
     }
