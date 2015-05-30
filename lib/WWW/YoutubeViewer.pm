@@ -273,10 +273,16 @@ sub set_lwp_useragent {
     my $cache = LWP::ConnCache->new;
     $cache->total_capacity(undef);                               # no limit
 
-    $self->{lwp}->ssl_opts(Timeout => 30);
-    $self->{lwp}->default_header('Accept-Encoding' => 'gzip');
-    $self->{lwp}->conn_cache($cache);
-    $self->{lwp}->proxy('http', $self->get_http_proxy) if (defined($self->get_http_proxy));
+    my $agent = $self->{lwp};
+    $agent->ssl_opts(Timeout => 30);
+    $agent->default_header('Accept-Encoding' => 'gzip');
+    $agent->conn_cache($cache);
+    $agent->proxy('http', $self->get_http_proxy) if (defined($self->get_http_proxy));
+
+    my $http_proxy = $agent->proxy('http');
+    if(defined($http_proxy)) {
+      $agent->proxy('https', $http_proxy) if (!defined($agent->proxy('https')));
+    }
 
     push @{$self->{lwp}->requests_redirectable}, 'POST';
     return $self->{lwp};
