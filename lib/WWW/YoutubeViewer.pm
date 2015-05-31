@@ -544,16 +544,30 @@ sub get_video_tops {
     ...    # NEEDS WORK!!!
 }
 
-sub _get_ytdl_url {
+sub _get_pairs_from_ytdl {
     my ($self, $videoID) = @_;
 
-    return '' if ((state $x = $self->proxy_system('youtube-dl', '--version')) == 0);
+    my @array;
 
-    chomp(my $url = $self->proxy_stdout('youtube-dl',
-        '--get-url', '--format', 'best',
-        '"http://www.youtube.com/watch?v=' . $videoID . '"'));
+    return @array if ((state $x = $self->proxy_system('youtube-dl', '--version')) != 0);
 
-    return $url;
+    my @urls = $self->proxy_stdout('youtube-dl',
+        '--get-url', '--all-formats',
+        '"http://www.youtube.com/watch?v=' . $videoID . '"');
+
+    foreach my $url (@urls) {
+        foreach my $pair (split(/&/, $url)) {
+            $pair =~ s{^itag=(?=\w+=)}{}im;
+            my ($key, $value) = split(/=/, $pair);
+            $key // next;
+            push(@array, {
+              'itag' => $value,
+              'url' => $url
+            });
+        }
+    }
+
+    return @array;
 }
 
 sub _get_pairs_from_info_data {
@@ -581,22 +595,22 @@ sub _get_pairs_from_info_data {
                 $hash_ref->{url} .= "&signature=$hash_ref->{sig}";
             }
             elsif (exists $hash_ref->{s}) {    # has an encrypted signature :(
-                # Unfortunately, this streaming URLs doesn't work with 'mplayer', but they work with 'mpv' and 'vlc'
-                my $url = $self->_get_ytdl_url($videoID);
-                if ($url ne '') {
-                    foreach my $item (@array) {
-                        if (exists $item->{url}) {
-                            $item->{url} = $url;
+                my @pairs = $self->_get_pairs_from_ytdl($videoID);
+                foreach my $item (@pairs) {
+                    foreach my $ref (@array) {
+                        if (defined($ref->{itag}) && ($ref->{itag} eq $item->{itag})) {
+                          $ref->{url} = $item->{url};
                         }
                     }
-                    last;
                 }
+                last;
             }
         }
     }
 
     return @array;
 }
+
 
 =head2 get_streaming_urls($videoID)
 
