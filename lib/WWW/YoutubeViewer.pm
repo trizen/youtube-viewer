@@ -570,9 +570,10 @@ sub _get_pairs_from_info_data {
             }
             elsif (exists $hash_ref->{s}) {    # has an encrypted signature :(
                 if ((state $x = $self->proxy_system('youtube-dl', '--version')) == 0) {    # true if youtube-dl is installed
-
                     # Unfortunately, this streaming URLs doesn't work with 'mplayer', but they work with 'mpv' and 'vlc'
-                    chomp(my $url = `youtube-dl --get-url --format best "http://www.youtube.com/watch?v=$videoID"`);
+                    chomp(my $url = $self->proxy_stdout('youtube-dl',
+                        '--get-url', '--format', 'best',
+                        '"http://www.youtube.com/watch?v=' . $videoID . '"'));
                     foreach my $item (@array) {
                         if (exists $item->{url}) {
                             $item->{url} = $url;
@@ -702,7 +703,7 @@ sub get_video_comments {
     }
 
     # Create proxy_{exec,system} subroutines
-    foreach my $name ('exec', 'system') {
+    foreach my $name ('exec', 'system', 'stdout') {
         *{__PACKAGE__ . '::proxy_' . $name} = sub {
             my ($self, @args) = @_;
 
@@ -716,6 +717,9 @@ sub get_video_comments {
             }
             elsif ($name eq 'system') {
                 system @args;
+            }
+            elsif ($name eq 'stdout') {
+                return qx/@args/;
             }
         };
     }
