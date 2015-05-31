@@ -544,26 +544,22 @@ sub get_video_tops {
     ...    # NEEDS WORK!!!
 }
 
-sub _get_pairs_from_ytdl {
+sub _get_formats_from_ytdl {
     my ($self, $videoID) = @_;
 
+    ((state $x = $self->proxy_system('youtube-dl', '--version')) == 0)
+      || return;
+
+    my $json = $self->proxy_stdout('youtube-dl', '--all-formats', '--dump-single-json',
+                                   quotemeta("http://www.youtube.com/watch?v=" . $videoID));
+
     my @array;
-
-    return @array if ((state $x = $self->proxy_system('youtube-dl', '--version')) != 0);
-
-    my @urls = $self->proxy_stdout('youtube-dl',
-        '--get-url', '--all-formats',
-        '"http://www.youtube.com/watch?v=' . $videoID . '"');
-
-    foreach my $url (@urls) {
-        foreach my $pair (split(/&/, $url)) {
-            $pair =~ s{^itag=(?=\w+=)}{}im;
-            my ($key, $value) = split(/=/, $pair);
-            $key // next;
-            push(@array, {
-              'itag' => $value,
-              'url' => $url
-            });
+    my $ref = $self->parse_json_string($json) // return;
+    if (ref($ref) eq 'HASH' and exists($ref->{formats}) and ref($ref->{formats}) eq 'ARRAY') {
+        foreach my $format (@{$ref->{formats}}) {
+            if (exists($format->{format_id}) and exists($format->{url})) {
+                push @array, $format;
+            }
         }
     }
 
@@ -595,14 +591,36 @@ sub _get_pairs_from_info_data {
                 $hash_ref->{url} .= "&signature=$hash_ref->{sig}";
             }
             elsif (exists $hash_ref->{s}) {    # has an encrypted signature :(
-                my @pairs = $self->_get_pairs_from_ytdl($videoID);
-                foreach my $item (@pairs) {
+
+                my @formats = $self->_get_formats_from_ytdl($videoID);
+                foreach my $format (@formats) {
+
+                    my $modified;
                     foreach my $ref (@array) {
-                        if (defined($ref->{itag}) && ($ref->{itag} eq $item->{itag})) {
-                          $ref->{url} = $item->{url};
+                        if (defined($ref->{itag}) && ($ref->{itag} eq $format->{format_id})) {
+                            $ref->{url} = $format->{url};
+                            $modified = 1;
+                            last;
                         }
                     }
+
+                    if (not $modified) {
+                        push @array,
+                          {
+                            itag => $format->{format_id},
+                            url  => $format->{url},
+                            type => (
+                                     (
+                                      (defined($format->{format_note}) && $format->{format_note} eq 'DASH audio')
+                                      ? 'audio/'
+                                      : 'video/'
+                                     )
+                                     . $format->{ext}
+                                    ),
+                          };
+                    }
                 }
+
                 last;
             }
         }
@@ -610,7 +628,6 @@ sub _get_pairs_from_info_data {
 
     return @array;
 }
-
 
 =head2 get_streaming_urls($videoID)
 
@@ -632,7 +649,7 @@ sub get_streaming_urls {
     }
 
     my $error = $info[0]->{errorcode};
-    if (defined($error) && $error == 150) { # sign in to confirm your age
+    if (defined($error) && $error == 150) {    # sign in to confirm your age
         my @ytdl_info = $self->_get_pairs_from_ytdl($videoID);
         return @ytdl_info if (@ytdl_info);
     }
@@ -742,15 +759,10 @@ sub get_video_comments {
             local $ENV{http_proxy}  = $self->{lwp}->proxy('http');
             local $ENV{https_proxy} = $self->{lwp}->proxy('https');
 
-            if ($name eq 'exec') {
-                exec @args;
-            }
-            elsif ($name eq 'system') {
-                system @args;
-            }
-            elsif ($name eq 'stdout') {
-                return qx/@args/;
-            }
+                $name eq 'exec'   ? exec(@args)
+              : $name eq 'system' ? system(@args)
+              : $name eq 'stdout' ? qx(@args)
+              :                     ();
         };
     }
 }

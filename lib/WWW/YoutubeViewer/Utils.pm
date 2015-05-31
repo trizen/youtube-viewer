@@ -93,6 +93,7 @@ sub video_extension {
       : $type =~ /\bwebm\b/i     ? q{webm}
       : $type =~ /\b3gpp?\b/i    ? q{3gp}
       : $type =~ m{^video/(\w+)} ? $1
+      : $type =~ m{^audio/(\w+)} ? $1
       :                            q{mp4};
 }
 

@@ -174,7 +174,6 @@ sub _find_streaming_url {
             foreach my $i (@{$itag}) {
                 if (exists $stream->{$i}) {
                     my $video_info = $stream->{$i};
-                    exists($video_info->{s}) && next;    # skip videos with encoded signatures
                     my $audio_info = $self->_find_streaming_url($stream, $itags, 'audio', 0, $mp4_audio);
                     if (defined $audio_info) {
                         $video_info->{__AUDIO__} = $audio_info;
@@ -186,7 +185,7 @@ sub _find_streaming_url {
         elsif (exists $stream->{$itag}) {
             if ($resolution eq 'audio' and not $mp4_audio) {
                 if ($itag == 140 or $itag == 141 or $itag == 139) {
-                    next;                                # skip mp4 audio URLs
+                    next;    # skip mp4 audio URLs
                 }
             }
             return $stream->{$itag};
