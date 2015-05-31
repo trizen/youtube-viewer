@@ -631,6 +631,12 @@ sub get_streaming_urls {
         Data::Dump::pp(\@info);
     }
 
+    my $error = $info[0]->{errorcode};
+    if (defined($error) && $error == 150) { # sign in to confirm your age
+        my @ytdl_info = $self->_get_pairs_from_ytdl($videoID);
+        return @ytdl_info if (@ytdl_info);
+    }
+
     return @info;
 }
 
