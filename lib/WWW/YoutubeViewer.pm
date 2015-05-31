@@ -544,6 +544,32 @@ sub get_video_tops {
     ...    # NEEDS WORK!!!
 }
 
+sub _get_pairs_from_ytdl {
+    my ($self, $videoID) = @_;
+
+    my @array;
+
+    return @array if ((state $x = $self->proxy_system('youtube-dl', '--version')) != 0);
+
+    my @urls = $self->proxy_stdout('youtube-dl',
+        '--get-url', '--all-formats',
+        '"http://www.youtube.com/watch?v=' . $videoID . '"');
+
+    foreach my $url (@urls) {
+        foreach my $pair (split(/&/, $url)) {
+            $pair =~ s{^itag=(?=\w+=)}{}im;
+            my ($key, $value) = split(/=/, $pair);
+            $key // next;
+            push(@array, {
+              'itag' => $value,
+              'url' => $url
+            });
+        }
+    }
+
+    return @array;
+}
+
 sub _get_pairs_from_info_data {
     my ($self, $content, $videoID) = @_;
 
@@ -569,23 +595,22 @@ sub _get_pairs_from_info_data {
                 $hash_ref->{url} .= "&signature=$hash_ref->{sig}";
             }
             elsif (exists $hash_ref->{s}) {    # has an encrypted signature :(
-                if ((state $x = $self->proxy_system('youtube-dl', '--version')) == 0) {    # true if youtube-dl is installed
-
-                    # Unfortunately, this streaming URLs doesn't work with 'mplayer', but they work with 'mpv' and 'vlc'
-                    chomp(my $url = `youtube-dl --get-url --format best "http://www.youtube.com/watch?v=$videoID"`);
-                    foreach my $item (@array) {
-                        if (exists $item->{url}) {
-                            $item->{url} = $url;
+                my @pairs = $self->_get_pairs_from_ytdl($videoID);
+                foreach my $item (@pairs) {
+                    foreach my $ref (@array) {
+                        if (defined($ref->{itag}) && ($ref->{itag} eq $item->{itag})) {
+                          $ref->{url} = $item->{url};
                         }
                     }
-                    last;
                 }
+                last;
             }
         }
     }
 
     return @array;
 }
+
 
 =head2 get_streaming_urls($videoID)
 
@@ -604,6 +629,12 @@ sub get_streaming_urls {
     if ($self->get_debug == 2) {
         require Data::Dump;
         Data::Dump::pp(\@info);
+    }
+
+    my $error = $info[0]->{errorcode};
+    if (defined($error) && $error == 150) { # sign in to confirm your age
+        my @ytdl_info = $self->_get_pairs_from_ytdl($videoID);
+        return @ytdl_info if (@ytdl_info);
     }
 
     return @info;
@@ -702,7 +733,7 @@ sub get_video_comments {
     }
 
     # Create proxy_{exec,system} subroutines
-    foreach my $name ('exec', 'system') {
+    foreach my $name ('exec', 'system', 'stdout') {
         *{__PACKAGE__ . '::proxy_' . $name} = sub {
             my ($self, @args) = @_;
 
@@ -716,6 +747,9 @@ sub get_video_comments {
             }
             elsif ($name eq 'system') {
                 system @args;
+            }
+            elsif ($name eq 'stdout') {
+                return qx/@args/;
             }
         };
     }
