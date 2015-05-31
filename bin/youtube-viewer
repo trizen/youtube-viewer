@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 29 May 2015
+#  Latest edit on: 01 June 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -3612,12 +3612,26 @@ sub print_videos {
                             : $videos
                            )
               ) {
-                __SUB__->(
-                            $opt{play_backwards}
-                          ? $yv_obj->previous_page($url, $info->{prevPageToken})
-                          : $yv_obj->next_page($url, $info->{nextPageToken}),
-                          auto => 1
-                         );
+                if ($opt{play_backwards}) {
+                    if (defined $info->{prevPageToken}) {
+                        __SUB__->($yv_obj->previous_page($url, $info->{prevPageToken}), auto => 1);
+                    }
+                    else {
+                        $opt{play_backwards} = 0;
+                        warn_first_page();
+                        __SUB__->($results);
+                    }
+                }
+                else {
+                    if (defined $info->{nextPageToken}) {
+                        __SUB__->($yv_obj->next_page($url, $info->{nextPageToken}), auto => 1);
+                    }
+                    else {
+                        $opt{play_all} = 0;
+                        warn_last_page();
+                        __SUB__->($results);
+                    }
+                }
             }
             else {
                 $opt{play_all}       = 0;
@@ -3663,7 +3677,7 @@ sub print_videos {
                     press_enter_to_continue();
                 }
                 when (['n', 'next']) {
-                    if (exists $info->{nextPageToken}) {
+                    if (defined $info->{nextPageToken}) {
                         my $request = $yv_obj->next_page($url, $info->{nextPageToken});
                         __SUB__->($request, @keywords ? (auto => 1) : ());
                     }
@@ -3677,7 +3691,7 @@ sub print_videos {
                     }
                 }
                 when (['b', 'back', 'p', 'prev', 'previous']) {
-                    if (exists $info->{prevPageToken}) {
+                    if (defined $info->{prevPageToken}) {
                         __SUB__->($yv_obj->previous_page($url, $info->{prevPageToken}), @keywords ? (auto => 1) : ());
                     }
                     else {
