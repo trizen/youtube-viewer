@@ -559,16 +559,19 @@ sub _get_formats_from_ytdl {
         foreach my $format (@{$ref->{formats}}) {
             if (exists($format->{format_id}) and exists($format->{url})) {
 
-                $format->{type} = (
-                                   (
-                                    (defined($format->{format_note}) && $format->{format_note} eq 'DASH audio')
-                                    ? 'audio/'
-                                    : 'video/'
-                                   )
-                                   . $format->{ext}
-                                  );
-
-                push @array, $format;
+                push @array,
+                  {
+                    itag => $format->{format_id},
+                    url  => $format->{url},
+                    type => (
+                             (
+                              (defined($format->{format_note}) && $format->{format_note} eq 'DASH audio')
+                              ? 'audio/'
+                              : 'video/'
+                             )
+                             . $format->{ext}
+                            ),
+                  };
             }
         }
     }
@@ -607,7 +610,7 @@ sub _get_pairs_from_info_data {
 
                     my $modified;
                     foreach my $ref (@array) {
-                        if (defined($ref->{itag}) && ($ref->{itag} eq $format->{format_id})) {
+                        if (defined($ref->{itag}) && ($ref->{itag} eq $format->{itag})) {
                             $ref->{url} = $format->{url};
                             $modified = 1;
                             last;
@@ -615,12 +618,7 @@ sub _get_pairs_from_info_data {
                     }
 
                     if (not $modified) {
-                        push @array,
-                          {
-                            itag => $format->{format_id},
-                            url  => $format->{url},
-                            type => $format->{type},
-                          };
+                        push @array, $format;
                     }
                 }
 
@@ -654,9 +652,7 @@ sub get_streaming_urls {
     my $error = $info[0]->{errorcode};
     if (defined($error) && $error == 150) {    # sign in to confirm your age
         my @ytdl_info = $self->_get_formats_from_ytdl($videoID);
-        if (@ytdl_info) {
-            return map { scalar {url => $_->{url}, itag => $_->{format_id}, type => $_->{type}} } @ytdl_info;
-        }
+        return (@ytdl_info) if @ytdl_info;
     }
 
     return @info;
