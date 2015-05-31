@@ -79,15 +79,15 @@ sub new {
     return $self;
 }
 
-=head2 video_extension($type)
+=head2 extension($type)
 
-Returns the video extension format from a video type.
+Returns the extension format from a given type.
 
 From a string like 'video/webm;+codecs="vp9"', it returns 'webm'.
 
 =cut
 
-sub video_extension {
+sub extension {
     my ($self, $type) = @_;
         $type =~ /\bflv\b/i      ? q{flv}
       : $type =~ /\bwebm\b/i     ? q{webm}
@@ -224,7 +224,7 @@ sub format_text {
         SIZE   => sub { $streaming->{streaming}{size} },
         SUB    => sub { $streaming->{srt_file} },
         VIDEO  => sub { $streaming->{streaming}{url} },
-        FORMAT => sub { $self->video_extension($streaming->{streaming}{type}) },
+        FORMAT => sub { $self->extension($streaming->{streaming}{type}) },
 
         AUDIO => sub {
             ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'

@@ -558,6 +558,16 @@ sub _get_formats_from_ytdl {
     if (ref($ref) eq 'HASH' and exists($ref->{formats}) and ref($ref->{formats}) eq 'ARRAY') {
         foreach my $format (@{$ref->{formats}}) {
             if (exists($format->{format_id}) and exists($format->{url})) {
+
+                $format->{type} = (
+                                   (
+                                    (defined($format->{format_note}) && $format->{format_note} eq 'DASH audio')
+                                    ? 'audio/'
+                                    : 'video/'
+                                   )
+                                   . $format->{ext}
+                                  );
+
                 push @array, $format;
             }
         }
@@ -609,14 +619,7 @@ sub _get_pairs_from_info_data {
                           {
                             itag => $format->{format_id},
                             url  => $format->{url},
-                            type => (
-                                     (
-                                      (defined($format->{format_note}) && $format->{format_note} eq 'DASH audio')
-                                      ? 'audio/'
-                                      : 'video/'
-                                     )
-                                     . $format->{ext}
-                                    ),
+                            type => $format->{type},
                           };
                     }
                 }
@@ -650,8 +653,10 @@ sub get_streaming_urls {
 
     my $error = $info[0]->{errorcode};
     if (defined($error) && $error == 150) {    # sign in to confirm your age
-        my @ytdl_info = $self->_get_pairs_from_ytdl($videoID);
-        return @ytdl_info if (@ytdl_info);
+        my @ytdl_info = $self->_get_formats_from_ytdl($videoID);
+        if (@ytdl_info) {
+            return map { scalar {url => $_->{url}, itag => $_->{format_id}, type => $_->{type}} } @ytdl_info;
+        }
     }
 
     return @info;
