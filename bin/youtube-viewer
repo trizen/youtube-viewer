@@ -608,7 +608,6 @@ usage: $execname [options] ([url] | [keywords])
    -p  --playlists   : search for playlists of videos
        --pid=s       : list a playlist of videos by playlistID
        --pp=s,s      : play the videos from the given playlist IDs
-       --disco       : YouTube discovery - search and display a disco playlist
        --ps=s        : add videos by ID or URL to a post-selected playlist
                        or in a given playlistID specified with `--pid`
        --position=i  : the position in a playlist where to add a video
@@ -1194,15 +1193,6 @@ sub apply_configuration {
         get_and_play_playlists(split(/[,\s]+/, delete $opt->{play_playlists}));
     }
 
-    if (delete $opt->{disco}) {
-        if (defined(my $videos = $yv_obj->get_disco_videos($keywords))) {
-            print_videos($videos);
-        }
-        else {
-            warn_no_results("disco video");
-        }
-    }
-
     if (defined $opt->{playlist_id}) {
         my $playlistID = delete($opt{playlist_id});
         get_and_print_videos_from_playlist($playlistID);
@@ -1374,7 +1364,6 @@ sub parse_arguments {
         'res|resolution=s' => \$opt{resolution},
 
         'movies|M'                                   => \$opt{show_movies},
-        'disco|discovery'                            => \$opt{disco},
         'comments=s'                                 => \$opt{get_comments},
         'search|videos|V:s'                          => \$opt{search_videos},
         'video-ids|videoids|id|ids=s'                => \$opt{play_video_ids},
