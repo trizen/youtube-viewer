@@ -45,6 +45,8 @@ use File::Spec::Functions qw(
   tmpdir
   );
 
+binmode(STDOUT, ':utf8');
+
 my $appname  = 'GTK Youtube Viewer';
 my $version  = '3.1.7';
 my $execname = 'gtk-youtube-viewer';
@@ -142,21 +144,21 @@ my %CONFIG = (
                                   srt   => q{-sub *SUB*},
                                   audio => q{-audiofile *AUDIO*},
                                   fs    => q{-fs},
-                                  arg   => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d},
+                                  arg   => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d -title *TITLE*},
                                  },
                       vlc => {
                               cmd   => q{vlc},
                               srt   => q{--sub-file *SUB*},
                               audio => q{--input-slave *AUDIO*},
                               fs    => q{--fullscreen},
-                              arg   => q{--quiet --play-and-exit --no-video-title-show},
+                              arg   => q{--quiet --play-and-exit --no-video-title-show --input-title-format *TITLE*},
                              },
                       mpv => {
                               cmd   => q{mpv},
                               srt   => q{--sub-file *SUB*},
                               audio => q{--audio-file *AUDIO*},
                               fs    => q{--fullscreen},
-                              arg   => q{--really-quiet},
+                              arg   => q{--really-quiet --title *TITLE*},
                              },
                      },
     video_player_selected => undef,    # autodetect it later
