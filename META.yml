@@ -7,7 +7,7 @@ build_requires:
 configure_requires:
   Module::Build: '0'
 dynamic_config: 1
-generated_by: 'Module::Build version 0.4211, CPAN::Meta::Converter version 2.150001'
+generated_by: 'Module::Build version 0.4212, CPAN::Meta::Converter version 2.150001'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -73,9 +73,11 @@ recommends:
 requires:
   Data::Dump: '0'
   File::Path: '0'
+  File::ShareDir: '0'
   File::Spec: '0'
   File::Spec::Functions: '0'
   Getopt::Long: '0'
+  Gtk2: '0'
   HTTP::Request: '0'
   JSON: '0'
   LWP::Protocol::https: '0'

@@ -4,7 +4,7 @@
       "Daniel \"Trizen\" Șuteu <trizenx@gmail.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4211",
+   "generated_by" : "Module::Build version 0.4212",
    "license" : [
       "perl_5"
    ],
@@ -34,9 +34,11 @@
          "requires" : {
             "Data::Dump" : "0",
             "File::Path" : "0",
+            "File::ShareDir" : "0",
             "File::Spec" : "0",
             "File::Spec::Functions" : "0",
             "Getopt::Long" : "0",
+            "Gtk2" : "0",
             "HTTP::Request" : "0",
             "JSON" : "0",
             "LWP::Protocol::https" : "0",
