@@ -221,7 +221,6 @@ sub format_text {
         },
 
         ITAG   => sub { $streaming->{streaming}{itag} },
-        SIZE   => sub { $streaming->{streaming}{size} },
         SUB    => sub { $streaming->{srt_file} },
         VIDEO  => sub { $streaming->{streaming}{url} },
         FORMAT => sub { $self->extension($streaming->{streaming}{type}) },
@@ -243,7 +242,7 @@ sub format_text {
 
     my $tokens_re = do {
         local $" = '|';
-        qr/\*(@{[map {quotemeta} keys %special_tokens]})\*/;
+        qr/\*(@{[keys %special_tokens]})\*/;
     };
 
     my %special_escapes = (
