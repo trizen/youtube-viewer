@@ -284,98 +284,75 @@ $gui->add_from_file($glade_file);
 $gui->connect_signals(undef);
 
 # -------------  Get GUI objects ------------- #
-my (
-    $mainw,                      $users_list_window,             $help_window,
-    $prefernces_window,          $login_to_youtube,              $errors_window,
-    $details_window,             $about_window,                  $treeview,
-    $liststore,                  $config_view,                   $statusbar,
-    $thumbs_column,              $textview_help,                 $order_combobox,
-    $resolution_combobox,        $spin_results,                  $users_treeview,
-    $users_liststore,            $thumbs_checkbutton,            $spin_start_with_page,
-    $fullscreen_checkbutton,     $notebook,                      $search_entry,
-    $from_author_entry,          $gif_spinner,                   $hbox2,
-    $feeds_window,               $feeds_treeview,                $feeds_liststore,
-    $feeds_statusbar,            $safesearch_combobox,           $definition_combobox,
-    $caption_combobox,           $duration_combobox,             $warnings_window,
-    $warnings_textview,          $errors_textview,               $category_id_entry,
-    $more_options_expander,      $cat_treeview,                  $cats_liststore,
-    $dash_checkbutton,           $spin_published_within,         $published_within_combobox,
-    $search_for_videos_checkbox, $search_for_playlists_checkbox, $search_for_channels_checkbox,
-    $clear_search_list_checkbox, $panel_account_type_combobox,   $panel_user_entry,
-    $channel_type_combobox,
-   );
 
-sub get_objects {
-    my %objects = (
+my %objects = (
 
-        # Windows
-        '__MAIN__'          => \$mainw,
-        'users_list_window' => \$users_list_window,
-        'help_window'       => \$help_window,
-        'prefernces_window' => \$prefernces_window,
-        'errors_window'     => \$errors_window,
-        'login_to_youtube'  => \$login_to_youtube,
-        'details_window'    => \$details_window,
-        'aboutdialog1'      => \$about_window,
-        'feeds_window'      => \$feeds_window,
-        'warnings_window'   => \$warnings_window,
+    # Windows
+    '__MAIN__'          => \my $mainw,
+    'users_list_window' => \my $users_list_window,
+    'help_window'       => \my $help_window,
+    'prefernces_window' => \my $prefernces_window,
+    'errors_window'     => \my $errors_window,
+    'login_to_youtube'  => \my $login_to_youtube,
+    'details_window'    => \my $details_window,
+    'aboutdialog1'      => \my $about_window,
+    'feeds_window'      => \my $feeds_window,
+    'warnings_window'   => \my $warnings_window,
 
-        # Others
-        'treeview1'              => \$users_treeview,
-        'feeds_statusbar'        => \$feeds_statusbar,
-        'treeview2'              => \$treeview,
-        'treeview3'              => \$cat_treeview,
-        'feeds_treeview'         => \$feeds_treeview,
-        'liststore1'             => \$liststore,
-        'liststore2'             => \$users_liststore,
-        'liststore4'             => \$cats_liststore,
-        'liststore11'            => \$feeds_liststore,
-        'textview3'              => \$config_view,
-        'warnings_textview'      => \$warnings_textview,
-        'errors_textview'        => \$errors_textview,
-        'search_entry'           => \$search_entry,
-        'statusbar1'             => \$statusbar,
-        'treeviewcolumn2'        => \$thumbs_column,
-        'textview2'              => \$textview_help,
-        'from_author_entry'      => \$from_author_entry,
-        'category_id_entry'      => \$category_id_entry,
-        'more_options_expander'  => \$more_options_expander,
-        'notebook1'              => \$notebook,
-        'comboboxtext9'          => \$resolution_combobox,
-        'comboboxtext8'          => \$duration_combobox,
-        'comboboxtext3'          => \$caption_combobox,
-        'comboboxtext4'          => \$definition_combobox,
-        'comboboxtext5'          => \$safesearch_combobox,
-        'comboboxtext1'          => \$published_within_combobox,
-        'panel_user_entry'       => \$panel_user_entry,
-        'comboboxtext6'          => \$panel_account_type_combobox,
-        'comboboxtext2'          => \$order_combobox,
-        'comboboxtext7'          => \$channel_type_combobox,
-        'videos_checkbox'        => \$search_for_videos_checkbox,
-        'playlists_checkbox'     => \$search_for_playlists_checkbox,
-        'channels_checkbox'      => \$search_for_channels_checkbox,
-        'spinbutton1'            => \$spin_results,
-        'spinbutton2'            => \$spin_start_with_page,
-        'spinbutton3'            => \$spin_published_within,
-        'thumbs_checkbutton'     => \$thumbs_checkbutton,
-        'fullscreen_checkbutton' => \$fullscreen_checkbutton,
-        'clear_list_checkbutton' => \$clear_search_list_checkbox,
-        'dash_checkbutton'       => \$dash_checkbutton,
-        'gif_spinner'            => \$gif_spinner,
-        'hbox2'                  => \$hbox2,
-    );
+    # Others
+    'treeview1'              => \my $users_treeview,
+    'feeds_statusbar'        => \my $feeds_statusbar,
+    'treeview2'              => \my $treeview,
+    'treeview3'              => \my $cat_treeview,
+    'feeds_treeview'         => \my $feeds_treeview,
+    'liststore1'             => \my $liststore,
+    'liststore2'             => \my $users_liststore,
+    'liststore4'             => \my $cats_liststore,
+    'liststore11'            => \my $feeds_liststore,
+    'textview3'              => \my $config_view,
+    'warnings_textview'      => \my $warnings_textview,
+    'errors_textview'        => \my $errors_textview,
+    'search_entry'           => \my $search_entry,
+    'statusbar1'             => \my $statusbar,
+    'treeviewcolumn2'        => \my $thumbs_column,
+    'textview2'              => \my $textview_help,
+    'from_author_entry'      => \my $from_author_entry,
+    'category_id_entry'      => \my $category_id_entry,
+    'more_options_expander'  => \my $more_options_expander,
+    'notebook1'              => \my $notebook,
+    'comboboxtext9'          => \my $resolution_combobox,
+    'comboboxtext8'          => \my $duration_combobox,
+    'comboboxtext3'          => \my $caption_combobox,
+    'comboboxtext4'          => \my $definition_combobox,
+    'comboboxtext5'          => \my $safesearch_combobox,
+    'comboboxtext1'          => \my $published_within_combobox,
+    'panel_user_entry'       => \my $panel_user_entry,
+    'comboboxtext6'          => \my $panel_account_type_combobox,
+    'comboboxtext2'          => \my $order_combobox,
+    'comboboxtext7'          => \my $channel_type_combobox,
+    'videos_checkbox'        => \my $search_for_videos_checkbox,
+    'playlists_checkbox'     => \my $search_for_playlists_checkbox,
+    'channels_checkbox'      => \my $search_for_channels_checkbox,
+    'spinbutton1'            => \my $spin_results,
+    'spinbutton2'            => \my $spin_start_with_page,
+    'spinbutton3'            => \my $spin_published_within,
+    'thumbs_checkbutton'     => \my $thumbs_checkbutton,
+    'fullscreen_checkbutton' => \my $fullscreen_checkbutton,
+    'clear_list_checkbutton' => \my $clear_search_list_checkbox,
+    'dash_checkbutton'       => \my $dash_checkbutton,
+    'gif_spinner'            => \my $gif_spinner,
+    'hbox2'                  => \my $hbox2,
+);
 
-    while (my ($key, $value) = each %objects) {
-        my $object = $gui->get_object($key);
-        if (defined $object) {
-            ${$value} = $object;
-        }
-        else {
-            print STDERR "[WARN] undefined object: $key\n";
-        }
+while (my ($key, $value) = each %objects) {
+    my $object = $gui->get_object($key);
+    if (defined $object) {
+        ${$value} = $object;
+    }
+    else {
+        print STDERR "[WARN] undefined object: $key\n";
     }
 }
-get_objects();
 
 # __WARN__ handle
 local $SIG{__WARN__} = sub {
