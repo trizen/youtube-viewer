@@ -37,6 +37,11 @@
     <property name="can_focus">False</property>
     <property name="icon_name">emblem-downloads</property>
   </object>
+  <object class="GtkEntryBuffer" id="entrybuffer1">
+    <property name="text" translatable="yes">Search for YouTube videos...</property>
+    <signal name="deleted-text" handler="analyze_text" swapped="no"/>
+    <signal name="inserted-text" handler="analyze_text" swapped="no"/>
+  </object>
   <object class="GtkImage" id="icon_from_pixbuf">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -834,9 +839,9 @@
                         <property name="can_focus">True</property>
                         <property name="has_focus">True</property>
                         <property name="is_focus">True</property>
+                        <property name="buffer">entrybuffer1</property>
                         <property name="invisible_char">•</property>
                         <property name="activates_default">True</property>
-                        <property name="text" translatable="yes">Search for YouTube videos...</property>
                         <property name="invisible_char_set">True</property>
                         <property name="caps_lock_warning">False</property>
                         <property name="primary_icon_stock">gtk-find</property>

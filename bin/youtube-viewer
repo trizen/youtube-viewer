@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 01 June 2015
+#  Latest edit on: 11 June 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -35,7 +35,7 @@
 # - Added the options `--ps` and `--pid` to add videos by URL or ID to a given playlistID      - NEW (v3.1.2)
 # - Added the stdin commands ":ps" and ":s2p" to add one or more videos to a selected playlist - NEW (v3.1.2)
 # - Added the `--std-input=s` option which can be used to specify the first standard input     - NEW (v3.1.1)
-# - Added input history support across sessions, with the 'save_input_history' config-key      - NEW (v3.1.1)
+# - Added input history support across sessions, with the 'history' config-key                 - NEW (v3.1.1)
 # - Added support for more video players (--player=s) // Added support for shows (--us=author) - NEW (v3.1.0)
 # - Added support to --copy-caption for downloaded videos // Added fixed-width for playlists   - NEW (v3.1.0)
 # - Added the ':play' stdin option // Added the support for 'watch_later' videos (-L)          - NEW (v3.1.0)
@@ -180,6 +180,7 @@ my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
 my $config_dir = catdir($xdg_config_home, $execname);
 my $config_file         = catfile($config_dir, "$execname.conf");
 my $authentication_file = catfile($config_dir, 'reg.dat');
+my $history_file        = catfile($config_dir, 'history.txt');
 
 if (not -d $config_dir) {
     require File::Path;
@@ -296,8 +297,9 @@ my %CONFIG = (
     download_and_play    => 0,
     autohide_watched     => 0,
     remove_played_file   => 0,
-    save_input_history   => 0,
-    history_size_limit   => 1_000,
+    history              => 0,
+    history_limit        => 1_000,
+    history_file         => $history_file,
     convert_cmd          => q{ffmpeg -i *IN* *OUT*},
     convert_to           => undef,
 
@@ -513,24 +515,28 @@ if (not -d $CONFIG{cache_dir}) {
 
 @opt{keys %CONFIG} = values(%CONFIG);
 
-if ($opt{save_input_history}) {
-    my $history_file = catfile($config_dir, 'input_history.txt');
-    if (open($opt{history_fh}, '>>:encoding(UTF-8)', $history_file)) {
+if ($opt{history}) {
+    if (open($opt{history_fh}, '>>:encoding(UTF-8)', $opt{history_file})) {
         select((select($opt{history_fh}), $| = 1)[0]);    # autoflush
     }
     else {
-        warn "[!] Can't open history file `$history_file' for appending: $!";
+        warn "[!] Can't open history file `$opt{history_file}' for appending: $!";
     }
 
-    $term->ReadHistory($history_file);
+    # Add history to Term::ReadLine
+    $term->ReadHistory($opt{history_file});
+
+    # Read back the history list from memory
+    # and create a dictionary to avoid duplicates
+    my @history = $term->history_list;
+    @{$opt{history_hash}}{@history} = ();
 
     # Rewrite the history file when the history size limit has been reached in order to keep
     # only the last n entries, minus some random number to avoid an imediate second rewrite.
     #            - the 'rand' part implies that you're lucky :) -
-    if ((my @history = $term->history_list) > $opt{history_size_limit}) {
-        open my $fh, '>', $history_file;
-        say {$fh}
-          join("\n", @history[(@history - $opt{history_size_limit}) + int(rand($opt{history_size_limit})) .. $#history]);
+    if (@history > $opt{history_limit}) {
+        open my $fh, '>', $opt{history_file};
+        say {$fh} join("\n", @history[(@history - $opt{history_limit}) + int(rand($opt{history_limit})) .. $#history]);
         close $fh;
     }
 }
@@ -1726,7 +1732,7 @@ sub get_user_input {
     my $input = unpack(
                        'A*', defined($opt{std_input})
                        ? delete($opt{std_input})
-                       : $term->readline($text)
+                       : ($term->readline($text) // return ':return')
                       ) =~ s/^\s+//r;
 
     require Encode;
@@ -1735,8 +1741,12 @@ sub get_user_input {
     return q{:next} if $input eq q{};    # <ENTER> for the next page
     my ($args, $keywords) = parse_options($input);
 
-    if ($opt{save_input_history} && (@{$keywords} || @{$args})) {
-        say {$opt{history_fh}} join(' ', @{$args}, @{$keywords});
+    if ($opt{history} && @{$keywords}) {
+        my $str = join(' ', grep { /\w/ and not /^[:;=]/ } @{$keywords});
+        if (not exists($opt{history_hash}{$str}) and $str ne '' and $str !~ /^\d{1,2}\z/) {
+            say {$opt{history_fh}} $str;
+            undef $opt{history_hash}{$str};
+        }
     }
 
     apply_input_arguments($args, $keywords);

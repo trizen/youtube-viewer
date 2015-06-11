@@ -368,7 +368,7 @@ sub get_duration {
 
 sub get_definition {
     my ($self, $info) = @_;
-    uc($info->{contentDetails}{definition});
+    uc($info->{contentDetails}{definition} // '-');
 }
 
 sub get_dimension {

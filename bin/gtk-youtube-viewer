@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 28 May 2015
+#  Latest edit on: 12 June 2015
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -68,6 +68,7 @@ my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
 my $config_dir = catdir($xdg_config_home, 'youtube-viewer');
 my $config_file         = catfile($config_dir, "$execname.conf");
 my $youtube_users_file  = catfile($config_dir, 'youtube_users.txt');
+my $history_file        = catfile($config_dir, 'history.txt');
 my $authentication_file = catfile($config_dir, 'reg.dat');
 
 # Create the configuration directory
@@ -223,16 +224,20 @@ my %CONFIG = (
     use_threads            => 0,
     use_threads_for_thumbs => 0,    # this is unstable
 
-    hpaned_position    => 420,
-    search_channels    => 0,
-    search_playlists   => 0,
-    thousand_separator => q{,},
-    downloads_dir      => curdir(),
-    web_browser        => undef,                 # defaults to $ENV{WEBBROWSER} or xdg-open
-    terminal           => undef,                 # autodetect it later
-    terminal_exec      => q{-e '%s'},
-    youtube_viewer     => undef,
-    youtube_users_file => $youtube_users_file,
+    hpaned_position        => 420,
+    search_channels        => 0,
+    search_playlists       => 0,
+    thousand_separator     => q{,},
+    downloads_dir          => curdir(),
+    web_browser            => undef,                 # defaults to $ENV{WEBBROWSER} or xdg-open
+    terminal               => undef,                 # autodetect it later
+    terminal_exec          => q{-e '%s'},
+    youtube_viewer         => undef,
+    youtube_users_file     => $youtube_users_file,
+    history                => 1,
+    history_limit          => 1_000,
+    history_file           => $history_file,
+    entry_completion_limit => 10,
 );
 
 my %MPLAYER;
@@ -455,6 +460,142 @@ if (not -d $CONFIG{cache_dir}) {
       or warn "[!] Can't create dir `$CONFIG{cache_dir}': $!";
 }
 
+{
+
+    sub _get_special_words {
+        my ($str) = @_;
+        ((map { s/^[[:punct:]]+//r =~ s/[[:punct:]]+\z//r } split(' ', $str)), split(/\W+/, $str));
+    }
+
+    my %history_dict;
+
+    sub update_history_dict {
+        my (@words) = @_;
+
+        foreach my $str (@words) {
+            my $str_ref = \$str;
+
+            # Create models from each word of the string
+            foreach my $word (_get_special_words(lc($str))) {
+                my $ref = \%history_dict;
+                foreach my $char (split(//, $word)) {
+                    $ref = $ref->{$char} //= {};
+                    push @{$ref->{values}}, $str_ref;
+                }
+            }
+        }
+    }
+
+    my $completion;
+
+    sub analyze_text {
+        my ($buffer) = @_;
+
+        $completion // return;
+        my $text = $buffer->get_text;
+
+        my (@matches, @words);
+        foreach my $word (_get_special_words(lc($text))) {
+
+            my $ref = \%history_dict;
+            foreach my $char (split(//, $word)) {
+                if (exists $ref->{$char}) {
+                    $ref = $ref->{$char};
+                }
+                else {
+                    $ref = undef;
+                    last;
+                }
+            }
+
+            if (defined $ref and exists $ref->{values}) {
+                push @words,   $word;
+                push @matches, @{$ref->{values}};
+            }
+            else {
+                last;
+            }
+        }
+
+        state $x = require List::Util;
+        @matches = grep {
+            my $str = lc(${$_});
+            not defined(List::Util::first(sub { index($str, $_) == -1 }, @words));
+        } @matches;
+
+        my %seen;
+        my $store = Gtk2::ListStore->new('Glib::String');
+
+        my $i = 0;
+        foreach my $str (map { $_->[0] }
+                         sort { $a->[1] cmp $b->[1] }
+                         map { [${$_}, (lc(${$_} =~ s/\W+//gr)) ^ $text] } grep { !$seen{lc(${$_})}++ } @matches) {
+            $store->set($store->append, 0, $str);
+            last if ++$i == $CONFIG{entry_completion_limit};
+        }
+
+        $completion->set_model($store);
+    }
+
+    my %history;
+    my $history_fh;
+
+    sub set_history {
+        defined($history_fh) && return 1;
+
+        # Open the history file for appending
+        if (open($history_fh, '>>:encoding(UTF-8)', $CONFIG{history_file})) {
+            select((select($history_fh), $| = 1)[0]);    # autoflush
+        }
+        else {
+            warn "[!] Can't open history file `$CONFIG{history_file}' for appending: $!";
+            return;
+        }
+
+        # Slurp the history file into memory
+        if (open(my $fh, '<:encoding(UTF-8)', $CONFIG{history_file})) {
+            while (defined(my $line = <$fh>)) {
+                chomp $line;
+                undef $history{$line};
+            }
+        }
+
+        # Set entry completion
+        $completion = Gtk2::EntryCompletion->new;
+        $completion->set_match_func(sub { 1 });
+        $completion->set_text_column(0);
+        $search_entry->set_completion($completion);
+
+        # Create the completion dictionary
+        my @history = keys(%history);
+        update_history_dict(@history);
+
+        # Trim the history file to a random number of entries when the limit has been reached
+        if ($#history >= $CONFIG{history_limit}) {
+            if (open(my $fh, '>:encoding(UTF-8)', $CONFIG{history_file})) {
+                say {$fh}
+                  join("\n", @history[(@history - $CONFIG{history_limit}) + int(rand($CONFIG{history_limit})) .. $#history]);
+                close $fh;
+            }
+        }
+
+        return 1;
+    }
+
+    sub append_to_history {
+        my ($text) = @_;
+
+        my $str = join(' ', split(' ', $text));
+        if (not exists $history{$str}) {
+            if (set_history()) {
+                say {$history_fh} $str;
+            }
+            undef $history{$str};
+            update_history_dict($str);
+        }
+    }
+}
+
 # Locate video player
 if (not defined $CONFIG{video_player_selected}) {
     foreach my $key (sort keys %{$CONFIG{video_players}}) {
@@ -601,6 +742,11 @@ sub apply_configuration {
 
     if ($CONFIG{mainw_fullscreen}) {
         maximize_unmaximize_mainw();
+    }
+
+    # Support for history input
+    if ($CONFIG{history}) {
+        set_history();
     }
 
     # Set HPaned position
@@ -1454,6 +1600,11 @@ sub search {
 
     return if check_keywords($keywords);
     $liststore->clear if $CONFIG{clear_search_list};
+
+    # Remember the input text when "history" is enabled
+    if ($CONFIG{history}) {
+        append_to_history($keywords);
+    }
 
     if ((my $period = $published_within_combobox->get_active_text) !~ /^any/i) {
         my $amount = $spin_published_within->get_value;
