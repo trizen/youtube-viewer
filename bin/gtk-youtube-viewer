@@ -461,22 +461,20 @@ if (not -d $CONFIG{cache_dir}) {
 }
 
 {
-
-    sub _get_special_words {
-        my ($str) = @_;
-        ((map { s/^[[:punct:]]+//r =~ s/[[:punct:]]+\z//r } split(' ', $str)), split(/\W+/, $str));
-    }
+    my $split_string = sub {
+        ((map { s/^[[:punct:]]+//r =~ s/[[:punct:]]+\z//r } split(' ', $_[0])), split(/\W+/, $_[0]));
+    };
 
     my %history_dict;
 
     sub update_history_dict {
-        my (@words) = @_;
+        my (@entries) = @_;
 
-        foreach my $str (@words) {
+        foreach my $str (@entries) {
             my $str_ref = \$str;
 
             # Create models from each word of the string
-            foreach my $word (_get_special_words(lc($str))) {
+            foreach my $word ($split_string->(lc($str))) {
                 my $ref = \%history_dict;
                 foreach my $char (split(//, $word)) {
                     $ref = $ref->{$char} //= {};
@@ -495,7 +493,7 @@ if (not -d $CONFIG{cache_dir}) {
         my $text = $buffer->get_text;
 
         my (@matches, @words);
-        foreach my $word (_get_special_words(lc($text))) {
+        foreach my $word ($split_string->(lc($text))) {
 
             my $ref = \%history_dict;
             foreach my $char (split(//, $word)) {
@@ -527,9 +525,11 @@ if (not -d $CONFIG{cache_dir}) {
         my $store = Gtk2::ListStore->new('Glib::String');
 
         my $i = 0;
-        foreach my $str (map { $_->[0] }
+        foreach my $str (
+                         map  { $_->[0] }
                          sort { $a->[1] cmp $b->[1] }
-                         map { [${$_}, (lc(${$_} =~ s/\W+//gr)) ^ $text] } grep { !$seen{lc(${$_})}++ } @matches) {
+                         map  { [${$_}, (lc(${$_} =~ s/\W+//gr)) ^ $text] } grep { !$seen{lc(${$_})}++ } @matches
+          ) {
             $store->set($store->append, 0, $str);
             last if ++$i == $CONFIG{entry_completion_limit};
         }
