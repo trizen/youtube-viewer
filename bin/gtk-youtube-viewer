@@ -528,7 +528,7 @@ if (not -d $CONFIG{cache_dir}) {
         foreach my $str (
                          map  { $_->[0] }
                          sort { $a->[1] cmp $b->[1] }
-                         map  { [${$_}, (lc(${$_} =~ s/[[:punct:]]+//gr)) ^ $text] } grep { !$seen{lc(${$_})}++ } @matches
+                         map { [${$_}, (lc(${$_} =~ s/\W+//gr)) ^ ($text =~ s/\W+//gr)] } grep { !$seen{lc(${$_})}++ } @matches
           ) {
             $store->set($store->append, 0, $str);
             last if ++$i == $CONFIG{entry_completion_limit};
