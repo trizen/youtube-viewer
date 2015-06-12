@@ -553,10 +553,12 @@ if (not -d $CONFIG{cache_dir}) {
         }
 
         # Slurp the history file into memory
-        if (open(my $fh, '<:encoding(UTF-8)', $CONFIG{history_file})) {
+        my @history;
+        if (open(my $fh, '<:utf8', $CONFIG{history_file})) {
             while (defined(my $line = <$fh>)) {
                 chomp $line;
-                undef $history{$line};
+                push @history, $line;
+                undef $history{lc($line)};
             }
         }
 
@@ -567,12 +569,11 @@ if (not -d $CONFIG{cache_dir}) {
         $search_entry->set_completion($completion);
 
         # Create the completion dictionary
-        my @history = keys(%history);
         update_history_dict(@history);
 
         # Trim the history file to a random number of entries when the limit has been reached
         if ($#history >= $CONFIG{history_limit}) {
-            if (open(my $fh, '>:encoding(UTF-8)', $CONFIG{history_file})) {
+            if (open(my $fh, '>:utf8', $CONFIG{history_file})) {
                 say {$fh}
                   join("\n", @history[(@history - $CONFIG{history_limit}) + int(rand($CONFIG{history_limit})) .. $#history]);
                 close $fh;
@@ -586,7 +587,7 @@ if (not -d $CONFIG{cache_dir}) {
         my ($text) = @_;
 
         my $str = join(' ', split(' ', $text));
-        if (not exists $history{$str}) {
+        if (not exists $history{lc($str)}) {
             if (set_history()) {
                 say {$history_fh} $str;
             }

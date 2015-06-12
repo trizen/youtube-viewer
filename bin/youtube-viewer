@@ -516,7 +516,7 @@ if (not -d $CONFIG{cache_dir}) {
 @opt{keys %CONFIG} = values(%CONFIG);
 
 if ($opt{history}) {
-    if (open($opt{history_fh}, '>>:encoding(UTF-8)', $opt{history_file})) {
+    if (open($opt{history_fh}, '>>:utf8', $opt{history_file})) {
         select((select($opt{history_fh}), $| = 1)[0]);    # autoflush
     }
     else {
@@ -528,14 +528,15 @@ if ($opt{history}) {
 
     # Read back the history list from memory
     # and create a dictionary to avoid duplicates
-    my @history = $term->history_list;
-    @{$opt{history_hash}}{@history} = ();
+    require Encode;
+    my @history = map { Encode::decode_utf8($_) } $term->history_list;
+    @{$opt{history_hash}}{map { lc } @history} = ();
 
     # Rewrite the history file when the history size limit has been reached in order to keep
     # only the last n entries, minus some random number to avoid an imediate second rewrite.
     #            - the 'rand' part implies that you're lucky :) -
     if (@history > $opt{history_limit}) {
-        open my $fh, '>', $opt{history_file};
+        open my $fh, '>:utf8', $opt{history_file};
         say {$fh} join("\n", @history[(@history - $opt{history_limit}) + int(rand($opt{history_limit})) .. $#history]);
         close $fh;
     }
@@ -1743,9 +1744,9 @@ sub get_user_input {
 
     if ($opt{history} && @{$keywords}) {
         my $str = join(' ', grep { /\w/ and not /^[:;=]/ } @{$keywords});
-        if (not exists($opt{history_hash}{$str}) and $str ne '' and $str !~ /^\d{1,2}\z/) {
+        if (not exists($opt{history_hash}{lc($str)}) and $str ne '' and $str !~ /^\d{1,2}\z/) {
             say {$opt{history_fh}} $str;
-            undef $opt{history_hash}{$str};
+            undef $opt{history_hash}{lc($str)};
         }
     }
 
