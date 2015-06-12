@@ -544,7 +544,7 @@ if (not -d $CONFIG{cache_dir}) {
         defined($history_fh) && return 1;
 
         # Open the history file for appending
-        if (open($history_fh, '>>:encoding(UTF-8)', $CONFIG{history_file})) {
+        if (open($history_fh, '>>:utf8', $CONFIG{history_file})) {
             select((select($history_fh), $| = 1)[0]);    # autoflush
         }
         else {
