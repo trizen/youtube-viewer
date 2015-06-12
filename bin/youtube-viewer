@@ -535,7 +535,7 @@ if ($opt{history}) {
     # Rewrite the history file when the history size limit has been reached in order to keep
     # only the last n entries, minus some random number to avoid an imediate second rewrite.
     #            - the 'rand' part implies that you're lucky :) -
-    if ($opt{history_limit} > 0 and @history > $opt{history_limit}) {
+    if ($opt{history_limit} > 0 and $#history >= $opt{history_limit}) {
 
         # Try to create a backup, first
         require File::Copy;

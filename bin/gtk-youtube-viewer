@@ -495,6 +495,8 @@ if (not -d $CONFIG{cache_dir}) {
         my (@matches, @words);
         foreach my $word ($split_string->($text)) {
 
+            next if $word eq '';
+
             my $ref = \%history_dict;
             foreach my $char (split(//, $word)) {
                 if (exists $ref->{$char}) {
@@ -518,8 +520,8 @@ if (not -d $CONFIG{cache_dir}) {
 
         state $x = require List::Util;
         @matches = grep {
-            my $str = lc(${$_});
-            not defined(List::Util::first(sub { index($str, $_) == -1 }, @words));
+            my $lc_str = lc(${$_});
+            not defined(List::Util::first(sub { index($lc_str, $_) == -1 }, @words));
         } @matches;
 
         my %seen;
@@ -527,9 +529,19 @@ if (not -d $CONFIG{cache_dir}) {
 
         my $i = 0;
         foreach my $str (
-                         map  { $_->[0] }
-                         sort { $a->[1] cmp $b->[1] }
-                         map  { [${$_}, (lc(${$_} =~ s/\W+//gr)) ^ ($text =~ s/\W+//gr)] } grep { !$seen{$_}++ } @matches
+            map  { $_->[0] }
+            sort { $b->[1] <=> $a->[1] }
+            map {
+                my $lc_str = lc(${$_});
+                [${$_},
+
+                 (    # Calculate a score for each match
+                    (((($lc_str =~ s/\W+//gr)) ^ ($text =~ s/\W+//gr)) =~ /^[\0]+/ ? $+[0]**2 : 0) +
+                      scalar(grep { $lc_str =~ /\b\Q$_\E\b/i } @words)**2 +
+                      scalar(grep { $lc_str =~ /\b\Q$_\E/i } @words)
+                 )
+                ]
+            } grep { !$seen{$_}++ } @matches
           ) {
             $store->set($store->append, 0, $str);
             last if ++$i == $CONFIG{entry_completion_limit};
