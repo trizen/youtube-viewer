@@ -511,6 +511,7 @@ if (not -d $CONFIG{cache_dir}) {
                 push @matches, @{$ref->{values}};
             }
             else {
+                @matches = ();    # don't include partial matches
                 last;
             }
         }
