@@ -298,7 +298,7 @@ my %CONFIG = (
     autohide_watched     => 0,
     remove_played_file   => 0,
     history              => 0,
-    history_limit        => 1_000,
+    history_limit        => 10_000,
     history_file         => $history_file,
     convert_cmd          => q{ffmpeg -i *IN* *OUT*},
     convert_to           => undef,
@@ -535,10 +535,17 @@ if ($opt{history}) {
     # Rewrite the history file when the history size limit has been reached in order to keep
     # only the last n entries, minus some random number to avoid an imediate second rewrite.
     #            - the 'rand' part implies that you're lucky :) -
-    if (@history > $opt{history_limit}) {
-        open my $fh, '>:utf8', $opt{history_file};
-        say {$fh} join("\n", @history[(@history - $opt{history_limit}) + int(rand($opt{history_limit})) .. $#history]);
-        close $fh;
+    if ($opt{history_limit} > 0 and @history > $opt{history_limit}) {
+
+        # Try to create a backup, first
+        require File::Copy;
+        File::Copy::copy($opt{history_file}, "$opt{history_file}.bak");
+
+        # Now, try to rewrite the history file
+        if (open(my $fh, '>:utf8', $opt{history_file})) {
+            say {$fh} join("\n", @history[(@history - $opt{history_limit}) + int(rand($opt{history_limit})) .. $#history]);
+            close $fh;
+        }
     }
 }
 
@@ -1744,7 +1751,7 @@ sub get_user_input {
 
     if ($opt{history} && @{$keywords}) {
         my $str = join(' ', grep { /\w/ and not /^[:;=]/ } @{$keywords});
-        if (not exists($opt{history_hash}{lc($str)}) and $str ne '' and $str !~ /^\d{1,2}\z/) {
+        if (not exists($opt{history_hash}{lc($str)}) and $str ne '' and $str !~ /^\d{1,2}\z/ and $str !~ /^https?:/) {
             say {$opt{history_fh}} $str;
             undef $opt{history_hash}{lc($str)};
         }

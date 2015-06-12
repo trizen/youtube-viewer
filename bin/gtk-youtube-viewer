@@ -235,7 +235,7 @@ my %CONFIG = (
     youtube_viewer         => undef,
     youtube_users_file     => $youtube_users_file,
     history                => 1,
-    history_limit          => 1_000,
+    history_limit          => 10_000,
     history_file           => $history_file,
     entry_completion_limit => 10,
 );
@@ -572,7 +572,13 @@ if (not -d $CONFIG{cache_dir}) {
         update_history_dict(@history);
 
         # Trim the history file to a random number of entries when the limit has been reached
-        if ($#history >= $CONFIG{history_limit}) {
+        if ($CONFIG{history_limit} > 0 and $#history >= $CONFIG{history_limit}) {
+
+            # Try to create a backup, first
+            require File::Copy;
+            File::Copy::copy($CONFIG{history_file}, "$CONFIG{history_file}.bak");
+
+            # Now, try to rewrite the history file
             if (open(my $fh, '>:utf8', $CONFIG{history_file})) {
                 say {$fh}
                   join("\n", @history[(@history - $CONFIG{history_limit}) + int(rand($CONFIG{history_limit})) .. $#history]);
