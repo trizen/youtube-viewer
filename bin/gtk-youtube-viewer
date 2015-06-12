@@ -529,7 +529,7 @@ if (not -d $CONFIG{cache_dir}) {
         foreach my $str (
                          map  { $_->[0] }
                          sort { $a->[1] cmp $b->[1] }
-                         map { [${$_}, (lc(${$_} =~ s/\W+//gr)) ^ ($text =~ s/\W+//gr)] } grep { !$seen{lc(${$_})}++ } @matches
+                         map  { [${$_}, (lc(${$_} =~ s/\W+//gr)) ^ ($text =~ s/\W+//gr)] } grep { !$seen{$_}++ } @matches
           ) {
             $store->set($store->append, 0, $str);
             last if ++$i == $CONFIG{entry_completion_limit};
@@ -557,9 +557,13 @@ if (not -d $CONFIG{cache_dir}) {
         my @history;
         if (open(my $fh, '<:utf8', $CONFIG{history_file})) {
             while (defined(my $line = <$fh>)) {
+
                 chomp $line;
-                push @history, $line;
-                undef $history{lc($line)};
+
+                if (not exists $history{lc($line)}) {
+                    undef $history{lc($line)};
+                    push @history, $line;
+                }
             }
         }
 
