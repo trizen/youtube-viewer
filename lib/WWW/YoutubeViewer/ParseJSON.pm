@@ -33,7 +33,11 @@ Parse a JSON string and return a HASH ref.
 
 sub parse_json_string {
     my ($self, $json) = @_;
-    $json // return {};
+
+    if (not defined($json) or $json eq '') {
+        return {};
+    }
+
     state $x = require JSON;
     my $hash = eval { JSON::decode_json($json) };
     return $@ ? do { warn "[JSON]: $@\n"; {} } : $hash;

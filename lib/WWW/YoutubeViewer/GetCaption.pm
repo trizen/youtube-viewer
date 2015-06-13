@@ -147,7 +147,7 @@ Convert the XML data to SubRip format.
 sub xml2srt {
     my ($self, $xml) = @_;
 
-    require WWW::YoutubeViewer::ParseXML;
+    state $x = require WWW::YoutubeViewer::ParseXML;
     my $hash = eval { WWW::YoutubeViewer::ParseXML::xml2hash($xml) } // return;
 
     my $sections;
@@ -161,7 +161,7 @@ sub xml2srt {
         return;
     }
 
-    require HTML::Entities;
+    state $y = require HTML::Entities;
 
     my @text;
     foreach my $i (0 .. $#{$sections}) {
@@ -185,7 +185,7 @@ Get the XML content for a given caption data.
 sub get_xml_data {
     my ($self, $info) = @_;
 
-    require LWP::UserAgent;
+    state $x = require LWP::UserAgent;
     my $lwp = LWP::UserAgent->new(
           timeout   => 30,
           env_proxy => 1,
@@ -212,7 +212,7 @@ sub save_caption {
     # Find one of the prefered languages
     my $info = $self->find_caption_data() // return;
 
-    require File::Spec;
+    state $x = require File::Spec;
     my $filename = "${video_id}_$info->{lc}.srt";
     my $srt_file = File::Spec->catfile($self->{captions_dir} // File::Spec->tmpdir, $filename);
 

@@ -148,7 +148,7 @@ sub encode_token {
     my ($self, $token) = @_;
 
     if (defined(my $key = $self->get_key)) {
-        require MIME::Base64;
+        state $x = require MIME::Base64;
         return MIME::Base64::encode_base64($token ^ substr($key, -length($token)));
     }
 
@@ -165,7 +165,7 @@ sub decode_token {
     my ($self, $token) = @_;
 
     if (defined(my $key = $self->get_key)) {
-        require MIME::Base64;
+        state $x = require MIME::Base64;
         my $bin = MIME::Base64::decode_base64($token);
         return $bin ^ substr($key, -length($bin));
     }

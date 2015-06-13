@@ -54,8 +54,6 @@ our @region_IDs = qw(
   IT JP MX NL NZ PL RU ZA KR ES SE TW US
   );
 
-our @feed_methods = qw(newsubscriptionvideos recommendations favorites watch_history);
-
 my %valid_options = (
 
     # Main options
@@ -193,7 +191,7 @@ sub page_token {
         push @f, $k + 1;
     }
 
-    require MIME::Base64;
+    state $x = require MIME::Base64;
     MIME::Base64::encode_base64(pack('C*', @f, 16, 0)) =~ tr/=//dr;
 }
 
@@ -206,18 +204,14 @@ Escapes a string with URI::Escape and returns it.
 sub escape_string {
     my ($self, $string) = @_;
 
-    require URI::Escape;
+    state $x = require URI::Escape;
 
-    if ($self->get_escape_utf8) {
-        utf8::decode($string);
-    }
-
-    my $escaped =
-      $self->get_escape_utf8()
-      ? URI::Escape::uri_escape_utf8($string)
+    $self->get_escape_utf8
+      ? do {
+        state $x = require Encode;
+        URI::Escape::uri_escape_utf8(Encode::decode_utf8($string));
+      }
       : URI::Escape::uri_escape($string);
-
-    return $escaped;
 }
 
 =head2 set_lwp_useragent()
@@ -585,7 +579,7 @@ sub _get_pairs_from_info_data {
     my @array;
     my $i = 0;
 
-    require URI::Escape;
+    state $x = require URI::Escape;
     foreach my $block (split(/,/, URI::Escape::uri_unescape($content))) {
         foreach my $pair (split(/&/, $block)) {
             $pair =~ s{^url_encoded_fmt_stream_map=(?=\w+=)}{}im;
@@ -645,7 +639,7 @@ sub get_streaming_urls {
     my @info = $self->_get_pairs_from_info_data($content, $videoID);
 
     if ($self->get_debug == 2) {
-        require Data::Dump;
+        state $x = require Data::Dump;
         Data::Dump::pp(\@info);
     }
 
@@ -690,7 +684,7 @@ sub _prepare_request {
 sub _save {
     my ($self, $method, $uri, $content) = @_;
 
-    require HTTP::Request;
+    state $x = require HTTP::Request;
     my $req = HTTP::Request->new($method => $uri);
     $req->content_type('application/json; charset=UTF-8');
     $self->_prepare_request($req, length($content));

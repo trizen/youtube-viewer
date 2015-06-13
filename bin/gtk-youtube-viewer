@@ -260,7 +260,7 @@ EOD
 
     # Save hash config to file
     sub dump_configuration {
-        require Data::Dump;
+        state $x = require Data::Dump;
         open my $config_fh, '>', $config_file
           or do { warn "[!] Can't open '${config_file}' for write: $!"; return };
         my $dumped_config = q{our $CONFIG = } . Data::Dump::pp(\%CONFIG) . "\n";
@@ -536,9 +536,9 @@ if (not -d $CONFIG{cache_dir}) {
                 [${$_},
 
                  (    # Calculate a score for each match
-                    (((($lc_str =~ s/\W+//gr)) ^ ($text =~ s/\W+//gr)) =~ /^[\0]+/ ? $+[0]**2 : 0) +
-                      scalar(grep { $lc_str =~ /\b\Q$_\E\b/i } @words)**2 +
-                      scalar(grep { $lc_str =~ /\b\Q$_\E/i } @words)
+                    ((($lc_str =~ s/\W+//gr) ^ ($text =~ s/\W+//gr)) =~ /^[\0]+/ ? $+[0]**2 : 0) +
+                      scalar(grep { $lc_str =~ /\b\Q$_\E\b/ } @words)**2 +
+                      scalar(grep { $lc_str =~ /\b\Q$_\E/ } @words)
                  )
                 ]
             } grep { !$seen{$_}++ } @matches
@@ -593,7 +593,7 @@ if (not -d $CONFIG{cache_dir}) {
 
             # Try to create a backup, first
             require File::Copy;
-            File::Copy::copy($CONFIG{history_file}, "$CONFIG{history_file}.bak");
+            File::Copy::cp($CONFIG{history_file}, "$CONFIG{history_file}.bak");
 
             # Now, try to rewrite the history file
             if (open(my $fh, '>:utf8', $CONFIG{history_file})) {
@@ -1204,7 +1204,7 @@ sub hide_feeds_window {
 
 # Preferences window
 sub show_preferences_window {
-    require Data::Dump;
+    state $x = require Data::Dump;
     get_main_window_size();
     my $config_view_buffer = $config_view->get_buffer;
     $config_view_buffer->set_text(Data::Dump::dump(\%CONFIG));
@@ -1670,11 +1670,6 @@ sub encode_entities {
     return $text;
 }
 
-sub decode_entities {
-    require HTML::Entities;
-    return HTML::Entities::decode_entities($_[0]);
-}
-
 sub get_next_page_spaces {
     $CONFIG{show_thumbs} ? "\t" x 10 : "\t" x 20;
 }
@@ -2017,7 +2012,7 @@ sub get_streaming_url {
     # Download the closed-captions
     my $srt_file;
     if (@captions and $CONFIG{get_captions}) {
-        require WWW::YoutubeViewer::GetCaption;
+        state $x = require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
                                                          captions_dir => $CONFIG{captions_dir},
                                                          captions     => \@captions,
@@ -2026,7 +2021,7 @@ sub get_streaming_url {
         $srt_file = $yv_cap->save_caption($video_id);
     }
 
-    require WWW::YoutubeViewer::Itags;
+    state $x        = require WWW::YoutubeViewer::Itags;
     state $yv_itags = WWW::YoutubeViewer::Itags->new();
 
     my ($streaming, $resolution) =
@@ -2073,7 +2068,7 @@ sub update_mplayer_arguments {
 }
 
 sub get_quotewords {
-    require Text::ParseWords;
+    state $x = require Text::ParseWords;
     return Text::ParseWords::quotewords(@_);
 }
 

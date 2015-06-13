@@ -72,6 +72,7 @@ recommends:
   Term::ReadLine::Gnu::XS: '0'
 requires:
   Data::Dump: '0'
+  Encode: '0'
   File::Path: '0'
   File::ShareDir: '0'
   File::Spec: '0'

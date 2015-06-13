@@ -45,6 +45,7 @@ my $builder = Module::Build->new(
         'Getopt::Long'          => 0,
         'HTTP::Request'         => 0,
         'JSON'                  => 0,
+        'Encode'                => 0,
         'MIME::Base64'          => 0,
         'List::Util'            => 0,
         'LWP::UserAgent'        => 0,
