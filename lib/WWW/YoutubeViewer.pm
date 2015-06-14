@@ -41,19 +41,6 @@ our $VERSION = '0.05';
 
 =cut
 
-our @feeds_IDs = qw(top_rated top_favorites most_shared most_popular
-  most_recent most_discussed most_responded recently_featured on_the_web);
-
-our @movie_IDs = qw(most_popular most_recent trending);
-
-our @categories_IDs = qw(Film Autos Music Animals Sports Travel Games
-  People Comedy Entertainment News Howto Education Tech Nonprofit Movies Trailers);
-
-our @region_IDs = qw(
-  AR AU BR CA CZ FR DE GB HK HU IN IE IL
-  IT JP MX NL NZ PL RU ZA KR ES SE TW US
-  );
-
 my %valid_options = (
 
     # Main options
@@ -72,7 +59,7 @@ my %valid_options = (
     # Video only options
     videoCaption    => {valid => [qw(any closedCaption none)],     default => undef},
     videoDefinition => {valid => [qw(any high standard)],          default => undef},
-    videoCategoryId => {valid => \@categories_IDs,                 default => undef},
+    videoCategoryId => {valid => [qr/^\w+\z/],                     default => undef},
     videoDimension  => {valid => [qw(any 2d 3d)],                  default => undef},
     videoDuration   => {valid => [qw(any short medium long)],      default => undef},
     videoEmbeddable => {valid => [qw(any true)],                   default => undef},

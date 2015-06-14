@@ -794,42 +794,9 @@ sub wrap_text {
 }
 
 sub tricks {
-    my $tab = "\t\t";
-    my $cat_ids = wrap_text(
-                            i_tab => $tab,
-                            s_tab => $tab,
-                            text  => [@{WWW::YoutubeViewer::categories_IDs}]
-                           );
-
-    my $region_ids = wrap_text(
-                               i_tab => $tab,
-                               s_tab => $tab,
-                               text  => [@{WWW::YoutubeViewer::region_IDs}]
-                              );
-
-    my $valid_keys = wrap_text(
-        i_tab => q{},
-        s_tab => q{ } x 3,
-        text  => [
-            sort qw(
-              videoID
-              name duration author
-              description dislikes
-              rating published views
-              category title likes
-              )
-        ]
-    );
-
     print <<"TRICKS";
--> Valid categories:
-$cat_ids
 
--> Valid region IDs:
-$region_ids
-
-NOTE: Categories and region IDs are case sensitive!
-      [orderby, time, duration]'s values are also case sensitive!
+                == youtube-viewer -- tips and tricks ==
 
 -> Playing videos
  > To stream the videos in other players, you need to change the
@@ -861,9 +828,6 @@ NOTE: Categories and region IDs are case sensitive!
 
  > When more videos are selected to play, you can stop them by
    pressing CTRL+C. $execname will return to the previous section.
-
- > For the option ':kregex', the valid keys are:
-   $valid_keys
 
  > Space inside the values of STDIN options, can be either quoted
    or backslashed.

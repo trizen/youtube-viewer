@@ -129,11 +129,7 @@ my %symbols = (
 my %CONFIG = (
 
     # Combobox values
-    active_order_combobox         => 0,
     active_resolution_combobox    => 0,
-    active_definition_combobox    => 0,
-    active_caption_combobox       => 0,
-    active_duration_combobox      => 0,
     active_safeSearch_combobox    => 1,
     active_more_options_expander  => 0,
     active_panel_account_combobox => 0,
@@ -184,16 +180,12 @@ my %CONFIG = (
     dash_mp4_audio  => 0,
     maxResults      => 10,
     resolution      => 'original',
-    videoDefinition => undef,
     videoDimension  => undef,
     videoLicense    => undef,
     safeSearch      => undef,
-    videoCaption    => undef,
-    videoDuration   => undef,
     videoSyndicated => undef,
     publishedBefore => undef,
     publishedAfter  => undef,
-    order           => undef,
     hl              => 'en_US',
     cats_region     => 'us',
 
@@ -688,6 +680,12 @@ require WWW::YoutubeViewer::Utils;
 my $yv_utils = WWW::YoutubeViewer::Utils->new(thousand_separator => $CONFIG{thousand_separator},
                                               youtube_url_format => $CONFIG{youtube_video_url},);
 
+# Set default combobox values
+$definition_combobox->set_active(0);
+$duration_combobox->set_active(0);
+$caption_combobox->set_active(0);
+$order_combobox->set_active(0);
+
 # Set config file to $CONFIG hash ref
 sub apply_configuration {
 
@@ -709,9 +707,7 @@ sub apply_configuration {
     # Others
     foreach my $option_name (
                              qw(
-                             videoCaption maxResults order
-                             videoDefinition videoCategoryId
-                             videoDimension videoDuration
+                             maxResults videoDimension
                              videoEmbeddable videoLicense
                              videoSyndicated channelId
                              publishedAfter publishedBefore
@@ -749,11 +745,7 @@ sub apply_configuration {
     $more_options_expander->set_expanded($CONFIG{active_more_options_expander});
 
     # Combo boxes setting config value
-    $order_combobox->set_active($CONFIG{active_order_combobox});
     $resolution_combobox->set_active($CONFIG{active_resolution_combobox});
-    $definition_combobox->set_active($CONFIG{active_definition_combobox});
-    $caption_combobox->set_active($CONFIG{active_caption_combobox});
-    $duration_combobox->set_active($CONFIG{active_duration_combobox});
     $safesearch_combobox->set_active($CONFIG{active_safeSearch_combobox});
 
     # Resize the main window
@@ -963,14 +955,6 @@ CTRL+S : save the configuration
 
 -Other windows
 ESC : close the focused window
-
-* Video tops
-
-Valid categories are:
-    @{[@{WWW::YoutubeViewer::categories_IDs}]}
-
-Valid region IDs are:
-    @{[@{WWW::YoutubeViewer::region_IDs}]}
 
 * Configuration
 
@@ -1223,6 +1207,8 @@ sub save_configuration {
     my $config = get_text($config_view);
 
     my $hash_ref = eval $config;
+
+    print STDERR $@ if $@;
     die $@ if $@;
 
     %CONFIG = %{$hash_ref};
@@ -1241,8 +1227,7 @@ sub delete_selected_row {
 
 # Combo boxes changes
 sub combobox_order_changed {
-    $CONFIG{active_order_combobox} = $order_combobox->get_active;
-    $yv_obj->set_order($CONFIG{order} = $order_combobox->get_active_text);
+    $yv_obj->set_order($order_combobox->get_active_text);
 }
 
 sub combobox_resolution_changed {
@@ -1258,14 +1243,12 @@ sub combobox_safesearch_changed {
 
 sub combobox_duration_changed {
     my $text = $duration_combobox->get_active_text;
-    $CONFIG{active_duration_combobox} = $duration_combobox->get_active;
-    $yv_obj->set_videoDuration($CONFIG{videoDuration} = $text);
+    $yv_obj->set_videoDuration($text);
 }
 
 sub combobox_caption_changed {
     my $text = $caption_combobox->get_active_text;
-    $CONFIG{active_caption_combobox} = $caption_combobox->get_active;
-    $yv_obj->set_videoCaption($CONFIG{videoCaption} = $text);
+    $yv_obj->set_videoCaption($text);
 }
 
 sub combobox_panel_account_changed {
@@ -1285,8 +1268,7 @@ sub combobox_channel_type_changed {
 
 sub combobox_definition_changed {
     my $text = $definition_combobox->get_active_text;
-    $CONFIG{active_definition_combobox} = $definition_combobox->get_active;
-    $yv_obj->set_videoDefinition($CONFIG{videoDefinition} = $text);
+    $yv_obj->set_videoDefinition($text);
 }
 
 sub combobox_published_within_changed {
@@ -1421,30 +1403,11 @@ sub add_top_row {
 sub set_youtube_tops {
     my ($top_time, $main_label) = @_;
 
-    my $iter = $tops_liststore->append;
-    $tops_liststore->set($iter, 0, "<big><b>\t$main_label</b></big>");
+    ...;    # Unimplemented!
 
-    my $i = 0;
-    foreach my $top_name (@{WWW::YoutubeViewer::feeds_IDs}) {
-
-        my $top_time_copy = $top_time;
-        if (++$i ~~ [3, 5, 8, 9]) {    # doesn't support the 'time' option
-            $top_time_copy = $top_time eq 'today' ? q{} : next;
-        }
-
-        add_top_row($top_name, $top_time_copy);
-    }
-}
-
-set_youtube_tops('today',    'Today tops');
-set_youtube_tops('all_time', 'All time tops');
-
-{
-    my $iter = $tops_liststore->append;
-    $tops_liststore->set($iter, 0, "<big><b>\tMovies</b></big>");
-    foreach my $movie_top (@{WWW::YoutubeViewer::movie_IDs}) {
-        add_top_row($movie_top, 'movies');
-    }
+    #my $iter = $tops_liststore->append;
+    #$tops_liststore->set($iter, 0, "<big><b>\t$main_label</b></big>");
+    #add_top_row($name, $type);
 }
 
 # ------------ Usernames list window ------------ #
@@ -1636,9 +1599,22 @@ sub search {
         $yv_obj->set_publishedAfter($date);
     }
 
+    # Set the username
     my $username = $from_author_entry->get_text;
     if ($username =~ /^[\w\-]+\z/) {
         $yv_obj->set_channelId($yv_obj->channel_id_from_username($username) // $username);
+    }
+    else {
+        $yv_obj->set_channelId();
+    }
+
+    # Set the category ID
+    my $category_id = $category_id_entry->get_text;
+    if ($category_id =~ /^\w+\z/) {
+        $yv_obj->set_videoCategoryId($category_id);
+    }
+    else {
+        $yv_obj->set_videoCategoryId();
     }
 
     my @types;
@@ -2200,8 +2176,6 @@ sub get_options_as_arguments {
     my @args;
     my %options = (
                    'no-interactive' => q{},
-                   'order'          => $CONFIG{order},
-                   'time'           => $CONFIG{time_sort},
                    'resolution'     => $CONFIG{resolution},
                    'download-dir'   => quotemeta(rel2abs($CONFIG{downloads_dir})),
                    'fullscreen'     => $CONFIG{fullscreen} ? q{} : undef,

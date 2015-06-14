@@ -2223,7 +2223,6 @@ When the specified resolution is not found, it falls down to a lower resolution.
                                 </child>
                                 <child>
                                   <object class="GtkScrolledWindow" id="scrolledwindow7">
-                                    <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="hscrollbar_policy">automatic</property>
                                     <property name="vscrollbar_policy">automatic</property>
