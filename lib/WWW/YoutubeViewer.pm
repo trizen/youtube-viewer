@@ -59,7 +59,7 @@ my %valid_options = (
     # Video only options
     videoCaption    => {valid => [qw(any closedCaption none)],     default => undef},
     videoDefinition => {valid => [qw(any high standard)],          default => undef},
-    videoCategoryId => {valid => [qr/^\w+\z/],                     default => undef},
+    videoCategoryId => {valid => [qr/^\d+\z/],                     default => undef},
     videoDimension  => {valid => [qw(any 2d 3d)],                  default => undef},
     videoDuration   => {valid => [qw(any short medium long)],      default => undef},
     videoEmbeddable => {valid => [qw(any true)],                   default => undef},
