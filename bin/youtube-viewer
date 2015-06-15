@@ -213,11 +213,11 @@ my %CONFIG = (
 
     video_players => {
                       mplayer => {
-                                  cmd     => get_mplayer(),
-                                  srt     => q{-sub *SUB*},
-                                  audio   => q{-audiofile *AUDIO*},
-                                  fs      => q{-fs},
-                                  arg     => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d -title *TITLE*},
+                                  cmd   => get_mplayer(),
+                                  srt   => q{-sub *SUB*},
+                                  audio => q{-audiofile *AUDIO*},
+                                  fs    => q{-fs},
+                                  arg   => q{-prefer-ipv4 -really-quiet -cache *CACHE* -cache-min *CACHE-MIN* -title *TITLE*},
                                   novideo => q{-novideo},
                                  },
                       vlc => {
@@ -315,10 +315,12 @@ sub set_mplayer_arguments {
     my ($cache, $cache_min) = @_;
     $MPLAYER{fullscreen} = $opt{fullscreen} ? $opt{video_players}{$opt{video_player_selected}}{fs}      // '' : q{};
     $MPLAYER{novideo}    = $opt{novideo}    ? $opt{video_players}{$opt{video_player_selected}}{novideo} // '' : q{};
-    $MPLAYER{mplayer_arguments} =
-      exists($opt{video_players}{$opt{video_player_selected}}{arg})
-      ? sprintf($opt{video_players}{$opt{video_player_selected}}{arg}, $cache, $cache_min)
-      : '';
+    $MPLAYER{mplayer_arguments} = $opt{video_players}{$opt{video_player_selected}}{arg} // q{};
+
+    # Set the cache parameters (if any)
+    $MPLAYER{mplayer_arguments} =~ s/\*CACHE\*/$cache/g;
+    $MPLAYER{mplayer_arguments} =~ s/\*CACHE-MIN\*/$cache_min/g;
+
     return 1;
 }
 
@@ -3306,14 +3308,14 @@ sub get_player_command {
             (    # Audio file (http://)
                ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
                  && exists($opt{video_players}{$opt{video_player_selected}}{audio})
-               ? sprintf($opt{video_players}{$opt{video_player_selected}}{audio}, $streaming->{streaming}{__AUDIO__}{url})
+               ? $opt{video_players}{$opt{video_player_selected}}{audio}
                : ()
             ),
 
             (    # Caption file (.srt)
                defined($streaming->{srt_file})
                  && exists($opt{video_players}{$opt{video_player_selected}}{srt})
-               ? sprintf($opt{video_players}{$opt{video_player_selected}}{srt}, $streaming->{srt_file})
+               ? $opt{video_players}{$opt{video_player_selected}}{srt}
                : ()
             ),
 

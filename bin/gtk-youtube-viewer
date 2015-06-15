@@ -141,7 +141,7 @@ my %CONFIG = (
                                   srt   => q{-sub *SUB*},
                                   audio => q{-audiofile *AUDIO*},
                                   fs    => q{-fs},
-                                  arg   => q{-prefer-ipv4 -really-quiet -cache %d -cache-min %d -title *TITLE*},
+                                  arg   => q{-prefer-ipv4 -really-quiet -cache *CACHE* -cache-min *CACHE-MIN* -title *TITLE*},
                                  },
                       vlc => {
                               cmd   => q{vlc},
@@ -237,8 +237,14 @@ my %MPLAYER;
 # MPlayer variable arguments
 sub set_mplayer_arguments {
     my ($cache, $cache_min) = @_;
-    $MPLAYER{mplayer_arguments} = sprintf($CONFIG{video_players}{$CONFIG{video_player_selected}}{arg}, $cache, $cache_min);
+
     $MPLAYER{fullscreen} = $CONFIG{fullscreen} ? $CONFIG{video_players}{$CONFIG{video_player_selected}}{fs} : q{};
+    $MPLAYER{mplayer_arguments} = $CONFIG{video_players}{$CONFIG{video_player_selected}}{arg} // q{};
+
+    # Set the cache parameters (if any)
+    $MPLAYER{mplayer_arguments} =~ s/\*CACHE\*/$cache/g;
+    $MPLAYER{mplayer_arguments} =~ s/\*CACHE-MIN\*/$cache_min/g;
+
     return 1;
 }
 
@@ -2077,17 +2083,14 @@ sub get_player_command {
             (    # Audio file (http://)
                ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
                  && exists($CONFIG{video_players}{$CONFIG{video_player_selected}}{audio})
-               ? sprintf(
-                         $CONFIG{video_players}{$CONFIG{video_player_selected}}{audio},
-                         $streaming->{streaming}{__AUDIO__}{url}
-                        )
+               ? $CONFIG{video_players}{$CONFIG{video_player_selected}}{audio}
                : ()
             ),
 
             (    # Caption file (.srt)
                defined($streaming->{srt_file})
                  && exists($CONFIG{video_players}{$CONFIG{video_player_selected}}{srt})
-               ? sprintf($CONFIG{video_players}{$CONFIG{video_player_selected}}{srt}, $streaming->{srt_file})
+               ? $CONFIG{video_players}{$CONFIG{video_player_selected}}{srt}
                : ()
             ),
 
