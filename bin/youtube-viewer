@@ -649,8 +649,7 @@ usage: $execname [options] ([url] | [keywords])
                           valid values are: short, medium, long
    --caption=s          : only videos with/without closed captions
                           valid values are: true, false
-   --category=s         : search only for videos in a specific category
-                          this option can also be used with `--tops`
+   --category=i         : search only for videos in a specific category ID
    --safe-search=s      : YouTube will skip restricted videos for your location
                           valid values are: none, moderate, strict
    --order=s            : order the results using a specific sorting method
@@ -900,12 +899,12 @@ sub examples {
     print <<"EXAMPLES";
 ==== COMMAND LINE EXAMPLES ====
 
-Command: $execname -A -n -4 russian music -category=Music
+Command: $execname -A -n -4 russian music -category=10
 Results: play all the video results (-A)
          only audio, no video (-n)
          quality 480p (-4)
          search for "russian music"
-         in the "Music" category.
+         in the "10" category, which is the Music category.
          -A will include the videos from the next pages as well.
 
 Command: $execname -comments=http://www.youtube.com/watch?v=U6_8oIPFREY
@@ -926,7 +925,7 @@ Command: $execname --page=2 -u=Google
 Results: show latest videos uploaded by Google,
          starting with the page number 2.
 
-Command: $execname --category=Music --tops
+Command: $execname --category=10 --tops
 Results: show today tops for Music category.
 
 Command: $execname --tops=all --region=JP
@@ -1066,8 +1065,7 @@ sub apply_configuration {
                              videoSyndicated channelId
                              publishedAfter publishedBefore
                              safeSearch regionCode
-                             videoCategoryId debug
-                             http_proxy hl page
+                             debug http_proxy hl page
                              )
       ) {
 
@@ -1378,7 +1376,7 @@ sub parse_arguments {
         'http_proxy=s'           => \$opt{http_proxy},
 
         'catlang|cl|hl=s'          => \$opt{hl},
-        'category|cat=s'           => \$opt{category},
+        'category|cat-id|cat=i'    => \$opt{videoCategoryId},
         'cats-region|cat-region=s' => \$opt{cats_region},
         'r|region|region-code=s'   => \$opt{regionCode},
 
