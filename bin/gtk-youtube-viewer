@@ -208,7 +208,6 @@ my %CONFIG = (
 
     # Others
     http_proxy      => undef,
-    page            => 1,
     debug           => 0,
     fullscreen      => 0,
     use_lower_cache => 0,
@@ -692,6 +691,9 @@ $duration_combobox->set_active(0);
 $caption_combobox->set_active(0);
 $order_combobox->set_active(0);
 
+# Spin button start with page
+$spin_start_with_page->set_value(1);
+
 # Set config file to $CONFIG hash ref
 sub apply_configuration {
 
@@ -718,7 +720,7 @@ sub apply_configuration {
                              videoEmbeddable videoLicense
                              publishedAfter publishedBefore
                              regionCode videoCategoryId
-                             page debug http_proxy
+                             debug http_proxy
                              )
       ) {
 
@@ -735,9 +737,6 @@ sub apply_configuration {
 
     # Spin button results setting config value
     $spin_results->set_value($CONFIG{maxResults});
-
-    # Spin button start with page
-    $spin_start_with_page->set_value($CONFIG{page});
 
     # Checking thumbs button
     $thumbs_checkbutton->set_active($CONFIG{show_thumbs});
@@ -1295,7 +1294,7 @@ sub spin_results_per_page_changed {
 }
 
 sub spin_start_with_page_changed {
-    $yv_obj->set_page($CONFIG{page} = $spin_start_with_page->get_value);
+    $yv_obj->set_page($spin_start_with_page->get_value);
 }
 
 sub toggled_clear_search_list {
