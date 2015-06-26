@@ -343,7 +343,8 @@ Get thumbnail URL.
 
 sub get_thumbnail_url {
     my ($self, $info, $type) = @_;
-    $info->{snippet}{thumbnails}{$type}{url} // $info->{snippet}{thumbnails}{default}{url};
+    $info->{snippet}{thumbnails}{$type}{url} // $info->{snippet}{thumbnails}{default}{url}
+      // $info->{snippet}{thumbnails}{medium}{url} // $info->{snippet}{thumbnails}{high}{url};
 }
 
 sub get_channel_title {
@@ -351,9 +352,14 @@ sub get_channel_title {
     $info->{snippet}{channelTitle} || $self->get_channel_id($info);
 }
 
+sub get_id {
+    my ($self, $info) = @_;
+    $info->{id};
+}
+
 sub get_channel_id {
     my ($self, $info) = @_;
-    $info->{snippet}{channelId};
+    $info->{snippet}{resourceId}{channelId} // $info->{snippet}{channelId};
 }
 
 sub get_publication_date {
@@ -404,8 +410,9 @@ sub get_comments {
 {
     no strict 'refs';
     foreach my $pair ([playlist => {'youtube#playlist' => 1}],
-                      [channel => {'youtube#channel' => 1}],
-                      [video   => {'youtube#video'   => 1, 'youtube#playlistItem' => 1}],
+                      [channel      => {'youtube#channel'      => 1}],
+                      [video        => {'youtube#video'        => 1, 'youtube#playlistItem' => 1}],
+                      [subscription => {'youtube#subscription' => 1}],
       ) {
 
         *{__PACKAGE__ . '::' . 'is_' . $pair->[0]} = sub {

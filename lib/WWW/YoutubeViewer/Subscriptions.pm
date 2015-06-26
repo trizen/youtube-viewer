@@ -42,16 +42,36 @@ sub subscribe_channel {
     ...    # NEEDS WORK!!!
 }
 
-=head2 subscriptions_mine(%args)
+=head2 subscriptions(;$channel_id)
 
-Retrieve the subscriptions for the authenticated user.
+Retrieve the subscriptions for a channel ID or for the authenticated user.
 
 =cut
 
-sub subscriptions_mine {
-    my ($self, %args) = @_;
+sub subscriptions {
+    my ($self, $channel_id) = @_;
     $self->get_access_token() // return;
-    return $self->_get_results($self->_make_subscriptions_url(mine => 'true', %args));
+    return
+      $self->_get_results(
+                          $self->_make_subscriptions_url(
+                                                         order => 'relevance',
+                                                         defined($channel_id)
+                                                         ? (channelId => $channel_id)
+                                                         : (mine => 'true'),
+                                                         , part => 'snippet'
+                                                        )
+                         );
+}
+
+=head2 subscriptions_from_username($username)
+
+Retrieve subscriptions for a given YouTube username.
+
+=cut
+
+sub subscriptions_from_username {
+    my ($self, $username) = @_;
+    $self->subscriptions($self->channel_id_from_username($username) // $username);
 }
 
 =head2 subscription_videos(;$channel_id)
@@ -64,7 +84,6 @@ sub subscription_videos {
     my ($self, $channel_id) = @_;
 
     my $url = $self->_make_subscriptions_url(
-                                             maxResults => 2,
                                              order      => 'unread',
                                              maxResults => 50,
                                              part       => 'snippet,contentDetails',

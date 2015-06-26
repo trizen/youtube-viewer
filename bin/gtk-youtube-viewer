@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 12 June 2015
+#  Latest edit on: 26 June 2015
 #  Website: http://trizen.googlecode.com
 #-------------------------------------------------------
 
@@ -189,16 +189,12 @@ my %CONFIG = (
     hl              => 'en_US',
     cats_region     => 'us',
 
-    search_for_videos    => 1,
-    search_for_channels  => 0,
-    search_for_playlists => 0,
-
     # URI options
-    thumbnail_type      => 'medium',
-    thumb_url           => 'http://i1.ytimg.com/vi/%s/%s.jpg',
-    youtube_video_url   => 'http://www.youtube.com/watch?v=%s',
-    playlists_url       => 'http://www.youtube.com/playlist?list=%s',
-    youtube_profile_url => 'http://www.youtube.com/user/%s',
+    thumbnail_type       => 'medium',
+    youtube_thumb_url    => 'https://i1.ytimg.com/vi/%s/%s.jpg',
+    youtube_video_url    => 'https://www.youtube.com/watch?v=%s',
+    youtube_playlist_url => 'https://www.youtube.com/playlist?list=%s',
+    youtube_channel_url  => 'https://www.youtube.com/channel/%s',
 
     # Subtitle options
     srt_languages => ['en', 'es'],
@@ -216,8 +212,6 @@ my %CONFIG = (
     use_threads_for_thumbs => 0,    # this is unstable
 
     hpaned_position        => 420,
-    search_channels        => 0,
-    search_playlists       => 0,
     thousand_separator     => q{,},
     downloads_dir          => curdir(),
     web_browser            => undef,                 # defaults to $ENV{WEBBROWSER} or xdg-open
@@ -271,10 +265,8 @@ if (not -e $config_file or -z _) {
     dump_configuration();
 }
 
-# SIG handlers
-foreach my $sig (qw(HUP TERM INT KILL)) {
-    $SIG{$sig} = \&on_mainw_destroy;
-}
+local $SIG{TERM} = \&on_mainw_destroy;
+local $SIG{INT}  = \&on_mainw_destroy;
 
 # Locating the .glade interface file and icons dir
 my $glade_file = catfile($share_dir, "$execname.glade");
@@ -694,6 +686,9 @@ $order_combobox->set_active(0);
 # Spin button start with page
 $spin_start_with_page->set_value(1);
 
+# Set search for videos
+$search_for_videos_checkbox->set_active(1);
+
 # Set config file to $CONFIG hash ref
 sub apply_configuration {
 
@@ -703,9 +698,6 @@ sub apply_configuration {
     # DASH mode
     $dash_checkbutton->set_active($CONFIG{dash_support});
 
-    $search_for_channels_checkbox->set_active($CONFIG{search_for_channels});
-    $search_for_playlists_checkbox->set_active($CONFIG{search_for_playlists});
-    $search_for_videos_checkbox->set_active($CONFIG{search_for_videos});
     $clear_search_list_checkbox->set_active($CONFIG{clear_search_list});
     $panel_account_type_combobox->set_active($CONFIG{active_panel_account_combobox});
     $channel_type_combobox->set_active($CONFIG{active_channel_type_combobox});
@@ -1148,11 +1140,12 @@ sub hide_login_to_youtube_window {
 
 # Details window
 sub show_details_window {
-    my ($code, $iter) = get_selected_video_code() or return;
+    my ($code, $iter) = get_selected_entry_code();
+    $code // return;
 
     #return unless $code =~ /$valid_video_id_re/;
     $details_window->show;
-    set_video_details($code, $iter);
+    set_entry_details($code, $iter);
     return 1;
 }
 
@@ -1162,7 +1155,7 @@ sub hide_details_window {
 }
 
 sub set_comments {
-    my $videoID = get_selected_video_code() or return;
+    my $videoID = get_selected_entry_code() // return;
 
     return unless $videoID =~ /$valid_video_id_re/;
 
@@ -1172,7 +1165,7 @@ sub set_comments {
 
 # Feeds window
 sub show_feeds_window {
-    my $videoID = get_selected_video_code() or return;
+    my $videoID = get_selected_entry_code() // return;
 
     return unless $videoID =~ /$valid_video_id_re/;
 
@@ -1225,7 +1218,8 @@ sub save_configuration {
 }
 
 sub delete_selected_row {
-    my (undef, $iter) = get_selected_video_code() or return;
+    my (undef, $iter) = get_selected_entry_code();
+    $iter // return;
     $liststore->remove($iter);
     return 1;
 }
@@ -1309,18 +1303,6 @@ sub toggled_mplayer_fullscreen {
 # DASH mode
 sub toggled_dash_support {
     $CONFIG{dash_support} = $dash_checkbutton->get_active() || 0;
-}
-
-sub toggled_search_for_channels {
-    $CONFIG{search_for_channels} = $search_for_channels_checkbox->get_active() || 0;
-}
-
-sub toggled_search_for_playlists {
-    $CONFIG{search_for_playlists} = $search_for_playlists_checkbox->get_active() || 0;
-}
-
-sub toggled_search_for_videos {
-    $CONFIG{search_for_videos} = $search_for_videos_checkbox->get_active() || 0;
 }
 
 # Check buttons toggles
@@ -1503,7 +1485,7 @@ sub change_subscription_page {
 sub subscriptions_button {
     my $type     = $panel_account_type_combobox->get_active_text;
     my $username = $panel_user_entry->get_text;
-    subscription_videos($type, $username);
+    subscriptions($type, $username);
 }
 
 sub favorites_button {
@@ -1532,7 +1514,7 @@ sub dislikes_button {
 
 {
     no strict 'refs';
-    foreach my $name (qw(favorites uploads likes dislikes playlists subscription_videos)) {
+    foreach my $name (qw(favorites uploads likes dislikes playlists subscriptions)) {
         *{__PACKAGE__ . '::' . $name} = sub {
             my ($type, $channel) = @_;
 
@@ -1548,7 +1530,11 @@ sub dislikes_button {
                 $method = 'my_dislikes';
             }
 
-            my $request = $yv_obj->$method($type =~ /^(?:user|channel)/i && $channel =~ /^\S+\z/ ? $channel : ());
+            my $request = $yv_obj->$method(
+                                             $type =~ /^(?:user|channel)/i && $channel =~ /^\S+\z/
+                                           ? $channel
+                                           : ()
+                                          );
 
             if ($yv_utils->has_entries($request)) {
                 $liststore->clear if $CONFIG{clear_search_list};
@@ -1563,9 +1549,9 @@ sub dislikes_button {
     }
 }
 
-sub get_selected_video_code {
+sub get_selected_entry_code {
     my (%options) = @_;
-    my $iter = $treeview->get_selection->get_selected or return;
+    my $iter = $treeview->get_selection->get_selected // return;
     if (not $options{force}) {
         return unless defined $liststore->get($iter, 4);
     }
@@ -1670,14 +1656,14 @@ sub get_next_page_spaces {
 }
 
 sub get_code {
-    my ($code, $iter) = get_selected_video_code(force => 1) or return;
+    my ($code, $iter) = get_selected_entry_code(force => 1);
+    $code // return;
 
-    my $data = $liststore->get($iter, 7);
-    my $entry = $data =~ /^\{/ ? $yv_obj->parse_json_string($data) : $data;
+    my $type = $liststore->get($iter, 7);
 
-        $entry eq 'playlist' ? list_playlist($code)
-      : $entry eq 'channel' ? uploads('channel', $code)
-      : $entry eq 'next_page' && $code ne '' ? do {
+    $type eq 'playlist' ? list_playlist($code)
+      : ($type eq 'channel' || $type eq 'subscription') ? uploads('channel', $code)
+      : $type eq 'next_page' && $code ne '' ? do {
 
         my $next_page_token = $liststore->get($iter, 5);
         my $results = $yv_obj->next_page($code, $next_page_token);
@@ -1693,8 +1679,8 @@ sub get_code {
 
         display_results($results);
       }
-      : (ref($entry) eq 'HASH' && $yv_utils->is_video($entry)) ? play_video($entry)
-      :                                                          return;
+      : $type eq 'video' ? play_video($yv_obj->parse_json_string($liststore->get($iter, 8)))
+      :                    return;
 }
 
 sub _make_row_description {
@@ -1714,6 +1700,25 @@ sub _append_next_page {
     $liststore->set($iter, 7, 'next_page');
 }
 
+#
+## Copy from: http://cpansearch.perl.org/src/SREZIC/Image-Info-1.38/lib/Image/Info.pm
+#
+sub determine_image_format {
+    local ($_) = @_;
+    return "JPEG" if /^\xFF\xD8/;
+    return "PNG"  if /^\x89PNG\x0d\x0a\x1a\x0a/;
+    return "GIF"  if /^GIF8[79]a/;
+    return "TIFF" if /^MM\x00\x2a/;
+    return "TIFF" if /^II\x2a\x00/;
+    return "BMP"  if /^BM/;
+    return "ICO"  if /^\000\000\001\000/;
+    return "PPM"  if /^P[1-6]/;
+    return "XPM"  if /(^\/\* XPM \*\/)|(static\s+char\s+\*\w+\[\]\s*=\s*{\s*"\d+)/;
+    return "XBM"  if /^(?:\/\*.*\*\/\n)?#define\s/;
+    return "SVG"  if /^(<\?xml|[\012\015\t ]*<svg\b)/;
+    return undef;
+}
+
 sub _get_pixbuf_thumbnail {
     my ($url) = @_;
 
@@ -1723,8 +1728,17 @@ sub _get_pixbuf_thumbnail {
       : $yv_obj->lwp_get($url);
 
     my $pixbuf;
-    if ($thumbnail) {
-        my $pixbufloader = 'Gtk2::Gdk::PixbufLoader'->new;
+    if (defined $thumbnail) {
+        my $type = determine_image_format($thumbnail);
+
+        my $pixbufloader;
+        if (defined($type)) {
+            $pixbufloader = eval { 'Gtk2::Gdk::PixbufLoader'->new_with_type(lc($type)) };
+        }
+        if (not defined $pixbufloader) {
+            $pixbufloader = 'Gtk2::Gdk::PixbufLoader'->new;
+        }
+
         $pixbufloader->set_size(120, 90);
         $pixbufloader->write($thumbnail);
         $pixbuf = $pixbufloader->get_pixbuf;
@@ -1773,6 +1787,9 @@ sub display_results {
         elsif ($yv_utils->is_channel($item)) {
             add_channel_entry($item);
         }
+        elsif ($yv_utils->is_subscription($item)) {
+            add_subscription_entry($item);
+        }
         elsif ($yv_utils->is_video($item)) {
             @{$item}{qw(contentDetails statistics)} = @{$video_details->[$pos{$i}]}{qw(contentDetails statistics)};
             add_video_entry($item);
@@ -1780,6 +1797,39 @@ sub display_results {
     }
 
     _append_next_page($url, $info->{nextPageToken});
+}
+
+sub add_subscription_entry {
+    my ($subscription) = @_;
+
+    my $iter            = $liststore->append;
+    my $row_description = $yv_utils->get_description($subscription);
+
+    $liststore->set($iter, 4, $row_description);
+    $liststore->set($iter, 7, 'subscription');
+    $row_description = _make_row_description($row_description);
+
+    $liststore->set($iter, 3, $yv_utils->get_channel_id($subscription));
+    $liststore->set(
+                    $iter,
+                    0,
+                    '<big><b>'
+                      . encode_entities($yv_utils->get_title($subscription))
+                      . "</b></big>\n\n"
+                      . "<b>$symbols{face}\t</b> "
+                      . encode_entities($yv_utils->get_channel_id($subscription)) . "\n"
+                      . "<b>$symbols{crazy_arrow}\t</b> "
+                      . $yv_utils->get_publication_date($subscription)
+                      . "\n\n<i>"
+                      . encode_entities($row_description) . '</i>'
+                   );
+
+    $liststore->set($iter, 2, "<b>$symbols{category}</b>  " . 'Subscription' . "\n");
+
+    if ($CONFIG{show_thumbs}) {
+        my $pixbuf = _get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($subscription, $CONFIG{thumbnail_type}));
+        $liststore->set_value($iter, 1, $pixbuf);
+    }
 }
 
 sub add_video_entry {
@@ -1790,7 +1840,8 @@ sub add_video_entry {
     my $row_description = $yv_utils->get_description($video);
     $liststore->set($iter, 4, $row_description);
     $liststore->set($iter, 6, $yv_utils->get_channel_id($video));
-    $liststore->set($iter, 7, $yv_obj->make_json_string($video));
+    $liststore->set($iter, 7, 'video');
+    $liststore->set($iter, 8, $yv_obj->make_json_string($video));
     $row_description = _make_row_description($row_description);
 
     $liststore->set($iter, 3, $yv_utils->get_video_id($video));
@@ -1850,6 +1901,8 @@ sub add_channel_entry {
                       . "</b></big>\n\n"
                       . "<b>$symbols{face}\t</b> "
                       . encode_entities($yv_utils->get_channel_title($channel)) . "\n"
+                      . "<b>$symbols{play}\t</b> "
+                      . encode_entities($yv_utils->get_channel_id($channel)) . "\n"
                       . "<b>$symbols{crazy_arrow}\t</b> "
                       . $yv_utils->get_publication_date($channel)
                       . "\n\n<i>"
@@ -1884,6 +1937,8 @@ sub add_playlist_entry {
                       . "</b></big>\n\n"
                       . "<b>$symbols{face}\t</b> "
                       . encode_entities($yv_utils->get_channel_title($playlist)) . "\n"
+                      . "<b>$symbols{play}\t</b> "
+                      . encode_entities($yv_utils->get_playlist_id($playlist)) . "\n"
                       . "<b>$symbols{crazy_arrow}\t</b> "
                       . $yv_utils->format_date($yv_utils->get_publication_date($playlist)) . "\n\n" . '<i>'
                       . encode_entities($row_description) . '</i>'
@@ -1957,7 +2012,7 @@ sub likes_from_text_entry {
 
 sub subscriptions_from_text_entry {
     my ($text_entry) = @_;
-    subscription_videos($channel_type_combobox->get_active_text, $text_entry->get_text);
+    subscriptions($channel_type_combobox->get_active_text, $text_entry->get_text);
 }
 
 # Get videos from username
@@ -2228,29 +2283,39 @@ sub execute_external_program {
 }
 
 sub _make_youtube_url {
+    my ($code, $type) = @_;
 
-    my $format =
-        $CONFIG{search_playlists} ? $CONFIG{playlists_url}
-      : $CONFIG{search_channels}  ? $CONFIG{youtube_profile_url}
-      :                             $CONFIG{youtube_video_url};
+    my $format = (
+                    ($type eq 'subscription' || $type eq 'channel') ? $CONFIG{youtube_channel_url}
+                  : $type eq 'video'    ? $CONFIG{youtube_video_url}
+                  : $type eq 'playlist' ? $CONFIG{youtube_playlist_url}
+                  :                       ()
+                 );
 
-    my $value = $_[0] =~ /^username=(.+)/ ? $1 : shift;
+    if (defined $format) {
+        return sprintf($format, $code);
+    }
 
-    return sprintf($format, $value);
+    return "https://www.youtube.com";
 }
 
 sub open_youtube_url {
-    my $url = _make_youtube_url(get_selected_video_code() or return);
-    my $code = execute_external_program(join(q{ }, $CONFIG{web_browser} // $ENV{WEBBROWSER} // 'xdg-open', quotemeta($url)));
+    my ($code, $iter) = get_selected_entry_code();
+    $code // return;
 
-    warn "Can't open YouTube URL - exit code: $code\n" if $code != 0;
+    my $type = $liststore->get($iter, 7);
+    my $url = _make_youtube_url($code, $type);
+
+    my $exit_code =
+      execute_external_program(join(q{ }, $CONFIG{web_browser} // $ENV{WEBBROWSER} // 'xdg-open', quotemeta($url)));
+    warn "Can't open YouTube URL - exit code: $exit_code\n" if $exit_code != 0;
     return 1;
 }
 
 my @queue_codes;
 
 sub queue_playback {
-    my $code = get_selected_video_code() or return;
+    my $code = get_selected_entry_code() // return;
     print "[*] Added: <$code>\n" if $yv_obj->get_debug;
     push @queue_codes, $code;
     return 1;
@@ -2279,7 +2344,7 @@ sub play_all_video_results {
 }
 
 sub play_selected_video_with_cli_youtube_viewer {
-    my $code = get_selected_video_code() or return;
+    my $code = get_selected_entry_code() // return;
     execute_cli_youtube_viewer("--video-id=$code");
     return 1;
 }
@@ -2304,8 +2369,15 @@ sub execute_cli_youtube_viewer {
 }
 
 sub download_video {
-    my $code = get_selected_video_code() or return;
-    die "Unable to download a playlist!\n" if $CONFIG{search_playlists};
+    my ($code, $iter) = get_selected_entry_code();
+    $code // return;
+
+    my $type = $liststore->get($iter, 7);
+    if ($type ne 'video') {
+        warn "Can't download resource: $type\n";
+        return;
+    }
+
     execute_cli_youtube_viewer("--video-id=$code", '--download');
     return 1;
 }
@@ -2339,7 +2411,7 @@ sub get_channel_id_for_selected_video {
 }
 
 sub show_related_videos {
-    my $code = get_selected_video_code() or return;
+    my $code = get_selected_entry_code() // return;
 
     my $results = $yv_obj->related_to_videoID($code);
     if ($yv_utils->has_entries($results)) {
@@ -2352,7 +2424,7 @@ sub show_related_videos {
 }
 
 sub favorite_video {
-    my $code = get_selected_video_code() or return;
+    my $code = get_selected_entry_code() // return;
 
     $feeds_statusbar->push(
                            0, $yv_obj->favorite_video($code)
@@ -2371,7 +2443,7 @@ sub subscribe_channel {
 }
 
 sub like_selected_video {
-    my $code = get_selected_video_code() or return;
+    my $code = get_selected_entry_code() // return;
     $feeds_statusbar->push(
                            0, $yv_obj->send_rating_to_video($code, 'like')
                            ? 'Video liked.'
@@ -2380,7 +2452,7 @@ sub like_selected_video {
 }
 
 sub dislike_selected_video {
-    my $code = get_selected_video_code() or return;
+    my $code = get_selected_entry_code() // return;
     $feeds_statusbar->push(
                            0, $yv_obj->send_rating_to_video($code, 'dislike')
                            ? 'Video disliked.'
@@ -2389,7 +2461,7 @@ sub dislike_selected_video {
 }
 
 sub send_comment_to_video {
-    my $videoID = get_selected_video_code() or return;
+    my $videoID = get_selected_entry_code() // return;
     my $comment = get_text($gui->get_object('comment_textview'));
 
     $feeds_statusbar->push(0,
@@ -2440,9 +2512,10 @@ sub show_playlists_from_username {
     return 1;
 }
 
-# Setting details to details_window
-sub set_video_details {
+sub set_entry_details {
     my ($code, $iter) = @_;
+
+    my $type         = $liststore->get($iter, 7);
     my $main_details = $liststore->get($iter, 0);
 
     # Setting title
@@ -2452,24 +2525,29 @@ sub set_video_details {
     # Setting video details
     $main_details =~ s/^\s+//;
     $main_details =~ s{\s*<i>.+</i>\s*}{\n};
+    $main_details =~ s{\h+}{ }g;
+    $main_details =~ s{^<b>.*?</b>\K\h*}{\t}gm;
 
     my $secondary_details = $liststore->get($iter, 2);
+    $secondary_details =~ s{\h+}{ }g;
+    $secondary_details =~ s{^<b>.*?</b>\K\h*}{\t}gm;
+
     $gui->get_object('video_details_label')->set_label($main_details . $secondary_details);
 
     # Setting the link button
-    my $url        = _make_youtube_url($code);
+    my $url = _make_youtube_url($code, $type);
     my $linkbutton = $gui->get_object('linkbutton1');
     $linkbutton->set_label($url);
     $linkbutton->set_uri($url);
 
     # Getting thumbs
     foreach my $nr (qw(1 2 3)) {
-        if ($CONFIG{search_playlists} or $CONFIG{search_channels}) {
-            $gui->get_object("image$nr")->set_from_pixbuf($default_thumb);
+        if ($code =~ /$valid_video_id_re/) {
+            my $pixbuf = _get_pixbuf_thumbnail(sprintf($CONFIG{youtube_thumb_url}, $code, $nr));
+            $gui->get_object("image$nr")->set_from_pixbuf($pixbuf);
         }
         else {
-            my $pixbuf = _get_pixbuf_thumbnail(sprintf($CONFIG{thumb_url}, $code, $nr));
-            $gui->get_object("image$nr")->set_from_pixbuf($pixbuf);
+            $gui->get_object("image$nr")->set_from_pixbuf($default_thumb);
         }
     }
 

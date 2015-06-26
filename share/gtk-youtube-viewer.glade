@@ -557,6 +557,8 @@
       <column type="gchararray"/>
       <!-- column-name result_type -->
       <column type="gchararray"/>
+      <!-- column-name json_data -->
+      <column type="gchararray"/>
     </columns>
   </object>
   <object class="GtkListStore" id="liststore11">
@@ -1132,7 +1134,6 @@
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">False</property>
                                                     <property name="draw_indicator">True</property>
-                                                    <signal name="toggled" handler="toggled_search_for_channels" swapped="no"/>
                                                   </object>
                                                   <packing>
                                                     <property name="expand">True</property>
@@ -1147,7 +1148,6 @@
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">False</property>
                                                     <property name="draw_indicator">True</property>
-                                                    <signal name="toggled" handler="toggled_search_for_playlists" swapped="no"/>
                                                   </object>
                                                   <packing>
                                                     <property name="expand">True</property>
@@ -1162,7 +1162,6 @@
                                                     <property name="can_focus">True</property>
                                                     <property name="receives_default">False</property>
                                                     <property name="draw_indicator">True</property>
-                                                    <signal name="toggled" handler="toggled_search_for_videos" swapped="no"/>
                                                   </object>
                                                   <packing>
                                                     <property name="expand">True</property>
