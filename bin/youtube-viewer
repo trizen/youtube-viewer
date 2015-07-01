@@ -1469,6 +1469,8 @@ sub parse_arguments {
 
 # Parse the arguments
 if (@ARGV) {
+    require Encode;
+    @ARGV = map { Encode::decode_utf8($_) } @ARGV;
     parse_arguments(\@ARGV);
 }
 
