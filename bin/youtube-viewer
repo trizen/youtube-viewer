@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 11 June 2015
+#  Latest edit on: 01 July 2015
 #  Websites: http://trizen.googlecode.com
 #            https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
@@ -100,6 +100,7 @@
 # - NTmatter (for adding reverse range support - https://github.com/trizen/youtube-viewer/pull/2)
 # - Andrew (for a nice review of (gtk-)youtube-viewer: http://www.webupd8.org/2015/02/youtube-viewer-complete-youtube-client.html)
 # - AnyComputer (for a complete french review of gtk-youtube-viewer: https://www.youtube.com/watch?v=6-qbdDUlBqg)
+# - Jookia (for fixing the proxy system and improving the support for encrypted videos - https://github.com/Jookia)
 
 =head1 NAME
 
@@ -145,7 +146,7 @@ use File::Spec::Functions qw(
 binmode(STDOUT, ':utf8');
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.1.8';
+my $version  = '3.1.9';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
@@ -668,12 +669,12 @@ usage: $execname [options] ([url] | [keywords])
    --logout             : will delete the authentication key
 
  * [GET] Personal
-   -F --favorites:s     : show the latest favorited videos *
-   -R --recommended     : show the recommended videos for you *
-   -S --subscriptions:s : show the new subscription videos *
-   -w --watched         : show the latest watched videos on YouTube *
-   -L --likes           : show the videos that you liked on YouTube *
-      --dislikes        : show the videos that you disliked on YouTube *
+   -F  --favorites:s     : show the latest favorited videos *
+   -R  --recommended     : show the recommended videos for you *
+   -S  --subscriptions:s : show the subscribed channels *
+   -SV --subs-videos:s   : show the subscription videos *
+   -L  --likes           : show the videos that you liked on YouTube *
+       --dislikes        : show the videos that you disliked on YouTube *
 
 * [POST] Personal
    --subscribe=s        : subscribe to a channel *
@@ -1089,10 +1090,6 @@ sub apply_configuration {
         $yv_obj->set_channelId($yv_obj->channel_id_from_username($username) // $username);
     }
 
-    if (defined $opt->{channel_id}) {
-        $yv_obj->set_channelId(delete $opt->{channel_id});
-    }
-
     if (defined $opt->{within}) {
         my $value = delete $opt->{within};
 
@@ -1245,6 +1242,11 @@ sub apply_configuration {
         }
     }
 
+    if (defined $opt->{subscriptions}) {
+        my $username = delete $opt->{subscriptions};
+        print_channels($username ? $yv_obj->subscriptions_from_username($username) : $yv_obj->subscriptions);
+    }
+
     if (defined $opt->{subscription_videos}) {
         my $username = delete $opt->{subscription_videos};
         print_videos($username ? $yv_obj->subscription_videos_from_username($username) : $yv_obj->subscription_videos);
@@ -1354,10 +1356,10 @@ sub parse_arguments {
         'season-clips|season_clips|clips=s'          => \$opt{season_clips},
         'channels|search-channels|search_channels:s' => \$opt{search_channels},
 
-        'subscriptions|S:s'                 => \$opt{subscription_videos},
+        'subscriptions|S:s'                 => \$opt{subscriptions},
+        'subs-videos|SV:s'                  => \$opt{subscription_videos},
         'favorites|fv|favorited-videos|F:s' => \$opt{favorites},
         'recommended|recommendations|R:s'   => \$opt{recommendations},
-        'watch_history|watched|w:s'         => \$opt{watch_history},
         'likes|L:s'                         => \$opt{likes},
         'dislikes'                          => \$opt{dislikes},
         'subscribe=s'                       => \$opt{subscribe_channel},
@@ -1390,7 +1392,7 @@ sub parse_arguments {
         'like=s'                     => \$opt{like_video},
         'dislike=s'                  => \$opt{dislike_video},
         'author=s'                   => \$opt{author},
-        'channel-id=s'               => \$opt{channel_id},
+        'channel-id=s'               => \$opt{channelId},
         'all|A|play-all!'            => \$opt{play_all},
         'backwards|B!'               => \$opt{play_backwards},
         'input|std-input=s'          => \$opt{std_input},
@@ -2314,6 +2316,26 @@ sub print_channels {
                              text  => [$yv_utils->get_description($channel) || 'No description available...']
                             ),
                   );
+        }
+        elsif ($opt{results_fixed_width}) {
+
+            state $x = require List::Util;
+
+            my @authors = map { $yv_utils->get_channel_title($_) } @{$channels};
+            my @dates   = map { $yv_utils->get_publication_date($_) } @{$channels};
+
+            my $author_width = List::Util::max(map { length($_) } @authors);
+            my $dates_width  = List::Util::max(map { length($_) } @dates);
+            my $title_length = $term_width - ($author_width + $dates_width + 2 + 3 + 1 + 2);
+
+            print "\n";
+            foreach my $i (0 .. $#{$channels}) {
+                my $playlist = $channels->[$i];
+                printf "%s. %s %*s [%*s]\n", colored(sprintf('%2d', $i + 1), 'bold'),
+                  chop_title($yv_utils->get_title($playlist), $title_length),
+                  $author_width, $authors[$i], $dates_width, $dates[$i];
+            }
+            last;
         }
         else {
             print "\n" if $i == 0;

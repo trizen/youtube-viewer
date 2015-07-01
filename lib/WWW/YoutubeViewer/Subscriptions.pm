@@ -84,7 +84,7 @@ sub subscription_videos {
     my ($self, $channel_id) = @_;
 
     my $url = $self->_make_subscriptions_url(
-                                             order      => 'unread',
+                                             order      => 'relevance',
                                              maxResults => 50,
                                              part       => 'snippet,contentDetails',
                                              defined($channel_id)
