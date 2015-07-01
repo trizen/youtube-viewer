@@ -1706,12 +1706,15 @@ sub get_user_input {
 
     return q{:next} if $input eq q{};    # <ENTER> for the next page
 
+    state $x = require Encode;
+    $input = Encode::decode_utf8($input);
+
     my ($args, $keywords) = parse_options($input);
+
     if ($opt{history} && @{$keywords}) {
         my $str = join(' ', grep { /\w/ and not /^[:;=]/ } @{$keywords});
         if (not exists($opt{history_hash}{lc($str)}) and $str ne '' and $str !~ /^[0-9]{1,2}\z/ and $str !~ /^https?:/) {
-            state $x = require Encode;
-            say {$opt{history_fh}} Encode::decode_utf8($str);
+            say {$opt{history_fh}} $str;
             undef $opt{history_hash}{lc($str)};
         }
     }

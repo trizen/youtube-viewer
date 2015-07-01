@@ -194,10 +194,7 @@ sub escape_string {
     state $x = require URI::Escape;
 
     $self->get_escape_utf8
-      ? do {
-        state $x = require Encode;
-        URI::Escape::uri_escape_utf8(Encode::decode_utf8($string));
-      }
+      ? URI::Escape::uri_escape_utf8($string)
       : URI::Escape::uri_escape($string);
 }
 
