@@ -2330,9 +2330,9 @@ sub print_channels {
 
             print "\n";
             foreach my $i (0 .. $#{$channels}) {
-                my $playlist = $channels->[$i];
+                my $channel = $channels->[$i];
                 printf "%s. %s %*s [%*s]\n", colored(sprintf('%2d', $i + 1), 'bold'),
-                  chop_title($yv_utils->get_title($playlist), $title_length),
+                  chop_title($yv_utils->get_title($channel), $title_length),
                   $author_width, $authors[$i], $dates_width, $dates[$i];
             }
             last;
