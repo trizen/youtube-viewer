@@ -136,13 +136,6 @@ my %CONFIG = (
     active_channel_type_combobox  => 0,
 
     video_players => {
-                      mplayer => {
-                                  cmd   => q{mplayer},
-                                  srt   => q{-sub *SUB*},
-                                  audio => q{-audiofile *AUDIO*},
-                                  fs    => q{-fs},
-                                  arg   => q{-prefer-ipv4 -really-quiet -cache *CACHE* -cache-min *CACHE-MIN* -title *TITLE*},
-                                 },
                       vlc => {
                               cmd   => q{vlc},
                               srt   => q{--sub-file *SUB*},
@@ -159,12 +152,6 @@ my %CONFIG = (
                              },
                      },
     video_player_selected => undef,    # autodetect it later
-
-    # MPlayer options
-    cache           => 30000,
-    cache_min       => 5,
-    lower_cache     => 1000,
-    lower_cache_min => 3,
 
     # GUI options
     clean_text_entries_on_click => 1,
@@ -203,10 +190,9 @@ my %CONFIG = (
     cache_dir     => undef, # will be defined later
 
     # Others
-    http_proxy      => undef,
-    debug           => 0,
-    fullscreen      => 0,
-    use_lower_cache => 0,
+    http_proxy => undef,
+    debug      => 0,
+    fullscreen => 0,
 
     use_threads            => 0,
     use_threads_for_thumbs => 0,    # this is unstable
@@ -224,22 +210,6 @@ my %CONFIG = (
     history_file           => $history_file,
     entry_completion_limit => 10,
 );
-
-my %MPLAYER;
-
-# MPlayer variable arguments
-sub set_mplayer_arguments {
-    my ($cache, $cache_min) = @_;
-
-    $MPLAYER{fullscreen} = $CONFIG{fullscreen} ? $CONFIG{video_players}{$CONFIG{video_player_selected}}{fs} : q{};
-    $MPLAYER{mplayer_arguments} = $CONFIG{video_players}{$CONFIG{video_player_selected}}{arg} // q{};
-
-    # Set the cache parameters (if any)
-    $MPLAYER{mplayer_arguments} =~ s/\*CACHE\*/$cache/g;
-    $MPLAYER{mplayer_arguments} =~ s/\*CACHE-MIN\*/$cache_min/g;
-
-    return 1;
-}
 
 {
     my $config_documentation = <<"EOD";
@@ -2095,28 +2065,6 @@ sub get_streaming_url {
            };
 }
 
-sub update_mplayer_arguments {
-    my ($resolution) = @_;
-
-    if (
-        $CONFIG{use_lower_cache}
-        or not $resolution ~~ [
-            qw(
-              original
-              2160
-              1440
-              1080
-              720
-              )
-        ]
-      ) {
-        set_mplayer_arguments($CONFIG{lower_cache}, $CONFIG{lower_cache_min});
-    }
-    else {
-        set_mplayer_arguments($CONFIG{cache}, $CONFIG{cache_min});
-    }
-}
-
 sub get_quotewords {
     state $x = require Text::ParseWords;
     return Text::ParseWords::quotewords(@_);
@@ -2126,7 +2074,9 @@ sub get_quotewords {
 sub get_player_command {
     my ($streaming, $video) = @_;
 
-    update_mplayer_arguments($streaming->{resolution});
+    my %MPLAYER;
+    $MPLAYER{fullscreen} = $CONFIG{fullscreen} ? $CONFIG{video_players}{$CONFIG{video_player_selected}}{fs} : q{};
+    $MPLAYER{mplayer_arguments} = $CONFIG{video_players}{$CONFIG{video_player_selected}}{arg} // q{};
 
     my $cmd = join(
         q{ },

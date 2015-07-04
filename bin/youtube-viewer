@@ -56,7 +56,6 @@
 # - Added support to search for videos uploaded by a particular YouTube user (-author=USER)    - (v2.5.4)
 # - Added support to get video results starting with a predefined page (e.g.: -page=4)         - (v2.5.4)
 # - Added support for previous page and support to list youtube usernames from a file          - (v2.5.2)
-# - Added few options to control cache of MPlayer and lower cache for lower video resolutions  - (v2.5.1)
 # - Added colors for text (--use_colors), 360p support (-3), playlist support                  - (v2.5.0)
 # - Added support for today and all time Youtube tops (usage: -t, --tops, -a, --all-time)      - (v2.4.*)
 # - Re-added the support for the next page / Added support for download (-d, --download)       - (v2.4.*)
@@ -206,21 +205,7 @@ use WWW::YoutubeViewer::RegularExpressions;
 # Main configuration
 my %CONFIG = (
 
-    # MPlayer options
-    cache           => 30000,
-    cache_min       => 5,
-    lower_cache     => 1000,
-    lower_cache_min => 3,
-
     video_players => {
-                      mplayer => {
-                                  cmd   => get_mplayer(),
-                                  srt   => q{-sub *SUB*},
-                                  audio => q{-audiofile *AUDIO*},
-                                  fs    => q{-fs},
-                                  arg   => q{-prefer-ipv4 -really-quiet -cache *CACHE* -cache-min *CACHE-MIN* -title *TITLE*},
-                                  novideo => q{-novideo},
-                                 },
                       vlc => {
                               cmd     => q{vlc},
                               srt     => q{--sub-file *SUB*},
@@ -284,7 +269,6 @@ my %CONFIG = (
     clobber              => 0,
     skip_if_exists       => 0,
     fullscreen           => 0,
-    use_lower_cache      => 0,
     results_with_details => 0,
     results_with_colors  => 0,
     results_fixed_width  => 0,
@@ -309,21 +293,7 @@ my %CONFIG = (
 
 local $SIG{__WARN__} = sub { warn @_; ++$opt{_error} };
 
-my %MPLAYER;
-
-# MPlayer variable arguments
-sub set_mplayer_arguments {
-    my ($cache, $cache_min) = @_;
-    $MPLAYER{fullscreen} = $opt{fullscreen} ? $opt{video_players}{$opt{video_player_selected}}{fs}      // '' : q{};
-    $MPLAYER{novideo}    = $opt{novideo}    ? $opt{video_players}{$opt{video_player_selected}}{novideo} // '' : q{};
-    $MPLAYER{mplayer_arguments} = $opt{video_players}{$opt{video_player_selected}}{arg} // q{};
-
-    # Set the cache parameters (if any)
-    $MPLAYER{mplayer_arguments} =~ s/\*CACHE\*/$cache/g;
-    $MPLAYER{mplayer_arguments} =~ s/\*CACHE-MIN\*/$cache_min/g;
-
-    return 1;
-}
+my %MPLAYER;    # will store video player arguments
 
 my $base_options = <<'BASE';
 # Base
@@ -684,14 +654,6 @@ usage: $execname [options] ([url] | [keywords])
 
 == Player Options ==
 
- * Cache
-   --cache=i       : set the cache for MPlayer (set: $opt{cache})
-   --cache-min=i   : set the cache-min for MPlayer (set: $opt{cache_min})
-   --lcache=i      : set the lower-cache for MPlayer (set: $opt{lower_cache})
-   --lcache-min=i  : set the lower-cache-min for MPlayer (set: $opt{lower_cache_min})
-   --nocache       : don't use any cache for MPlayer (for fast connections)
-   --use-lc        : always use lower cache for MPlayer (for slow connections)
-
  * Arguments
    -f  --fullscreen!  : set the fullscreen mode for the selected video player
    -n  --novideo!     : play the music only without a video in the foreground
@@ -804,9 +766,6 @@ sub tricks {
  > To stream the videos in other players, you need to change the
    configuration file. Where it says "video_player_selected", change it
    to any player which is defined inside the "video_players" hash.
-
- > lower_cache and lower_cache_min values are used when -l (--use-lower-cache)
-   is specified as argument, or if the resolution of a video is lower than 720p.
 
 -> Arguments
  > Almost all boolean arguments can be negated with a "--no-" prefix.
@@ -1414,16 +1373,10 @@ sub parse_arguments {
         'escape-info!'              => \$opt{escape_info},
 
         # MPlayer
-        'player|vplayer|video-player|video_player=s'  => \$opt{video_player_selected},
-        'nocache!'                                    => \$opt{nocache},
-        'cache=i'                                     => \$opt{cache},
-        'cache-min|cache_min=i'                       => \$opt{cache_min},
-        'lcache|lower-cache|lower_cache=i'            => \$opt{lower_cache},
-        'lcache-minlower-cache-min|lower_cache_min=i' => \$opt{lower_cache_min},
-        'use-lower-cache|l|use_lower_cache|use-lc!'   => \$opt{use_lower_cache},
-        'append-mplayer|append-arg|arg=s'             => \$MPLAYER{user_defined_arguments},
-        'vo=s'                                        => sub { $MPLAYER{video_output} = "-vo $_[1]" },
-        'af=s'                                        => sub { $MPLAYER{audio_filter} = "-af $_[1]" },
+        'player|vplayer|video-player|video_player=s' => \$opt{video_player_selected},
+        'append-mplayer|append-arg|arg=s'            => \$MPLAYER{user_defined_arguments},
+        'vo=s'                                       => sub { $MPLAYER{video_output} = "-vo $_[1]" },
+        'af=s'                                       => sub { $MPLAYER{audio_filter} = "-af $_[1]" },
 
         # Others
         'colorful|C!'       => \$opt{results_with_colors},
@@ -3164,28 +3117,6 @@ sub get_streaming_url {
            };
 }
 
-sub update_mplayer_arguments {
-    my ($resolution) = @_;
-
-    if (
-        $opt{use_lower_cache}
-        or not $resolution ~~ [
-            qw(
-              original
-              2160
-              1440
-              1080
-              720
-              )
-        ]
-      ) {
-        set_mplayer_arguments($opt{nocache} ? (32, 0) : ($opt{lower_cache}, $opt{lower_cache_min}));
-    }
-    else {
-        set_mplayer_arguments($opt{nocache} ? (32, 0) : ($opt{cache}, $opt{cache_min}));
-    }
-}
-
 sub download_video {
     my ($streaming, $info) = @_;
 
@@ -3320,7 +3251,9 @@ sub download_video {
 sub get_player_command {
     my ($streaming, $video) = @_;
 
-    update_mplayer_arguments($streaming->{resolution});
+    $MPLAYER{fullscreen} = $opt{fullscreen} ? $opt{video_players}{$opt{video_player_selected}}{fs}      // '' : q{};
+    $MPLAYER{novideo}    = $opt{novideo}    ? $opt{video_players}{$opt{video_player_selected}}{novideo} // '' : q{};
+    $MPLAYER{mplayer_arguments} = $opt{video_players}{$opt{video_player_selected}}{arg} // q{};
 
     my $cmd = join(
         q{ },
