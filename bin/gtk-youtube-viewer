@@ -18,8 +18,8 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 26 June 2015
-#  Website: http://trizen.googlecode.com
+#  Latest edit on: 05 August 2015
+#  Website: http://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
 use utf8;
@@ -2295,7 +2295,17 @@ sub play_all_video_results {
 
 sub play_selected_video_with_cli_youtube_viewer {
     my $code = get_selected_entry_code() // return;
-    execute_cli_youtube_viewer("--video-id=$code");
+
+    if ($code =~ /$valid_video_id_re/) {
+        execute_cli_youtube_viewer("--video-id=$code");
+    }
+    elsif ($code =~ /$valid_playlist_id_re/) {
+        execute_cli_youtube_viewer("--pp=$code");
+    }
+    else {
+        warn "Can't play: $code\n";
+    }
+
     return 1;
 }
 
