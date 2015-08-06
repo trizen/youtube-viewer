@@ -18,9 +18,8 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 01 July 2015
-#  Websites: http://trizen.googlecode.com
-#            https://github.com/trizen/youtube-viewer
+#  Latest edit on: 06 August 2015
+#  Website: https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
 # youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
@@ -628,6 +627,7 @@ usage: $execname [options] ([url] | [keywords])
    --within=s           : show only videos uploaded within the specified time
                           valid values are: Nd, Nm, Ny, where N is a number
    --hd!                : search only for videos available in at least 720p
+   --vd=s               : set the video definition (any, high or standard)
    --page=i             : get results starting with a specific page
    --results=i          : how many results to display per page (max: 50)
    -2  -3  -4  -7  -1   : resolutions: 240p, 360p, 480p, 720p and 1080p
@@ -1041,7 +1041,7 @@ sub apply_configuration {
     }
 
     if (defined $opt->{hd}) {
-        $yv_obj->videoDefinition(delete($opt->{videoDefinition}) ? 'high' : 'any');
+        $yv_obj->set_videoDefinition(delete($opt->{hd}) ? 'high' : 'any');
     }
 
     if (defined $opt->{author}) {
