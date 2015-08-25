@@ -54,6 +54,8 @@ or:
     * http://blog.johnkrauss.com/installing-youtube-viewer/
 * [EN] Gtk Youtube Viewer
     * http://puppylinux.org/wikka/GtkYoutubeViewer
+* [ES] Este es el mejor cliente de YouTube para Linux
+    * http://rootear.com/ubuntu-linux/cliente-youtube-linux
 * [ES] YouTube Viewer: busca, reproduce y descarga vídeos de YouTube desde el escritorio
     * http://www.linuxadictos.com/youtube-viewer-busca-reproduce-y-descarga-videos-de-youtube-desde-el-escritorio.html
 * [GR] YOUTUBE VIEWER: ΤΟ YOUTUBE ΚΥΡΙΟΛΕΚΤΙΚΑ ΣΤΟ DESKTOP ΣΑΣ
