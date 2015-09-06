@@ -2119,7 +2119,8 @@ sub play_video {
     }
 
     if (ref($streaming->{streaming}) ne 'HASH') {
-        next;
+        warn "Can't play this video: no streaming data has been found!\n";
+        return;
     }
 
     my $command = get_player_command($streaming, $video);
