@@ -16,7 +16,7 @@ name: WWW-YoutubeViewer
 provides:
   WWW::YoutubeViewer:
     file: lib/WWW/YoutubeViewer.pm
-    version: '0.05'
+    version: '0.06'
   WWW::YoutubeViewer::Activities:
     file: lib/WWW/YoutubeViewer/Activities.pm
     version: '0.01'
@@ -25,6 +25,9 @@ provides:
     version: '0.01'
   WWW::YoutubeViewer::Channels:
     file: lib/WWW/YoutubeViewer/Channels.pm
+    version: '0.01'
+  WWW::YoutubeViewer::CommentThreads:
+    file: lib/WWW/YoutubeViewer/CommentThreads.pm
     version: '0.01'
   WWW::YoutubeViewer::GetCaption:
     file: lib/WWW/YoutubeViewer/GetCaption.pm
@@ -92,5 +95,5 @@ requires:
   URI::Escape: '0'
 resources:
   license: http://dev.perl.org/licenses/
-version: '0.05'
+version: '0.06'
 x_serialization_backend: 'CPAN::Meta::YAML version 0.016'

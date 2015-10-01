@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 05 August 2015
+#  Latest edit on: 01 October 2015
 #  Website: http://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -129,11 +129,12 @@ my %symbols = (
 my %CONFIG = (
 
     # Combobox values
-    active_resolution_combobox    => 0,
-    active_safeSearch_combobox    => 1,
-    active_more_options_expander  => 0,
-    active_panel_account_combobox => 0,
-    active_channel_type_combobox  => 0,
+    active_resolution_combobox          => 0,
+    active_safeSearch_combobox          => 1,
+    active_more_options_expander        => 0,
+    active_panel_account_combobox       => 0,
+    active_channel_type_combobox        => 0,
+    active_subscriptions_order_combobox => 0,
 
     video_players => {
                       vlc => {
@@ -290,6 +291,7 @@ my %objects = (
     'comboboxtext4'          => \my $definition_combobox,
     'comboboxtext5'          => \my $safesearch_combobox,
     'comboboxtext1'          => \my $published_within_combobox,
+    'comboboxtext13'         => \my $subscriptions_order_combobox,
     'panel_user_entry'       => \my $panel_user_entry,
     'comboboxtext6'          => \my $panel_account_type_combobox,
     'comboboxtext2'          => \my $order_combobox,
@@ -671,6 +673,7 @@ sub apply_configuration {
     $clear_search_list_checkbox->set_active($CONFIG{clear_search_list});
     $panel_account_type_combobox->set_active($CONFIG{active_panel_account_combobox});
     $channel_type_combobox->set_active($CONFIG{active_channel_type_combobox});
+    $subscriptions_order_combobox->set_active($CONFIG{active_subscriptions_order_combobox});
 
     $published_within_combobox->set_active(0);
 
@@ -1130,7 +1133,7 @@ sub set_comments {
     return unless $videoID =~ /$valid_video_id_re/;
 
     $feeds_liststore->clear;
-    print_comments($yv_obj->get_video_comments($videoID));
+    display_comments($yv_obj->comments_from_video_id($videoID));
 }
 
 # Feeds window
@@ -1142,8 +1145,7 @@ sub show_feeds_window {
     $feeds_window->show;
     $feeds_statusbar->pop(0);
 
-    ## NEEDS WORK!!!
-    #print_comments($yv_obj->get_video_comments($videoID));
+    display_comments($yv_obj->comments_from_video_id($videoID));
 
     return 1;
 }
@@ -1218,6 +1220,11 @@ sub combobox_duration_changed {
 sub combobox_caption_changed {
     my $text = $caption_combobox->get_active_text;
     $yv_obj->set_videoCaption($text);
+}
+
+sub combobox_subscriptions_order_changed {
+    $CONFIG{active_subscriptions_order_combobox} = $subscriptions_order_combobox->get_active;
+    $yv_obj->set_subscriptions_order($subscriptions_order_combobox->get_active_text);
 }
 
 sub combobox_panel_account_changed {
@@ -2351,7 +2358,7 @@ sub comments_row_activated {
         $feeds_liststore->remove($iter);
         my $results = $yv_obj->next_page($value, comments => 1);
         if ($yv_utils->has_entries($results)) {
-            print_comments($results);
+            display_comments($results);
         }
         else {
             die "This is the last page of comments.\n";
@@ -2395,12 +2402,11 @@ sub favorite_video {
 }
 
 sub subscribe_channel {
-    my $user = get_channel_id_for_selected_video();
-    $feeds_statusbar->push(
-                           0, $yv_obj->subscribe_channel($user)
-                           ? "Successfully subscribed to channel: $user."
-                           : 'Error!'
-                          );
+    my $channel_id = get_channel_id_for_selected_video();
+    $feeds_statusbar->push(0,
+                           $yv_obj->subscribe_channel($channel_id)
+                           ? "Successfully subscribed to channel: $channel_id."
+                           : 'Error!');
 }
 
 sub like_selected_video {
@@ -2426,34 +2432,41 @@ sub send_comment_to_video {
     my $comment = get_text($gui->get_object('comment_textview'));
 
     $feeds_statusbar->push(0,
-                           length($comment) && $yv_obj->send_comment_to_video($videoID, $comment)
+                           length($comment) && $yv_obj->comment_to_video_id($comment, $videoID)
                            ? 'Video comment has been posted!'
                            : 'Error!');
 }
 
-sub print_comments {
-    my ($results, %options) = @_;
+sub display_comments {
+    my ($results) = @_;
 
     my $url      = $results->{url};
-    my $comments = $results->{results};
+    my $res      = $results->{results} // {};
+    my $comments = $res->{items} // [];
 
-    my $i = 0;
     foreach my $comment (@{$comments}) {
+        my $snippet = (($comment->{snippet} // next)->{topLevelComment} // next)->{snippet};
 
         my $iter = $feeds_liststore->append;
         $feeds_liststore->set(
                               $iter,
                               0,
-                              "<big><b>$comment->{name}</b> ("
-                                . $yv_utils->format_date($comment->{published})
+                              "<big><b>"
+                                . encode_entities($snippet->{authorDisplayName})
+                                . "</b> ("
+                                . $yv_utils->format_date($snippet->{publishedAt})
                                 . ") said:</big>\n\t"
-                                . encode_entities($comment->{content})
+                                . encode_entities($snippet->{textDisplay} // 'Empty comment...')
                              );
     }
 
-    my $iter = $feeds_liststore->append;
-    $feeds_liststore->set($iter, 0, "\n<big><b>=&gt;&gt; NEXT PAGE</b></big>\n");
-    $feeds_liststore->set($iter, 1, $url);
+    #
+    ## This needs work!!!
+    #
+    #my $iter = $feeds_liststore->append;
+    #$feeds_liststore->set($iter, 0, "\n<big><b>=&gt;&gt; NEXT PAGE</b></big>\n");
+    #$feeds_liststore->set($iter, 1, $url);
+
     return 1;
 }
 

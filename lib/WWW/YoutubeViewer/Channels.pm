@@ -28,7 +28,7 @@ our $VERSION = '0.01';
 
 sub _make_channels_url {
     my ($self, %opts) = @_;
-    return $self->_make_feed_url('channels', %opts,);
+    return $self->_make_feed_url('channels', %opts);
 }
 
 =head2 channels_from_categoryID($category_id)
@@ -92,6 +92,17 @@ For all functions, C<$channels->{results}{items}> contains:
             return $self->_get_results($self->_make_channels_url(id => $id, part => $part));
         };
     }
+}
+
+=head2 my_channel()
+
+Returns info about the channel of the current authenticated user.
+
+=cut
+
+sub my_channel {
+    my ($self) = @_;
+    return $self->_get_results($self->_make_channels_url(part => 'snippet', mine => 'true'));
 }
 
 =head2 channels_my_subscribers()

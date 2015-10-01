@@ -6,6 +6,7 @@ lib/WWW/YoutubeViewer.pm
 lib/WWW/YoutubeViewer/Activities.pm
 lib/WWW/YoutubeViewer/Authentication.pm
 lib/WWW/YoutubeViewer/Channels.pm
+lib/WWW/YoutubeViewer/CommentThreads.pm
 lib/WWW/YoutubeViewer/GetCaption.pm
 lib/WWW/YoutubeViewer/GuideCategories.pm
 lib/WWW/YoutubeViewer/Itags.pm

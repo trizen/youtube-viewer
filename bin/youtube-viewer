@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 06 August 2015
+#  Latest edit on: 01 October 2015
 #  Website: https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -246,6 +246,8 @@ my %CONFIG = (
     publishedBefore => undef,
     publishedAfter  => undef,
     order           => undef,
+
+    subscriptions_order => 'relevance',
 
     hl          => 'en_US',
     cats_region => 'us',
@@ -643,11 +645,14 @@ usage: $execname [options] ([url] | [keywords])
    -R  --recommended     : show the recommended videos for you *
    -S  --subscriptions:s : show the subscribed channels *
    -SV --subs-videos:s   : show the subscription videos *
+       --subs-order=s    : change the subscription order
+                           valid values: alphabetical, relevance, unread
    -L  --likes           : show the videos that you liked on YouTube *
        --dislikes        : show the videos that you disliked on YouTube *
 
 * [POST] Personal
    --subscribe=s        : subscribe to a channel *
+   --user-subscribe=s   : subscribe to a channel via username *
    --favorite=s         : favorite a YouTube video by URL or ID *
    --like=s             : send a 'like' rating to a video URL or ID *
    --dislike=s          : send a 'dislike' rating to a video URL or ID *
@@ -1024,8 +1029,8 @@ sub apply_configuration {
                              videoEmbeddable videoLicense
                              videoSyndicated channelId
                              publishedAfter publishedBefore
-                             safeSearch regionCode
-                             debug http_proxy hl page
+                             safeSearch regionCode debug hl
+                             http_proxy page subscriptions_order
                              )
       ) {
 
@@ -1094,6 +1099,10 @@ sub apply_configuration {
     # ... SUBROUTINE CALLS ... #
     if (defined $opt->{subscribe_channel}) {
         subscribe_to_channels(split(/[,\s]+/, delete $opt->{subscribe_channel}));
+    }
+
+    if (defined $opt->{subscribe_username}) {
+        subscribe_to_usernames(split(/[,\s]+/, delete $opt->{subscribe_username}));
     }
 
     if (defined $opt->{favorite_video}) {
@@ -1317,11 +1326,13 @@ sub parse_arguments {
 
         'subscriptions|S:s'                 => \$opt{subscriptions},
         'subs-videos|SV:s'                  => \$opt{subscription_videos},
+        'subs-order=s'                      => \$opt{subscriptions_order},
         'favorites|fv|favorited-videos|F:s' => \$opt{favorites},
         'recommended|recommendations|R:s'   => \$opt{recommendations},
         'likes|L:s'                         => \$opt{likes},
         'dislikes'                          => \$opt{dislikes},
         'subscribe=s'                       => \$opt{subscribe_channel},
+        'user-subscribe=s'                  => \$opt{subscribe_username},
         'favorite|favorite-video|fav=s'     => \$opt{favorite_video},
         'channel-suggestions'               => \$opt{channel_suggestions},
         'cv|channel|channel-videos=s'       => \$opt{channel_id_videos},
@@ -1867,7 +1878,7 @@ sub get_and_print_related_videos {
 sub get_and_print_comments {
     foreach my $id (@_) {
         my $videoID = get_valid_video_id($id) // next;
-        my $comments = $yv_obj->get_video_comments($videoID);
+        my $comments = $yv_obj->comments_from_video_id($videoID);
         print_comments($comments, $videoID);
     }
     return 1;
@@ -1976,12 +1987,14 @@ sub get_and_print_videos_from_playlist {
     return 1;
 }
 
-sub subscribe_to_channels {
+sub subscribe_to {
+    my ($is_channel, @ids) = @_;
+
     return if not authenticated();
 
-    foreach my $channel (@_) {
+    foreach my $channel (@ids) {
         if ($channel =~ /$valid_username_re/) {
-            if ($yv_obj->subscribe_channel($channel)) {
+            if ($is_channel ? $yv_obj->subscribe_channel($channel) : $yv_obj->subscribe_channel_from_username($channel)) {
                 print "** Successfully subscribed to channel: $channel\n";
             }
             else {
@@ -1990,6 +2003,14 @@ sub subscribe_to_channels {
         }
     }
     return 1;
+}
+
+sub subscribe_to_channels {
+    subscribe_to(1, @_);
+}
+
+sub subscribe_to_usernames {
+    subscribe_to(0, @_);
 }
 
 sub _bold_color {
@@ -2538,25 +2559,26 @@ sub print_shows {
 sub print_comments {
     my ($results, $videoID) = @_;
 
-    ...;    # NEEDS WORK!!!
-
-    if (not @{$results->{results}}) {
-        warn colored("\n[!] No comments found...", 'bold red') . "\n";
+    if (not $yv_utils->has_entries($results)) {
+        warn_no_results("comments");
     }
 
     my $url      = $results->{url};
-    my $comments = $results->{results};
+    my $res      = $results->{results} // {};
+    my $comments = $res->{items} // [];
 
     my $i = 0;
     foreach my $comment (@{$comments}) {
+        my $snippet = (($comment->{snippet} // next)->{topLevelComment} // next)->{snippet};
+
         printf(
                "\n%s on %s said:\n%s\n",
-               colored($comment->{name}, 'bold'),
-               $yv_utils->format_date($comment->{published}),
+               colored($snippet->{authorDisplayName}, 'bold'),
+               $yv_utils->format_date($snippet->{publishedAt}),
                wrap_text(
                          i_tab => q{ } x 4,
                          s_tab => q{ } x 4,
-                         text  => [$comment->{content} // 'Empty comment...']
+                         text  => [$snippet->{textDisplay} // 'Empty comment...']
                         ),
               );
     }
@@ -2593,7 +2615,7 @@ sub print_comments {
                             my $comment = do { local (@ARGV, $/) = $filename; <> };
                             $comment =~ s/[^\s[:^cntrl:]]+//g;    # remove control characters
 
-                            if (length($comment) and $yv_obj->send_comment_to_video($videoID, $comment)) {
+                            if (length($comment) and $yv_obj->comment_to_video_id($comment, $videoID)) {
                                 print "\n** Comment posted!\n";
                             }
                             else {

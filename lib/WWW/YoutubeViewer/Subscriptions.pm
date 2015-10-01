@@ -28,18 +28,40 @@ our $VERSION = '0.01';
 
 sub _make_subscriptions_url {
     my ($self, %opts) = @_;
-    return $self->_make_feed_url('subscriptions', %opts,);
+    return $self->_make_feed_url('subscriptions', %opts);
 }
 
-=head2 subscribe_channel($username)
+=head2 subscribe_channel($channel_id)
 
-Subscribe to an user's channel.
+Subscribe to an YouTube channel.
 
 =cut
 
 sub subscribe_channel {
-    my ($self, $user) = @_;
-    ...    # NEEDS WORK!!!
+    my ($self, $channel_id) = @_;
+
+    my $resource = {
+                    snippet => {
+                                resourceId => {
+                                               kind      => 'youtube#channel',
+                                               channelId => $channel_id,
+                                              }
+                               }
+                   };
+
+    my $url = $self->_simple_feeds_url('subscriptions', part => 'snippet');
+    return $self->post_as_json($url, $resource);
+}
+
+=head2 subscribe_channel_from_username($username)
+
+Subscribe to an YouTube channel via username.
+
+=cut
+
+sub subscribe_channel_from_username {
+    my ($self, $username) = @_;
+    $self->subscribe_channel($self->channel_id_from_username($username));
 }
 
 =head2 subscriptions(;$channel_id)
@@ -54,7 +76,7 @@ sub subscriptions {
     return
       $self->_get_results(
                           $self->_make_subscriptions_url(
-                                                         order => 'relevance',
+                                                         order => $self->get_subscriptions_order,
                                                          defined($channel_id)
                                                          ? (channelId => $channel_id)
                                                          : (mine => 'true'),
@@ -81,10 +103,10 @@ Retrieve the video subscriptions for a channel ID or for the current authenticat
 =cut
 
 sub subscription_videos {
-    my ($self, $channel_id) = @_;
+    my ($self, $channel_id, $order) = @_;
 
     my $url = $self->_make_subscriptions_url(
-                                             order      => 'relevance',
+                                             order      => $self->get_subscriptions_order,
                                              maxResults => 50,
                                              part       => 'snippet,contentDetails',
                                              defined($channel_id)

@@ -14,6 +14,7 @@ use parent qw(
   WWW::YoutubeViewer::ParseJSON
   WWW::YoutubeViewer::Subscriptions
   WWW::YoutubeViewer::PlaylistItems
+  WWW::YoutubeViewer::CommentThreads
   WWW::YoutubeViewer::Authentication
   WWW::YoutubeViewer::VideoCategories
   );
@@ -24,11 +25,11 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =head1 VERSION
 
-Version 0.05
+Version 0.06
 
 =cut
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 =head1 SYNOPSIS
 
@@ -72,6 +73,8 @@ my %valid_options = (
     relevanceLanguage => {valid => [qr/^[a-z](?:\-\w+)?\z/i],  default => undef},
     safeSearch        => {valid => [qw(none moderate strict)], default => undef},
     videoType         => {valid => [qw(any episode movie)],    default => undef},
+
+    subscriptions_order => {valid => [qw(alphabetical relevance unread)], default => undef},
 
     # Others
     debug       => {valid => [0 .. 2],     default => 0},
@@ -301,11 +304,11 @@ Get and return the content for $url.
 =cut
 
 sub lwp_get {
-    my ($self, $url) = @_;
+    my ($self, $url, $simple) = @_;
 
     $self->{lwp} // $self->set_lwp_useragent();
 
-    my %lwp_header = $self->_get_lwp_header();
+    my %lwp_header = ($simple ? () : $self->_get_lwp_header);
     my $response = $self->{lwp}->get($url, %lwp_header);
 
     if ($response->is_success) {
@@ -402,12 +405,12 @@ sub lwp_mirror {
 }
 
 sub _get_results {
-    my ($self, $url) = @_;
+    my ($self, $url, $simple) = @_;
 
     return
       scalar {
               url     => $url,
-              results => $self->parse_json_string($self->lwp_get($url)),
+              results => $self->parse_json_string($self->lwp_get($url, $simple)),
              };
 }
 
@@ -431,7 +434,7 @@ sub _append_url_args {
 
 sub _simple_feeds_url {
     my ($self, $suburl, %args) = @_;
-    $self->get_feeds_url() . $suburl . '?' . $self->list_to_url_arguments(%args, key => $self->get_key);
+    $self->get_feeds_url() . $suburl . '?' . $self->list_to_url_arguments(key => $self->get_key, %args);
 }
 
 =head2 default_arguments(%args)
@@ -644,7 +647,7 @@ sub _request {
     my $res = $self->{lwp}->request($req);
 
     if ($res->is_success) {
-        return $res->content();
+        return $res->decoded_content;
     }
     else {
         warn 'Request error: ' . $res->status_line();
@@ -681,30 +684,6 @@ sub post_as_json {
     my ($self, $url, $ref) = @_;
     my $json_str = $self->make_json_string($ref);
     $self->_save('POST', $url, $json_str);
-}
-
-=head2 send_comment_to_video($videoID, $comment)
-
-Send comment to a video. Returns true on success.
-
-=cut
-
-sub send_comment_to_video {
-    my ($self, $code, $comment) = @_;
-
-    ...    # NEEDS WORK!!!
-}
-
-=head2 get_video_comments($videoID)
-
-Returns a list of comments for a videoID.
-
-=cut
-
-sub get_video_comments {
-    my ($self, $video_id) = @_;
-
-    ...    # NEEDS WORK!!!
 }
 
 # SOUBROUTINE FACTORY
