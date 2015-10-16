@@ -43,6 +43,7 @@ use File::Spec::Functions qw(
   updir
   path
   tmpdir
+  file_name_is_absolute
   );
 
 binmode(STDOUT, ':utf8');
@@ -102,6 +103,11 @@ foreach my $dir ($config_dir) {
 
 sub which_command {
     my ($cmd) = @_;
+
+    if (file_name_is_absolute($cmd)) {
+        return $cmd;
+    }
+
     state $paths = [path()];
     foreach my $path (@{$paths}) {
         if (-e (my $cmd_path = catfile($path, $cmd))) {
@@ -151,6 +157,12 @@ my %CONFIG = (
                               fs    => q{--fullscreen},
                               arg   => q{--really-quiet --title *TITLE*},
                              },
+                      smplayer => {
+                                   cmd => "smplayer",
+                                   fs  => "-fullscreen",
+                                   srt => "-sub *SUB*",
+                                   arg => "-close-at-end -media-title *TITLE* *URL*",
+                                  },
                      },
     video_player_selected => undef,    # autodetect it later
 

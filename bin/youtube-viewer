@@ -139,6 +139,7 @@ use File::Spec::Functions qw(
   path
   rel2abs
   tmpdir
+  file_name_is_absolute
   );
 
 binmode(STDOUT, ':utf8');
@@ -189,6 +190,11 @@ if (not -d $config_dir) {
 
 sub which_command {
     my ($cmd) = @_;
+
+    if (file_name_is_absolute($cmd)) {
+        return $cmd;
+    }
+
     state $paths = [path()];
     foreach my $path (@{$paths}) {
         if (-e (my $cmd_path = catfile($path, $cmd))) {
