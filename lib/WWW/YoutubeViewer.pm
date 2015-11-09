@@ -390,7 +390,6 @@ sub lwp_mirror {
     my ($self, $url, $name) = @_;
 
     $self->{lwp} // $self->set_lwp_useragent();
-    my %lwp_header = $self->_get_lwp_header();
 
     my $response = $self->{lwp}->mirror($url, $name);
 
