@@ -1683,7 +1683,7 @@ sub _append_next_page {
     $token // return;    # no next page is available
 
     my $iter = $liststore->append;
-    $liststore->set($iter, 0, get_next_page_spaces() . "<big><b>NEXT PAGE</b></big>");
+    $liststore->set($iter, 0, get_next_page_spaces() . "<big><b>LOAD MORE</b></big>");
     $liststore->set($iter, 3, $url);
     $liststore->set($iter, 5, $token);
     $liststore->set($iter, 7, 'next_page');
