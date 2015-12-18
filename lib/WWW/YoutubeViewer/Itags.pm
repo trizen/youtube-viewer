@@ -47,23 +47,27 @@ Reference: http://en.wikipedia.org/wiki/YouTube#Quality_and_formats
 =cut
 
 sub get_itags {
+#<<
     scalar {
-
         'original' => [
-            38,    # mp4 (3072p) (v-a)
+            38,      # mp4 (3072p) (v-a)
             [138,    # mp4 (2160p-4320p) (v)
              266,    # mp4 (2160p-2304p) (v)
             ],
         ],
 
         '2160' => [
-            [272,    # webm (v)
+            [
+             315,    # webm HFR (v)
+             272,    # webm (v)
              313,    # mp4 (v)
             ],
         ],
 
         '1440' => [
-            [271,    # webm (v)
+            [
+             308,    # webm HFR (v)
+             271,    # webm (v)
              264,    # mp4 (v)
             ],
         ],
@@ -78,7 +82,7 @@ sub get_itags {
              137,    # mp4 (v)
             ],
             96,      # ts (live) (v-a)
-                  ],
+        ],
 
         '720' => [
             [302,    # webm HFR (v)
@@ -92,7 +96,7 @@ sub get_itags {
 
             120,     # flv (live) (v-a)
             95,      # ts (live) (v-a)
-                 ],
+        ],
 
         '480' => [
             44,      # webm (v-a)
@@ -101,7 +105,7 @@ sub get_itags {
              135,    # mp4 (v)
             ],
             94,      # ts (live) (v-a)
-                 ],
+        ],
 
         '360' => [
             43,      # webm (v-a)
@@ -110,6 +114,7 @@ sub get_itags {
             [243,    # webm (v)
              134,    # mp4 (v)
             ],
+            93,      # ts (live) (v-a)
         ],
 
         '240' => [
@@ -120,6 +125,8 @@ sub get_itags {
             [242,    # webm (v)
              133,    # mp4 (v)
             ],
+            92,      # ts (live) (v-a)
+            132,     # ts (live) (v-a)
         ],
 
         '144' => [
@@ -127,15 +134,20 @@ sub get_itags {
             [278,    # webm (v)
              160,    # mp4 (v)
             ],
+            151,     # ts (live) (v-a)
         ],
 
         'audio' => [172,     # webm (192 kbps)
                     171,     # webm (128 kbps)
                     140,     # m4a (128 kbps)
                     141,     # m4a (256 kbps)
+                    251,     # webm (160 kbps)
+                    250,     # webm (64 kbps)
+                    249,     # webm (48 kbps)
                     139,     # m4a (48 kbps)
                    ],
            };
+#>>
 }
 
 =head2 get_resolutions()
