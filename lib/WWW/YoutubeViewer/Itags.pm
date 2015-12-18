@@ -47,7 +47,7 @@ Reference: http://en.wikipedia.org/wiki/YouTube#Quality_and_formats
 =cut
 
 sub get_itags {
-#<<
+#<<<
     scalar {
         'original' => [
             38,      # mp4 (3072p) (v-a)
@@ -147,7 +147,7 @@ sub get_itags {
                     139,     # m4a (48 kbps)
                    ],
            };
-#>>
+#>>>
 }
 
 =head2 get_resolutions()

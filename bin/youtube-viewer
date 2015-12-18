@@ -145,7 +145,7 @@ use File::Spec::Functions qw(
 binmode(STDOUT, ':utf8');
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.1.9';
+my $version  = '3.2.0';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
