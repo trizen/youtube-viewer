@@ -227,6 +227,14 @@ my %CONFIG = (
                               arg     => q{--really-quiet --title *TITLE*},
                               novideo => q{--no-video},
                              },
+                      mplayer => {
+                                  cmd     => q{mplayer},
+                                  srt     => q{-sub *SUB*},
+                                  audio   => q{-audiofile *AUDIO*},
+                                  fs      => q{-fs},
+                                  arg     => q{-prefer-ipv4 -really-quiet -title *TITLE*},
+                                  novideo => q{-novideo},
+                                 },
                      },
 
     video_player_selected => (

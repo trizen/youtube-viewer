@@ -157,11 +157,18 @@ my %CONFIG = (
                               fs    => q{--fullscreen},
                               arg   => q{--really-quiet --title *TITLE*},
                              },
+                      mplayer => {
+                                  cmd   => q{mplayer},
+                                  srt   => q{-sub *SUB*},
+                                  audio => q{-audiofile *AUDIO*},
+                                  fs    => q{-fs},
+                                  arg   => q{-prefer-ipv4 -really-quiet -title *TITLE*},
+                                 },
                       smplayer => {
-                                   cmd => "smplayer",
-                                   fs  => "-fullscreen",
-                                   srt => "-sub *SUB*",
-                                   arg => "-close-at-end -media-title *TITLE* *URL*",
+                                   cmd => q{smplayer},
+                                   srt => q{-sub *SUB*},
+                                   fs  => q{-fullscreen},
+                                   arg => q{-close-at-end -media-title *TITLE* *URL*},
                                   },
                      },
     video_player_selected => undef,    # autodetect it later
