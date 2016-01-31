@@ -278,6 +278,7 @@ my %CONFIG = (
 
     # Others
     http_proxy           => undef,
+    confirm              => 0,
     debug                => 0,
     page                 => 1,
     colors               => $constant{win32} ^ 1,
@@ -717,6 +718,7 @@ usage: $execname [options] ([url] | [keywords])
        --combine-multi!  : combine multiple videos into one play instance
        --get-term-width! : allow $execname to read your terminal width
        --autohide!       : automatically hide watched videos
+       --confirm!        : show a confirmation message after each play
 
  * Closed-captions
    --get-captions!      : download the closed captions for videos
@@ -1410,6 +1412,7 @@ sub parse_arguments {
         'caption=s'         => \$opt{videoCaption},
         'fullscreen|fs|f!'  => \$opt{fullscreen},
         'dash!'             => \$opt{dash_support},
+        'confirm!'          => \$opt{confirm},
 
         'convert-command|convert-cmd=s'     => \$opt{convert_cmd},
         'dash-m4a|dash-mp4-audio!'          => \$opt{dash_mp4_audio},
@@ -3379,6 +3382,8 @@ sub play_videos {
                 return;
             }
         }
+
+        press_enter_to_continue() if $opt{confirm};
     }
 
     if ($opt{combine_multiple_videos} && @streaming_urls) {
@@ -3769,6 +3774,7 @@ sub print_videos {
                 when (/^(?:play|P)${digit_or_equal_re}(.*)/) {
                     if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                         local $opt{download_video} = 0;
+                        local $opt{extract_info}   = undef;
                         play_videos([@{$videos}[@nums]]);
                     }
                     else {
