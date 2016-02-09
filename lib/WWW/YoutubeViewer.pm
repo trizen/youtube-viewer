@@ -182,7 +182,7 @@ sub page_token {
     }
 
     state $x = require MIME::Base64;
-    MIME::Base64::encode_base64(pack('C*', @f, 16, 0)) =~ tr/=//dr;
+    MIME::Base64::encode_base64(pack('C*', @f, 16, 0)) =~ tr/=\n//dr;
 }
 
 =head2 escape_string($string)

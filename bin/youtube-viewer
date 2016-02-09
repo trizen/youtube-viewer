@@ -2992,6 +2992,7 @@ FORMAT
                                       sub  => __SUB__,
                                       url  => $url,
                                       res  => $playlists,
+                                      info => $info,
                                       mode => 'playlists',
                                      )
                   ) {
