@@ -796,6 +796,17 @@ sub tricks {
  > Arguments that require an ID/URL, you can specify more than one,
    separated by whitespace (quoted), or separated by commas.
 
+-> My channel
+ > Starting with version 3.2.1, it's possible to use the string "mine"
+   in place where a channel ID is required. Doing this, "mine" will be
+   replaced with your channel ID. (requires authentication)
+
+   Examples:
+        $execname --channel-playlists=mine
+        $execname --channel-videos=mine
+        $execname --likes=mine
+        $execname --favorites=mine
+
 -> More STDIN help:
  > ":r", ":return" will return to the previous section.
    For example, if you search for playlists, then select a playlist
