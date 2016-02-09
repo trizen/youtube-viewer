@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2010-2015 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
+# Copyright (C) 2010-2016 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,13 +18,14 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 01 October 2015
+#  Latest edit on: 09 February 2016
 #  Website: https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
 # youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
 #
 # [CHANGELOG]
+# - Added the `i..` range, which plays all the videos, starting with video `i`. (#114)         - NEW (v3.2.1)
 # - Added support for downloading multiple videos in parallel (--dl-parallel)                  - NEW (v3.1.4)
 # - Migration to APIv3; some features has been lost in the process, but nothing too critical.  - NEW (v3.1.4)
 # - Added built-in support for [auto-generated] closed-captions (gcap is no longer required)   - NEW (v3.1.3)
@@ -111,7 +112,7 @@ See: youtube-viewer --help
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2015 Trizen.
+Copyright 2010-2016 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
@@ -399,6 +400,7 @@ $action_options
 3-8, 3..8         : same as 3 4 5 6 7 8
 8-3, 8..3         : same as 8 7 6 5 4 3
 8 2 12 4 6 5 1    : play the videos in your order
+10..              : play all the videos onwards from 10
 :q(ueue)=i,i,...  : enqueue videos for playing them later
 :pq, :play-queue  : play the enqueued videos (if any)
 :anp, :nnp        : auto-next-page, no-next-page
@@ -1861,8 +1863,8 @@ sub get_and_play_video_ids {
 sub get_and_play_playlists {
     foreach my $id (@_) {
         my $videos = $yv_obj->videos_from_playlist_id(get_valid_playlist_id($id) // next);
-        local $opt{play_all} = 1;
-        print_videos($videos, auto => 1);
+        local $opt{play_all} = length($opt{std_input}) ? 0 : 1;
+        print_videos($videos, auto => $opt{play_all});
     }
     return 1;
 }
@@ -3380,6 +3382,7 @@ sub play_videos {
 
             $yv_obj->proxy_system($command);    # execute the video player
             if ($? and $? != 512) {
+                $opt{auto_next_page} = 0;
                 return;
             }
         }
@@ -3832,7 +3835,12 @@ sub print_videos {
                 when (!$contains_keywords && (valid_num($_, $videos) || /$range_num_re/)) {
                     my @for_play;
                     if (/$range_num_re/) {
-                        my @ids = get_valid_numbers($#{$videos}, "$1..$2");
+                        my $from = $1;
+                        my $to = $2 // do {
+                            $opt{auto_next_page} ? do { $from = 1 } : do { $opt{auto_next_page} = 1 };
+                            $#{$videos} + 1;
+                        };
+                        my @ids = get_valid_numbers($#{$videos}, "$from..$to");
                         continue if not @ids;
                         push @for_play, @ids;
                     }
