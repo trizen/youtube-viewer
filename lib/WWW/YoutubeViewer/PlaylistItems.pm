@@ -116,7 +116,12 @@ Get favorited videos for a given username or from the current user.
 
         *{__PACKAGE__ . '::' . $name} = sub {
             my ($self, $channel_id) = @_;
-            my $playlist_id = $self->get_playlist_id($name, $channel_id ? (id => $channel_id) : (mine => 'true'));
+            my $playlist_id =
+              $self->get_playlist_id(
+                                     $name, ($channel_id and $channel_id ne 'mine')
+                                     ? (id => $channel_id)
+                                     : (mine => 'true')
+                                    );
             $self->videos_from_playlist_id($playlist_id);
         };
     }

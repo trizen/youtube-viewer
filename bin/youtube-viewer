@@ -25,6 +25,7 @@
 # youtube-viewer is a command line utility for viewing youtube-videos in MPlayer.
 #
 # [CHANGELOG]
+# - Added the `--channel-videos=s` command-line option to display videos from a channel ID.    - NEW (v3.2.1)
 # - Added the `i..` range, which plays all the videos, starting with video `i`. (#114)         - NEW (v3.2.1)
 # - Added support for downloading multiple videos in parallel (--dl-parallel)                  - NEW (v3.1.4)
 # - Migration to APIv3; some features has been lost in the process, but nothing too critical.  - NEW (v3.1.4)
@@ -602,7 +603,7 @@ usage: $execname [options] ([url] | [keywords])
        --cats-region=s  : region code for categories (default: us)
 
  * Videos
-   -u  --user=s         : list videos uploaded by a specific user
+   -uv --user-vid=s     : list videos uploaded by a specific user
    -cv --channel-vid=s  : list videos uploaded to a specific channel
    -uf --user-fav=s     : list the videos favorited by a specific user
    -id --videoids=s,s   : play YouTube videos by their IDs
@@ -610,17 +611,17 @@ usage: $execname [options] ([url] | [keywords])
        --search=s       : search for YouTube videos (default mode)
 
  * Playlists
-   -p  --playlists   : search for playlists of videos
-       --pid=s       : list a playlist of videos by playlistID
-       --pp=s,s      : play the videos from the given playlist IDs
-       --ps=s        : add videos by ID or URL to a post-selected playlist
-                       or in a given playlistID specified with `--pid`
-       --position=i  : the position in a playlist where to add a video
-   -up --user-pl=s   : list the playlists created by a specific user
+   -p  --playlists    : search for playlists of videos
+       --pid=s        : list a playlist of videos by playlistID
+       --pp=s,s       : play the videos from the given playlist IDs
+       --ps=s         : add videos by ID or URL to a post-selected playlist
+                        or in a given playlistID specified with `--pid`
+       --position=i   : the position in a playlist where to add a video
+   -up --user-pl=s    : list the playlists created by a specific user
+   -cp --channel-pl=s : list the playlists belonging to a specific channel ID
 
  * Channels
    --channels         : search for Youtube channels
-   --channel-suggest  : show the suggested YouTube channels for you *
 
  * Shows
    -us --user-shows=s : display the shows belonging to a user
@@ -1182,14 +1183,6 @@ sub apply_configuration {
         print_channels($yv_obj->search_channels($value, @{$keywords}));
     }
 
-    if (delete $opt->{channel_suggestions}) {
-        my $results = $yv_obj->get_channel_suggestions();
-
-        if (defined $results) {
-            print_channels($results, 'channel_suggestions');
-        }
-    }
-
     if (delete $opt->{categories}) {
         print_categories($yv_obj->video_categories($opt{cats_region}));
     }
@@ -1244,6 +1237,10 @@ sub apply_configuration {
 
     if (defined $opt->{user_playlists}) {
         print_playlists($yv_obj->playlists_from_username(delete $opt->{user_playlists}));
+    }
+
+    if (defined $opt->{channel_playlists}) {
+        print_playlists($yv_obj->playlists(delete $opt->{channel_playlists}));
     }
 
     if (defined $opt->{favorites}) {
@@ -1351,19 +1348,21 @@ sub parse_arguments {
         'dislikes'                          => \$opt{dislikes},
         'subscribe=s'                       => \$opt{subscribe_channel},
         'user-subscribe=s'                  => \$opt{subscribe_username},
-        'favorite|favorite-video|fav=s'     => \$opt{favorite_video},
-        'channel-suggestions'               => \$opt{channel_suggestions},
         'cv|channel|channel-videos=s'       => \$opt{channel_id_videos},
+        'cp|channel-playlists=s'            => \$opt{channel_playlists},
 
-        'login|authenticate'     => \$opt{authenticate},
-        'logout'                 => \$opt{logout},
-        'user|username|u|uv=s'   => \$opt{user_videos},
-        'shows|user-shows|us=s'  => \$opt{user_shows},
-        'user-playlists|up=s'    => \$opt{user_playlists},
-        'user-favorites|uf=s'    => \$opt{user_favorited_videos},
-        'user-likes|ul=s'        => \$opt{user_liked_videos},
-        'related-videos|rl|rv=s' => \$opt{related_videos},
-        'http_proxy=s'           => \$opt{http_proxy},
+        # English-UK friendly
+        'favorite|favourite|favorite-video|favourite-video|fav=s' => \$opt{favorite_video},
+
+        'login|authenticate'      => \$opt{authenticate},
+        'logout'                  => \$opt{logout},
+        'user|user-videos|u|uv=s' => \$opt{user_videos},
+        'shows|user-shows|us=s'   => \$opt{user_shows},
+        'user-playlists|up=s'     => \$opt{user_playlists},
+        'user-favorites|uf=s'     => \$opt{user_favorited_videos},
+        'user-likes|ul=s'         => \$opt{user_liked_videos},
+        'related-videos|rl|rv=s'  => \$opt{related_videos},
+        'http_proxy=s'            => \$opt{http_proxy},
 
         'catlang|cl|hl=s'          => \$opt{hl},
         'category|cat-id|cat=i'    => \$opt{videoCategoryId},

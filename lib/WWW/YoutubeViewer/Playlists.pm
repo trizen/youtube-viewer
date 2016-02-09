@@ -66,7 +66,7 @@ Get and return playlists from a channel ID.
 
 sub playlists {
     my ($self, $id) = @_;
-    $self->_get_results($self->_make_playlists_url(channelId => $id));
+    $self->_get_results($self->_make_playlists_url(($id and $id ne 'mine') ? (channelId => $id) : (mine => 'true')));
 }
 
 =head2 playlists_from_username($username)
