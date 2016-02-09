@@ -2583,8 +2583,8 @@ sub print_comments {
     }
 
     my $url      = $results->{url};
-    my $res      = $results->{results} // {};
-    my $comments = $res->{items} // [];
+    my $info     = $results->{results} // {};
+    my $comments = $info->{items} // [];
 
     my $i = 0;
     foreach my $comment (@{$comments}) {
@@ -2613,6 +2613,7 @@ sub print_comments {
                                       sub  => __SUB__,
                                       url  => $url,
                                       res  => $comments,
+                                      info => $info,
                                       mode => 'comments',
                                       args => [$videoID],
                                      )

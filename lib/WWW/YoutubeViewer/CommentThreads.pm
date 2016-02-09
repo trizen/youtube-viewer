@@ -67,25 +67,19 @@ sub comment_to_video_id {
 
     my $url = $self->_simple_feeds_url('commentThreads', part => 'snippet');
 
-    state $channel = $self->my_channel;
-    if (defined($channel) and defined $channel->{results}) {
-        ## ok
-    }
-    else {
-        return;
-    }
-
     my $hash = {
-                "snippet" => {
-                              "topLevelComment" => {
-                                                    "snippet" => {
-                                                                  "textOriginal" => $comment,
-                                                                  "channelId"    => $channel->{results}{items}[0]{id}
-                                                                 }
-                                                   },
-                              "videoId" => $video_id,
-                             }
-               };
+        "snippet" => {
+
+            "topLevelComment" => {
+                                  "snippet" => {
+                                                "textOriginal" => $comment,
+                                               }
+                                 },
+            "videoId" => $video_id,
+
+            #"channelId"    => $channel_id,
+        },
+    };
 
     $self->post_as_json($url, $hash);
 }
@@ -104,7 +98,7 @@ You can find documentation for this module with the perldoc command.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2015 Trizen.
+Copyright 2015-2016 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

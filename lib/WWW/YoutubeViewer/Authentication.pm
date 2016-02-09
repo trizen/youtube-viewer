@@ -66,7 +66,7 @@ sub get_accounts_oauth_url {
                                       response_type => 'code',
                                       client_id     => $self->get_client_id() // return,
                                       redirect_uri  => $self->get_redirect_uri() // return,
-                                      scope         => 'https://www.googleapis.com/auth/youtube',
+                                      scope         => 'https://www.googleapis.com/auth/youtube.force-ssl',
                                       access_type   => 'offline',
                                      );
     return $url;
