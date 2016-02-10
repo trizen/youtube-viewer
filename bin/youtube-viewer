@@ -3345,11 +3345,11 @@ sub play_videos {
 
         my $video_id = $yv_utils->get_video_id($video);
 
-        if (defined($opt{max_seconds})) {
+        if (defined($opt{max_seconds}) and $opt{max_seconds} >= 0) {
             next if $yv_utils->get_duration($video) > $opt{max_seconds};
         }
 
-        if (defined($opt{min_seconds})) {
+        if (defined($opt{min_seconds}) and $opt{min_seconds} >= 0) {
             next if $yv_utils->get_duration($video) < $opt{min_seconds};
         }
 
