@@ -1154,7 +1154,7 @@ sub apply_configuration {
     }
 
     if (defined $opt->{dislike_video}) {
-        rate_videos('dislike', split(/[,\s]+/, delete $opt->{like_video}));
+        rate_videos('dislike', split(/[,\s]+/, delete $opt->{dislike_video}));
     }
 
     if (defined $opt->{play_video_ids}) {
