@@ -2485,12 +2485,12 @@ When the specified resolution is not found, it falls down to a lower resolution.
     <property name="type_hint">normal</property>
     <property name="transient_for">__MAIN__</property>
     <property name="program_name">GTK Youtube Viewer</property>
-    <property name="copyright" translatable="yes">Copyright © 2010-2015 by Trizen</property>
+    <property name="copyright" translatable="yes">Copyright © 2010-2016 by Trizen</property>
     <property name="comments" translatable="yes">Written in Perl, Gtk2 and Glade under the GPLv3.</property>
     <property name="website">https://github.com/trizen/youtube-viewer</property>
     <property name="website_label" translatable="yes">https://github.com/trizen/youtube-viewer</property>
     <property name="license" translatable="yes">
-Copyright (C) 2010-2015 Trizen &lt;trizenx@gmail.com&gt;.
+Copyright (C) 2010-2016 Trizen &lt;trizenx@gmail.com&gt;.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

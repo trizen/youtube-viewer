@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2010-2015 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
+# Copyright (C) 2010-2016 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 01 October 2015
+#  Latest edit on: 27 February 2016
 #  Website: http://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -49,7 +49,7 @@ use File::Spec::Functions qw(
 binmode(STDOUT, ':utf8');
 
 my $appname  = 'GTK Youtube Viewer';
-my $version  = '3.2.0';
+my $version  = '3.2.1';
 my $execname = 'gtk-youtube-viewer';
 
 # Share directory
@@ -62,8 +62,29 @@ sub EXTRA_VIDEO_PART () { join(',', 'snippet', VIDEO_PART()) }
 my $key = 'aXalQYmzI8gPkMSLyMhpApfMAiU2b23Qz2nE3mq';
 
 # Configuration dir/file
-my $xdg_config_home = $ENV{XDG_CONFIG_HOME}
-  || catdir((my $home_dir = $ENV{HOME} || $ENV{LOGDIR} || (getpwuid($<))[7] || `echo -n ~`), '.config');
+my $home_dir;
+my $xdg_config_home = $ENV{XDG_CONFIG_HOME};
+
+if ($xdg_config_home and -d -w $xdg_config_home) {
+    require File::Basename;
+    $home_dir = File::Basename::dirname($xdg_config_home);
+
+    if (not -d -w $home_dir) {
+        $home_dir = curdir();
+    }
+}
+else {
+    $home_dir =
+         $ENV{HOME}
+      || $ENV{LOGDIR}
+      || ($^O eq 'MSWin32' ? '\Local Settings\Application Data' : ((getpwuid($<))[7] || `echo -n ~`));
+
+    if (not -d -w $home_dir) {
+        $home_dir = curdir();
+    }
+
+    $xdg_config_home = catdir($home_dir, '.config');
+}
 
 # Configuration dir/file
 my $config_dir = catdir($xdg_config_home, 'youtube-viewer');
@@ -422,12 +443,12 @@ my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 if (not defined $CONFIG{cache_dir}) {
 
     my $cache_dir =
-      (defined($ENV{XDG_CACHE_HOME}) and -w $ENV{XDG_CACHE_HOME})
+      ($ENV{XDG_CACHE_HOME} and -d -w $ENV{XDG_CACHE_HOME})
       ? $ENV{XDG_CACHE_HOME}
       : catdir($home_dir, '.cache');
 
-    if (not -w $cache_dir) {
-        $cache_dir = '.cache';
+    if (not -d -w $cache_dir) {
+        $cache_dir = catdir(curdir(), '.cache');
     }
 
     $CONFIG{cache_dir} = catdir($cache_dir, 'youtube-viewer');
@@ -641,7 +662,7 @@ if (not defined $CONFIG{terminal}) {
 # Locate youtube-viewer
 $CONFIG{youtube_viewer} //= which_command('youtube-viewer') // 'youtube-viewer';
 
-require WWW::YoutubeViewer;
+use WWW::YoutubeViewer v3.2.1;
 my $yv_obj = WWW::YoutubeViewer->new(
                                      escape_utf8         => 1,
                                      key                 => $key,
@@ -793,8 +814,8 @@ sub set_threads {
     require Thread::Queue;
 
     no warnings 'redefine';
-    state $lwp_get = \&{WWW::YoutubeViewer::lwp_get};
-    *{WWW::YoutubeViewer::lwp_get} = \&threads_lwp_get;
+    state $lwp_get = \&WWW::YoutubeViewer::lwp_get;
+    *WWW::YoutubeViewer::lwp_get = \&threads_lwp_get;
 
     $queue = 'Thread::Queue'->new;
     $jobs  = 'Thread::Queue'->new;
@@ -1851,10 +1872,10 @@ sub add_video_entry {
                       . $yv_utils->set_thousands($yv_utils->get_likes($video)) . "\n"
                       . "<b>$symbols{down_arrow}\t</b> "
                       . $yv_utils->set_thousands($yv_utils->get_dislikes($video)) . "\n"
-                      . "<b>$symbols{ellipsis}\t</b> "
-                      . $yv_utils->get_caption($video) . "\n"
                       . "<b>$symbols{face}\t</b> "
-                      . encode_entities($yv_utils->get_channel_title($video)) . "\n" . "<i>"
+                      . encode_entities($yv_utils->get_channel_title($video)) . "\n"
+                      . "<b>$symbols{ellipsis}\t</b> "
+                      . encode_entities($yv_utils->get_channel_id($video)) . "\n" . "<i>"
                       . encode_entities($row_description) . "</i>"
                    );
 
@@ -2375,7 +2396,8 @@ sub comments_row_activated {
 
     if (defined $value and $value =~ m{^https?://}) {
         $feeds_liststore->remove($iter);
-        my $results = $yv_obj->next_page($value, comments => 1);
+        my ($url, $token) = split(/;/, $value);
+        my $results = $yv_obj->next_page($url, $token);
         if ($yv_utils->has_entries($results)) {
             display_comments($results);
         }
@@ -2479,12 +2501,9 @@ sub display_comments {
                              );
     }
 
-    #
-    ## This needs work!!!
-    #
-    #my $iter = $feeds_liststore->append;
-    #$feeds_liststore->set($iter, 0, "\n<big><b>=&gt;&gt; NEXT PAGE</b></big>\n");
-    #$feeds_liststore->set($iter, 1, $url);
+    my $iter = $feeds_liststore->append;
+    $feeds_liststore->set($iter, 0, "\n<big><b>LOAD MORE</b></big>\n");
+    $feeds_liststore->set($iter, 1, "$url;$res->{nextPageToken}");
 
     return 1;
 }

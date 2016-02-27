@@ -25,11 +25,11 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =head1 VERSION
 
-Version 3.2.0
+Version 3.2.1
 
 =cut
 
-our $VERSION = '3.2.0';
+our $VERSION = '3.2.1';
 
 =head1 SYNOPSIS
 
@@ -695,7 +695,7 @@ sub post_as_json {
             my ($self, $url, $token) = @_;
 
             my $pt_url = (
-                            $url =~ s/[?&]pageToken=\K\w+/$token/
+                            $url =~ s/[?&]pageToken=\K[^&]+/$token/
                           ? $url
                           : $self->_append_url_args($url, pageToken => $token)
                          );
