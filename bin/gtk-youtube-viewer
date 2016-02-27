@@ -2501,9 +2501,11 @@ sub display_comments {
                              );
     }
 
-    my $iter = $feeds_liststore->append;
-    $feeds_liststore->set($iter, 0, "\n<big><b>LOAD MORE</b></big>\n");
-    $feeds_liststore->set($iter, 1, "$url;$res->{nextPageToken}");
+    if (exists $res->{nextPageToken}) {
+        my $iter = $feeds_liststore->append;
+        $feeds_liststore->set($iter, 0, "\n<big><b>LOAD MORE...</b></big>\n");
+        $feeds_liststore->set($iter, 1, "$url;$res->{nextPageToken}");
+    }
 
     return 1;
 }
