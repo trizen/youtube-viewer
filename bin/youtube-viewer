@@ -749,6 +749,9 @@ usage: $execname [options] ([url] | [keywords])
    -W  --fixed-width!   : adjust the results to fit inside the term width
    -i  --info=s         : show some info for a videoID or URL
    -e  --extract=s      : extract information from videos (see: -T)
+       --extract-file=s : extract the information from videos in this file
+       --dump=format    : dump metadata information in `videoID.format` files
+                          valid formats: json, perl
    -q  --quiet          : do not display any warning
        --really-quiet   : do not display any warning or output
        --escape-info!   : quotemeta() the fields of the `--extract`
@@ -1122,8 +1125,9 @@ sub apply_configuration {
     }
 
     # ... OTHER OPTIONS ... #
-    if (defined $opt->{shuffle_playlist}) {
-        $opt{shuffle} = delete $opt->{shuffle_playlist};
+    if (defined $opt->{extract_info_file}) {
+        open my $fh, '>:utf8', delete($opt->{extract_info_file});
+        $opt{extract_info_fh} = $fh;
     }
 
     if (defined $opt->{colors}) {
@@ -1422,7 +1426,18 @@ sub parse_arguments {
         'convert-to|convert_to=s'   => \$opt{convert_to},
         'keep-original-video!'      => \$opt{keep_original_video},
         'e|extract|extract-info=s'  => \$opt{extract_info},
+        'extract-file=s'            => \$opt{extract_info_file},
         'escape-info!'              => \$opt{escape_info},
+
+        'dump=s' => sub {
+            my (undef, $format) = @_;
+            $opt{dump} = (
+                ($format =~ /json/i) ? 'json' : ($format =~ /perl/i) ? 'perl' : do {
+                    warn "[!] Invalid format <<$format>> for option --dump\n";
+                    undef;
+                  }
+            );
+        },
 
         # MPlayer
         'player|vplayer|video-player|video_player=s' => \$opt{video_player_selected},
@@ -1453,7 +1468,7 @@ sub parse_arguments {
         'novideo|n!'                        => \$opt{novideo},
         'autohide!'                         => \$opt{autohide_watched},
         'results=i'                         => \$opt{maxResults},
-        'shuffle|s!'                        => \$opt{shuffle_playlist},
+        'shuffle|s!'                        => \$opt{shuffle},
         'more|m!'                           => \$opt{more_results},
         'combine-multiple-videos|combine!'  => \$opt{combine_multiple_videos},
         'pos|position=i'                    => \$opt{position},
@@ -3378,6 +3393,26 @@ sub play_videos {
             next;
         }
 
+        # Dump metadata information
+        if (defined($opt{dump})) {
+
+            my $file = $video_id . '.' . $opt{dump};
+            open(my $fh, '>:utf8', $file)
+              or die "Can't open file `$file' for writing: $!";
+
+            local $video->{streaming} = $streaming;
+
+            if ($opt{dump} eq 'json') {
+                print {$fh} JSON->new->pretty(1)->encode($video);
+            }
+            elsif ($opt{dump} eq 'perl') {
+                require Data::Dump;
+                print {$fh} Data::Dump::pp($video);
+            }
+
+            close $fh;
+        }
+
         if ($opt{download_video}) {
             print_video_info($video);
             if (not download_video($streaming, $video)) {
@@ -3385,7 +3420,8 @@ sub play_videos {
             }
         }
         elsif (length($opt{extract_info})) {
-            say $yv_utils->format_text($streaming, $video, $opt{extract_info}, $opt{escape_info});
+            my $fh = $opt{extract_info_fh} // \*STDOUT;
+            say {$fh} $yv_utils->format_text($streaming, $video, $opt{extract_info}, $opt{escape_info});
         }
         elsif ($opt{combine_multiple_videos}) {
             print_video_info($video);
