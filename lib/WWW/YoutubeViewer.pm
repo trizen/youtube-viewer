@@ -605,6 +605,11 @@ sub _get_pairs_from_info_data {
                 last;
             }
         }
+        elsif (exists $hash_ref->{hlsvp}) {
+            $hash_ref->{itag} = 38;
+            $hash_ref->{type} = 'video/ts';
+            $hash_ref->{url}  = $hash_ref->{hlsvp};
+        }
     }
 
     return @array;
