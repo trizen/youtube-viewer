@@ -321,7 +321,8 @@ Get description.
 
 sub get_description {
     my ($self, $info) = @_;
-    $info->{snippet}{description} || 'No description available...';
+    my $desc = $info->{snippet}{description};
+    (defined($desc) and $desc =~ /\S/) ? $desc : 'No description available...';
 }
 
 =head2 get_title($info)
