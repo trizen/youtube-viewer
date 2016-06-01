@@ -2158,10 +2158,11 @@ sub get_player_command {
 sub play_video {
     my ($video) = @_;
 
-    my $streaming = get_streaming_url($yv_utils->get_video_id($video));
+    my $video_id  = $yv_utils->get_video_id($video);
+    my $streaming = get_streaming_url($video_id);
 
     if (defined $streaming->{info}{status} and $streaming->{info}{status} =~ /\bfail/i) {
-        die "[x_x] Error on: " . sprintf($CONFIG{youtube_video_url}, $video->{videoID}) . "\n",
+        die "[x_x] Error on: " . sprintf($CONFIG{youtube_video_url}, $video_id) . "\n",
           "[x_x] Reason: " . $streaming->{info}{reason} =~ s/\+/ /gr . "\n";
     }
 
