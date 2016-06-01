@@ -3528,8 +3528,11 @@ sub print_video_info {
 
     my $title        = $yv_utils->get_title($video);
     my $title_length = length($title);
+    my $rep          = ($term_width - $title_length) / 2 - 4;
 
-    print "\n$hr\n", q{ } x (($term_width - $title_length) / 2 - 4) => (_bold_color("=>> $title <<=") . "\n\n"),
+    $rep = 0 if $rep < 0;
+
+    print "\n$hr\n", q{ } x $rep => (_bold_color("=>> $title <<=") . "\n\n"),
       map(sprintf(q{-> } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]),
           (
            ['Channel'    => $yv_utils->get_channel_title($video)],
