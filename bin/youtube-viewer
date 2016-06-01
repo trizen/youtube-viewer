@@ -2308,25 +2308,70 @@ sub valid_num {
     return $num =~ /^[0-9]{1,2}\z/ && $num != 0 && $num <= @{$array_ref};
 }
 
-sub chop_title {
-    my ($title, $title_length) = @_;
+sub adj_width {
+    my ($str, $len, $prepend) = @_;
 
-    $title_length > 0 or do {
-        warn "[WARN] Insufficient space for title: increase your terminal width!\n";
-        return $title;
+    $len > 0 or do {
+        warn "[WARN] Insufficient space for the title: increase your terminal width!\n";
+        return $str;
     };
 
-    state $x = require Text::CharWidth;
-    my $title_width_len = Text::CharWidth::mbswidth($title);
-    if ($title_width_len != $title_length) {
-        while (Text::CharWidth::mbswidth($title) > $title_length) {
-            chop $title;
+    state $pkg = (
+        eval {
+            require Unicode::GCString;
+            'Unicode::GCString';
+          } // eval {
+            require Text::CharWidth;
+            'Text::CharWidth';
+          } // do {
+            warn "[WARN] Please install Unicode::GCString or Text::CharWidth in order to use this functionality.\n";
+            '';
+          }
+    );
+
+    #
+    ## Unicode::GCString
+    #
+    if ($pkg eq 'Unicode::GCString') {
+
+        my $gcstr     = Unicode::GCString->new($str);
+        my $str_width = $gcstr->columns;
+
+        if ($str_width != $len) {
+            while ($str_width > $len) {
+                $gcstr = $gcstr->substr(0, -1);
+                $str_width = $gcstr->columns;
+            }
+
+            $str = $gcstr->as_string;
+            my $spaces = ' ' x ($len - $str_width);
+            $str = $prepend ? "$spaces$str" : "$str$spaces";
         }
 
-        $title .= ' ' x ($title_length - Text::CharWidth::mbswidth($title));
+        return $str;
     }
 
-    return $title;
+    #
+    ## Text::CharWidth
+    #
+    if ($pkg eq 'Text::CharWidth') {
+
+        my $str_width = Text::CharWidth::mbswidth($str);
+
+        if ($str_width != $len) {
+            while ($str_width > $len) {
+                chop $str;
+                $str_width = Text::CharWidth::mbswidth($str);
+            }
+
+            my $spaces = ' ' x ($len - $str_width);
+            $str = $prepend ? "$spaces$str" : "$str$spaces";
+        }
+
+        return $str;
+    }
+
+    return $str;
 }
 
 # ... PRINT SUBROUTINES ... #
@@ -2368,16 +2413,17 @@ sub print_channels {
             my @authors = map { $yv_utils->get_channel_title($_) } @{$channels};
             my @dates   = map { $yv_utils->get_publication_date($_) } @{$channels};
 
-            my $author_width = List::Util::max(map { length($_) } @authors);
-            my $dates_width  = List::Util::max(map { length($_) } @dates);
+            my $author_width = List::Util::min(List::Util::max(map { length($_) } @authors), int($term_width / 5));
+            my $dates_width = List::Util::max(map { length($_) } @dates);
             my $title_length = $term_width - ($author_width + $dates_width + 2 + 3 + 1 + 2);
 
             print "\n";
             foreach my $i (0 .. $#{$channels}) {
                 my $channel = $channels->[$i];
-                printf "%s. %s %*s [%*s]\n", colored(sprintf('%2d', $i + 1), 'bold'),
-                  chop_title($yv_utils->get_title($channel), $title_length),
-                  $author_width, $authors[$i], $dates_width, $dates[$i];
+                printf "%s. %s %s [%*s]\n", colored(sprintf('%2d', $i + 1), 'bold'),
+                  adj_width($yv_utils->get_title($channel), $title_length),
+                  adj_width($authors[$i], $author_width, 1),
+                  $dates_width, $dates[$i];
             }
             last;
         }
@@ -2559,15 +2605,16 @@ sub print_shows {
 
             state $x = require List::Util;
 
-            my $max_author_len = List::Util::max(map { length($_->{name}) } @{$shows});
-            my $count_width    = List::Util::max(map { length($_->{seasons}) } @{$shows});
+            my $max_author_len = List::Util::min(List::Util::max(map { length($_->{name}) } @{$shows}), int($term_width / 5));
+            my $count_width = List::Util::max(map { length($_->{seasons}) } @{$shows});
             my $title_length = $term_width - ($max_author_len + $count_width + 2 + 3 + 1 + 2);
 
             foreach my $show (@{$shows}) {
                 print "\n" if $i == 0;
-                printf "%s. %s %*s [%*s]\n", colored(sprintf('%2d', ++$i), 'bold'),
-                  chop_title($show->{title}, $title_length),
-                  $max_author_len, $show->{name}, $count_width, $show->{seasons};
+                printf "%s. %s %s [%*s]\n", colored(sprintf('%2d', ++$i), 'bold'),
+                  adj_width($show->{title}, $title_length),
+                  adj_width($show->{name}, $max_author_len, 1),
+                  $count_width, $show->{seasons};
             }
             last;
         }
@@ -2987,16 +3034,17 @@ FORMAT
             my @authors = map { $yv_utils->get_channel_title($_) } @{$playlists};
             my @dates   = map { $yv_utils->get_publication_date($_) } @{$playlists};
 
-            my $author_width = List::Util::max(map { length($_) } @authors);
-            my $dates_width  = List::Util::max(map { length($_) } @dates);
+            my $author_width = List::Util::min(List::Util::max(map { length($_) } @authors), int($term_width / 5));
+            my $dates_width = List::Util::max(map { length($_) } @dates);
             my $title_length = $term_width - ($author_width + $dates_width + 2 + 3 + 1 + 2);
 
             print "\n";
             foreach my $i (0 .. $#{$playlists}) {
                 my $playlist = $playlists->[$i];
-                printf "%s. %s %*s [%*s]\n", colored(sprintf('%2d', $i + 1), 'bold'),
-                  chop_title($yv_utils->get_title($playlist), $title_length),
-                  $author_width, $authors[$i], $dates_width, $dates[$i];
+                printf "%s. %s %s [%*s]\n", colored(sprintf('%2d', $i + 1), 'bold'),
+                  adj_width($yv_utils->get_title($playlist), $title_length),
+                  adj_width($authors[$i], $author_width, 1),
+                  $dates_width, $dates[$i];
             }
             last;
         }
@@ -3621,19 +3669,19 @@ sub print_videos {
             my @durations = map { $yv_utils->get_duration($_) } @{$videos};
             my @authors   = map { $yv_utils->get_channel_title($_) } @{$videos};
 
-            my $author_width = List::Util::max(map { length($_) } @authors);
+            my $author_width = List::Util::min(List::Util::max(map { length($_) } @authors), int($term_width / 5));
             my $time_width = List::Util::first(sub { $_ >= 3600 }, @durations) ? 8 : 6;
             my $title_length = $term_width - ($author_width + $time_width + 3 + 2 + 1);
 
             foreach my $i (0 .. $#{$videos}) {
                 my $video = $videos->[$i];
                 push @formatted,
-                  sprintf(
-                          "%s. %s %*s %*s\n",
-                          colored(sprintf('%2d', $i + 1), 'bold'), chop_title($yv_utils->get_title($video), $title_length),
-                          $author_width, $yv_utils->get_channel_title($video),
-                          $time_width,   $yv_utils->format_time($durations[$i])
-                         );
+                  sprintf("%s. %s %s %*s\n",
+                          colored(sprintf('%2d', $i + 1), 'bold'),
+                          adj_width($yv_utils->get_title($video), $title_length),
+                          adj_width($yv_utils->get_channel_title($video), $author_width, 1),
+                          $time_width,
+                          $yv_utils->format_time($durations[$i]));
             }
             last;
         }

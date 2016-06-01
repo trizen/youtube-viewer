@@ -75,7 +75,8 @@ my $builder = Module::Build->new(
         fixed_width_support => {
                                 description => "Print the results in a fixed-width format (--fixed-width, -W)",
                                 requires    => {
-                                             'Text::CharWidth' => 0,
+                                             'Unicode::GCString' => 0,          # this is recommended
+                                             #'Text::CharWidth' => 0,           # this works as fallback
                                             },
                                },
 
