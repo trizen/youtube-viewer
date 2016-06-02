@@ -2,35 +2,35 @@
 use ExtUtils::MakeMaker;
 WriteMakefile
 (
-  'VERSION_FROM' => 'lib/WWW/YoutubeViewer.pm',
-  'PREREQ_PM' => {
-                   'Gtk2' => 0,
-                   'URI::Escape' => 0,
-                   'File::Path' => 0,
-                   'MIME::Base64' => 0,
-                   'Data::Dump' => 0,
-                   'File::ShareDir' => 0,
-                   'Test::More' => 0,
-                   'JSON' => 0,
-                   'Text::Wrap' => 0,
-                   'File::Spec' => 0,
-                   'List::Util' => 0,
-                   'Term::ANSIColor' => 0,
-                   'HTTP::Request' => 0,
-                   'Encode' => 0,
-                   'Text::ParseWords' => 0,
-                   'Term::ReadLine' => 0,
-                   'Getopt::Long' => 0,
-                   'LWP::UserAgent' => 0,
-                   'LWP::Protocol::https' => 0,
-                   'File::Spec::Functions' => 0
-                 },
   'PL_FILES' => {},
   'INSTALLDIRS' => 'site',
+  'VERSION_FROM' => 'lib/WWW/YoutubeViewer.pm',
   'NAME' => 'WWW::YoutubeViewer',
   'EXE_FILES' => [
                    'bin/gtk-youtube-viewer',
                    'bin/youtube-viewer'
-                 ]
+                 ],
+  'PREREQ_PM' => {
+                   'File::Spec' => 0,
+                   'HTTP::Request' => 0,
+                   'Text::Wrap' => 0,
+                   'JSON' => 0,
+                   'Data::Dump' => 0,
+                   'Test::More' => 0,
+                   'Getopt::Long' => 0,
+                   'LWP::UserAgent' => 0,
+                   'Term::ReadLine' => 0,
+                   'File::Spec::Functions' => 0,
+                   'URI::Escape' => 0,
+                   'Term::ANSIColor' => 0,
+                   'Text::ParseWords' => 0,
+                   'MIME::Base64' => 0,
+                   'File::Path' => 0,
+                   'List::Util' => 0,
+                   'Gtk2' => 0,
+                   'LWP::Protocol::https' => 0,
+                   'Encode' => 0,
+                   'File::ShareDir' => 0
+                 }
 )
 ;

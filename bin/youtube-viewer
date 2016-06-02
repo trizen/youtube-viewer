@@ -18,7 +18,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 16 May 2016
+#  Latest edit on: 02 June 2016
 #  Website: https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -148,7 +148,7 @@ use File::Spec::Functions qw(
 binmode(STDOUT, ':utf8');
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.2.1';
+my $version  = '3.2.2';
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
