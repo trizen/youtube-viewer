@@ -73,7 +73,7 @@ Favorite a video. Returns true on success.
 sub favorite_video {
     my ($self, $video_id) = @_;
     $video_id // return;
-    my $playlist_id = $self->get_playlist_id('favorites', mine => 'true');
+    my $playlist_id = $self->get_playlist_id('favorites', mine => 'true') // return;
     $self->add_video_to_playlist($playlist_id, $video_id);
 }
 

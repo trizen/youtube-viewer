@@ -306,6 +306,7 @@ Get and return the content for $url.
 sub lwp_get {
     my ($self, $url, $simple) = @_;
 
+    $url // return;
     $self->{lwp} // $self->set_lwp_useragent();
 
     my %lwp_header = ($simple ? () : $self->_get_lwp_header);

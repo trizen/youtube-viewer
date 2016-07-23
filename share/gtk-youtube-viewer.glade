@@ -1676,7 +1676,7 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="receives_default">False</property>
                                                             <property name="draw_indicator">True</property>
-                                                            <signal name="toggled" handler="toggled_mplayer_fullscreen" swapped="no"/>
+                                                            <signal name="toggled" handler="toggled_fullscreen" swapped="no"/>
                                                           </object>
                                                           <packing>
                                                             <property name="expand">False</property>
@@ -1700,6 +1700,21 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                           </packing>
                                                         </child>
                                                         <child>
+                                                          <object class="GtkCheckButton" id="audio_only_checkbutton">
+                                                            <property name="label" translatable="yes">Audio only</property>
+                                                            <property name="visible">True</property>
+                                                            <property name="can_focus">True</property>
+                                                            <property name="receives_default">False</property>
+                                                            <property name="draw_indicator">True</property>
+                                                            <signal name="toggled" handler="toggled_audio_only" swapped="no"/>
+                                                          </object>
+                                                          <packing>
+                                                            <property name="expand">True</property>
+                                                            <property name="fill">True</property>
+                                                            <property name="position">3</property>
+                                                          </packing>
+                                                        </child>
+                                                        <child>
                                                           <object class="GtkCheckButton" id="clear_list_checkbutton">
                                                             <property name="label" translatable="yes">Clear search list</property>
                                                             <property name="visible">True</property>
@@ -1711,7 +1726,7 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                           <packing>
                                                             <property name="expand">True</property>
                                                             <property name="fill">True</property>
-                                                            <property name="position">3</property>
+                                                            <property name="position">4</property>
                                                           </packing>
                                                         </child>
                                                       </object>

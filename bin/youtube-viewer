@@ -1473,7 +1473,7 @@ sub parse_arguments {
         'info|i|video-info=s'               => \$opt{print_video_info},
         'get-term-width!'                   => \$opt{get_term_width},
         'page=i'                            => \$opt{page},
-        'novideo|n!'                        => \$opt{novideo},
+        'novideo|no-video|n!'               => \$opt{novideo},
         'autohide!'                         => \$opt{autohide_watched},
         'highlight!'                        => \$opt{highlight_watched},
         'results=i'                         => \$opt{maxResults},

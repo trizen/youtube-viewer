@@ -235,6 +235,7 @@ my %CONFIG = (
     http_proxy => undef,
     debug      => 0,
     fullscreen => 0,
+    audio_only => 0,
 
     use_threads            => 0,
     use_threads_for_thumbs => 0,    # this is unstable
@@ -345,8 +346,9 @@ my %objects = (
     'spinbutton3'            => \my $spin_published_within,
     'thumbs_checkbutton'     => \my $thumbs_checkbutton,
     'fullscreen_checkbutton' => \my $fullscreen_checkbutton,
-    'clear_list_checkbutton' => \my $clear_search_list_checkbox,
+    'clear_list_checkbutton' => \my $clear_list_checkbutton,
     'dash_checkbutton'       => \my $dash_checkbutton,
+    'audio_only_checkbutton' => \my $audio_only_checkbutton,
     'gif_spinner'            => \my $gif_spinner,
     'hbox2'                  => \my $hbox2,
     'feeds_title'            => \my $feeds_title,
@@ -709,10 +711,13 @@ sub apply_configuration {
     # Fullscreen mode
     $fullscreen_checkbutton->set_active($CONFIG{fullscreen});
 
+    # Audio-only mode
+    $audio_only_checkbutton->set_active($CONFIG{audio_only});
+
     # DASH mode
     $dash_checkbutton->set_active($CONFIG{dash_support});
 
-    $clear_search_list_checkbox->set_active($CONFIG{clear_search_list});
+    $clear_list_checkbutton->set_active($CONFIG{clear_search_list});
     $panel_account_type_combobox->set_active($CONFIG{active_panel_account_combobox});
     $channel_type_combobox->set_active($CONFIG{active_channel_type_combobox});
     $subscriptions_order_combobox->set_active($CONFIG{active_subscriptions_order_combobox});
@@ -1620,17 +1625,24 @@ sub spin_results_per_page_changed {
     $yv_obj->set_maxResults($CONFIG{maxResults} = $spin_results->get_value);
 }
 
+# Page number
 sub spin_start_with_page_changed {
     $yv_obj->set_page($spin_start_with_page->get_value);
 }
 
+# Clear search list
 sub toggled_clear_search_list {
-    $CONFIG{clear_search_list} = $clear_search_list_checkbox->get_active() || 0;
+    $CONFIG{clear_search_list} = $clear_list_checkbutton->get_active() || 0;
 }
 
 # Fullscreen mode
-sub toggled_mplayer_fullscreen {
+sub toggled_fullscreen {
     $CONFIG{fullscreen} = $fullscreen_checkbutton->get_active() || 0;
+}
+
+# Audio-only mode
+sub toggled_audio_only {
+    $CONFIG{audio_only} = $audio_only_checkbutton->get_active() || 0;
 }
 
 # DASH mode
@@ -2015,8 +2027,12 @@ sub get_code {
 
         display_results($results);
       }
-      : $type eq 'video' ? play_video($yv_obj->parse_json_string($liststore->get($iter, 8)))
-      :                    return;
+      : $type eq 'video' ? (
+                            $CONFIG{audio_only}
+                            ? execute_cli_youtube_viewer("--id=$code")
+                            : play_video($yv_obj->parse_json_string($liststore->get($iter, 8)))
+                           )
+      : return;
 }
 
 sub _make_row_description {
@@ -2575,15 +2591,16 @@ sub get_options_as_arguments {
                    'download-dir'   => quotemeta(rel2abs($CONFIG{downloads_dir})),
                    'fullscreen'     => $CONFIG{fullscreen} ? q{} : undef,
                    'no-dash'        => $CONFIG{dash_support} ? undef : q{},
+                   'no-video'       => $CONFIG{audio_only} ? q{} : undef,
                   );
 
     while (my ($argv, $value) = each %options) {
         push(
             @args,
             do {
-                $value             ? '--' . $argv . '=' . $value
-                  : defined $value ? '--' . $argv
-                  :                  next;
+                $value              ? '--' . $argv . '=' . $value
+                  : defined($value) ? '--' . $argv
+                  :                   next;
               }
             );
     }
