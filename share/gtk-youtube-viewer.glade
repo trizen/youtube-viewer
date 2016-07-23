@@ -432,112 +432,25 @@
     <property name="stock">gtk-missing-image</property>
     <property name="icon-size">5</property>
   </object>
+  <object class="GtkImage" id="image79">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">applications-internet</property>
+  </object>
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">window-new</property>
   </object>
+  <object class="GtkImage" id="image80">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">mail-send</property>
+  </object>
   <object class="GtkImage" id="image9">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">list-add</property>
-  </object>
-  <object class="GtkMenu" id="detailsmenu">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <child>
-      <object class="GtkImageMenuItem" id="details">
-        <property name="label" translatable="yes">Show video details</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="tooltip_text" translatable="yes">(CTRL+D)</property>
-        <property name="image">image8</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="show_details_window" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="menuitem9">
-        <property name="label" translatable="yes">Comments / Ratings</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image30</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="show_feeds_window" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkSeparatorMenuItem" id="separator">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="queue_playback">
-        <property name="label" translatable="yes">Add to playback queue</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image9</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="queue_playback" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="menuitem1">
-        <property name="label" translatable="yes">Play the enqued videos</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image10</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="play_videos_from_queue" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="play_all_videos">
-        <property name="label" translatable="yes">Play all the video results</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image16</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="play_all_video_results" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkSeparatorMenuItem" id="menuitem2">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="play_in_new_term">
-        <property name="label" translatable="yes">Play this video in a terminal</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image5</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="play_selected_video_with_cli_youtube_viewer" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="download_video">
-        <property name="label" translatable="yes">Download the selected video</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image15</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="download_video" swapped="no"/>
-      </object>
-    </child>
-    <child>
-      <object class="GtkImageMenuItem" id="open_youtube">
-        <property name="label" translatable="yes">Open the YouTube video page</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="image">image7</property>
-        <property name="use_stock">False</property>
-        <signal name="activate" handler="open_youtube_url" swapped="no"/>
-      </object>
-    </child>
   </object>
   <object class="GtkListStore" id="liststore1">
     <columns>
@@ -604,7 +517,7 @@
   <object class="GtkImage" id="terminal_icon2">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="icon_name">utilities-terminal</property>
+    <property name="icon_name">video-display</property>
   </object>
   <object class="GtkWindow" id="__MAIN__">
     <property name="visible">True</property>
@@ -727,10 +640,13 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="donate_menu_item">
+                      <object class="GtkImageMenuItem" id="donate_item">
+                        <property name="label" translatable="yes">Donate</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Donate</property>
+                        <property name="tooltip_text" translatable="yes">Thank the author, by making a small donation.</property>
+                        <property name="image">image79</property>
+                        <property name="use_stock">False</property>
                         <signal name="activate" handler="donate" swapped="no"/>
                       </object>
                     </child>
@@ -2954,8 +2870,9 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
     <property name="title" translatable="yes">Feeds</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
-    <property name="default_width">640</property>
-    <property name="default_height">480</property>
+    <property name="default_width">450</property>
+    <property name="default_height">400</property>
+    <property name="destroy_with_parent">True</property>
     <property name="transient_for">__MAIN__</property>
     <signal name="destroy" handler="hide_feeds_window" swapped="no"/>
     <signal name="delete-event" handler="hide_feeds_window" swapped="no"/>
@@ -2969,14 +2886,12 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="label" translatable="yes">Video feeds</property>
+            <property name="use_markup">True</property>
+            <property name="justify">fill</property>
             <property name="selectable">True</property>
-            <attributes>
-              <attribute name="weight" value="bold"/>
-              <attribute name="scale" value="1.5"/>
-            </attributes>
+            <property name="ellipsize">end</property>
           </object>
           <packing>
-            <property name="x_options"/>
             <property name="y_options"/>
           </packing>
         </child>
@@ -3022,15 +2937,8 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
                     </child>
                   </object>
                 </child>
-                <child type="label">
-                  <object class="GtkButton" id="button18">
-                    <property name="label">gtk-refresh</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="use_stock">True</property>
-                    <signal name="clicked" handler="set_comments" swapped="no"/>
-                  </object>
+                <child type="label_item">
+                  <placeholder/>
                 </child>
               </object>
               <packing>
@@ -3071,6 +2979,7 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
                                       <object class="GtkTextView" id="comment_textview">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
+                                        <property name="wrap_mode">word</property>
                                       </object>
                                       <packing>
                                         <property name="expand">True</property>
@@ -3091,40 +3000,13 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
                         <property name="position">0</property>
                       </packing>
                     </child>
-                    <child>
-                      <object class="GtkVButtonBox" id="vbuttonbox2">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="layout_style">end</property>
-                        <child>
-                          <object class="GtkButton" id="button17">
-                            <property name="label">Send</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="image">image23</property>
-                            <signal name="clicked" handler="send_comment_to_video" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">False</property>
-                        <property name="position">1</property>
-                      </packing>
-                    </child>
                   </object>
                 </child>
                 <child type="label">
                   <object class="GtkLabel" id="label24">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">&lt;b&gt;Add a comment to this video:&lt;/b&gt;</property>
+                    <property name="label" translatable="yes">&lt;b&gt;Write your comment:&lt;/b&gt;</property>
                     <property name="use_markup">True</property>
                   </object>
                 </child>
@@ -3147,236 +3029,40 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <child>
-              <object class="GtkFrame" id="frame14">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label_xalign">0</property>
-                <property name="shadow_type">none</property>
-                <child>
-                  <object class="GtkAlignment" id="alignment14">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="left_padding">12</property>
-                    <child>
-                      <object class="GtkHButtonBox" id="hbuttonbox1">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="layout_style">start</property>
-                        <child>
-                          <object class="GtkButton" id="button10">
-                            <property name="label" translatable="yes">Like</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="image">image11</property>
-                            <signal name="clicked" handler="like_selected_video" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkButton" id="button11">
-                            <property name="label" translatable="yes">Dislike</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="image">image12</property>
-                            <signal name="clicked" handler="dislike_selected_video" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child type="label">
-                  <object class="GtkLabel" id="label22">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">&lt;b&gt;Rate this video:&lt;/b&gt;</property>
-                    <property name="use_markup">True</property>
-                    <property name="selectable">True</property>
-                  </object>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkFrame" id="frame15">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label_xalign">0</property>
-                <property name="shadow_type">none</property>
-                <child>
-                  <object class="GtkAlignment" id="alignment15">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="left_padding">12</property>
-                    <child>
-                      <object class="GtkHBox" id="hbox3">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="homogeneous">True</property>
-                        <child>
-                          <object class="GtkVButtonBox" id="vbuttonbox4">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <child>
-                              <object class="GtkButton" id="button24">
-                                <property name="label" translatable="yes">Add video to favorites</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="image">image58</property>
-                                <signal name="clicked" handler="favorite_video" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkButton" id="button23">
-                                <property name="label" translatable="yes">Subscribe to author's channel</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="image">image55</property>
-                                <signal name="clicked" handler="subscribe_channel" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">1</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkVButtonBox" id="vbuttonbox3">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <child>
-                              <object class="GtkButton" id="button20">
-                                <property name="label" translatable="yes">More videos from this author</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="image">image56</property>
-                                <signal name="clicked" handler="show_more_videos_from_username" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkButton" id="button13">
-                                <property name="label" translatable="yes">Show author's favorited videos</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="image">image74</property>
-                                <signal name="clicked" handler="get_user_favorited_videos" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">1</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkVButtonBox" id="vbuttonbox1">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <child>
-                              <object class="GtkButton" id="button15">
-                                <property name="label" translatable="yes">Show related videos</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="image">image73</property>
-                                <signal name="clicked" handler="show_related_videos" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkButton" id="button12">
-                                <property name="label" translatable="yes">Show author's plalyists</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="image">image71</property>
-                                <signal name="clicked" handler="show_playlists_from_username" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">1</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">2</property>
-                          </packing>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child type="label">
-                  <object class="GtkLabel" id="label23">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">&lt;b&gt;Others:&lt;/b&gt;</property>
-                    <property name="use_markup">True</property>
-                    <property name="selectable">True</property>
-                  </object>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="padding">1</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
               <object class="GtkHButtonBox" id="hbuttonbox7">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="layout_style">end</property>
+                <child>
+                  <object class="GtkButton" id="button17">
+                    <property name="label">Send</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="image">image80</property>
+                    <signal name="clicked" handler="send_comment_to_video" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="button18">
+                    <property name="label">gtk-refresh</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="use_stock">True</property>
+                    <signal name="clicked" handler="set_comments" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
                 <child>
                   <object class="GtkButton" id="button16">
                     <property name="label">gtk-close</property>
@@ -3390,14 +3076,14 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">False</property>
-                    <property name="position">0</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">False</property>
-                <property name="position">2</property>
+                <property name="position">0</property>
               </packing>
             </child>
             <child>
@@ -3409,7 +3095,7 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="position">3</property>
+                <property name="position">1</property>
               </packing>
             </child>
           </object>

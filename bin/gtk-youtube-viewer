@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 02 June 2016
+#  Latest edit on: 23 July 2016
 #  Website: http://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -31,6 +31,7 @@ use if ($DEVEL = 0), lib => qw(../lib);    # devel only
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
 use Gtk2 qw(-init);
+use Encode qw(encode_utf8);
 use File::ShareDir qw(dist_dir);
 use File::Spec::Functions qw(
   rel2abs
@@ -118,6 +119,9 @@ foreach my $dir ($config_dir) {
     }
 }
 ## end of compatibility
+
+# Video queue for the enqueue feature
+my @VIDEO_QUEUE;
 
 sub which_command {
     my ($cmd) = @_;
@@ -345,6 +349,7 @@ my %objects = (
     'dash_checkbutton'       => \my $dash_checkbutton,
     'gif_spinner'            => \my $gif_spinner,
     'hbox2'                  => \my $hbox2,
+    'feeds_title'            => \my $feeds_title,
 );
 
 while (my ($key, $value) = each %objects) {
@@ -534,7 +539,7 @@ if (not -d $CONFIG{cache_dir}) {
                 [${$_},
 
                  (    # Calculate a score for each match
-                    ((($lc_str =~ s/\W+//gr) ^ ($text =~ s/\W+//gr)) =~ /^[\0]+/ ? $+[0]**2 : 0) +
+                    ((encode_utf8($lc_str =~ s/\W+//gr) ^ encode_utf8($text =~ s/\W+//gr)) =~ /^[\0]+/ ? $+[0]**2 : 0) +
                       scalar(grep { $lc_str =~ /\b\Q$_\E\b/ } @words)**2 +
                       scalar(grep { $lc_str =~ /\b\Q$_\E/ } @words)
                  )
@@ -794,8 +799,7 @@ my %users_table = map { lc($_) => $_ } (
 set_usernames();
 
 sub donate {
-    my $url = 'https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=75FUVBE6Q73T8';
-    system "xdg-open \Q$url\E &";
+    open_external_url('https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=75FUVBE6Q73T8');
 }
 
 # ---------------- Threads ---------------- #
@@ -870,13 +874,13 @@ sub get_text {
     my $object_buffer = $object->get_buffer;
     my $start_iter    = $object_buffer->get_start_iter;
     my $end_iter      = $object_buffer->get_end_iter;
-    return $object_buffer->get_text($start_iter, $end_iter, undef);
+    $object_buffer->get_text($start_iter, $end_iter, undef);
 }
 
 sub new_image_from_pixbuf {
     my ($object_name, $pixbuf) = @_;
     my $object = $gui->get_object($object_name) // return;
-    return scalar($object->new_from_pixbuf($pixbuf));
+    scalar($object->new_from_pixbuf($pixbuf));
 }
 
 # Setting application icons
@@ -884,7 +888,6 @@ sub new_image_from_pixbuf {
     $gui->get_object('username_list')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
     $gui->get_object('uploads_button')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
     $gui->get_object('button6')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
-    $gui->get_object('button23')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
 }
 
 # Treeview signals
@@ -897,12 +900,329 @@ sub new_image_from_pixbuf {
 sub menu_popup {
     my ($treeview, $event) = @_;
 
-    #return 0 unless $treeview->get_selection->get_selected();
-
+    # Ignore non-right-clicks
     if ($event->button != 3) {
         return 0;
     }
-    my $menu = $gui->get_object('detailsmenu');
+
+    ##my ($path, $col, $cell_x, $cell_y) = ...;
+    my $path = ($treeview->get_path_at_pos($event->x, $event->y))[0] // return 0;
+
+    my $selection = $treeview->get_selection;
+    $selection->select_path($path);
+
+    my $iter = $selection->get_selected() // return 0;
+    my $type = $liststore->get($iter, 7);
+
+    # Ignore the right-click on 'next-page' entry
+    $type eq 'next_page' and return 0;
+
+    # Create the main right-click menu
+    my $menu = 'Gtk2::Menu'->new;
+
+    # Video menu
+    if ($type eq 'video') {
+
+        my $video_id = $liststore->get($iter, 3);
+
+        # More details
+        {
+            my $item = 'Gtk2::ImageMenuItem'->new("Show more details");
+            $item->set_image('Gtk2::Image'->new_from_icon_name("window-new", q{menu}));
+            $item->signal_connect(activate => \&show_details_window);
+            $item->show;
+            $menu->append($item);
+        }
+
+        # Youtube comments
+        {
+            my $item = 'Gtk2::ImageMenuItem'->new("YouTube comments");
+            $item->set_image('Gtk2::Image'->new_from_icon_name("edit-copy", q{menu}));
+            $item->signal_connect(activate => \&show_feeds_window);
+            $item->show;
+            $menu->append($item);
+        }
+
+        # Separator
+        {
+            my $item = 'Gtk2::SeparatorMenuItem'->new;
+            $item->show;
+            $menu->append($item);
+        }
+
+        # Video submenu
+        {
+            my $video = 'Gtk2::Menu'->new;
+            my $cat   = 'Gtk2::ImageMenuItem'->new("Video");
+            $cat->set_image('Gtk2::Image'->new_from_icon_name("video-x-generic", q{menu}));
+            $cat->show;
+
+            # Play
+            {
+                my $item = 'Gtk2::ImageMenuItem'->new("Play");
+                $item->signal_connect(activate => \&get_code);
+                $item->set_property(tooltip_text => "Play the video");
+                $item->set_image('Gtk2::Image'->new_from_icon_name("media-playback-start", q{menu}));
+                $item->show;
+                $video->append($item);
+            }
+
+            # Enqueue
+            {
+                my $item = 'Gtk2::ImageMenuItem'->new("Enqueue");
+                $item->signal_connect(activate => sub { enqueue_video($video_id) });
+                $item->set_property(tooltip_text => "Enqueue video to play it later");
+                $item->set_image('Gtk2::Image'->new_from_icon_name("list-add", q{menu}));
+                $item->show;
+                $video->append($item);
+            }
+
+            # Favorite
+            {
+                my $item = 'Gtk2::ImageMenuItem'->new("Favorite");
+                $item->set_property(tooltip_text => "Save the video to favorites");
+                $item->signal_connect(
+                    activate => sub {
+                        $yv_obj->favorite_video($video_id)
+                          or warn "Failed to favorite the video <$video_id>: $!";
+                    }
+                );
+                $item->set_image('Gtk2::Image'->new_from_icon_name("emblem-favorite", q{menu}));
+                $item->show;
+                $video->append($item);
+            }
+
+            # Download
+            {
+                my $item = 'Gtk2::ImageMenuItem'->new("Download");
+                $item->set_property(tooltip_text => "Download the video");
+                $item->signal_connect(activate => \&download_video);
+                $item->set_image('Gtk2::Image'->new_from_icon_name("emblem-downloads", q{menu}));
+                $item->show;
+                $video->append($item);
+            }
+
+            # Separator
+            {
+                my $item = 'Gtk2::SeparatorMenuItem'->new;
+                $item->show;
+                $video->append($item);
+            }
+
+            # Like
+            {
+                my $item = 'Gtk2::ImageMenuItem'->new("Like");
+                $item->set_property(tooltip_text => "Send a positive rating");
+                $item->signal_connect(
+                    activate => sub {
+                        $yv_obj->send_rating_to_video($video_id, 'like')
+                          or warn "Failed to send a positive rating to <$video_id>: $!";
+                    }
+                );
+                $item->set_image('Gtk2::Image'->new_from_icon_name("go-up", q{menu}));
+                $item->show;
+                $video->append($item);
+            }
+
+            # Disike
+            {
+                my $item = 'Gtk2::ImageMenuItem'->new("Dislike");
+                $item->set_property(tooltip_text => "Send a negative rating");
+                $item->signal_connect(
+                    activate => sub {
+                        $yv_obj->send_rating_to_video($video_id, 'dislike')
+                          or warn "Failed to send a negative rating to <$video_id>: $!";
+                    }
+                );
+                $item->set_image('Gtk2::Image'->new_from_icon_name("go-down", q{menu}));
+                $item->show;
+                $video->append($item);
+            }
+
+            # Separator
+            {
+                my $item = 'Gtk2::SeparatorMenuItem'->new;
+                $item->show;
+                $video->append($item);
+            }
+
+            # Related videos
+            {
+                my $item = 'Gtk2::ImageMenuItem'->new("Related videos");
+                $item->set_property(tooltip_text => "Display videos that are related to this video");
+                $item->signal_connect(activate => \&show_related_videos);
+                $item->set_image('Gtk2::Image'->new_from_icon_name("video-x-generic", q{menu}));
+                $item->show;
+                $video->append($item);
+            }
+
+            # Open the YouTube video page
+            {
+                my $item = 'Gtk2::ImageMenuItem'->new("YouTube page");
+                $item->signal_connect(activate => sub { open_external_url(make_youtube_url('video', $video_id)) });
+                $item->set_property(tooltip_text => "Open the YouTube page of this video");
+                $item->set_image('Gtk2::Image'->new_from_icon_name("applications-internet", q{menu}));
+                $item->show;
+                $video->append($item);
+            }
+
+            $cat->set_submenu($video);
+            $menu->append($cat);
+        }
+    }
+    elsif ($type eq 'playlist') {
+
+        my $playlist_id = $liststore->get($iter, 3);
+
+        # More details
+        {
+            my $item = 'Gtk2::ImageMenuItem'->new("Videos");
+            $item->set_property(tooltip_text => "Display the videos from this playlist");
+            $item->signal_connect(activate => sub { list_playlist($playlist_id) });
+            $item->set_image('Gtk2::Image'->new_from_icon_name("folder-open", q{menu}));
+            $item->show;
+            $menu->append($item);
+        }
+
+        # Separator
+        {
+            my $item = 'Gtk2::SeparatorMenuItem'->new;
+            $item->show;
+            $menu->append($item);
+        }
+    }
+
+    my $channel_id = $liststore->get($iter, 6);
+
+    # Author submenu
+    {
+        my $author = 'Gtk2::Menu'->new;
+        my $cat    = 'Gtk2::ImageMenuItem'->new("Author");
+        $cat->set_image('Gtk2::Image'->new_from_pixbuf($user_icon_pixbuf));
+        $cat->show;
+
+        # More videos from this author
+        {
+            my $item = 'Gtk2::ImageMenuItem'->new("Uploads");
+            $item->signal_connect(activate => sub { uploads('channel', $channel_id) });
+            $item->set_property(tooltip_text => "Show more videos from this author");
+            $item->set_image('Gtk2::Image'->new_from_icon_name("emblem-shared", q{menu}));
+            $item->show;
+            $author->append($item);
+        }
+
+        # Favorites of this author
+        {
+            my $item = 'Gtk2::ImageMenuItem'->new("Favorites");
+            $item->signal_connect(activate => sub { favorites('channel', $channel_id) });
+            $item->set_property(tooltip_text => "Show favorite videos of this author");
+            $item->set_image('Gtk2::Image'->new_from_icon_name("emblem-favorite", q{menu}));
+            $item->show;
+            $author->append($item);
+        }
+
+        # Playlists created by this author
+        {
+            my $item = 'Gtk2::ImageMenuItem'->new("Playlists");
+            $item->signal_connect(activate => \&show_playlists_from_selected_author);
+            $item->set_property(tooltip_text => "Show playlists created by this author");
+            $item->set_image('Gtk2::Image'->new_from_icon_name("emblem-documents", q{menu}));
+            $item->show;
+            $author->append($item);
+        }
+
+        # Liked videos by this author
+        {
+            my $item = 'Gtk2::ImageMenuItem'->new("Likes");
+            $item->signal_connect(activate => sub { likes('channel', $channel_id) });
+            $item->set_property(tooltip_text => "Show liked videos by this author");
+            $item->set_image('Gtk2::Image'->new_from_icon_name("emblem-default", q{menu}));
+            $item->show;
+            $author->append($item);
+        }
+
+        # Separator
+        {
+            my $item = 'Gtk2::SeparatorMenuItem'->new;
+            $item->show;
+            $author->append($item);
+        }
+
+        # Subscribe to channel
+        {
+            my $item = 'Gtk2::ImageMenuItem'->new("Subscribe");
+            $item->signal_connect(
+                activate => sub {
+                    $yv_obj->subscribe_channel($channel_id)
+                      or warn "Failed to subscribe to channel <$channel_id>: $!";
+                }
+            );
+            $item->set_property(tooltip_text => "Subscribe to this channel");
+            $item->set_image('Gtk2::Image'->new_from_pixbuf($feed_icon_pixbuf));
+            $item->show;
+            $author->append($item);
+        }
+
+        # Open the YouTube channel page
+        {
+            my $item = 'Gtk2::ImageMenuItem'->new("YouTube page");
+            $item->signal_connect(activate => sub { open_external_url(make_youtube_url('channel', $channel_id)) });
+            $item->set_property(tooltip_text => "Open the YouTube page of this channel");
+            $item->set_image('Gtk2::Image'->new_from_icon_name("applications-internet", q{menu}));
+            $item->show;
+            $author->append($item);
+        }
+
+        if ($type eq 'video' or $type eq 'playlist') {
+            $cat->set_submenu($author);
+            $menu->append($cat);
+        }
+        else {
+            $menu = $author;
+        }
+    }
+
+    if (@VIDEO_QUEUE) {
+
+        # Separator
+        {
+            my $item = 'Gtk2::SeparatorMenuItem'->new;
+            $item->show;
+            $menu->append($item);
+        }
+
+        # Play enqueued videos
+        {
+            my $item = 'Gtk2::ImageMenuItem'->new("Play enqueued videos");
+            $item->signal_connect(activate => \&play_enqueued_videos);
+            $item->set_property(tooltip_text => "Play the enqueued videos (if any)");
+            $item->set_image('Gtk2::Image'->new_from_icon_name("media-playback-start", q{menu}));
+            $item->show;
+            $menu->append($item);
+        }
+    }
+
+    if ($type eq 'video' or $type eq 'playlist') {
+
+        # Separator
+        {
+            my $item = 'Gtk2::SeparatorMenuItem'->new;
+            $item->show;
+            $menu->append($item);
+        }
+
+        # Play with CLI youtube-viewer
+        {
+            my $item = 'Gtk2::ImageMenuItem'->new("Play in terminal");
+            $item->signal_connect(activate => \&play_selected_video_with_cli_youtube_viewer);
+            $item->set_property(tooltip_text => "Play with youtube-viewer in a new terminal");
+            $item->set_image('Gtk2::Image'->new_from_icon_name("computer", q{menu}));
+            $item->show;
+            $menu->append($item);
+        }
+
+    }
+
     $menu->popup(undef, undef, undef, undef, $event->button, $event->time);
     return 0;
 }
@@ -996,9 +1316,9 @@ $accel->connect(ord('d'), ['control-mask'], ['visible'], \&show_details_window);
 $accel->connect(ord('f'), ['control-mask'], ['visible'], \&show_feeds_window);
 $accel->connect(ord('s'), ['control-mask'], ['visible'], \&add_user_to_favorites);
 $accel->connect(ord('r'), ['control-mask'], ['visible'], \&show_related_videos);
-$accel->connect(ord('g'), ['control-mask'], ['visible'], \&get_user_favorited_videos);
-$accel->connect(ord('m'), ['control-mask'], ['visible'], \&show_more_videos_from_username);
-$accel->connect(ord('k'), ['control-mask'], ['visible'], \&show_playlists_from_username);
+$accel->connect(ord('g'), ['control-mask'], ['visible'], \&show_user_favorited_videos);
+$accel->connect(ord('m'), ['control-mask'], ['visible'], \&show_videos_from_selected_author);
+$accel->connect(ord('k'), ['control-mask'], ['visible'], \&show_playlists_from_selected_author);
 $accel->connect(ord('w'), ['control-mask'], ['visible'], \&show_warnings_window);
 $accel->connect(0xffff,   ['lock-mask'],    ['visible'], \&delete_selected_row);
 $accel->connect(0xffc8,   ['lock-mask'],    ['visible'], \&maximize_unmaximize_mainw);
@@ -1152,8 +1472,6 @@ sub hide_login_to_youtube_window {
 sub show_details_window {
     my ($code, $iter) = get_selected_entry_code();
     $code // return;
-
-    #return unless $code =~ /$valid_video_id_re/;
     $details_window->show;
     set_entry_details($code, $iter);
     return 1;
@@ -1165,19 +1483,20 @@ sub hide_details_window {
 }
 
 sub set_comments {
-    my $videoID = get_selected_entry_code() // return;
-
-    return unless $videoID =~ /$valid_video_id_re/;
-
+    my $videoID = get_selected_entry_code(type => 'video') // return;
     $feeds_liststore->clear;
     display_comments($yv_obj->comments_from_video_id($videoID));
 }
 
 # Feeds window
 sub show_feeds_window {
-    my $videoID = get_selected_entry_code() // return;
+    my ($videoID, $iter) = get_selected_entry_code(type => 'video');
+    $videoID // return;
 
-    return unless $videoID =~ /$valid_video_id_re/;
+    my $info = $liststore->get($iter, 0);
+    my ($video_title) = $info =~ m{^(<big><b>.*?</b></big>)}s;
+
+    $feeds_title->set_markup("<big>$video_title</big>");
 
     $feeds_window->show;
     $feeds_statusbar->pop(0);
@@ -1566,9 +1885,12 @@ sub dislikes_button {
 sub get_selected_entry_code {
     my (%options) = @_;
     my $iter = $treeview->get_selection->get_selected // return;
-    if (not $options{force}) {
-        return unless defined $liststore->get($iter, 4);
+
+    if (exists $options{type}) {
+        my $type = $liststore->get($iter, 7) // return;
+        $type eq $options{type} or return;
     }
+
     my $code = $liststore->get($iter, 3);
     return wantarray ? ($code, $iter) : $code;
 }
@@ -1670,7 +1992,7 @@ sub get_next_page_spaces {
 }
 
 sub get_code {
-    my ($code, $iter) = get_selected_entry_code(force => 1);
+    my ($code, $iter) = get_selected_entry_code();
     $code // return;
 
     my $type = $liststore->get($iter, 7);
@@ -1823,7 +2145,9 @@ sub add_subscription_entry {
     $liststore->set($iter, 7, 'subscription');
     $row_description = _make_row_description($row_description);
 
-    $liststore->set($iter, 3, $yv_utils->get_channel_id($subscription));
+    my $channel_id = $yv_utils->get_channel_id($subscription);
+    $liststore->set($iter, 3, $channel_id);
+    $liststore->set($iter, 6, $channel_id);
     $liststore->set(
                     $iter,
                     0,
@@ -1831,7 +2155,7 @@ sub add_subscription_entry {
                       . encode_entities($yv_utils->get_title($subscription))
                       . "</b></big>\n\n"
                       . "<b>$symbols{face}\t</b> "
-                      . encode_entities($yv_utils->get_channel_id($subscription)) . "\n"
+                      . encode_entities($channel_id) . "\n"
                       . "<b>$symbols{crazy_arrow}\t</b> "
                       . $yv_utils->get_publication_date($subscription)
                       . "\n\n<i>"
@@ -1849,11 +2173,12 @@ sub add_subscription_entry {
 sub add_video_entry {
     my ($video) = @_;
 
-    my $iter = $liststore->append;
+    my $iter       = $liststore->append;
+    my $channel_id = $yv_utils->get_channel_id($video);
 
     my $row_description = $yv_utils->get_description($video);
     $liststore->set($iter, 4, $row_description);
-    $liststore->set($iter, 6, $yv_utils->get_channel_id($video));
+    $liststore->set($iter, 6, $channel_id);
     $liststore->set($iter, 7, 'video');
     $liststore->set($iter, 8, $yv_obj->make_json_string($video));
     $row_description = _make_row_description($row_description);
@@ -1872,7 +2197,7 @@ sub add_video_entry {
                       . "<b>$symbols{face}\t</b> "
                       . encode_entities($yv_utils->get_channel_title($video)) . "\n"
                       . "<b>$symbols{ellipsis}\t</b> "
-                      . encode_entities($yv_utils->get_channel_id($video)) . "\n" . "<i>"
+                      . encode_entities($channel_id) . "\n" . "<i>"
                       . encode_entities($row_description) . "</i>"
                    );
 
@@ -1906,7 +2231,9 @@ sub add_channel_entry {
     $liststore->set($iter, 7, 'channel');
     $row_description = _make_row_description($row_description);
 
-    $liststore->set($iter, 3, $yv_utils->get_channel_id($channel));
+    my $channel_id = $yv_utils->get_channel_id($channel);
+    $liststore->set($iter, 3, $channel_id);
+    $liststore->set($iter, 6, $channel_id);
     $liststore->set(
                     $iter,
                     0,
@@ -1916,7 +2243,7 @@ sub add_channel_entry {
                       . "<b>$symbols{face}\t</b> "
                       . encode_entities($yv_utils->get_channel_title($channel)) . "\n"
                       . "<b>$symbols{play}\t</b> "
-                      . encode_entities($yv_utils->get_channel_id($channel)) . "\n"
+                      . encode_entities($channel_id) . "\n"
                       . "<b>$symbols{crazy_arrow}\t</b> "
                       . $yv_utils->get_publication_date($channel)
                       . "\n\n<i>"
@@ -1936,13 +2263,14 @@ sub add_playlist_entry {
 
     my $iter            = $liststore->append;
     my $row_description = $yv_utils->get_description($playlist);
+    my $playlist_id     = $yv_utils->get_playlist_id($playlist);
 
     $liststore->set($iter, 4, $row_description);
     $row_description = _make_row_description($row_description);
 
     $liststore->set($iter, 6, $yv_utils->get_channel_id($playlist));
     $liststore->set($iter, 7, 'playlist');
-    $liststore->set($iter, 3, $yv_utils->get_playlist_id($playlist));
+    $liststore->set($iter, 3, $playlist_id);
     $liststore->set(
                     $iter,
                     0,
@@ -1952,7 +2280,7 @@ sub add_playlist_entry {
                       . "<b>$symbols{face}\t</b> "
                       . encode_entities($yv_utils->get_channel_title($playlist)) . "\n"
                       . "<b>$symbols{play}\t</b> "
-                      . encode_entities($yv_utils->get_playlist_id($playlist)) . "\n"
+                      . encode_entities($playlist_id) . "\n"
                       . "<b>$symbols{crazy_arrow}\t</b> "
                       . $yv_utils->format_date($yv_utils->get_publication_date($playlist)) . "\n\n" . '<i>'
                       . encode_entities($row_description) . '</i>'
@@ -2278,8 +2606,8 @@ sub execute_external_program {
     }
 }
 
-sub _make_youtube_url {
-    my ($code, $type) = @_;
+sub make_youtube_url {
+    my ($type, $code) = @_;
 
     my $format = (
                     ($type eq 'subscription' || $type eq 'channel') ? $CONFIG{youtube_channel_url}
@@ -2295,61 +2623,47 @@ sub _make_youtube_url {
     return "https://www.youtube.com";
 }
 
-sub open_youtube_url {
-    my ($code, $iter) = get_selected_entry_code();
-    $code // return;
-
-    my $type = $liststore->get($iter, 7);
-    my $url = _make_youtube_url($code, $type);
+sub open_external_url {
+    my ($url) = @_;
 
     my $exit_code =
       execute_external_program(join(q{ }, $CONFIG{web_browser} // $ENV{WEBBROWSER} // 'xdg-open', quotemeta($url)));
-    warn "Can't open YouTube URL - exit code: $exit_code\n" if $exit_code != 0;
-    return 1;
-}
 
-my @queue_codes;
-
-sub queue_playback {
-    my $code = get_selected_entry_code() // return;
-    print "[*] Added: <$code>\n" if $yv_obj->get_debug;
-    push @queue_codes, $code;
-    return 1;
-}
-
-sub play_videos_from_queue {
-    if (@queue_codes) {
-        execute_cli_youtube_viewer('--video-ids=' . join(q{,}, splice @queue_codes));
+    if ($exit_code != 0) {
+        warn "Can't open URL <<$url>> -- exit code: $exit_code\n";
     }
+
     return 1;
 }
 
-sub play_all_video_results {
-    my $model = $treeview->get_model;
-    my $iter = $model->get_iter_first // return;
+sub enqueue_video {
+    my ($video_id) = @_;
+    print "[*] Added: <$video_id>\n" if $yv_obj->get_debug;
+    push @VIDEO_QUEUE, $video_id;
+    return 1;
+}
 
-    my @ids;
-
-    do {
-        push @ids, $liststore->get($iter, 3);
-    } while defined($iter = $model->iter_next($iter));
-
-    execute_cli_youtube_viewer('--video-ids=' . join(q{,}, grep { /$valid_video_id_re/ } @ids));
-
+sub play_enqueued_videos {
+    if (@VIDEO_QUEUE) {
+        execute_cli_youtube_viewer('--video-ids=' . join(q{,}, splice @VIDEO_QUEUE));
+    }
     return 1;
 }
 
 sub play_selected_video_with_cli_youtube_viewer {
-    my $code = get_selected_entry_code() // return;
+    my ($code, $iter) = get_selected_entry_code();
+    $code // return;
 
-    if ($code =~ /$valid_video_id_re/) {
+    my $type = $liststore->get($iter, 7);
+
+    if ($type eq 'video') {
         execute_cli_youtube_viewer("--video-id=$code");
     }
-    elsif ($code =~ /$valid_playlist_id_re/) {
+    elsif ($type eq 'playlist') {
         execute_cli_youtube_viewer("--pp=$code");
     }
     else {
-        warn "Can't play: $code\n";
+        warn "Can't play $type: $code\n";
     }
 
     return 1;
@@ -2375,15 +2689,7 @@ sub execute_cli_youtube_viewer {
 }
 
 sub download_video {
-    my ($code, $iter) = get_selected_entry_code();
-    $code // return;
-
-    my $type = $liststore->get($iter, 7);
-    if ($type ne 'video') {
-        warn "Can't download resource: $type\n";
-        return;
-    }
-
+    my $code = get_selected_entry_code(type => 'video') // return;
     execute_cli_youtube_viewer("--video-id=$code", '--download');
     return 1;
 }
@@ -2407,67 +2713,31 @@ sub comments_row_activated {
     return 1;
 }
 
-sub get_user_favorited_videos {
+sub show_user_favorited_videos {
     my $username = get_channel_id_for_selected_video() // return;
     favorites('channel', $username);
 }
 
 sub get_channel_id_for_selected_video {
-    my $iter = $treeview->get_selection->get_selected() or return;
-    return $liststore->get($iter, 6);
+    my $iter = $treeview->get_selection->get_selected() // return;
+    $liststore->get($iter, 6);
 }
 
 sub show_related_videos {
-    my $code = get_selected_entry_code() // return;
+    my $video_id = get_selected_entry_code(type => 'video') // return;
 
-    my $results = $yv_obj->related_to_videoID($code);
+    my $results = $yv_obj->related_to_videoID($video_id);
     if ($yv_utils->has_entries($results)) {
         $liststore->clear if $CONFIG{clear_search_list};
         display_results($results);
     }
     else {
-        die "No related video for videoID: <$code>\n";
+        die "No related video for videoID: <$video_id>\n";
     }
 }
 
-sub favorite_video {
-    my $code = get_selected_entry_code() // return;
-
-    $feeds_statusbar->push(
-                           0, $yv_obj->favorite_video($code)
-                           ? 'Video favorited.'
-                           : 'Error!'
-                          );
-}
-
-sub subscribe_channel {
-    my $channel_id = get_channel_id_for_selected_video();
-    $feeds_statusbar->push(0,
-                           $yv_obj->subscribe_channel($channel_id)
-                           ? "Successfully subscribed to channel: $channel_id."
-                           : 'Error!');
-}
-
-sub like_selected_video {
-    my $code = get_selected_entry_code() // return;
-    $feeds_statusbar->push(
-                           0, $yv_obj->send_rating_to_video($code, 'like')
-                           ? 'Video liked.'
-                           : 'Error!'
-                          );
-}
-
-sub dislike_selected_video {
-    my $code = get_selected_entry_code() // return;
-    $feeds_statusbar->push(
-                           0, $yv_obj->send_rating_to_video($code, 'dislike')
-                           ? 'Video disliked.'
-                           : 'Error!'
-                          );
-}
-
 sub send_comment_to_video {
-    my $videoID = get_selected_entry_code() // return;
+    my $videoID = get_selected_entry_code(type => 'video') // return;
     my $comment = get_text($gui->get_object('comment_textview'));
 
     $feeds_statusbar->push(0,
@@ -2508,11 +2778,11 @@ sub display_comments {
     return 1;
 }
 
-sub show_more_videos_from_username {
+sub show_videos_from_selected_author {
     uploads('channel', get_channel_id_for_selected_video() || return);
 }
 
-sub show_playlists_from_username {
+sub show_playlists_from_selected_author {
     my $request = $yv_obj->playlists(get_channel_id_for_selected_video() || return);
     if ($yv_utils->has_entries($request)) {
         $liststore->clear if $CONFIG{clear_search_list};
@@ -2547,7 +2817,7 @@ sub set_entry_details {
     $gui->get_object('video_details_label')->set_label($main_details . $secondary_details);
 
     # Setting the link button
-    my $url = _make_youtube_url($code, $type);
+    my $url = make_youtube_url($type, $code);
     my $linkbutton = $gui->get_object('linkbutton1');
     $linkbutton->set_label($url);
     $linkbutton->set_uri($url);
