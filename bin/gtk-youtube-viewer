@@ -497,7 +497,7 @@ if (not -d $CONFIG{cache_dir}) {
         $completion // return;
         my $text = lc($buffer->get_text);
 
-        my (@matches, %words);
+        my (%matches, %words);
         foreach my $word ($split_string->($text)) {
 
             next if $word eq '';
@@ -514,11 +514,17 @@ if (not -d $CONFIG{cache_dir}) {
             }
 
             if (defined $ref and exists $ref->{values}) {
-                if (not exists $words{$word}) { undef $words{$word} }
-                push @matches, @{$ref->{values}};
+                if (not exists $words{$word}) {
+                    undef $words{$word};
+                }
+                foreach my $match (@{$ref->{values}}) {
+                    if (not exists $matches{$match}) {
+                        undef $matches{$$match};
+                    }
+                }
             }
             else {
-                @matches = ();    # don't include partial matches
+                %matches = ();    # don't include partial matches
                 last;
             }
         }
@@ -526,12 +532,11 @@ if (not -d $CONFIG{cache_dir}) {
         my @words = keys %words;
 
         state $x = require List::Util;
-        @matches = grep {
-            my $lc_str = lc(${$_});
-            not defined(List::Util::first(sub { index($lc_str, $_) == -1 }, @words));
-        } @matches;
+        my @matches = grep {
+            my $match = lc($_);
+            not defined(List::Util::first(sub { index($match, $_) == -1 }, @words));
+        } keys %matches;
 
-        my %seen;
         my $store = Gtk2::ListStore->new('Glib::String');
 
         my $i = 0;
@@ -539,16 +544,16 @@ if (not -d $CONFIG{cache_dir}) {
             map  { $_->[0] }
             sort { $b->[1] <=> $a->[1] }
             map {
-                my $lc_str = lc(${$_});
-                [${$_},
+                my $match = lc($_);
+                [$_,
 
                  (    # Calculate a score for each match
-                    ((encode_utf8($lc_str =~ s/\W+//gr) ^ encode_utf8($text =~ s/\W+//gr)) =~ /^[\0]+/ ? $+[0]**2 : 0) +
-                      scalar(grep { $lc_str =~ /\b\Q$_\E\b/ } @words)**2 +
-                      scalar(grep { $lc_str =~ /\b\Q$_\E/ } @words)
+                    ((encode_utf8($match =~ s/\W+//gr) ^ encode_utf8($text =~ s/\W+//gr)) =~ /^[\0]+/ ? $+[0]**2 : 0) +
+                      scalar(grep { $match =~ /\b\Q$_\E\b/ } @words)**2 +
+                      scalar(grep { $match =~ /\b\Q$_\E/ } @words)
                  )
                 ]
-            } grep { !$seen{$_}++ } @matches
+            } @matches
           ) {
             $store->set($store->append, 0, $str);
             last if ++$i == $CONFIG{entry_completion_limit};
