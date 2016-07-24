@@ -546,10 +546,10 @@
                     <property name="can_focus">False</property>
                     <child>
                       <object class="GtkImageMenuItem" id="username_list">
-                        <property name="label" translatable="yes">Users (CTRL+U)</property>
+                        <property name="label" translatable="yes">Saved channels</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="tooltip_text" translatable="yes">Youtube usernames list</property>
+                        <property name="tooltip_text" translatable="yes">See your list of saved channels</property>
                         <property name="use_stock">False</property>
                         <signal name="activate" handler="show_users_list_window" swapped="no"/>
                       </object>
@@ -3268,7 +3268,7 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
           <object class="GtkLabel" id="label11">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="label" translatable="yes">Connect to your Youtube account</property>
+            <property name="label" translatable="yes">Connect to your YouTube account</property>
             <attributes>
               <attribute name="weight" value="bold"/>
               <attribute name="scale" value="2"/>

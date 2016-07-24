@@ -497,7 +497,7 @@ if (not -d $CONFIG{cache_dir}) {
         $completion // return;
         my $text = lc($buffer->get_text);
 
-        my (@matches, @words);
+        my (@matches, %words);
         foreach my $word ($split_string->($text)) {
 
             next if $word eq '';
@@ -514,7 +514,7 @@ if (not -d $CONFIG{cache_dir}) {
             }
 
             if (defined $ref and exists $ref->{values}) {
-                push @words,   $word;
+                if (not exists $words{$word}) { undef $words{$word} }
                 push @matches, @{$ref->{values}};
             }
             else {
@@ -522,6 +522,8 @@ if (not -d $CONFIG{cache_dir}) {
                 last;
             }
         }
+
+        my @words = keys %words;
 
         state $x = require List::Util;
         @matches = grep {
