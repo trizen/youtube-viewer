@@ -31,7 +31,7 @@ use if ($DEVEL = 0), lib => qw(../lib);    # devel only
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
 use Gtk2 qw(-init);
-use Encode qw(encode_utf8);
+use List::Util qw(all);
 use File::ShareDir qw(dist_dir);
 use File::Spec::Functions qw(
   rel2abs
@@ -467,7 +467,7 @@ if (not -d $CONFIG{cache_dir}) {
 
 {
     my $split_string = sub {
-        ((map { s/^[[:punct:]]+//r =~ s/[[:punct:]]+\z//r } split(' ', $_[0])), split(/\W+/, $_[0]));
+        grep { $_ ne '' } split(/\W+/, $_[0]);
     };
 
     my %history_dict;
@@ -495,12 +495,11 @@ if (not -d $CONFIG{cache_dir}) {
         my ($buffer) = @_;
 
         $completion // return;
-        my $text = lc($buffer->get_text);
+        my $text   = lc($buffer->get_text);
+        my @tokens = $split_string->($text);
 
-        my (%matches, %words);
-        foreach my $word ($split_string->($text)) {
-
-            next if $word eq '';
+        my (@words, @matches, %analyzed);
+        foreach my $word (@tokens) {
 
             my $ref = \%history_dict;
             foreach my $char (split(//, $word)) {
@@ -514,28 +513,22 @@ if (not -d $CONFIG{cache_dir}) {
             }
 
             if (defined $ref and exists $ref->{values}) {
-                if (not exists $words{$word}) {
-                    undef $words{$word};
-                }
+                push @words, $word;
                 foreach my $match (@{$ref->{values}}) {
-                    if (not exists $matches{$match}) {
-                        undef $matches{$$match};
+                    if (not exists $analyzed{$match}) {
+                        undef $analyzed{$match};
+                        my $str = lc($$match);
+                        if (all { index($str, $_) != -1 } @tokens) {
+                            unshift @matches, $$match;
+                        }
                     }
                 }
             }
             else {
-                %matches = ();    # don't include partial matches
+                @matches = ();    # don't include partial matches
                 last;
             }
         }
-
-        my @words = keys %words;
-
-        state $x = require List::Util;
-        my @matches = grep {
-            my $match = lc($_);
-            not defined(List::Util::first(sub { index($match, $_) == -1 }, @words));
-        } keys %matches;
 
         my $store = Gtk2::ListStore->new('Glib::String');
 
@@ -544,15 +537,59 @@ if (not -d $CONFIG{cache_dir}) {
             map  { $_->[0] }
             sort { $b->[1] <=> $a->[1] }
             map {
-                my $match = lc($_);
-                [$_,
+                my $match       = lc($_);
+                my @parts       = $split_string->($match);
 
-                 (    # Calculate a score for each match
-                    ((encode_utf8($match =~ s/\W+//gr) ^ encode_utf8($text =~ s/\W+//gr)) =~ /^[\0]+/ ? $+[0]**2 : 0) +
-                      scalar(grep { $match =~ /\b\Q$_\E\b/ } @words)**2 +
-                      scalar(grep { $match =~ /\b\Q$_\E/ } @words)
-                 )
-                ]
+                my $end_w = $#words;
+                my $end_p = $#parts;
+
+                my $order_score = 0;
+                for (my $i = 0 ; $i <= $end_w ; ++$i) {
+                    my $word = $words[$i];
+
+                    for (my $j = $i ; $j <= $end_p ; ++$j) {
+                        my $part = $parts[$j];
+
+                        my $matched;
+                        my $continue = 1;
+                        while ($part eq $word) {
+                            $order_score += 1 - 1 / (length($word) + 1)**2;
+                            $matched ||= 1;
+                            $part = $parts[++$j] // do { $continue = 0; last };
+                            $word = $words[++$i] // do { $continue = 0; last };
+                        }
+
+                        if ($matched) {
+                            $order_score += 1 - 1 / (length($word) + 1)
+                              if ($continue and index($part, $word) == 0);
+                            last;
+                        }
+                        elsif (index($part, $word) == 0) {
+                            $order_score += length($word) / length($part);
+                            last;
+                        }
+                    }
+                }
+
+                my $prefix_score = 0;
+                all {
+                    ($parts[$_] eq $words[$_])
+                      ? do {
+                        $prefix_score += 1;
+                        1;
+                      }
+                      : (index($parts[$_], $words[$_]) == 0) ? do {
+                        $prefix_score += length($words[$_]) / length($parts[$_]);
+                        0;
+                      }
+                      : 0;
+                }
+                0 .. ($end_p < $end_w ? $end_p : $end_w);
+
+                ## printf("score('@parts', '@words') = %.4g + %.4g = %.4g\n",
+                ##        $order_score, $prefix_score, $order_score + $prefix_score);
+
+                [$_, $order_score + $prefix_score]
             } @matches
           ) {
             $store->set($store->append, 0, $str);
