@@ -543,8 +543,10 @@ if (not -d $CONFIG{cache_dir}) {
                 my $end_w = $#words;
                 my $end_p = $#parts;
 
+                my $min_end = $end_w < $end_p ? $end_w : $end_p;
+
                 my $order_score = 0;
-                for (my $i = 0 ; $i <= $end_w ; ++$i) {
+                for (my $i = 0 ; $i <= $min_end ; ++$i) {
                     my $word = $words[$i];
 
                     for (my $j = $i ; $j <= $end_p ; ++$j) {
@@ -584,7 +586,7 @@ if (not -d $CONFIG{cache_dir}) {
                       }
                       : 0;
                 }
-                0 .. ($end_p < $end_w ? $end_p : $end_w);
+                0 .. $min_end;
 
                 ## printf("score('@parts', '@words') = %.4g + %.4g = %.4g\n",
                 ##        $order_score, $prefix_score, $order_score + $prefix_score);
