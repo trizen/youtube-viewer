@@ -13,11 +13,11 @@ WWW::YoutubeViewer::RegularExpressions - Various utils.
 
 =head1 VERSION
 
-Version 0.01
+Version 3.2.2
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = v3.2.2;
 
 =head1 SYNOPSIS
 
@@ -35,7 +35,7 @@ our $non_digit_or_opt_re = qr{^(?!$range_num_re)(?>[0-9]{1,2}[^0-9]|[0-9]{3}|[^0
 
 # Generic name
 my $generic_name_re = qr{[a-zA-Z0-9_.\-]{11,34}};
-our $valid_username_re = qr{^(?:\w+(?:[-.]++\w++)*|$generic_name_re)\z};
+our $valid_channel_id_re = qr{^(?:\w+(?:[-.]++\w++)*|$generic_name_re)\z};
 
 # Video ID
 my $video_id_re = qr{[0-9A-Za-z_\-]{11}};
@@ -57,7 +57,7 @@ our @EXPORT = qw(
   $range_num_re
   $digit_or_equal_re
   $non_digit_or_opt_re
-  $valid_username_re
+  $valid_channel_id_re
   $valid_video_id_re
   $get_video_id_re
   $valid_course_id_re

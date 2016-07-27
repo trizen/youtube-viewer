@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 23 July 2016
+#  Latest edit on: 27 July 2016
 #  Website: http://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -29,6 +29,9 @@ my $DEVEL;    # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel only
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
+
+use WWW::YoutubeViewer v3.2.2;
+use WWW::YoutubeViewer::RegularExpressions v3.2.2;
 
 use Gtk2 qw(-init);
 use List::Util qw(all);
@@ -352,6 +355,8 @@ my %objects = (
     'gif_spinner'            => \my $gif_spinner,
     'hbox2'                  => \my $hbox2,
     'feeds_title'            => \my $feeds_title,
+    'channel_name_save'      => \my $save_channel_name_entry,
+    'channel_id_save'        => \my $save_channel_id_entry,
 );
 
 while (my ($key, $value) = each %objects) {
@@ -419,9 +424,6 @@ my $animation = 'Gtk2::Gdk::PixbufAnimation'->new_from_file(catfile($icons_path,
 # Setting application title and icon
 $mainw->set_title("$appname $version");
 $mainw->set_icon($app_icon_pixbuf);
-
-# Regular expressions
-use WWW::YoutubeViewer::RegularExpressions;
 
 our $CONFIG;
 require $config_file;    # Load the configuration file
@@ -712,7 +714,6 @@ if (not defined $CONFIG{terminal}) {
 # Locate youtube-viewer
 $CONFIG{youtube_viewer} //= which_command('youtube-viewer') // 'youtube-viewer';
 
-use WWW::YoutubeViewer v3.2.2;
 my $yv_obj = WWW::YoutubeViewer->new(
                                      escape_utf8         => 1,
                                      key                 => $key,
@@ -839,14 +840,6 @@ sub apply_configuration {
 apply_configuration();
 
 # YouTube usernames
-my %users_table = map { lc($_) => $_ } (
-                                        'KhanAcademy',         'VSauce',           'Gotbletu',      'ScienceChannel',
-                                        'SpaceRip',            'TEDtalksDirector', 'MIT',           'SixtySymbols',
-                                        'SciShow',             'NumberPhile',      'ComputerPhile', 'UCBerkeley',
-                                        'UCTelevision',        'BigThink',         'ProfessorFink', 'UCTVSeminars',
-                                        '1Veritasium',         'MinutePhysics',    'BrianTWill',    'SingingBanana',
-                                        'TheRoyalInstitution', 'ItsOkayToBeSmart', 'CrashCourse',   'MyCodeSchool'
-                                       );
 set_usernames();
 
 sub donate {
@@ -1802,51 +1795,174 @@ sub set_youtube_tops {
     #add_top_row($name, $type);
 }
 
-# ------------ Usernames list window ------------ #
-sub set_usernames {
-    if (-e $CONFIG{youtube_users_file}) {
-        if (open my $fh, '<', $CONFIG{youtube_users_file}) {
-            while (defined(my $user = <$fh>)) {
-                chomp $user;
-                $users_table{lc $user} = $user;
+{
+    my %channels;
+
+    # ------------ Usernames list window ------------ #
+    sub set_usernames {
+        if (-e $CONFIG{youtube_users_file}) {
+            if (open my $fh, '<:utf8', $CONFIG{youtube_users_file}) {
+                while (defined(my $entry = <$fh>)) {
+
+                    $entry = unpack('A*', $entry);
+                    my ($channel, $label) = split(' ', $entry, 2);
+
+                    if (defined($channel) and $channel =~ /$valid_channel_id_re/) {
+                        if (defined($label) and $label =~ /\S/) {
+                            $channels{$channel} = $label;
+                        }
+                        else {
+                            $channels{$channel} = undef;
+                        }
+                    }
+                }
+                close $fh;
             }
-            close $fh;
+        }
+        else {
+            # Default channels
+            %channels = (
+                         map { $_ => undef } (
+                                              'KhanAcademy',         'VSauce',           'Gotbletu',      'ScienceChannel',
+                                              'SpaceRip',            'TEDtalksDirector', 'MIT',           'SixtySymbols',
+                                              'SciShow',             'NumberPhile',      'ComputerPhile', 'UCBerkeley',
+                                              'UCTelevision',        'BigThink',         'ProfessorFink', 'UCTVSeminars',
+                                              '1Veritasium',         'MinutePhysics',    'BrianTWill',    'SingingBanana',
+                                              'TheRoyalInstitution', 'ItsOkayToBeSmart', 'CrashCourse',   'MyCodeSchool'
+                                             )
+                        );
+        }
+
+        foreach my $channel (sort { ($channels{$a} // lc($a)) cmp($channels{$b} // lc($b)) } keys %channels) {
+            my $iter = $users_liststore->append;
+
+            if (defined $channels{$channel}) {
+                $users_liststore->set($iter, 0, $channel);
+                $users_liststore->set($iter, 1, $channels{$channel});
+                $users_liststore->set($iter, 2, 'channel');
+            }
+            else {
+                $users_liststore->set($iter, 0, $channel);
+                $users_liststore->set($iter, 1, $channel);
+                $users_liststore->set($iter, 2, 'username');
+            }
+
+            $users_liststore->set($iter, 3, $user_icon_pixbuf);
         }
     }
-    foreach my $user (sort { lc $a cmp lc $b } values %users_table) {
-        my $iter = $users_liststore->append;
-        $users_liststore->set($iter, 0, $user);
-        $users_liststore->set($iter, 1, $user_icon_pixbuf);
+
+    sub save_channel {
+        my $channel_name = $save_channel_name_entry->get_text;
+        my $channel_id   = $save_channel_id_entry->get_text;
+
+        # Validate the channel id
+        if (defined($channel_id) and $channel_id =~ /$valid_channel_id_re/) {
+
+            # Get the channel name when empty
+            if (not defined($channel_name) or not $channel_name =~ /\S/) {
+                $channel_name = $yv_obj->channel_title_from_id($channel_id) // die "Invalid channel ID: <<$channel_id>>";
+            }
+        }
+        elsif (defined($channel_name) and $channel_name =~ /$valid_channel_id_re/) {
+            $channel_id = $yv_obj->channel_id_from_username($channel_name);
+
+            if (not defined $channel_id) {
+                die "Can't get channel ID from username: <<$channel_name>>";
+            }
+        }
+        elsif (defined($channel_id) and $channel_id =~ /\S/) {
+            die "Invalid channel ID: <<$channel_id>>";
+        }
+        else {
+            return;
+        }
+
+        save_channel_by_id($channel_id, $channel_name);
     }
-}
 
-sub add_username {
-    my $user = $gui->get_object('username_entry')->get_text;
-    $users_table{lc $user} = $user;
-    my $iter = $users_liststore->append;
-    $users_liststore->set($iter, 0, $user);
-    $users_liststore->set($iter, 1, $user_icon_pixbuf);
-}
+    sub save_channel_by_id {
+        my ($channel_id, $channel_name) = @_;
 
-sub add_user_to_favorites {
-    my $user = get_channel_id_for_selected_video() or return;
-    $gui->get_object('username_entry')->set_text($user);
-    add_username();
-    $feeds_statusbar->push(0, "Successfully added '${user}' into the username list (see: Menu->Users)");
-}
+        # Validate the channel ID
+        if (not defined($channel_id) or not $channel_id =~ /$valid_channel_id_re/) {
+            return;
+        }
 
-sub remove_selected_user {
-    my $iter = $users_treeview->get_selection->get_selected;
-    my $selected_user = $users_liststore->get($iter, 0);
-    delete $users_table{lc $selected_user};
-    $users_liststore->remove($iter);
-}
+        # Channel ID already exists in the list
+        if (exists($channels{$channel_id})) {
+            return;
+        }
 
-sub save_usernames_to_file {
-    open my $fh, '>', $CONFIG{youtube_users_file} or return 0;
-    local $, = "\n";
-    print $fh sort { lc $a cmp lc $b } values %users_table;
-    close $fh;
+        # Get the channel name
+        if (not defined($channel_name) or not $channel_name =~ /\S/) {
+            $channel_name = $yv_obj->channel_title_from_id($channel_id) // $channel_id;
+        }
+
+        # Store it internally
+        $channels{$channel_id} = $channel_name;
+
+        # Append it to the list
+        my $iter = $users_liststore->append;
+        $users_liststore->set($iter, 0, $channel_id);
+        $users_liststore->set($iter, 1, $channel_name);
+        $users_liststore->set($iter, 2, 'channel');
+        $users_liststore->set($iter, 3, $user_icon_pixbuf);
+    }
+
+    sub add_user_to_favorites {
+        my $channel_id = get_channel_id_for_selected_video() // return;
+        save_channel_by_id($channel_id);
+    }
+
+    sub remove_selected_user {
+        my $selection = $users_treeview->get_selection // return;
+        my $iter      = $selection->get_selected       // return;
+        my $channel_id = $users_liststore->get($iter, 0);
+        delete $channels{$channel_id};
+        $users_liststore->remove($iter);
+    }
+
+    sub save_usernames_to_file {
+        open(my $fh, '>:utf8', $CONFIG{youtube_users_file}) or return;
+        foreach my $channel (
+                             sort { ($channels{$a} // $a) cmp($channels{$b} // $b) }
+                             keys %channels
+          ) {
+            if (defined($channels{$channel})) {
+                say $fh "$channel $channels{$channel}";
+            }
+            else {
+                say $fh $channel;
+            }
+        }
+        close $fh;
+    }
+
+    # Get playlists from username
+    sub playlists_from_selected_username {
+        my $selection = $users_treeview->get_selection() // return;
+        my $iter      = $selection->get_selected()       // return;
+
+        my $type    = $users_liststore->get($iter, 2);
+        my $channel = $users_liststore->get($iter, 0);
+
+        playlists($type, $channel);
+    }
+
+    sub videos_from_selected_username {
+        my $selection = $users_treeview->get_selection() // return;
+        my $iter      = $selection->get_selected()       // return;
+
+        my $type    = $users_liststore->get($iter, 2);
+        my $channel = $users_liststore->get($iter, 0);
+
+        uploads($type, $channel);
+    }
+
+    sub videos_from_saved_channel {
+        hide_users_list_window();
+        videos_from_selected_username();
+    }
 }
 
 # ----- My panel settings ----- #
@@ -2356,12 +2472,6 @@ sub add_playlist_entry {
     }
 }
 
-sub print_channel_suggestions {
-    my $results = $yv_obj->get_channel_suggestions();
-    $liststore->clear if $CONFIG{clear_search_list};
-    display_results($results);
-}
-
 sub list_playlist {
     my ($playlist_id) = @_;
 
@@ -2375,23 +2485,6 @@ sub list_playlist {
         die "[!] Inexistent playlist...\n";
     }
     return;
-}
-
-# Get playlists from username
-sub playlists_from_selected_username {
-    my $iter = $users_treeview->get_selection->get_selected;
-    playlists('username', $users_liststore->get($iter, 0));
-}
-
-sub videos_from_selected_username {
-    my $iter = $users_treeview->get_selection->get_selected;
-    my $username = $users_liststore->get($iter, 0);
-    uploads('user', $username);
-}
-
-sub get_username_from_list {
-    hide_users_list_window();
-    videos_from_selected_username();
 }
 
 sub favorites_from_text_entry {
@@ -2438,7 +2531,7 @@ sub videos_from_username {
 sub is_valid_username {
     my ($username) = @_;
     die "Invalid username: <$username>\n"
-      unless $username =~ /$valid_username_re/;
+      unless $username =~ /$valid_channel_id_re/;
     return 1;
 }
 
@@ -2782,7 +2875,8 @@ sub show_user_favorited_videos {
 }
 
 sub get_channel_id_for_selected_video {
-    my $iter = $treeview->get_selection->get_selected() // return;
+    my $selection = $treeview->get_selection() // return;
+    my $iter      = $selection->get_selected() // return;
     $liststore->get($iter, 6);
 }
 

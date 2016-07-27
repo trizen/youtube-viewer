@@ -119,7 +119,7 @@ sub channels_my_subscribers {
 
 =head2 channel_id_from_username($username)
 
-Return the channel id for an username.
+Return the channel ID for an username.
 
 =cut
 
@@ -127,6 +127,24 @@ sub channel_id_from_username {
     my ($self, $username) = @_;
     my $channel = $self->channels_from_username($username) // return;
     $channel->{results}{items}[0]{id} // return;
+}
+
+=head2 channel_title_from_id($channel_id)
+
+Return the channel title for a given channel ID.
+
+=cut
+
+sub channel_title_from_id {
+    my ($self, $channel_id) = @_;
+    my $info = $self->channels_info($channel_id // return) // return;
+
+     (ref($info) eq 'HASH'
+                and ref($info->{results}) eq 'HASH'
+                and ref($info->{results}{items}) eq 'ARRAY'
+                and ref($info->{results}{items}[0]) eq 'HASH')
+                ?  $info->{results}{items}[0]{snippet}{title}
+                : ();
 }
 
 =head2 channels_contentDetails($channelID)

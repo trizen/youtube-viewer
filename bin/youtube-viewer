@@ -136,6 +136,9 @@ use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
+use WWW::YoutubeViewer v3.2.2;
+use WWW::YoutubeViewer::RegularExpressions v3.2.2;
+
 use File::Spec::Functions qw(
   catdir
   catfile
@@ -223,9 +226,6 @@ sub which_command {
     }
     return;
 }
-
-# Regular expressions
-use WWW::YoutubeViewer::RegularExpressions;
 
 # Main configuration
 my %CONFIG = (
@@ -566,7 +566,6 @@ if ($opt{history}) {
     $key =~ s/(.{$i})(.)/$2$1/g while --$i;
 }
 
-use WWW::YoutubeViewer v3.2.1;
 my $yv_obj = WWW::YoutubeViewer->new(
                                      escape_utf8         => 1,
                                      key                 => $key,
@@ -1236,7 +1235,7 @@ sub apply_configuration {
     }
 
     if (defined $opt->{user_videos}) {
-        if ($opt->{user_videos} =~ /$valid_username_re/) {
+        if ($opt->{user_videos} =~ /$valid_channel_id_re/) {
             print_videos($yv_obj->uploads_from_username(delete $opt->{user_videos}));
         }
         else {
@@ -1249,7 +1248,7 @@ sub apply_configuration {
     }
 
     if (defined $opt->{user_shows}) {
-        if ($opt->{user_shows} =~ /$valid_username_re/) {
+        if ($opt->{user_shows} =~ /$valid_channel_id_re/) {
             print_shows($yv_obj->get_shows_from_username(delete $opt->{user_shows}));
         }
         else {
@@ -1304,7 +1303,7 @@ sub apply_configuration {
 
     if (defined $opt->{user_favorited_videos}) {
         my $username = delete $opt->{user_favorited_videos};
-        if ($username =~ /$valid_username_re/) {
+        if ($username =~ /$valid_channel_id_re/) {
             print_videos($yv_obj->favorites_from_username($username));
         }
         else {
@@ -1314,7 +1313,7 @@ sub apply_configuration {
 
     if (defined $opt->{user_liked_videos}) {
         my $username = delete $opt->{user_liked_videos};
-        if ($username =~ /$valid_username_re/) {
+        if ($username =~ /$valid_channel_id_re/) {
             print_videos($yv_obj->likes_from_username($username));
         }
         else {
@@ -2059,7 +2058,7 @@ sub subscribe_to {
     return if not authenticated();
 
     foreach my $channel (@ids) {
-        if ($channel =~ /$valid_username_re/) {
+        if ($channel =~ /$valid_channel_id_re/) {
             if ($is_channel ? $yv_obj->subscribe_channel($channel) : $yv_obj->subscribe_channel_from_username($channel)) {
                 print "** Successfully subscribed to channel: $channel\n";
             }

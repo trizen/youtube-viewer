@@ -22,16 +22,6 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkImage" id="download_icon1">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-downloads</property>
-  </object>
-  <object class="GtkImage" id="download_icon2">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-downloads</property>
-  </object>
   <object class="GtkImage" id="download_icon3">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -47,40 +37,10 @@
     <property name="can_focus">False</property>
     <property name="stock">gtk-missing-image</property>
   </object>
-  <object class="GtkImage" id="image10">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">media-playback-start</property>
-  </object>
-  <object class="GtkImage" id="image11">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">go-up</property>
-  </object>
-  <object class="GtkImage" id="image12">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">go-down</property>
-  </object>
-  <object class="GtkImage" id="image13">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-favorite</property>
-  </object>
   <object class="GtkImage" id="image14">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">emblem-documents</property>
-  </object>
-  <object class="GtkImage" id="image15">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-downloads</property>
-  </object>
-  <object class="GtkImage" id="image16">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">media-skip-forward</property>
   </object>
   <object class="GtkImage" id="image17">
     <property name="visible">True</property>
@@ -92,7 +52,7 @@
     <property name="can_focus">False</property>
     <child>
       <object class="GtkImageMenuItem" id="menuitem8">
-        <property name="label" translatable="yes">User's videos</property>
+        <property name="label" translatable="yes">Videos</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="image">image17</property>
@@ -102,7 +62,7 @@
     </child>
     <child>
       <object class="GtkImageMenuItem" id="menuitem7">
-        <property name="label" translatable="yes">User's playlists</property>
+        <property name="label" translatable="yes">Playlists</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="image">image14</property>
@@ -121,173 +81,6 @@
         <signal name="activate" handler="remove_selected_user" swapped="no"/>
       </object>
     </child>
-  </object>
-  <object class="GtkImage" id="image18">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-display</property>
-  </object>
-  <object class="GtkImage" id="image19">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">applications-internet</property>
-  </object>
-  <object class="GtkImage" id="image20">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-x-generic</property>
-  </object>
-  <object class="GtkImage" id="image21">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">mail-send</property>
-  </object>
-  <object class="GtkImage" id="image22">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">mail-send</property>
-  </object>
-  <object class="GtkImage" id="image23">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">mail-send</property>
-  </object>
-  <object class="GtkImage" id="image24">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-favorite</property>
-  </object>
-  <object class="GtkImage" id="image25">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-display</property>
-  </object>
-  <object class="GtkImage" id="image26">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">applications-internet</property>
-  </object>
-  <object class="GtkImage" id="image27">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-x-generic</property>
-  </object>
-  <object class="GtkImage" id="image28">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-  </object>
-  <object class="GtkImage" id="image29">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">application-exit</property>
-  </object>
-  <object class="GtkImage" id="image30">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-favorite</property>
-  </object>
-  <object class="GtkImage" id="image31">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">applications-internet</property>
-  </object>
-  <object class="GtkImage" id="image32">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-x-generic</property>
-  </object>
-  <object class="GtkImage" id="image33">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-favorite</property>
-  </object>
-  <object class="GtkImage" id="image34">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-display</property>
-  </object>
-  <object class="GtkImage" id="image35">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">list-add</property>
-  </object>
-  <object class="GtkImage" id="image36">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-display</property>
-  </object>
-  <object class="GtkImage" id="image37">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-  </object>
-  <object class="GtkImage" id="image38">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-default</property>
-  </object>
-  <object class="GtkImage" id="image39">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">face-smile-big</property>
-  </object>
-  <object class="GtkImage" id="image40">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">face-sad</property>
-  </object>
-  <object class="GtkImage" id="image41">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-x-generic</property>
-  </object>
-  <object class="GtkImage" id="image42">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">applications-internet</property>
-  </object>
-  <object class="GtkImage" id="image43">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-favorite</property>
-  </object>
-  <object class="GtkImage" id="image44">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-default</property>
-  </object>
-  <object class="GtkImage" id="image45">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-display</property>
-  </object>
-  <object class="GtkImage" id="image46">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">application-exit</property>
-  </object>
-  <object class="GtkImage" id="image47">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">application-exit</property>
-  </object>
-  <object class="GtkImage" id="image48">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-favorite</property>
-  </object>
-  <object class="GtkImage" id="image49">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-  </object>
-  <object class="GtkImage" id="image5">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">utilities-terminal</property>
-  </object>
-  <object class="GtkImage" id="image50">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-default</property>
   </object>
   <object class="GtkImage" id="image51">
     <property name="visible">True</property>
@@ -308,26 +101,6 @@
     <property name="can_focus">False</property>
     <property name="icon_name">go-down</property>
   </object>
-  <object class="GtkImage" id="image55">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-missing-image</property>
-  </object>
-  <object class="GtkImage" id="image56">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-display</property>
-  </object>
-  <object class="GtkImage" id="image57">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">edit-delete</property>
-  </object>
-  <object class="GtkImage" id="image58">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-favorite</property>
-  </object>
   <object class="GtkImage" id="image59">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -338,119 +111,20 @@
     <property name="can_focus">False</property>
     <property name="icon_name">dialog-password</property>
   </object>
-  <object class="GtkImage" id="image60">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-  </object>
-  <object class="GtkImage" id="image61">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-favorite</property>
-  </object>
-  <object class="GtkImage" id="image62">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-default</property>
-  </object>
-  <object class="GtkImage" id="image63">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-display</property>
-  </object>
-  <object class="GtkImage" id="image64">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">application-exit</property>
-  </object>
-  <object class="GtkImage" id="image65">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-  </object>
-  <object class="GtkImage" id="image66">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-favorite</property>
-  </object>
-  <object class="GtkImage" id="image67">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-default</property>
-  </object>
-  <object class="GtkImage" id="image68">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-display</property>
-  </object>
-  <object class="GtkImage" id="image69">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">application-exit</property>
-  </object>
-  <object class="GtkImage" id="image7">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">applications-internet</property>
-  </object>
-  <object class="GtkImage" id="image70">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-documents</property>
-  </object>
-  <object class="GtkImage" id="image71">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-documents</property>
-  </object>
-  <object class="GtkImage" id="image72">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-documents</property>
-  </object>
-  <object class="GtkImage" id="image73">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">video-x-generic</property>
-  </object>
-  <object class="GtkImage" id="image74">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">emblem-favorite</property>
-  </object>
   <object class="GtkImage" id="image76">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">emblem-important</property>
-  </object>
-  <object class="GtkImage" id="image77">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-missing-image</property>
-  </object>
-  <object class="GtkImage" id="image78">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-missing-image</property>
-    <property name="icon-size">5</property>
   </object>
   <object class="GtkImage" id="image79">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">applications-internet</property>
   </object>
-  <object class="GtkImage" id="image8">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">window-new</property>
-  </object>
   <object class="GtkImage" id="image80">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">mail-send</property>
-  </object>
-  <object class="GtkImage" id="image9">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">list-add</property>
   </object>
   <object class="GtkListStore" id="liststore1">
     <columns>
@@ -484,9 +158,13 @@
   </object>
   <object class="GtkListStore" id="liststore2">
     <columns>
-      <!-- column-name usernames -->
+      <!-- column-name channel_id -->
       <column type="gchararray"/>
-      <!-- column-name user_logo -->
+      <!-- column-name channel_name -->
+      <column type="gchararray"/>
+      <!-- column-name type -->
+      <column type="gchararray"/>
+      <!-- column-name logo -->
       <column type="GdkPixbuf"/>
     </columns>
   </object>
@@ -2470,7 +2148,7 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
   <object class="GtkWindow" id="details_window">
     <property name="can_focus">False</property>
     <property name="border_width">2</property>
-    <property name="title" translatable="yes">Video Details</property>
+    <property name="title" translatable="yes">Video details</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
     <property name="transient_for">__MAIN__</property>
@@ -2882,7 +2560,7 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
   </object>
   <object class="GtkWindow" id="feeds_window">
     <property name="can_focus">False</property>
-    <property name="title" translatable="yes">Feeds</property>
+    <property name="title" translatable="yes">YouTube comments</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
     <property name="default_width">450</property>
@@ -3484,7 +3162,7 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
   </object>
   <object class="GtkWindow" id="users_list_window">
     <property name="can_focus">False</property>
-    <property name="title" translatable="yes">Youtube Usernames</property>
+    <property name="title" translatable="yes">Saved channels</property>
     <property name="window_position">center-on-parent</property>
     <property name="default_width">400</property>
     <property name="default_height">300</property>
@@ -3515,19 +3193,49 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <child>
-                  <object class="GtkLabel" id="add_user_label">
+                  <object class="GtkLabel" id="label22">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">Add an username:</property>
+                    <property name="label" translatable="yes">Channel name:</property>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">False</property>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
                     <property name="position">0</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkEntry" id="username_entry">
+                  <object class="GtkEntry" id="channel_name_save">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="invisible_char">•</property>
+                    <property name="primary_icon_activatable">False</property>
+                    <property name="secondary_icon_activatable">False</property>
+                    <property name="primary_icon_sensitive">True</property>
+                    <property name="secondary_icon_sensitive">True</property>
+                    <signal name="button-press-event" handler="clear_text" swapped="no"/>
+                    <signal name="activate" handler="save_channel" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="add_user_label">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Channel ID:</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkEntry" id="channel_id_save">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="invisible_char">•</property>
@@ -3537,27 +3245,27 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
                     <property name="primary_icon_sensitive">True</property>
                     <property name="secondary_icon_sensitive">True</property>
                     <signal name="button-press-event" handler="clear_text" swapped="no"/>
-                    <signal name="activate" handler="add_username" swapped="no"/>
+                    <signal name="activate" handler="save_channel" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>
                     <property name="fill">True</property>
-                    <property name="position">1</property>
+                    <property name="position">3</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="add_username">
+                  <object class="GtkButton" id="save_channel">
                     <property name="label">gtk-add</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="use_stock">True</property>
-                    <signal name="clicked" handler="add_username" swapped="no"/>
+                    <signal name="clicked" handler="save_channel" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">False</property>
-                    <property name="position">2</property>
+                    <property name="position">5</property>
                   </packing>
                 </child>
               </object>
@@ -3600,25 +3308,25 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="model">liststore2</property>
-                    <signal name="row-activated" handler="get_username_from_list" swapped="no"/>
+                    <signal name="row-activated" handler="videos_from_saved_channel" swapped="no"/>
                     <child>
                       <object class="GtkTreeViewColumn" id="treeviewcolumn13">
                         <property name="title" translatable="yes">Icon</property>
                         <child>
                           <object class="GtkCellRendererPixbuf" id="cellrendererpixbuf14"/>
                           <attributes>
-                            <attribute name="pixbuf">1</attribute>
+                            <attribute name="pixbuf">3</attribute>
                           </attributes>
                         </child>
                       </object>
                     </child>
                     <child>
                       <object class="GtkTreeViewColumn" id="treeviewcolumn23">
-                        <property name="title">Username</property>
+                        <property name="title">Channel</property>
                         <child>
                           <object class="GtkCellRendererText" id="cellrenderertext14"/>
                           <attributes>
-                            <attribute name="text">0</attribute>
+                            <attribute name="text">1</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -3652,7 +3360,7 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
-                <signal name="clicked" handler="get_username_from_list" swapped="no"/>
+                <signal name="clicked" handler="videos_from_saved_channel" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -3684,11 +3392,6 @@ See &lt;http://dev.perl.org/licenses/&gt; for more information.
         </child>
       </object>
     </child>
-  </object>
-  <object class="GtkImage" id="update_icon1">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">system-software-update</property>
   </object>
   <object class="GtkDialog" id="warnings_window">
     <property name="can_focus">False</property>
