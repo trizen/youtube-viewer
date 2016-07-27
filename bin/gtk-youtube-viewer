@@ -1307,18 +1307,18 @@ set_text(
 CTRL+H : help window
 CTRL+L : login window
 CTRL+P : preferences window
-CTRL+U : username list window
-CTRL+Y : CLI youtube viewer
-CTRL+D : video details window
-CTRL+F : show feeds window
+CTRL+Y : start CLI youtube viewer
+CTRL+U : show the saved user-list
+CTRL+D : show more video details for a selected video
+CTRL+C : show the comments for a selected video
 CTRL+W : show the warnings window
 CTRL+G : show videos favorited by the author of a selected video
 CTRL+R : show related videos for a selected video
 CTRL+M : show videos from the author of a selected video
 CTRL+K : show playlists from the author of a selected video
-CTRL+S : add the author name of a selected video into the users list
+CTRL+S : add the author of a selected video to the user-list
 CTRL+Q : close the application
-DEL : remove the selected video from the list
+DEL : remove the selected entry from the list
 F11 : minimize-maximize the main window
 
 -Preferences window
@@ -1357,7 +1357,7 @@ $accel->connect(ord('q'), ['control-mask'], ['visible'], \&on_mainw_destroy);
 $accel->connect(ord('u'), ['control-mask'], ['visible'], \&show_users_list_window);
 $accel->connect(ord('y'), ['control-mask'], ['visible'], \&run_cli_youtube_viewer);
 $accel->connect(ord('d'), ['control-mask'], ['visible'], \&show_details_window);
-$accel->connect(ord('f'), ['control-mask'], ['visible'], \&show_feeds_window);
+$accel->connect(ord('c'), ['control-mask'], ['visible'], \&show_feeds_window);
 $accel->connect(ord('s'), ['control-mask'], ['visible'], \&add_user_to_favorites);
 $accel->connect(ord('r'), ['control-mask'], ['visible'], \&show_related_videos);
 $accel->connect(ord('g'), ['control-mask'], ['visible'], \&show_user_favorited_videos);
