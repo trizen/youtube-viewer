@@ -4,7 +4,19 @@ use utf8;
 use 5.014;
 use warnings;
 
-our $VERSION = '0.01';
+=head1 NAME
+
+WWW::YoutubeViewer::Videos - videos handler.
+
+=head1 SYNOPSIS
+
+    use WWW::YoutubeViewer;
+    my $obj = WWW::YoutubeViewer->new(%opts);
+    my $info = $obj->video_details($videoID);
+
+=head1 SUBROUTINES/METHODS
+
+=cut
 
 sub _make_videos_url {
     my ($self, %opts) = @_;

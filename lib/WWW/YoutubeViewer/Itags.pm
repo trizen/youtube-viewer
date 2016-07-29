@@ -8,14 +8,6 @@ use warnings;
 
 WWW::YoutubeViewer::Itags - Get the YouTube itags.
 
-=head1 VERSION
-
-Version 0.04
-
-=cut
-
-our $VERSION = '0.04';
-
 =head1 SYNOPSIS
 
     use WWW::YoutubeViewer::Itags;

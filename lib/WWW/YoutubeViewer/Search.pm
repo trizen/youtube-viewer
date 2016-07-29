@@ -8,14 +8,6 @@ use warnings;
 
 WWW::YoutubeViewer::Search - Search functions for Youtube API v3
 
-=head1 VERSION
-
-Version 0.01
-
-=cut
-
-our $VERSION = '0.01';
-
 =head1 SYNOPSIS
 
     use WWW::YoutubeViewer;

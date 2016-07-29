@@ -8,14 +8,6 @@ use warnings;
 
 WWW::YoutubeViewer::Channels - Channels interface.
 
-=head1 VERSION
-
-Version 0.01
-
-=cut
-
-our $VERSION = '0.01';
-
 =head1 SYNOPSIS
 
     use WWW::YoutubeViewer;
@@ -139,12 +131,12 @@ sub channel_title_from_id {
     my ($self, $channel_id) = @_;
     my $info = $self->channels_info($channel_id // return) // return;
 
-     (ref($info) eq 'HASH'
-                and ref($info->{results}) eq 'HASH'
-                and ref($info->{results}{items}) eq 'ARRAY'
-                and ref($info->{results}{items}[0]) eq 'HASH')
-                ?  $info->{results}{items}[0]{snippet}{title}
-                : ();
+    (    ref($info) eq 'HASH'
+     and ref($info->{results}) eq 'HASH'
+     and ref($info->{results}{items}) eq 'ARRAY'
+     and ref($info->{results}{items}[0]) eq 'HASH')
+      ? $info->{results}{items}[0]{snippet}{title}
+      : ();
 }
 
 =head2 channels_contentDetails($channelID)

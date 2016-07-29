@@ -11,14 +11,6 @@ our @ISA = qw(Exporter);
 
 WWW::YoutubeViewer::RegularExpressions - Various utils.
 
-=head1 VERSION
-
-Version 3.2.2
-
-=cut
-
-our $VERSION = v3.2.2;
-
 =head1 SYNOPSIS
 
     use WWW::YoutubeViewer::RegularExpressions;

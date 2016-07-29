@@ -12,14 +12,6 @@ no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
 WWW::YoutubeViewer::ParseXML - Convert XML to a HASH ref structure.
 
-=head1 VERSION
-
-Version 0.04
-
-=cut
-
-our $VERSION = '0.04';
-
 =head1 SYNOPSIS
 
 Parse XML content and return an HASH ref structure.

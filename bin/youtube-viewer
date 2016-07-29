@@ -136,8 +136,8 @@ use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
-use WWW::YoutubeViewer v3.2.2;
-use WWW::YoutubeViewer::RegularExpressions v3.2.2;
+use WWW::YoutubeViewer v3.2.3;
+use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
   catdir
@@ -152,7 +152,7 @@ use File::Spec::Functions qw(
 binmode(STDOUT, ':utf8');
 
 my $appname  = 'Youtube Viewer';
-my $version  = '3.2.2';
+my $version  = $WWW::YoutubeViewer::VERSION;
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:

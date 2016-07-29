@@ -8,14 +8,6 @@ use warnings;
 
 WWW::YoutubeViewer::GetCaption - Save the YouTube closed captions as .srt files for a videoID.
 
-=head1 VERSION
-
-Version 0.02
-
-=cut
-
-our $VERSION = '0.02';
-
 =head1 SYNOPSIS
 
     use WWW::YoutubeViewer::GetCaption;

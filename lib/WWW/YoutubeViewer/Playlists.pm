@@ -8,14 +8,6 @@ use warnings;
 
 WWW::YoutubeViewer::Playlists - Youtube playlists handle.
 
-=head1 VERSION
-
-Version 0.01
-
-=cut
-
-our $VERSION = '0.01';
-
 =head1 SYNOPSIS
 
     use WWW::YoutubeViewer;

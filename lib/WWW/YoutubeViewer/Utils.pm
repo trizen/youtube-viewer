@@ -10,14 +10,6 @@ no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
 WWW::YoutubeViewer::Utils - Various utils.
 
-=head1 VERSION
-
-Version 0.02
-
-=cut
-
-our $VERSION = '0.02';
-
 =head1 SYNOPSIS
 
     use WWW::YoutubeViewer::Utils;

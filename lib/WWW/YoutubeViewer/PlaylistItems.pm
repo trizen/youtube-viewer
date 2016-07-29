@@ -6,15 +6,7 @@ use warnings;
 
 =head1 NAME
 
-WWW::YoutubeViewer::PlaylistItems - ...
-
-=head1 VERSION
-
-Version 0.01
-
-=cut
-
-our $VERSION = '0.01';
+WWW::YoutubeViewer::PlaylistItems - Manage playlist entries.
 
 =head1 SYNOPSIS
 
@@ -110,7 +102,8 @@ Get favorited videos for a given username or from the current user.
     foreach my $name (qw(favorites uploads likes)) {
         *{__PACKAGE__ . '::' . $name . '_from_username'} = sub {
             my ($self, $username) = @_;
-            my $playlist_id = $self->get_playlist_id($name, $username ? (forUsername => $username) : (mine => 'true')) // return;
+            my $playlist_id = $self->get_playlist_id($name, $username ? (forUsername => $username) : (mine => 'true'))
+              // return;
             $self->videos_from_playlist_id($playlist_id);
         };
 
