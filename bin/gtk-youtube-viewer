@@ -250,6 +250,7 @@ my %CONFIG = (
     terminal               => undef,                 # autodetect it later
     terminal_exec          => q{-e '%s'},
     youtube_viewer         => undef,
+    youtube_viewer_args    => [],
     youtube_users_file     => $youtube_users_file,
     history                => 1,
     history_limit          => 10_000,
@@ -2833,7 +2834,9 @@ sub execute_cli_youtube_viewer {
                        $CONFIG{terminal},
                        sprintf(
                                $CONFIG{terminal_exec},
-                               join(q{ }, $CONFIG{youtube_viewer}, get_options_as_arguments(), @arguments)
+                               join(q{ },
+                                    $CONFIG{youtube_viewer}, get_options_as_arguments(),
+                                    @arguments,              @{$CONFIG{youtube_viewer_args}}),
                               )
                       );
     my $code = execute_external_program($command);
