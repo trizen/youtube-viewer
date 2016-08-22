@@ -34,7 +34,6 @@ use WWW::YoutubeViewer v3.2.3;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use Gtk2 qw(-init);
-use List::Util qw(all);
 use File::ShareDir qw(dist_dir);
 use File::Spec::Functions qw(
   rel2abs
@@ -577,19 +576,21 @@ if (not -d $CONFIG{cache_dir}) {
                 }
 
                 my $prefix_score = 0;
-                all {
-                    ($parts[$_] eq $words[$_])
-                      ? do {
-                        $prefix_score += 1;
-                        1;
-                      }
-                      : (index($parts[$_], $words[$_]) == 0) ? do {
-                        $prefix_score += length($words[$_]) / length($parts[$_]);
-                        0;
-                      }
-                      : 0;
+                foreach my $i (0 .. $min_end) {
+                    (
+                     ($parts[$i] eq $words[$i])
+                     ? do {
+                         $prefix_score += 1;
+                         1;
+                       }
+                     : (index($parts[$i], $words[$i]) == 0) ? do {
+                         $prefix_score += length($words[$i]) / length($parts[$i]);
+                         0;
+                       }
+                     : 0
+                    )
+                      || last;
                 }
-                0 .. $min_end;
 
                 ## printf("score('@parts', '@words') = %.4g + %.4g = %.4g\n",
                 ##        $order_score, $prefix_score, $order_score + $prefix_score);
