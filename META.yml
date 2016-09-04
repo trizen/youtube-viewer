@@ -16,7 +16,7 @@ name: WWW-YoutubeViewer
 provides:
   WWW::YoutubeViewer:
     file: lib/WWW/YoutubeViewer.pm
-    version: v3.2.3
+    version: v3.2.4
   WWW::YoutubeViewer::Activities:
     file: lib/WWW/YoutubeViewer/Activities.pm
   WWW::YoutubeViewer::Authentication:
@@ -78,5 +78,5 @@ requires:
   URI::Escape: '0'
 resources:
   license: http://dev.perl.org/licenses/
-version: v3.2.3
+version: v3.2.4
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'
