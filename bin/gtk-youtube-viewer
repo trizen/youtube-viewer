@@ -694,10 +694,11 @@ if (not \%CONFIG ~~ $CONFIG) {
 if (not defined $CONFIG{terminal}) {
     foreach my $term (
                       'gnome-terminal', 'lxterminal', 'terminal', 'xfce4-terminal',
-                      'sakura',         'lilyterm',   'evilvte',  'superterm',
-                      'terminator',     'kterm',      'mlterm',   'mrxvt',
-                      'rxvt',           'urxvt',      'termit',   'fbterm',
-                      'stjerm',         'yakuake',    'roxterm',  'xterm'
+                      'sakura',         'st',         'lilyterm', 'evilvte',
+                      'superterm',      'terminator', 'kterm',    'mlterm',
+                      'mrxvt',          'rxvt',       'urxvt',    'termit',
+                      'fbterm',         'stjerm',     'yakuake',  'roxterm',
+                      'xterm'
       ) {
         if (defined(my $abs_path = which_command($term))) {
             $CONFIG{terminal} = $abs_path;
@@ -706,6 +707,12 @@ if (not defined $CONFIG{terminal}) {
     }
 
     $CONFIG{terminal} //= $ENV{TERM} || 'xterm';
+
+    # `st` requires changing the default value of `terminal_exec`.
+    # Probably more terminals require this modification. PRs are welcome.
+    if ($CONFIG{terminal} eq 'st') {
+        $CONFIG{terminal_exec} = '-e %s';
+    }
 }
 
 {
