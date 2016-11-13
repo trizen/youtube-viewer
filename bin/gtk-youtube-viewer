@@ -702,17 +702,18 @@ if (not defined $CONFIG{terminal}) {
       ) {
         if (defined(my $abs_path = which_command($term))) {
             $CONFIG{terminal} = $abs_path;
+
+            # `st` requires changing the default value of `terminal_exec`.
+            # Probably more terminals require this modification. PRs are welcome.
+            if ($term eq 'st') {
+                $CONFIG{terminal_exec} = '-e %s';
+            }
+
             last;
         }
     }
 
     $CONFIG{terminal} //= $ENV{TERM} || 'xterm';
-
-    # `st` requires changing the default value of `terminal_exec`.
-    # Probably more terminals require this modification. PRs are welcome.
-    if ($CONFIG{terminal} eq 'st') {
-        $CONFIG{terminal_exec} = '-e %s';
-    }
 }
 
 {
