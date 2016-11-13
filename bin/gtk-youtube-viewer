@@ -696,9 +696,9 @@ if (not defined $CONFIG{terminal}) {
                       'gnome-terminal', 'lxterminal', 'terminal', 'xfce4-terminal',
                       'sakura',         'st',         'lilyterm', 'evilvte',
                       'superterm',      'terminator', 'kterm',    'mlterm',
-                      'mrxvt',          'rxvt',       'urxvt',    'termit',
-                      'fbterm',         'stjerm',     'yakuake',  'roxterm',
-                      'xterm'
+                      'mrxvt',          'rxvt',       'urxvt',    'termite',
+                      'termit',         'fbterm',     'stjerm',   'yakuake',
+                      'roxterm',        'xterm'
       ) {
         if (defined(my $abs_path = which_command($term))) {
             $CONFIG{terminal} = $abs_path;
