@@ -1832,14 +1832,37 @@ sub set_youtube_tops {
         else {
             # Default channels
             %channels = (
-                         map { $_ => undef } (
-                                              'KhanAcademy',         'VSauce',           'Gotbletu',      'ScienceChannel',
-                                              'SpaceRip',            'TEDtalksDirector', 'MIT',           'SixtySymbols',
-                                              'SciShow',             'NumberPhile',      'ComputerPhile', 'UCBerkeley',
-                                              'UCTelevision',        'BigThink',         'ProfessorFink', 'UCTVSeminars',
-                                              '1Veritasium',         'MinutePhysics',    'BrianTWill',    'SingingBanana',
-                                              'TheRoyalInstitution', 'ItsOkayToBeSmart', 'CrashCourse',   'MyCodeSchool'
-                                             )
+                         'UC1_uAIS3r8Vu6JjXWvastJg' => 'Mathologer',
+                         'UCSju5G2aFaWMqn-_0YBtq5A' => 'StandUpMaths',
+                         'UCW6TXMZ5Pq6yL6_k5NZ2e0Q' => 'Socratica',
+                         'UC-WICcSW1k3HsScuXxDrp0w' => 'Curry On!',
+                         'UCShHFwKyhcDo3g7hr4f1R8A' => 'World Science Festival',
+                         'UCYO_jab_esuFRV4b17AJtAw' => '3Blue1Brown',
+                         'UCWnPjmqvljcafA0z2U1fwKQ' => 'Confreaks',
+                         'UC_QIfHvN9auy2CoOdSfMWDw' => 'Strange Loop',
+                         'UCH4BNI0-FOK2dMXoFtViWHw' => "It's Okay To Be Smart",
+                         'UCHnyfMqiRRG1u-2MsSQLbXA' => 'Veritasium',
+                         'UCseUQK4kC3x2x543nHtGpzw' => 'Brian Will',
+                         'UC9-y-6csu5WGm29I7JiwpnA' => 'Computerphile',
+                         'UCoxcjq-8xIDTYp3uz647V5A' => 'Numberphile',
+                         'UC6nSFpj9HTCZ5t-N3Rm3-HA' => 'Vsauce',
+                         'UC4a-Gbdw7vOaccHmFo40b9g' => 'Khan Academy',
+                         'UCUHW94eEFW7hkUMVaZz4eDg' => 'MinutePhysics',
+                         'UCYeF244yNGuFefuFKqxIAXw' => 'The Royal Institution',
+                         'UCX6b17PVsYBQ0ip5gyeme-Q' => 'CrashCourse',
+                         'UCwbsWIWfcOL2FiUZ2hKNJHQ' => 'UCBerkeley',
+                         'UCEBb1b_L6zDS3xTUrIALZOw' => 'MIT OpenCourseWare',
+                         'UCAuUUnT6oDeKwE6v1NGQxug' => 'TED',
+                         'UCvBqzzvUBLCs8Y7Axb-jZew' => 'Sixty Symbols',
+                         'UC6107grRI4m0o2-emgoDnAA' => 'SmarterEveryDay',
+                         'UCZYTClx2T1of7BRZ86-8fow' => 'SciShow',
+                         'UCF6F8LdCSWlRwQm_hfA2bcQ' => 'Coding Math',
+                         'UC1znqKFL3jeR0eoA0pHpzvw' => 'SpaceRip',
+                         'UCvjgXvBlbQiydffZU7m1_aw' => 'Daniel Shiffman',
+                         'UCC552Sd-3nyi_tk2BudLUzA' => 'AsapSCIENCE',
+                         'UC0wbcfzV-bHhABbWGXKHwdg' => 'Utah Open Source',
+                         'UCotwjyJnb-4KW7bmsOoLfkg' => 'Art of the Problem',
+                         'UC7y4qaRSb5w2O8cCHOsKZDw' => 'YAPC NA',
                         );
         }
 
