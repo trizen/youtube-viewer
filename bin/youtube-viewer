@@ -546,7 +546,6 @@ if ($opt{history}) {
 
     # Rewrite the history file when the history size limit has been reached in order to keep
     # only the last n entries, minus some random number to avoid an imediate second rewrite.
-    #            - the 'rand' part implies that you're lucky :) -
     if ($opt{history_limit} > 0 and $#history >= $opt{history_limit}) {
 
         # Try to create a backup, first
@@ -555,7 +554,8 @@ if ($opt{history}) {
 
         # Now, try to rewrite the history file
         if (open(my $fh, '>:utf8', $opt{history_file})) {
-            say {$fh} join("\n", @history[(@history - $opt{history_limit}) + int(rand($opt{history_limit})) .. $#history]);
+            say {$fh}
+              join("\n", @history[(@history - $opt{history_limit}) + int(rand($opt{history_limit} >> 1)) .. $#history]);
             close $fh;
         }
     }
@@ -796,7 +796,7 @@ sub wrap_text {
     my (%args) = @_;
 
     state $x = require Text::Wrap;
-    ${Text::Wrap::columns} = ($args{columns} || $term_width) - 8;
+    local $Text::Wrap::columns = ($args{columns} || $term_width) - 8;
 
     my $text = "@{$args{text}}";
     $text =~ tr{\r}{}d;
