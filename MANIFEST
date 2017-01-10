@@ -20,6 +20,7 @@ lib/WWW/YoutubeViewer/Subscriptions.pm
 lib/WWW/YoutubeViewer/Utils.pm
 lib/WWW/YoutubeViewer/VideoCategories.pm
 lib/WWW/YoutubeViewer/Videos.pm
+LICENSE
 Makefile.PL
 MANIFEST			This list of files
 META.json
