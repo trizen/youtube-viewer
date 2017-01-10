@@ -23,15 +23,15 @@ To package this application, run the following commands:
 
 ## gtk-youtube-viewer
 
-To install GTK Youtube Viewer, run `Build.PL` with the `--gtk-youtube-viewer` argument.
+To install GTK Youtube Viewer, run `Build.PL` with the `--gtk` argument.
 
 ```console
-    perl Build.PL --gtk-youtube-viewer
+    perl Build.PL --gtk
 ```
 
 or:
 ```console
-    perl Build.PL --destdir "/my/path" --installdirs vendor --gtk-youtube-viewer
+    perl Build.PL --destdir "/my/path" --installdirs vendor --gtk
 ```
 
 ### AVAILABILITY
@@ -59,7 +59,7 @@ or:
 * [ES] YouTube Viewer: busca, reproduce y descarga vídeos de YouTube desde el escritorio
     * http://www.linuxadictos.com/youtube-viewer-busca-reproduce-y-descarga-videos-de-youtube-desde-el-escritorio.html
 * [GR] YOUTUBE VIEWER: ΤΟ YOUTUBE ΚΥΡΙΟΛΕΚΤΙΚΑ ΣΤΟ DESKTOP ΣΑΣ
-    * http://osarena.net/youyubeviewer-to-youtube-olokliro-sto-desktop-sas-se-linux 
+    * http://osarena.net/youyubeviewer-to-youtube-olokliro-sto-desktop-sas-se-linux
 * [HU] GTK Youtube Viewer
     * http://ubuntu.hu/node/23555
 * [PT] YouTube Viewer: um completo cliente YouTube para Linux
@@ -69,7 +69,7 @@ or:
 * [RU] Установить клиент Youtube Viewer в Linux
     * http://compizomania.blogspot.com/2015/02/youtube-viewer-linux.html
 * [RU] Youtube Viewer / GTK Youtube Viewer
-    * http://zenway.ru/page/gtk-youtube-viewer 
+    * http://zenway.ru/page/gtk-youtube-viewer
 
 ### VIDEO REVIEWS
 
@@ -81,8 +81,6 @@ or:
     * https://www.youtube.com/watch?v=R5b12tvpe3E
 * [EN] GTK-YouTube Viewer for Puppy Linux
     * https://www.youtube.com/watch?v=UH3dPspqtRM
-* [FR] GTK YouTube Viewer - Client YouTube sous Linux
-    * https://www.youtube.com/watch?v=6-qbdDUlBqg
 
 ### SUPPORT AND DOCUMENTATION
 
@@ -93,7 +91,7 @@ After installing, you can find documentation with the following commands:
 
 ### LICENSE AND COPYRIGHT
 
-Copyright (C) 2012-2015 Daniel "Trizen" Șuteu
+Copyright (C) 2012-2017 Daniel "Trizen" Șuteu
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
