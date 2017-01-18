@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 27 July 2016
+#  Latest edit on: 18 January 2017
 #  Website: http://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -231,6 +231,7 @@ my %CONFIG = (
     srt_languages => ['en', 'es'],
     captions_dir  => tmpdir(),
     get_captions  => 1,
+    auto_captions => 0,
     cache_dir     => undef, # will be defined later
 
     # Others
@@ -2594,9 +2595,10 @@ sub get_streaming_url {
     if (@captions and $CONFIG{get_captions}) {
         state $x = require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
-                                                         captions_dir => $CONFIG{captions_dir},
-                                                         captions     => \@captions,
-                                                         languages    => $CONFIG{srt_languages},
+                                                         auto_captions => $CONFIG{auto_captions},
+                                                         captions_dir  => $CONFIG{captions_dir},
+                                                         captions      => \@captions,
+                                                         languages     => $CONFIG{srt_languages},
                                                         );
         $srt_file = $yv_cap->save_caption($video_id);
     }

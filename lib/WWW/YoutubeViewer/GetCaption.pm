@@ -46,7 +46,7 @@ Where to save the closed captions.
 
 =item languages => [qw(en es ro jp)]
 
-Prefered languages. First found is saved and returned.
+Preferred languages. First found is saved and returned.
 
 =back
 
@@ -56,9 +56,10 @@ sub new {
     my ($class, %opts) = @_;
 
     my $self = bless {}, $class;
-    $self->{captions_dir} = undef;
-    $self->{captions}     = [];
-    $self->{languages}    = [qw(en es ro jp)];
+    $self->{captions_dir}  = undef;
+    $self->{captions}      = [];
+    $self->{auto_captions} = 0;
+    $self->{languages}     = [qw(en es ro jp)];
 
     foreach my $key (keys %{$self}) {
         $self->{$key} = delete $opts{$key}
@@ -74,7 +75,7 @@ sub new {
 
 =head2 find_caption_data()
 
-Find a caption data, based on the prefered languages.
+Find a caption data, based on the preferred languages.
 
 =cut
 
@@ -88,14 +89,19 @@ sub find_caption_data {
                 my $lang = $self->{languages}[$i];
                 if ($caption->{lc} =~ /^\Q$lang\E(?:\z|[_-])/i) {
 
+                    my $auto = exists($caption->{k});
+
+                    # Check against auto-generated captions
+                    if ($auto and not $self->{auto_captions}) {
+                        next;
+                    }
+
                     # Fuzzy match or auto-generated caption
-                    # -- stored in the second half of the list --
-                    if (lc($caption->{lc}) ne lc($lang) or exists $caption->{k}) {
-                        $found[$i + @{$self->{languages}}] = $caption;
+                    if (lc($caption->{lc}) ne lc($lang) or $auto) {
+                        $found[$i + @{$self->{languages}} + ($auto || 0) * @{$self->{languages}}] = $caption;
                     }
 
                     # Perfect match
-                    # -- stored in the first half of the list --
                     else {
                         $i == 0 and return $caption;
                         $found[$i] = $caption;

@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  Appname: youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 02 June 2016
+#  Latest edit on: 18 January 2017
 #  Website: https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -293,6 +293,7 @@ my %CONFIG = (
     srt_languages => ['en', 'es'],
     captions_dir  => tmpdir(),
     get_captions  => 1,
+    auto_captions => 0,
     copy_caption  => 0,
     cache_dir     => undef, # will be defined later
 
@@ -745,6 +746,7 @@ usage: $execname [options] ([url] | [keywords])
 
  * Closed-captions
    --get-captions!      : download the closed captions for videos
+   --auto-captions!     : use auto-generated captions if avaiable
    --captions-dir=s     : the directory where to download the .srt files
 
  * Config
@@ -1487,11 +1489,13 @@ sub parse_arguments {
 
         'thousand-separator=s'           => \$opt{thousand_separator},
         'get-captions|get_captions!'     => \$opt{get_captions},
+        'auto-captions|auto_captions!'   => \$opt{auto_captions},
         'copy-caption|copy_caption!'     => \$opt{copy_caption},
         'captions-dir|captions_dir=s'    => \$opt{captions_dir},
         'skip-if-exists|skip_if_exists!' => \$opt{skip_if_exists},
         'downloads-dir|download-dir=s'   => \$opt{downloads_dir},
-    );
+      )
+      or die "Error in command-line arguments!";
 
     apply_configuration(\%opt, $keywords);
 }
@@ -3214,9 +3218,10 @@ sub get_streaming_url {
     if (@captions and $opt{get_captions} and not $opt{novideo}) {
         state $x = require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
-                                                         captions_dir => $opt{captions_dir},
-                                                         captions     => \@captions,
-                                                         languages    => $CONFIG{srt_languages},
+                                                         auto_captions => $opt{auto_captions},
+                                                         captions_dir  => $opt{captions_dir},
+                                                         captions      => \@captions,
+                                                         languages     => $CONFIG{srt_languages},
                                                         );
         $srt_file = $yv_cap->save_caption($video_id);
     }
