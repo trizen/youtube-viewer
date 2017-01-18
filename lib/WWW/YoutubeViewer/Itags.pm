@@ -130,10 +130,10 @@ sub get_itags {
         ],
 
         'audio' => [172,     # webm (192 kbps)
+                    251,     # webm (160 kbps)
                     171,     # webm (128 kbps)
                     140,     # m4a (128 kbps)
                     141,     # m4a (256 kbps)
-                    251,     # webm (160 kbps)
                     250,     # webm (64 kbps)
                     249,     # webm (48 kbps)
                     139,     # m4a (48 kbps)
