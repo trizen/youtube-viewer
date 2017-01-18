@@ -746,7 +746,7 @@ usage: $execname [options] ([url] | [keywords])
 
  * Closed-captions
    --get-captions!      : download the closed captions for videos
-   --auto-captions!     : use auto-generated captions if avaiable
+   --auto-captions!     : include auto-generated captions
    --captions-dir=s     : the directory where to download the .srt files
 
  * Config
