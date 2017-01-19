@@ -2751,12 +2751,13 @@ sub run_cli_youtube_viewer {
 sub get_options_as_arguments {
     my @args;
     my %options = (
-                   'no-interactive' => q{},
-                   'resolution'     => $CONFIG{resolution},
-                   'download-dir'   => quotemeta(rel2abs($CONFIG{downloads_dir})),
-                   'fullscreen'     => $CONFIG{fullscreen} ? q{} : undef,
-                   'no-dash'        => $CONFIG{dash_support} ? undef : q{},
-                   'no-video'       => $CONFIG{audio_only} ? q{} : undef,
+                   'no-interactive'   => q{},
+                   'resolution'       => $CONFIG{resolution},
+                   'download-dir'     => quotemeta(rel2abs($CONFIG{downloads_dir})),
+                   'fullscreen'       => $CONFIG{fullscreen} ? q{} : undef,
+                   'no-dash'          => $CONFIG{dash_support} ? undef : q{},
+                   'no-video'         => $CONFIG{audio_only} ? q{} : undef,
+                   'resolution=audio' => $CONFIG{audio_only} ? q{} : undef,
                   );
 
     while (my ($argv, $value) = each %options) {
