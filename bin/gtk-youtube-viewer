@@ -2252,8 +2252,8 @@ sub determine_image_format {
     return "BMP"  if /^BM/;
     return "ICO"  if /^\000\000\001\000/;
     return "PPM"  if /^P[1-6]/;
-    return "XPM"  if /(^\/\* XPM \*\/)|(static\s+char\s+\*\w+\[\]\s*=\s*\{\s*"\d+)/;
-    return "XBM"  if /^(?:\/\*.*\*\/\n)?#define\s/;
+    return "XPM"  if m~(^\/\* XPM \*\/)|(static\s+char\s+\*\w+\[\]\s*=\s*\{\s*"\d+)~;
+    return "XBM"  if m~^(?:\/\*.*\*\/\n)?#define\s~;
     return "SVG"  if /^(<\?xml|[\012\015\t ]*<svg\b)/;
     return undef;
 }
