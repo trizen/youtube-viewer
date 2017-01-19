@@ -208,7 +208,7 @@ my %CONFIG = (
 
     # Youtube options
     dash_support    => 1,
-    dash_mp4_audio  => 0,
+    dash_mp4_audio  => 1,
     maxResults      => 10,
     resolution      => 'original',
     videoDimension  => undef,

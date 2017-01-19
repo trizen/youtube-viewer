@@ -267,7 +267,7 @@ my %CONFIG = (
 
     # YouTube options
     dash_support    => 1,
-    dash_mp4_audio  => 0,
+    dash_mp4_audio  => 1,
     maxResults      => 20,
     resolution      => 'original',
     videoDefinition => undef,
@@ -746,7 +746,7 @@ usage: $execname [options] ([url] | [keywords])
 
  * Closed-captions
    --get-captions!      : download the closed captions for videos
-   --auto-captions!     : include auto-generated captions
+   --auto-captions!     : include or exclude auto-generated captions
    --captions-dir=s     : the directory where to download the .srt files
 
  * Config
@@ -771,7 +771,7 @@ usage: $execname [options] ([url] | [keywords])
                           If authentication required,
                           use 'http://user:pass\@domain.tld:port/'
    --dash!              : include or exclude the DASH itags
-   --dash-m4a!          : include or exclude the itags for MP4 audio URLs
+   --dash-mp4a!         : include or exclude the itags for MP4 audio streams
 
 
 Help options:
@@ -1463,26 +1463,26 @@ sub parse_arguments {
         'dash!'             => \$opt{dash_support},
         'confirm!'          => \$opt{confirm},
 
-        'convert-command|convert-cmd=s'     => \$opt{convert_cmd},
-        'dash-m4a|dash-mp4-audio!'          => \$opt{dash_mp4_audio},
-        'wget-dl|wget-download!'            => \$opt{download_with_wget},
-        'dl-parallel|download-in-parallel!' => \$opt{download_in_parallel},
-        'filename|filename-format=s'        => \$opt{video_filename_format},
-        'dp|downl-play|download-and-play!'  => \$opt{download_and_play},
-        'rp|rem-played|remove-played-file!' => \$opt{remove_played_file},
-        'clobber!'                          => \$opt{clobber},
-        'info|i|video-info=s'               => \$opt{print_video_info},
-        'get-term-width!'                   => \$opt{get_term_width},
-        'page=i'                            => \$opt{page},
-        'novideo|no-video|n!'               => \$opt{novideo},
-        'autohide!'                         => \$opt{autohide_watched},
-        'highlight!'                        => \$opt{highlight_watched},
-        'results=i'                         => \$opt{maxResults},
-        'shuffle|s!'                        => \$opt{shuffle},
-        'more|m!'                           => \$opt{more_results},
-        'combine-multiple-videos|combine!'  => \$opt{combine_multiple_videos},
-        'pos|position=i'                    => \$opt{position},
-        'ps|playlist-save=s'                => \$opt{playlist_save},
+        'convert-command|convert-cmd=s'      => \$opt{convert_cmd},
+        'dash-m4a|dash-mp4-audio|dash-mp4a!' => \$opt{dash_mp4_audio},
+        'wget-dl|wget-download!'             => \$opt{download_with_wget},
+        'dl-parallel|download-in-parallel!'  => \$opt{download_in_parallel},
+        'filename|filename-format=s'         => \$opt{video_filename_format},
+        'dp|downl-play|download-and-play!'   => \$opt{download_and_play},
+        'rp|rem-played|remove-played-file!'  => \$opt{remove_played_file},
+        'clobber!'                           => \$opt{clobber},
+        'info|i|video-info=s'                => \$opt{print_video_info},
+        'get-term-width!'                    => \$opt{get_term_width},
+        'page=i'                             => \$opt{page},
+        'novideo|no-video|n!'                => \$opt{novideo},
+        'autohide!'                          => \$opt{autohide_watched},
+        'highlight!'                         => \$opt{highlight_watched},
+        'results=i'                          => \$opt{maxResults},
+        'shuffle|s!'                         => \$opt{shuffle},
+        'more|m!'                            => \$opt{more_results},
+        'combine-multiple-videos|combine!'   => \$opt{combine_multiple_videos},
+        'pos|position=i'                     => \$opt{position},
+        'ps|playlist-save=s'                 => \$opt{playlist_save},
 
         'quiet|q!'      => \$opt{quiet},
         'really-quiet!' => \$opt{really_quiet},
