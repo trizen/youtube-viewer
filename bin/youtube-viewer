@@ -680,7 +680,6 @@ usage: $execname [options] ([url] | [keywords])
 
  * [GET] Personal
    -F  --favorites:s     : show the latest favorited videos *
-   -R  --recommended     : show the recommended videos for you *
    -S  --subscriptions:s : show the subscribed channels *
    -SV --subs-videos:s   : show the subscription videos *
        --subs-order=s    : change the subscription order
@@ -1380,7 +1379,6 @@ sub parse_arguments {
         'subs-videos|SV:s'                  => \$opt{subscription_videos},
         'subs-order=s'                      => \$opt{subscriptions_order},
         'favorites|fv|favorited-videos|F:s' => \$opt{favorites},
-        'recommended|recommendations|R:s'   => \$opt{recommendations},
         'likes|L:s'                         => \$opt{likes},
         'dislikes'                          => \$opt{dislikes},
         'subscribe=s'                       => \$opt{subscribe_channel},
