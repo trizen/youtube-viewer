@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2010-2016 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
+# Copyright (C) 2010-2017 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of either: the GNU General Public License as published
@@ -10,13 +10,13 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
-# See http://dev.perl.org/licenses/ for more information.
+# See https://dev.perl.org/licenses/ for more information.
 #
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
 #  Latest edit on: 18 January 2017
-#  Website: http://github.com/trizen/youtube-viewer
+#  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
 use utf8;
@@ -1296,21 +1296,13 @@ sub users_menu_popup {
 set_text(
     $textview_help, <<"HELP_TEXT"
 * Links
-    main website: https://code.google.com/p/trizen/
-    development website: https://github.com/trizen/youtube-viewer
-    developer's website: http://trizen.go.ro
+    Github: https://github.com/trizen/youtube-viewer
 
 * Developer
     Trizen <trizenx\@gmail.com>
 
 * Contributor
     Ovidiu D. Ni\x{21b}an <nitanovidiu\@gmail.com>
-
-* Config file
-    $config_file
-
-* Users list
-    $CONFIG{youtube_users_file}
 
 * Key binds
 
@@ -1350,10 +1342,8 @@ srt_languages
     a list with the preferred subtitle languages
 
 captions_dir
-    the directory where to store the closed captions from YouTube (.srt files)
+    the directory where to store the closed-captions from YouTube (.srt files)
 
-* Knowledge:
-    http://code.google.com/intl/ro/apis/youtube/2.0/developers_guide_protocol_api_query_parameters.html
 HELP_TEXT
         );
 
@@ -2248,10 +2238,11 @@ sub _append_next_page {
     $liststore->set($iter, 7, 'next_page');
 }
 
-#
-## Copy from: http://cpansearch.perl.org/src/SREZIC/Image-Info-1.38/lib/Image/Info.pm
-#
 sub determine_image_format {
+    #
+    ## Code from: https://metacpan.org/source/SREZIC/Image-Info-1.39/lib/Image/Info.pm
+    #
+
     local ($_) = @_;
     return "JPEG" if /^\xFF\xD8/;
     return "PNG"  if /^\x89PNG\x0d\x0a\x1a\x0a/;
@@ -2261,7 +2252,7 @@ sub determine_image_format {
     return "BMP"  if /^BM/;
     return "ICO"  if /^\000\000\001\000/;
     return "PPM"  if /^P[1-6]/;
-    return "XPM"  if /(^\/\* XPM \*\/)|(static\s+char\s+\*\w+\[\]\s*=\s*{\s*"\d+)/;
+    return "XPM"  if /(^\/\* XPM \*\/)|(static\s+char\s+\*\w+\[\]\s*=\s*\{\s*"\d+)/;
     return "XBM"  if /^(?:\/\*.*\*\/\n)?#define\s/;
     return "SVG"  if /^(<\?xml|[\012\015\t ]*<svg\b)/;
     return undef;
@@ -2646,7 +2637,7 @@ sub get_player_command {
             # Video player
             $CONFIG{video_players}{$CONFIG{video_player_selected}}{cmd},
 
-            (    # Audio file (http://)
+            (    # Audio file (https://)
                ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
                  && exists($CONFIG{video_players}{$CONFIG{video_player_selected}}{audio})
                ? $CONFIG{video_players}{$CONFIG{video_player_selected}}{audio}

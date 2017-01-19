@@ -1,7 +1,7 @@
 ---
 abstract: 'A very easy interface to YouTube.'
 author:
-  - 'Daniel "Trizen" Șuteu <trizenx@gmail.com>'
+  - 'Trizen <trizenx@gmail.com>'
 build_requires:
   Test::More: '0'
 configure_requires:

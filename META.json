@@ -1,7 +1,7 @@
 {
    "abstract" : "A very easy interface to YouTube.",
    "author" : [
-      "Daniel \"Trizen\" Șuteu <trizenx@gmail.com>"
+      "Trizen <trizenx@gmail.com>"
    ],
    "dynamic_config" : 1,
    "generated_by" : "Module::Build version 0.422",

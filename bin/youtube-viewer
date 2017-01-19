@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2010-2016 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
+# Copyright (C) 2010-2017 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of either: the GNU General Public License as published
@@ -10,13 +10,13 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
-# See http://dev.perl.org/licenses/ for more information.
+# See https://dev.perl.org/licenses/ for more information.
 #
 #-------------------------------------------------------
-#  Appname: youtube-viewer
+#  youtube-viewer
 #  Created on: 02 June 2010
 #  Latest edit on: 18 January 2017
-#  Website: https://github.com/trizen/youtube-viewer
+#  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
 # youtube-viewer is a command line utility for streaming YouTube videos in mpv/vlc/mplayer.
@@ -111,7 +111,7 @@ See: youtube-viewer --help
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2016 Trizen.
+Copyright 2010-2017 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
@@ -121,7 +121,7 @@ This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-See L<http://dev.perl.org/licenses/> for more information.
+See L<https://dev.perl.org/licenses/> for more information.
 
 =cut
 
@@ -287,7 +287,7 @@ my %CONFIG = (
     cats_region => 'us',
 
     # URI options
-    youtube_video_url => 'http://www.youtube.com/watch?v=%s',
+    youtube_video_url => 'https://www.youtube.com/watch?v=%s',
 
     # Subtitle options
     srt_languages => ['en', 'es'],
@@ -927,7 +927,7 @@ Results: play all the video results (-A)
          in the "10" category, which is the Music category.
          -A will include the videos from the next pages as well.
 
-Command: $execname -comments=http://www.youtube.com/watch?v=U6_8oIPFREY
+Command: $execname -comments=https://www.youtube.com/watch?v=U6_8oIPFREY
 Results: show video comments for a specific video URL or videoID
 
 Command: $execname -results=5 -up=khanacademy -D
@@ -3012,7 +3012,7 @@ sub print_playlists {
 
 TITLE: %s
    ID: %s
-  URL: http://www.youtube.com/playlist?list=%s
+  URL: https://www.youtube.com/playlist?list=%s
 DESCR: %s
 FORMAT
 
@@ -3402,7 +3402,7 @@ sub get_player_command {
             # Video player
             $opt{video_players}{$opt{video_player_selected}}{cmd},
 
-            (    # Audio file (http://)
+            (    # Audio file (https://)
                ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
                  && exists($opt{video_players}{$opt{video_player_selected}}{audio})
                ? $opt{video_players}{$opt{video_player_selected}}{audio}

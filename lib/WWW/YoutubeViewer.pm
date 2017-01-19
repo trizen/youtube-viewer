@@ -528,7 +528,7 @@ sub _get_formats_from_ytdl {
       || return;
 
     my $json = $self->proxy_stdout('youtube-dl', '--all-formats', '--dump-single-json',
-                                   quotemeta("http://www.youtube.com/watch?v=" . $videoID));
+                                   quotemeta("https://www.youtube.com/watch?v=" . $videoID));
 
     my @array;
     my $ref = $self->parse_json_string($json) // return;
