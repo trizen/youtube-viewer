@@ -200,7 +200,7 @@ my %CONFIG = (
     # GUI options
     clean_text_entries_on_click => 1,
     show_thumbs                 => 1,
-    clear_search_list           => 0,
+    clear_search_list           => 1,
     default_notebook_page       => 1,
     mainw_size                  => '700x400',
     mainw_maximized             => 0,
