@@ -306,50 +306,57 @@ sub lwp_get {
     $self->{lwp} // $self->set_lwp_useragent();
 
     my %lwp_header = ($simple ? () : $self->_get_lwp_header);
+
+    state $accepted_encodings = do {
+        require HTTP::Message;
+        HTTP::Message::decodable();
+    };
+
+    $lwp_header{'Accept-Encoding'} = $accepted_encodings;
+
     my $response = $self->{lwp}->get($url, %lwp_header);
 
     if ($response->is_success) {
         return $response->decoded_content;
     }
-    else {
-        my $status = $response->status_line;
 
-        if ($status =~ /^401 / and defined($self->get_refresh_token)) {
-            if (defined(my $refresh_token = $self->oauth_refresh_token())) {
-                if (defined $refresh_token->{access_token}) {
+    my $status = $response->status_line;
 
-                    $self->set_access_token($refresh_token->{access_token});
+    if ($status =~ /^401 / and defined($self->get_refresh_token)) {
+        if (defined(my $refresh_token = $self->oauth_refresh_token())) {
+            if (defined $refresh_token->{access_token}) {
 
-                    # Don't be tempted to use recursion here, because bad things will happen!
-                    my $new_resp = $self->{lwp}->get($url, $self->_get_lwp_header);
+                $self->set_access_token($refresh_token->{access_token});
 
-                    if ($new_resp->is_success) {
-                        $self->save_authentication_tokens();
-                        return $new_resp->decoded_content;
-                    }
-                    elsif ($new_resp->status_line() =~ /^401 /) {
-                        $self->set_refresh_token();    # refresh token was invalid
-                        $self->set_access_token();     # access token is also broken
-                        warn "[!] Can't refresh the access token! Logging out...\n";
-                    }
-                    else {
-                        warn '[' . $new_resp->status_line . "] Error occured on URL: $url\n";
-                    }
+                # Don't be tempted to use recursion here, because bad things will happen!
+                my $new_resp = $self->{lwp}->get($url, $self->_get_lwp_header);
+
+                if ($new_resp->is_success) {
+                    $self->save_authentication_tokens();
+                    return $new_resp->decoded_content;
+                }
+                elsif ($new_resp->status_line() =~ /^401 /) {
+                    $self->set_refresh_token();    # refresh token was invalid
+                    $self->set_access_token();     # access token is also broken
+                    warn "[!] Can't refresh the access token! Logging out...\n";
                 }
                 else {
-                    warn "[!] Can't get the access_token! Logging out...\n";
-                    $self->set_refresh_token();
-                    $self->set_access_token();
+                    warn '[' . $new_resp->status_line . "] Error occured on URL: $url\n";
                 }
             }
             else {
-                warn "[!] Invalid refresh_token! Logging out...\n";
+                warn "[!] Can't get the access_token! Logging out...\n";
                 $self->set_refresh_token();
                 $self->set_access_token();
             }
         }
-        warn '[' . $response->status_line . "] Error occured on URL: $url\n";
+        else {
+            warn "[!] Invalid refresh_token! Logging out...\n";
+            $self->set_refresh_token();
+            $self->set_access_token();
+        }
     }
+    warn '[' . $response->status_line . "] Error occured on URL: $url\n";
 
     return;
 }
