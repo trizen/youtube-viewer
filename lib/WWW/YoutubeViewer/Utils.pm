@@ -4,8 +4,6 @@ use utf8;
 use 5.014;
 use warnings;
 
-no if $] >= 5.018, warnings => 'experimental::smartmatch';
-
 =head1 NAME
 
 WWW::YoutubeViewer::Utils - Various utils.
@@ -161,33 +159,50 @@ sub has_entries {
     !!$req->{results}{pageInfo}{totalResults};
 }
 
-=head2 normalize_video_title($title)
+=head2 normalize_video_title($title, $fat32safe)
 
 Replace file-unsafe characters and trim spaces.
 
 =cut
 
 sub normalize_video_title {
-    my ($self, $title) = @_;
+    my ($self, $title, $fat32safe) = @_;
 
-    if ($^O ~~ [qw(linux freebsd openbsd)]) {
-        $title =~ tr{/}{%};
+    if ($fat32safe) {
+        $title =~ tr{:"*/?\\|}{;'+%$%%};    # "
+        $title =~ tr/<>//d;
     }
     else {
-        $title =~ tr{:"*/?\\|}{;'+%$%%};    # "
+        $title =~ tr{/}{%};
     }
 
     join(q{ }, split(q{ }, $title));
 }
 
-=head2 format_text($streaming=HASH, $video_info=HASH, $text=STRING, $escape=BOOL)
+=head2 format_text(%opt)
 
-Format a text with information from streaming and video info.
+Formats a text with information from streaming and video info.
+
+The structure of C<%opt> is:
+
+    (
+        streaming => HASH,
+        info      => HASH,
+        text      => STRING,
+        escape    => BOOL,
+        fat32safe => BOOL,
+    )
 
 =cut
 
 sub format_text {
-    my ($self, $streaming, $info, $text, $quotemeta) = @_;
+    my ($self, %opt) = @_;
+
+    my $streaming = $opt{streaming};
+    my $info      = $opt{info};
+    my $text      = $opt{text};
+    my $escape    = $opt{escape};
+    my $fat32safe = $opt{fat32safe};
 
     my %special_tokens = (
         ID          => sub { $self->get_video_id($info) },
@@ -202,7 +217,7 @@ sub format_text {
         DURATION    => sub { $self->get_duration($info) },
         TIME        => sub { $self->format_time($self->get_duration($info)) },
         TITLE       => sub { $self->get_title($info) },
-        FTITLE      => sub { $self->normalize_video_title($self->get_title($info)) },
+        FTITLE      => sub { $self->normalize_video_title($self->get_title($info), $fat32safe) },
         CAPTION     => sub { $self->get_caption($info) },
         DESCRIPTION => sub { $self->get_description($info) },
 
@@ -254,7 +269,7 @@ sub format_text {
 
     $text =~ s/$escapes_re/$special_escapes{$1}/g;
 
-    $quotemeta
+    $escape
       ? $text =~ s/$tokens_re/\Q${\$special_tokens{$1}()}\E/gr
       : $text =~ s/$tokens_re/${\$special_tokens{$1}()}/gr;
 }

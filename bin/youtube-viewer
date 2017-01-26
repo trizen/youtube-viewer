@@ -22,6 +22,7 @@
 # youtube-viewer is a command line utility for streaming YouTube videos in mpv/vlc/mplayer.
 #
 # [CHANGELOG]
+# - Added the `--fat32safe` option to make filenames FAT32-safe, by replacing bad characters.  - NEW (v3.2.5)
 # - Added the `--highlight` option to remember and highlight watched videos in a session.      - NEW (v3.2.2)
 # - Added the `--channel-videos=s` command-line option to display videos from a channel ID.    - NEW (v3.2.1)
 # - Added the `i..` range, which plays all the videos, starting with video `i`. (#114)         - NEW (v3.2.1)
@@ -70,7 +71,7 @@
 # - For "-A" option has been added 3 pages of youtube video results (50 clips)                 - (v2.3.*)
 # - Added "-prefer-ipv4" to the mplayer line (videoclips starts in no time now).               - (v2.3.*)
 # - Search and play videos at 480p, 720p. Ex: [words] --480, [words] -A --480                  - (v2.3.*)
-# - Added support to play a video at 480p even if it's resolution is higher. Ex: [url] --480   - (v2.2.*)
+# - Added support to play a video at 480p even if its resolution is higher. Ex: [url] --480    - (v2.2.*)
 # - Added a nice feature which prints some informations about the current playing video        - (v2.2.*)
 # - Added support to play videos by your order. Example: after search results, insert: 3 5 2 1 - (v2.1.*)
 # - Added support for next pages of video results (press <ENTER> after search results)         - (v2.1.*)
@@ -136,7 +137,7 @@ use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
-use WWW::YoutubeViewer v3.2.4;
+use WWW::YoutubeViewer v3.2.5;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
@@ -173,7 +174,7 @@ my $term_width = 80;
 my %watched_videos;
 
 # Unchangeable data goes here
-my %constant = (win32 => $^O eq 'MSWin32');    # doh
+my %constant = (win32 => ($^O eq 'MSWin32' ? 1 : 0));    # doh
 
 my $home_dir;
 my $xdg_config_home = $ENV{XDG_CONFIG_HOME};
@@ -305,6 +306,7 @@ my %CONFIG = (
     colors               => $constant{win32} ^ 1,
     clobber              => 0,
     skip_if_exists       => 0,
+    fat32safe            => $constant{win32},
     fullscreen           => 0,
     results_with_details => 0,
     results_with_colors  => 0,
@@ -362,7 +364,7 @@ my $other_options = <<'OTHER';
 # Others
 :r(eturn)         : return to previous section
 :refresh          : refresh the current list of results
-:dv=i             : dump the data structure of result i
+:dv=i             : display the data structure of result i
 -argv -argv2=v    : apply some arguments (e.g.: -u=google)
 :reset, :reload   : restart the application
 :q, :quit, :exit  : close the application
@@ -372,8 +374,8 @@ my $notes_options = <<'NOTES';
 NOTES:
  1. You can specify more options in a row, separated by spaces.
  2. A stdin option is valid only if it begins with '=', ';' or ':'.
- 3. Quoting a group of space separated keywords, or option values,
-    the group will be considered just like a single value/keyword.
+ 3. Quoting a group of space separated keywords or option-values,
+    the group will be considered a single keyword or a single value.
 NOTES
 
 my $general_help = <<"HELP";
@@ -410,7 +412,7 @@ $action_options
 :d(ownload)=i,i   : download the selected videos
 :c(omments)=i     : display video comments
 :r(elated)=i      : display related videos
-:a(uthor)=i       : display latest author's uploads
+:a(uthor)=i       : display author's latest uploads
 :p(laylists)=i    : display author's playlists
 :ps=i, :s2p=i,i   : save videos to a post-selected playlist
 :subscribe=i      : subscribe to author's channel
@@ -675,7 +677,7 @@ usage: $execname [options] ([url] | [keywords])
                           1080p, 720p, 480p, 360p, 240p, 144p, audio.
 
  * Account
-   --login              : will prompt you for login
+   --login              : will prompt for authentication (OAuth 2.0)
    --logout             : will delete the authentication key
 
  * [GET] Personal
@@ -693,6 +695,7 @@ usage: $execname [options] ([url] | [keywords])
    --favorite=s         : favorite a YouTube video by URL or ID *
    --like=s             : send a 'like' rating to a video URL or ID *
    --dislike=s          : send a 'dislike' rating to a video URL or ID *
+
 
 == Player Options ==
 
@@ -719,6 +722,7 @@ usage: $execname [options] ([url] | [keywords])
        --copy-caption!   : copy and rename the caption for downloaded videos
        --downloads-dir=s : downloads directory (set: '$opt{downloads_dir}')
        --filename=s      : set a custom format for the video filename (see: -T)
+       --fat32safe!      : makes filenames FAT32 safe (includes Unicode)
 
  * Convert
    --convert-cmd=s      : command for converting videos after download
@@ -733,10 +737,10 @@ usage: $execname [options] ([url] | [keywords])
    -A  --all!            : play all the video results in order
    -B  --backwards!      : play all video results in reverse order
    -s  --shuffle!        : shuffle the results of videos and playlists
-   -I  --interactive!    : prompt for the first user input
+   -I  --interactive!    : interactive mode, prompting for user input
        --std-input=s     : use this value as the first standard input
-       --max-seconds=i   : don't play videos longer than i seconds
-       --min-seconds=i   : don't play videos shorter than i seconds
+       --max-seconds=i   : ignore videos longer than i seconds
+       --min-seconds=i   : ignore videos shorter than i seconds
        --combine-multi!  : combine multiple videos into one play instance
        --get-term-width! : allow $execname to read your terminal width
        --autohide!       : automatically hide watched videos
@@ -779,7 +783,7 @@ Help options:
    -H  --stdin-help     : show the valid stdin options for $execname
    -v  --version        : print version and exit
    -h  --help           : print help and exit
-       --debug:1,2      : see behind the scenes
+       --debug:[1,2]    : see behind the scenes
 
 NOTES:
     *    -> requires authentication
@@ -1453,13 +1457,13 @@ sub parse_arguments {
         'af=s'                                       => sub { $MPLAYER{audio_filter} = "-af $_[1]" },
 
         # Others
-        'colorful|C!'       => \$opt{results_with_colors},
-        'details|D!'        => \$opt{results_with_details},
-        'fixed-width|W|fw!' => \$opt{results_fixed_width},
-        'caption=s'         => \$opt{videoCaption},
-        'fullscreen|fs|f!'  => \$opt{fullscreen},
-        'dash!'             => \$opt{dash_support},
-        'confirm!'          => \$opt{confirm},
+        'colorful||colourful|C!' => \$opt{results_with_colors},
+        'details|D!'             => \$opt{results_with_details},
+        'fixed-width|W|fw!'      => \$opt{results_fixed_width},
+        'caption=s'              => \$opt{videoCaption},
+        'fullscreen|fs|f!'       => \$opt{fullscreen},
+        'dash!'                  => \$opt{dash_support},
+        'confirm!'               => \$opt{confirm},
 
         'convert-command|convert-cmd=s'      => \$opt{convert_cmd},
         'dash-m4a|dash-mp4-audio|dash-mp4a!' => \$opt{dash_mp4_audio},
@@ -1492,6 +1496,7 @@ sub parse_arguments {
         'captions-dir|captions_dir=s'    => \$opt{captions_dir},
         'skip-if-exists|skip_if_exists!' => \$opt{skip_if_exists},
         'downloads-dir|download-dir=s'   => \$opt{downloads_dir},
+        'fat32safe!'                     => \$opt{fat32safe},
       )
       or die "Error in command-line arguments!";
 
@@ -3259,7 +3264,21 @@ sub get_streaming_url {
 sub download_video {
     my ($streaming, $info) = @_;
 
-    my $video_filename = $yv_utils->format_text($streaming, $info, $opt{video_filename_format}, 0);
+    my $fat32safe = $opt{fat32safe};
+    state $unix_like = $^O ~~ [qw(linux freebsd openbsd)];
+
+    if (not $fat32safe and not $unix_like) {
+        $fat32safe = 1;
+    }
+
+    my $video_filename = $yv_utils->format_text(
+                                                streaming => $streaming,
+                                                info      => $info,
+                                                text      => $opt{video_filename_format},
+                                                escape    => 0,
+                                                fat32safe => $fat32safe,
+                                               );
+
     my $naked_filename = $video_filename =~ s/\.\w+\z//r;
 
     if (not -d $opt{downloads_dir}) {
@@ -3420,7 +3439,14 @@ sub get_player_command {
     );
 
     my $has_video = $cmd =~ /\*(?:VIDEO|URL|ID)\*/;
-    $cmd = $yv_utils->format_text($streaming, $video, $cmd, 1);
+
+    $cmd = $yv_utils->format_text(
+                                  streaming => $streaming,
+                                  info      => $video,
+                                  text      => $cmd,
+                                  escape    => 1,
+                                 );
+
     $has_video ? $cmd : join(' ', $cmd, quotemeta($streaming->{streaming}{url}));
 }
 
@@ -3485,7 +3511,14 @@ sub play_videos {
         }
         elsif (length($opt{extract_info})) {
             my $fh = $opt{extract_info_fh} // \*STDOUT;
-            say {$fh} $yv_utils->format_text($streaming, $video, $opt{extract_info}, $opt{escape_info});
+            say {$fh}
+              $yv_utils->format_text(
+                                     streaming => $streaming,
+                                     info      => $video,
+                                     text      => $opt{extract_info},
+                                     escape    => $opt{escape_info},
+                                     fat32safe => $opt{fat32safe},
+                                    );
         }
         elsif ($opt{combine_multiple_videos}) {
             print_video_info($video);
