@@ -33,6 +33,7 @@ sub get_playlist_id {
     my $url = $self->_simple_feeds_url('channels', qw(part contentDetails), %fields);
     my $res = $self->_get_results($url);
 
+    ref($res->{results}{items}) eq 'ARRAY' || return;
     @{$res->{results}{items}} || return;
 
     return $res->{results}{items}[0]{contentDetails}{relatedPlaylists}{$playlist_name};

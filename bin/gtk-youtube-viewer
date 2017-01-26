@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 18 January 2017
+#  Latest edit on: 26 January 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -812,7 +812,8 @@ sub apply_configuration {
     $thumbs_checkbutton->set_active($CONFIG{show_thumbs});
 
     # Setup threads
-    if ($CONFIG{use_threads}) {
+    if ($CONFIG{use_threads} || $CONFIG{use_threads_for_thumbs}) {
+        $ENV{PERL_JSON_BACKEND} = 'JSON::PP';
         set_threads();
     }
 
@@ -877,24 +878,23 @@ sub set_threads {
     $jobs  = 'Thread::Queue'->new;
     threads->create(
         sub {
-            while (defined(my $url = $jobs->dequeue)) {
-                $queue->enqueue($yv_obj->$lwp_get($url) || q{});
+            while (my $arg = $jobs->dequeue) {
+                $queue->enqueue($yv_obj->$lwp_get(@$arg));
             }
         }
     )->detach();
 }
 
 sub threads_lwp_get {
-    my ($self, $url) = @_;
+    my ($self, @arg) = @_;
 
-    set_threads() unless defined $queue;
-    $gif_spinner->show;
-
-    if (not defined $url) {
-        $url = $self;
+    if (not defined($queue) or not defined($jobs)) {
+        set_threads();
     }
 
-    $jobs->enqueue($url);
+    $gif_spinner->show;
+
+    $jobs->enqueue(\@arg);
     while ($queue->pending == 0) {
         'Gtk2'->main_iteration;
         if (defined(my $lwp_result = $queue->dequeue_nb)) {
@@ -1333,10 +1333,10 @@ ESC : close the focused window
 * Configuration
 
 use_threads
-    1 to use threads when getting the XML content
+    1 for making HTTPS requests concurrently
 
 use_threads_for_thumbs
-    1 to use threads when getting the thumbnails (not recommended!)
+    1 for getting the thumbnail images concurrently
 
 srt_languages
     a list with the preferred subtitle languages
@@ -2263,8 +2263,8 @@ sub _get_pixbuf_thumbnail {
 
     my $thumbnail =
       $CONFIG{use_threads_for_thumbs}
-      ? threads_lwp_get($url)
-      : $yv_obj->lwp_get($url);
+      ? threads_lwp_get($yv_obj, $url, 1)
+      : $yv_obj->lwp_get($url, 1);
 
     my $pixbuf;
     if (defined $thumbnail) {
