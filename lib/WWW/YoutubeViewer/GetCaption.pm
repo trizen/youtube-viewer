@@ -59,7 +59,7 @@ sub new {
     $self->{captions_dir}  = undef;
     $self->{captions}      = [];
     $self->{auto_captions} = 0;
-    $self->{languages}     = [qw(en es ro jp)];
+    $self->{languages}     = [qw(en es)];
 
     foreach my $key (keys %{$self}) {
         $self->{$key} = delete $opts{$key}
