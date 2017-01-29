@@ -72,7 +72,7 @@
 # - Added "-prefer-ipv4" to the mplayer line (videoclips starts in no time now).               - (v2.3.*)
 # - Search and play videos at 480p, 720p. Ex: [words] --480, [words] -A --480                  - (v2.3.*)
 # - Added support to play a video at 480p even if its resolution is higher. Ex: [url] --480    - (v2.2.*)
-# - Added a nice feature which prints some informations about the current playing video        - (v2.2.*)
+# - Added a nice feature which prints some information about the current playing video         - (v2.2.*)
 # - Added support to play videos by your order. Example: after search results, insert: 3 5 2 1 - (v2.1.*)
 # - Added support for next pages of video results (press <ENTER> after search results)         - (v2.1.*)
 # - Added support to continue playing searched videos, usage: "youtube-viewer [words] -A"      - (v2.1.*)
@@ -548,7 +548,7 @@ if ($opt{history}) {
     @{$opt{history_hash}}{map { lc } @history} = ();
 
     # Rewrite the history file when the history size limit has been reached in order to keep
-    # only the last n entries, minus some random number to avoid an imediate second rewrite.
+    # only the last n entries, minus some random number to avoid an immediate second rewrite.
     if ($opt{history_limit} > 0 and $#history >= $opt{history_limit}) {
 
         # Try to create a backup, first
@@ -844,7 +844,7 @@ sub tricks {
  > "6" (quoted) or -V=6 will search for videos with the keyword '6'.
 
  > If a stdin option is followed by one or more digits, the equal sign,
-   which separates the option from value, can be omited.
+   which separates the option from value, can be omitted.
    For example:
         :i2,4  is equivalent with :i=2,4
         :d1-5  is equivalent with :d=1,2,3,4,5
@@ -876,7 +876,7 @@ sub tricks {
   *COMMENTS*    : the number of comments
   *DURATION*    : the duration of the video in seconds
   *DIMENSION*   : the dimension of the video (2D or 3D)
-  *DEFINITION*  : the defintion of the video (HD or SD)
+  *DEFINITION*  : the definition of the video (HD or SD)
   *TIME*        : the duration of the video in HH::MM::SS
   *TITLE*       : the title of the video
   *FTITLE*      : the title of the video (filename safe)
@@ -902,7 +902,7 @@ sub tricks {
     \\e                  escape
 
 -> Extracting information from videos:
- > Extracting information can be achevied by using the "--extract" command-line
+ > Extracting information can be achieved by using the "--extract" command-line
    option which takes a given format as its argument, which is defined by using
    special tokens, special escapes or literals.
 
@@ -2850,7 +2850,7 @@ sub print_categories {
 
     foreach my $category (@{$categories}) {
 
-        # Ignore unassignable categories
+        # Ignore nonassignable categories
         $category->{snippet}{assignable} || next;
 
         printf "%s. %-40s (id: %s)\n", colored(sprintf('%2d', ++$i), 'bold'), $yv_utils->get_title($category), $category->{id};
