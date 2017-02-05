@@ -1,38 +1,10 @@
 ## youtube-viewer
 
-### INSTALLATION
+* **youtube-viewer**
+    * a command-line interface to YouTube.
 
-To install this application, run the following commands:
-
-```console
-    perl Build.PL
-    ./Build installdeps
-    ./Build test
-    sudo ./Build install
-```
-
-### PACKAGING
-
-To package this application, run the following commands:
-
-```console
-    perl Build.PL --destdir "/my/package/path" --installdirs vendor
-    ./Build test
-    ./Build install --install_path script=/usr/bin
-```
-
-## gtk-youtube-viewer
-
-To install GTK Youtube Viewer, run `Build.PL` with the `--gtk` argument.
-
-```console
-    perl Build.PL --gtk
-```
-
-or:
-```console
-    perl Build.PL --destdir "/my/path" --installdirs vendor --gtk
-```
+* **gtk-youtube-viewer**
+    * a Gtk2 interface to YouTube.
 
 ### AVAILABILITY
 
@@ -45,6 +17,59 @@ or:
 * Puppy Linux: http://www.murga-linux.com/puppy/viewtopic.php?t=76835
 * Slackware: http://slackbuilds.org/repository/14.1/multimedia/youtube-viewer/
 * Ubuntu/Linux Mint: `sudo add-apt-repository ppa:nilarimogard/webupd8`
+
+### INSTALLATION
+
+To install `youtube-viewer`, run:
+
+```console
+    perl Build.PL
+    sudo ./Build installdeps
+    sudo ./Build install
+```
+
+To install `gtk-youtube-viewer` along with `youtube-viewer`, run:
+
+```console
+    perl Build.PL --gtk
+    sudo ./Build installdeps
+    sudo ./Build install
+```
+
+### DEPENDENCIES
+
+#### For youtube-viewer:
+
+* [libwww-perl](https://metacpan.org/release/libwww-perl)
+* [LWP::Protocol::https](https://metacpan.org/release/LWP-Protocol-https)
+* [Data::Dump](https://metacpan.org/release/Data-Dump)
+* [JSON](https://metacpan.org/release/JSON)
+
+
+#### For gtk-youtube-viewer:
+
+* [Gtk2](https://metacpan.org/release/Gtk2)
+* [File::ShareDir](https://metacpan.org/release/File-ShareDir)
+* + the dependencies required by youtube-viewer.
+
+
+#### Optional dependencies:
+
+* Local cache support: [LWP::UserAgent::Cached](https://metacpan.org/release/LWP-UserAgent-Cached)
+* Better STDIN support (+ history): [Term::ReadLine::Gnu](https://metacpan.org/release/Term-ReadLine-Gnu)
+* Faster JSON deserialization: [JSON::XS](https://metacpan.org/release/JSON-XS)
+* Fixed-width formatting (--fixed-width, -W): [Unicode::LineBreak](https://metacpan.org/release/Unicode-LineBreak) or [Text::CharWidth](https://metacpan.org/release/Text-CharWidth)
+
+
+### PACKAGING
+
+To package this application, run the following commands:
+
+```console
+    perl Build.PL --destdir "/my/package/path" --installdirs vendor [--gtk]
+    ./Build test
+    ./Build install --install_path script=/usr/bin
+```
 
 ### REVIEWS
 
