@@ -1527,7 +1527,7 @@ elsif ($opt{interactive} and -t) {
     first_user_input();
 }
 elsif ($opt{interactive} and -t STDOUT and not -t) {
-    print_videos($yv_obj->search_videos(<>));
+    print_videos($yv_obj->search_videos(scalar <STDIN>));
 }
 else {
     main_quit($opt{_error} || 0);
