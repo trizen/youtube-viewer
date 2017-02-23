@@ -1395,7 +1395,7 @@ $details_window->add_accel_group($accel);
 
 sub show_user_panel {
     change_subscription_page(1);
-    $statusbar->push(1, "Logged.");
+    $statusbar->push(1, "Logged in.");
     return 1;
 }
 
@@ -1999,7 +1999,7 @@ sub log_out {
     $yv_obj->set_access_token();
     $yv_obj->set_refresh_token();
 
-    $statusbar->push(1, "Not logged.");
+    $statusbar->push(1, "Not logged in.");
     return 1;
 }
 

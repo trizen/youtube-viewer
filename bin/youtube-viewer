@@ -1527,7 +1527,7 @@ elsif ($opt{interactive} and -t) {
     first_user_input();
 }
 elsif ($opt{interactive} and -t STDOUT and not -t) {
-    print_videos($yv_obj->search(<>));
+    print_videos($yv_obj->search_videos(<>));
 }
 else {
     main_quit($opt{_error} || 0);
@@ -1787,7 +1787,7 @@ INFO
     my $code = $term->readline(colored(q{Code: }, 'bold')) || return;
 
     my $info = $yv_obj->oauth_login($code) // do {
-        warn "[WARNING] Can't login... That's all I know...\n";
+        warn "[WARNING] Can't log in... That's all I know...\n";
         return;
     };
 
