@@ -352,6 +352,10 @@ sub lwp_get {
         }
     }
 
+    if ($response->status_line() =~ /^500 read timeout/i) {
+        return $self->lwp_get($url, $simple);    # try again
+    }
+
     warn '[' . $response->status_line . "] Error occured on URL: $url\n";
     return;
 }
