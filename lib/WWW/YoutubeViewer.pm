@@ -250,16 +250,21 @@ sub set_lwp_useragent {
     my $cache = LWP::ConnCache->new;
     $cache->total_capacity(undef);                               # no limit
 
+    my $accepted_encodings = do {
+        require HTTP::Message;
+        HTTP::Message::decodable();
+    };
+
     my $agent = $self->{lwp};
     $agent->ssl_opts(Timeout => 30);
-    $agent->default_header('Accept-Encoding' => 'gzip');
+    $agent->default_header('Accept-Encoding' => $accepted_encodings);
     $agent->conn_cache($cache);
     $agent->proxy('http', $self->get_http_proxy) if (defined($self->get_http_proxy));
 
     my $http_proxy = $agent->proxy('http');
     if (defined($http_proxy)) {
         $agent->proxy('https', $http_proxy) if (!defined($agent->proxy('https')));
-        $agent->timeout(5);
+        $agent->timeout(30);
     }
 
     push @{$self->{lwp}->requests_redirectable}, 'POST';
@@ -306,14 +311,6 @@ sub lwp_get {
     $self->{lwp} // $self->set_lwp_useragent();
 
     my %lwp_header = ($simple ? () : $self->_get_lwp_header);
-
-    state $accepted_encodings = do {
-        require HTTP::Message;
-        HTTP::Message::decodable();
-    };
-
-    $lwp_header{'Accept-Encoding'} = $accepted_encodings;
-
     my $response = $self->{lwp}->get($url, %lwp_header);
 
     if ($response->is_success) {
