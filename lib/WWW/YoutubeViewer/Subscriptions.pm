@@ -97,20 +97,39 @@ Retrieve the video subscriptions for a channel ID or for the current authenticat
 sub subscription_videos {
     my ($self, $channel_id, $order) = @_;
 
-    my $url = $self->_make_subscriptions_url(
-                                             order      => $self->get_subscriptions_order,
-                                             maxResults => 50,
-                                             part       => 'snippet,contentDetails',
-                                             defined($channel_id)
-                                             ? (channelId => $channel_id)
-                                             : (mine => 'true'),
-                                            );
+    my $max_results = $self->get_maxResults();
 
-    my $max_results   = $self->get_maxResults();
-    my $subscriptions = $self->_get_results($url)->{results};
+    my @subscription_items;
+    my $next_page_token;
+    while (1) {
+
+        my $url = $self->_make_subscriptions_url(
+                                                 order      => $self->get_subscriptions_order,
+                                                 maxResults => 50,
+                                                 part       => 'snippet,contentDetails',
+                                                 defined($channel_id)
+                                                 ? (channelId => $channel_id)
+                                                 : (mine => 'true'),
+                                                 defined($next_page_token) ? (pageToken => $next_page_token) : (),
+                                                );
+
+        my $subscriptions = $self->_get_results($url)->{results};
+
+        if (    ref($subscriptions) eq 'HASH'
+            and ref($subscriptions->{items}) eq 'ARRAY') {
+            push @subscription_items, @{$subscriptions->{items}};
+        }
+
+        $next_page_token = $subscriptions->{nextPageToken} || last;
+    }
+
+    my (undef, undef, undef, $mday, $mon, $year) = localtime;
+
+    $mon  += 1;
+    $year += 1900;
 
     my @videos;
-    foreach my $channel (@{$subscriptions->{items}}) {
+    foreach my $channel (@subscription_items) {
 
         my $new_items = $channel->{contentDetails}{newItemCount};
 
@@ -121,8 +140,31 @@ sub subscription_videos {
         $self->set_maxResults(1);    # don't load more than 1 video from each channel
                                      # maybe, this value should be configurable (?)
 
+        my $uploads = $self->uploads($channel->{snippet}{resourceId}{channelId});
+
+        (ref($uploads) eq 'HASH' and ref($uploads->{results}) eq 'HASH' and ref($uploads->{results}{items}) eq 'ARRAY')
+          || return {};
+
+        my $items = $uploads->{results}{items};
+
         # Get and store the video uploads from each channel
-        push @videos, @{$self->uploads($channel->{snippet}{resourceId}{channelId})->{results}{items}};
+        foreach my $item (@$items) {
+            my $publishedAt = $item->{snippet}{publishedAt};
+            my ($p_year, $p_mon, $p_mday) = $publishedAt =~ /^(\d{4})-(\d{2})-(\d{2})/;
+
+            my $year_diff = $year - $p_year;
+            my $mon_diff  = $mon - $p_mon;
+            my $mday_diff = $mday - $p_mday;
+
+            my $days_diff = $year_diff * 365.2422 + $mon_diff * 30.436875 + $mday_diff;
+
+            # Ignore old entries
+            if ($days_diff > 3) {
+                next;
+            }
+
+            push @videos, $item;
+        }
 
         # Stop when the limit is reached
         last if (@videos >= $max_results);
@@ -130,7 +172,7 @@ sub subscription_videos {
 
     # When there are no new videos, load one from each channel
     if ($#videos == -1) {
-        foreach my $channel (@{$subscriptions->{items}}) {
+        foreach my $channel (@subscription_items) {
             $self->set_maxResults(1);
             push @videos, @{$self->uploads($channel->{snippet}{resourceId}{channelId})->{results}{items}};
             last if (@videos >= $max_results);
