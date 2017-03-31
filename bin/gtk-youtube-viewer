@@ -235,6 +235,7 @@ my %CONFIG = (
     cache_dir     => undef, # will be defined later
 
     # Others
+    env_proxy  => 1,
     http_proxy => undef,
     debug      => 0,
     fullscreen => 0,
@@ -730,6 +731,7 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      key                 => $key,
                                      config_dir          => $config_dir,
                                      hl                  => $CONFIG{hl},
+                                     lwp_env_proxy       => $CONFIG{env_proxy},
                                      cache_dir           => $CONFIG{cache_dir},
                                      authentication_file => $authentication_file,
                                     );
