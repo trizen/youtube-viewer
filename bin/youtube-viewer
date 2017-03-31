@@ -772,7 +772,6 @@ usage: $execname [options] ([url] | [keywords])
        --use-colors!    : enable or disable the ANSI colors for text
 
  * Other
-   --env-proxy!         : use proxy if https_proxy environment variable is set
    --http_proxy=s       : HTTP proxy to use, format 'http://domain.tld:port/'.
                           If authentication required,
                           use 'http://user:pass\@domain.tld:port/'
@@ -1500,7 +1499,6 @@ sub parse_arguments {
         'skip-if-exists|skip_if_exists!' => \$opt{skip_if_exists},
         'downloads-dir|download-dir=s'   => \$opt{downloads_dir},
         'fat32safe!'                     => \$opt{fat32safe},
-        'env-proxy|env_proxy!'           => \$opt{env_proxy},
       )
       or die "Error in command-line arguments!";
 
