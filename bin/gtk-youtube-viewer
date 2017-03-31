@@ -2278,7 +2278,7 @@ sub _get_pixbuf_thumbnail {
             $pixbufloader = 'Gtk2::Gdk::PixbufLoader'->new;
         }
 
-        $pixbufloader->set_size(120, 90);
+        $pixbufloader->set_size(160, 90);
         $pixbufloader->write($thumbnail);
         $pixbuf = $pixbufloader->get_pixbuf;
         $pixbufloader->close;
