@@ -1459,7 +1459,7 @@ sub parse_arguments {
         'af=s'                                       => sub { $MPLAYER{audio_filter} = "-af $_[1]" },
 
         # Others
-        'colorful||colourful|C!' => \$opt{results_with_colors},
+        'colorful|colourful|C!'  => \$opt{results_with_colors},
         'details|D!'             => \$opt{results_with_details},
         'fixed-width|W|fw!'      => \$opt{results_fixed_width},
         'caption=s'              => \$opt{videoCaption},
