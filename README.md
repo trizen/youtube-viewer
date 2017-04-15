@@ -50,7 +50,7 @@ To install `gtk-youtube-viewer` along with `youtube-viewer`, run:
 
 * [Gtk2](https://metacpan.org/release/Gtk2)
 * [File::ShareDir](https://metacpan.org/release/File-ShareDir)
-* + the dependencies required by youtube-viewer.
+* \+ the dependencies required by youtube-viewer.
 
 
 #### Optional dependencies:
