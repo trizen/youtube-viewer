@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 18 January 2017
+#  Latest edit on: 19 April 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -532,34 +532,28 @@ if (not -d $CONFIG{cache_dir}) {
 @opt{keys %CONFIG} = values(%CONFIG);
 
 if ($opt{history}) {
-    if (open($opt{history_fh}, '>>:utf8', $opt{history_file})) {
-        select((select($opt{history_fh}), $| = 1)[0]);    # autoflush
-    }
-    else {
-        warn "[!] Can't open history file `$opt{history_file}' for appending: $!";
+
+    # Create the history file.
+    if (not -e $opt{history_file}) {
+        open my $fh, '>', $opt{history_file}
+          or warn "[!] Can't create the history file `$opt{history_file}': $!";
     }
 
     # Add history to Term::ReadLine
     $term->ReadHistory($opt{history_file});
 
-    # Read back the history list from memory
-    # and create a dictionary to avoid duplicates
-    require Encode;
-    my @history = map { Encode::decode_utf8($_) } $term->history_list;
-    @{$opt{history_hash}}{map { lc } @history} = ();
+    # All history entries
+    my @entries = $term->history_list;
 
-    # Rewrite the history file when the history size limit has been reached in order to keep
-    # only the last n entries, minus some random number to avoid an immediate second rewrite.
-    if ($opt{history_limit} > 0 and $#history >= $opt{history_limit}) {
+    # Rewrite the history file, when the history_limit has been reached.
+    if ($opt{history_limit} > 0 and @entries > $opt{history_limit}) {
 
         # Try to create a backup, first
         require File::Copy;
         File::Copy::cp($opt{history_file}, "$opt{history_file}.bak");
 
-        # Now, try to rewrite the history file
-        if (open(my $fh, '>:utf8', $opt{history_file})) {
-            say {$fh}
-              join("\n", @history[(@history - $opt{history_limit}) + int(rand($opt{history_limit} >> 1)) .. $#history]);
+        if (open my $fh, '>', $opt{history_file}) {
+            say {$fh} join("\n", @entries[(@entries - $opt{history_limit} + rand($opt{history_limit} >> 1)) .. $#entries]);
             close $fh;
         }
     }
@@ -1459,13 +1453,13 @@ sub parse_arguments {
         'af=s'                                       => sub { $MPLAYER{audio_filter} = "-af $_[1]" },
 
         # Others
-        'colorful|colourful|C!'  => \$opt{results_with_colors},
-        'details|D!'             => \$opt{results_with_details},
-        'fixed-width|W|fw!'      => \$opt{results_fixed_width},
-        'caption=s'              => \$opt{videoCaption},
-        'fullscreen|fs|f!'       => \$opt{fullscreen},
-        'dash!'                  => \$opt{dash_support},
-        'confirm!'               => \$opt{confirm},
+        'colorful|colourful|C!' => \$opt{results_with_colors},
+        'details|D!'            => \$opt{results_with_details},
+        'fixed-width|W|fw!'     => \$opt{results_fixed_width},
+        'caption=s'             => \$opt{videoCaption},
+        'fullscreen|fs|f!'      => \$opt{fullscreen},
+        'dash!'                 => \$opt{dash_support},
+        'confirm!'              => \$opt{confirm},
 
         'convert-command|convert-cmd=s'      => \$opt{convert_cmd},
         'dash-m4a|dash-mp4-audio|dash-mp4a!' => \$opt{dash_mp4_audio},
@@ -1753,9 +1747,8 @@ sub get_user_input {
 
     if ($opt{history} && @{$keywords}) {
         my $str = join(' ', grep { /\w/ and not /^[:;=]/ } @{$keywords});
-        if (not exists($opt{history_hash}{lc($str)}) and $str ne '' and $str !~ /^[0-9]{1,2}\z/ and $str !~ /^https?:/) {
-            say {$opt{history_fh}} $str;
-            undef $opt{history_hash}{lc($str)};
+        if ($str ne '' and $str !~ /^[0-9]{1,2}\z/) {
+            $term->append_history(1, $opt{history_file});
         }
     }
 
