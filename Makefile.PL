@@ -8,11 +8,9 @@ WriteMakefile
                    'Data::Dump' => 0,
                    'Encode' => 0,
                    'File::Path' => 0,
-                   'File::ShareDir' => 0,
                    'File::Spec' => 0,
                    'File::Spec::Functions' => 0,
                    'Getopt::Long' => 0,
-                   'Gtk2' => 0,
                    'HTTP::Request' => 0,
                    'JSON' => 0,
                    'LWP::Protocol::https' => 0,
@@ -28,7 +26,6 @@ WriteMakefile
                  },
   'INSTALLDIRS' => 'site',
   'EXE_FILES' => [
-                   'bin/gtk-youtube-viewer',
                    'bin/youtube-viewer'
                  ],
   'PL_FILES' => {}

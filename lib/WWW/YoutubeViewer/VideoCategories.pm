@@ -12,7 +12,7 @@ WWW::YoutubeViewer::VideoCategories - videoCategory resource handler.
 
     use WWW::YoutubeViewer;
     my $obj = WWW::YoutubeViewer->new(%opts);
-    my $videos = $obj->videos_from_categoryID($category_id);
+    my $cats = $obj->video_categories();
 
 =head1 SUBROUTINES/METHODS
 
@@ -21,10 +21,6 @@ WWW::YoutubeViewer::VideoCategories - videoCategory resource handler.
 sub _make_videoCategories_url {
     my ($self, %opts) = @_;
 
-    if (not exists $opts{id}) {
-        $opts{regionCode} //= $self->get_regionCode;
-    }
-
     $self->_make_feed_url(
                           'videoCategories',
                           hl => $self->get_hl,
@@ -32,7 +28,7 @@ sub _make_videoCategories_url {
                          );
 }
 
-=head2 video_categories(;$region_id)
+=head2 video_categories()
 
 Return video categories for a specific region ID.
 
@@ -50,12 +46,13 @@ Return video categories for a specific region ID.
 =cut
 
 sub video_categories {
-    my ($self, $code) = @_;
+    my ($self) = @_;
 
-    state $x = require File::Spec;
+    require File::Spec;
 
-    my $url = $self->_make_videoCategories_url(regionCode => $code);
-    my $file = File::Spec->catfile($self->get_config_dir, "categories-$code-" . $self->get_hl() . ".json");
+    my $region = $self->get_regionCode() // 'US';
+    my $url = $self->_make_videoCategories_url(regionCode => $region);
+    my $file = File::Spec->catfile($self->get_config_dir, "categories-$region-" . $self->get_hl() . ".json");
 
     my $json;
     if (open(my $fh, '<:utf8', $file)) {

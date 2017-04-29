@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 19 April 2017
+#  Latest edit on: 29 April 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -284,8 +284,8 @@ my %CONFIG = (
 
     subscriptions_order => 'relevance',
 
-    hl          => 'en_US',
-    cats_region => 'us',
+    hl         => 'en_US',
+    regionCode => undef,
 
     # URI options
     youtube_video_url => 'https://www.youtube.com/watch?v=%s',
@@ -344,9 +344,6 @@ my $base_options = <<'BASE';
 :v(ideoid)=ID     : play videos by YouTube video IDs
 [playlist-url]    : display videos from a playlistURL
 :playlist=ID      : display videos from a playlistID
-:lectures=ID      : display lectures from a categoryID
-:course=ID        : display lectures from a courseID
-:courses=ID       : display courses of lectures from a categoryID
 BASE
 
 my $action_options = <<'ACTIONS';
@@ -607,18 +604,12 @@ usage: $execname [options] ([url] | [keywords])
 
 == YouTube Options ==
 
- * Video tops:
-   -t  --tops           : display the YouTube video tops
-       --tops=all       : display all time YouTube video tops
-   -r  --region=s       : list top videos for a specific region
-   -M  --movies         : display the YouTube category of movies
-
  * Categories
    -c  --categories     : display the available YouTube categories
-       --edu-categories : display the YouTube EDU categories
-       --course-id=s    : list the video lectures from a course_ID
    -hl --catlang=s      : language for categories (default: en_US)
-       --cats-region=s  : region code for categories (default: us)
+
+ * Region
+   --region=s           : set the region code (default: US)
 
  * Videos
    -uv --user-vid=s     : list videos uploaded by a specific user
@@ -640,12 +631,6 @@ usage: $execname [options] ([url] | [keywords])
 
  * Channels
    --channels         : search for Youtube channels
-
- * Shows
-   -us --user-shows=s : display the shows belonging to a user
-       --seasons=s    : get and print the seasons of a YouTube show_ID
-       --episodes=s   : get and print the episodes for a show season_ID
-       --clips=s      : get and print the clips for a show season_ID
 
 * Comments
    --comments=s         : display comments for a YouTube video by ID or URL
@@ -926,15 +911,15 @@ Results: play all the video results (-A)
          in the "10" category, which is the Music category.
          -A will include the videos from the next pages as well.
 
-Command: $execname -comments=https://www.youtube.com/watch?v=U6_8oIPFREY
+Command: $execname --comments 'https://www.youtube.com/watch?v=U6_8oIPFREY'
 Results: show video comments for a specific video URL or videoID
 
-Command: $execname -results=5 -up=khanacademy -D
+Command: $execname --results=5 -up=khanacademy -D
 Results: set 5 results,
          get playlists created by a specific user
          and print them with details (-D)
 
-Command: $execname -author=UCBerkeley atom
+Command: $execname --author=UCBerkeley atom
 Results: search only in videos uploaded by a specific author
 
 Command: $execname -S=vsauce
@@ -944,22 +929,13 @@ Command: $execname --page=2 -u=Google
 Results: show latest videos uploaded by Google,
          starting with the page number 2.
 
-Command: $execname --category=10 --tops
-Results: show today tops for Music category.
-
-Command: $execname --tops=all --region=JP
-Results: show all time tops for the Japan country.
-
-Command: $execname --tops --region=RU --category=Music
-Results: show today tops of RUssian Music
-
-Command: $execname cats -order=viewCount -duration=short
-Results: search for 'cats' videos, ordered by ViewCount and short length.
+Command: $execname cats --order=viewCount --duration=short
+Results: search for 'cats' videos, ordered by ViewCount and short duration.
 
 Command: $execname --channels russian music
 Results: search for channels.
 
-Command: $execname --uf=Google
+Command: $execname -uf=Google
 Results: show latest videos favorited by a user.
 
 
@@ -967,7 +943,7 @@ Results: show latest videos favorited by a user.
 
 A STDIN option can begin with ':', ';' or '='.
 
-Command: <ENTER>, :n, :next, CTRL+D
+Command: <ENTER>, :n, :next
 Results: get the next page of results.
 
 Command: :b, :back (:r, :return)
@@ -996,15 +972,6 @@ Results: subscribe to the author's channel who uploaded the selected video.
 
 Command: :like=2, :dislike=4,5
 Results: like or dislike the selected videos.
-
-Command: :course=EC7AEDF86AABA1AA9A
-Results: list videos lectures from course ID.
-
-Command: :courses=285
-Results: list courses of lectures from EDU category ID.
-
-Command: :lectures=361
-Results: list video lectures from EDU category ID.
 
 Command: :fav=4, :favorite=3..5
 Results: favorite the selected videos.
@@ -1205,9 +1172,9 @@ sub apply_configuration {
         }
     }
 
-    if (defined $opt->{course_id}) {
-        get_and_print_videos_from_course(delete $opt->{course_id});
-    }
+    #~ if (defined $opt->{course_id}) {
+    #~ get_and_print_videos_from_course(delete $opt->{course_id});
+    #~ }
 
     if (defined $opt->{search_videos}) {
         my $value = delete $opt->{search_videos};
@@ -1220,20 +1187,20 @@ sub apply_configuration {
     }
 
     if (delete $opt->{categories}) {
-        print_categories($yv_obj->video_categories($opt{cats_region}));
+        print_categories($yv_obj->video_categories);
     }
 
-    if (defined $opt->{show_seasons}) {
-        get_and_print_content_from_show(delete $opt->{show_seasons});
-    }
+    #~ if (defined $opt->{show_seasons}) {
+    #~ get_and_print_content_from_show(delete $opt->{show_seasons});
+    #~ }
 
-    if (defined $opt->{season_episodes}) {
-        get_and_print_episodes_from_season_id(delete $opt->{season_episodes});
-    }
+    #~ if (defined $opt->{season_episodes}) {
+    #~ get_and_print_episodes_from_season_id(delete $opt->{season_episodes});
+    #~ }
 
-    if (defined $opt->{season_clips}) {
-        get_and_print_clips_from_season_id(delete $opt->{season_clips});
-    }
+    #~ if (defined $opt->{season_clips}) {
+    #~ get_and_print_clips_from_season_id(delete $opt->{season_clips});
+    #~ }
 
     if (defined $opt->{user_videos}) {
         if ($opt->{user_videos} =~ /$valid_channel_id_re/) {
@@ -1248,14 +1215,14 @@ sub apply_configuration {
         print_videos($yv_obj->uploads(delete $opt->{channel_id_videos}));
     }
 
-    if (defined $opt->{user_shows}) {
-        if ($opt->{user_shows} =~ /$valid_channel_id_re/) {
-            print_shows($yv_obj->get_shows_from_username(delete $opt->{user_shows}));
-        }
-        else {
-            warn_invalid("username", $opt->{user_shows});
-        }
-    }
+    #~ if (defined $opt->{user_shows}) {
+    #~ if ($opt->{user_shows} =~ /$valid_channel_id_re/) {
+    #~ print_shows($yv_obj->get_shows_from_username(delete $opt->{user_shows}));
+    #~ }
+    #~ else {
+    #~ warn_invalid("username", $opt->{user_shows});
+    #~ }
+    #~ }
 
     if (defined $opt->{subscriptions}) {
         my $username = delete $opt->{subscriptions};
@@ -1322,13 +1289,9 @@ sub apply_configuration {
         }
     }
 
-    if (defined $opt->{video_tops}) {
-        print_video_tops(time_id => (delete($opt->{video_tops}) =~ /^all/i ? 'all_time' : 'today'));
-    }
-
-    if (delete $opt->{show_movies}) {
-        print_movies();
-    }
+    #~ if (defined $opt->{video_tops}) {
+    #~ print_video_tops(time_id => (delete($opt->{video_tops}) =~ /^all/i ? 'all_time' : 'today'));
+    #~ }
 
     if (defined $opt->{get_comments}) {
         get_and_print_comments(split(/[,\s]+/, delete($opt->{get_comments})));
@@ -1363,17 +1326,16 @@ sub parse_arguments {
         '1080p|1' => sub { $opt{resolution} = 1080 },
         'res|resolution=s' => \$opt{resolution},
 
-        'movies|M'                                   => \$opt{show_movies},
-        'comments=s'                                 => \$opt{get_comments},
-        'search|videos|V:s'                          => \$opt{search_videos},
-        'video-ids|videoids|id|ids=s'                => \$opt{play_video_ids},
-        'tops|video-tops|t:s'                        => \$opt{video_tops},
-        'c|categories'                               => \$opt{categories},
-        'ec|educategories|edu-categories'            => \$opt{educategories},
-        'show-seasons|show_seasons|seasons=s',       => \$opt{show_seasons},
-        'season-episodes|season_episodes|episodes=s' => \$opt{season_episodes},
-        'season-clips|season_clips|clips=s'          => \$opt{season_clips},
-        'channels|search-channels|search_channels:s' => \$opt{search_channels},
+        'comments=s'                  => \$opt{get_comments},
+        'search|videos|V:s'           => \$opt{search_videos},
+        'video-ids|videoids|id|ids=s' => \$opt{play_video_ids},
+
+        #~ 'movies|M'               => \$opt{show_movies},
+        #~ 'tops|video-tops|t:s'    => \$opt{video_tops},
+        #~ 'course|course-id=s'     => \$opt{course_id},
+
+        'c|categories'               => \$opt{categories},
+        'channels|search-channels:s' => \$opt{search_channels},
 
         'subscriptions|S:s'                 => \$opt{subscriptions},
         'subs-videos|SV:s'                  => \$opt{subscription_videos},
@@ -1389,20 +1351,23 @@ sub parse_arguments {
         # English-UK friendly
         'favorite|favourite|favorite-video|favourite-video|fav=s' => \$opt{favorite_video},
 
+        #~ 'show-seasons|show_seasons|seasons=s',       => \$opt{show_seasons},
+        #~ 'season-episodes|season_episodes|episodes=s' => \$opt{season_episodes},
+        #~ 'season-clips|season_clips|clips=s'          => \$opt{season_clips},
+        #~ 'shows|user-shows|us=s'                      => \$opt{user_shows},
+
         'login|authenticate'      => \$opt{authenticate},
         'logout'                  => \$opt{logout},
         'user|user-videos|u|uv=s' => \$opt{user_videos},
-        'shows|user-shows|us=s'   => \$opt{user_shows},
         'user-playlists|up=s'     => \$opt{user_playlists},
         'user-favorites|uf=s'     => \$opt{user_favorited_videos},
         'user-likes|ul=s'         => \$opt{user_liked_videos},
         'related-videos|rl|rv=s'  => \$opt{related_videos},
         'http_proxy=s'            => \$opt{http_proxy},
 
-        'catlang|cl|hl=s'          => \$opt{hl},
-        'category|cat-id|cat=i'    => \$opt{videoCategoryId},
-        'cats-region|cat-region=s' => \$opt{cats_region},
-        'r|region|region-code=s'   => \$opt{regionCode},
+        'catlang|cl|hl=s'        => \$opt{hl},
+        'category|cat-id|cat=i'  => \$opt{videoCategoryId},
+        'r|region|region-code=s' => \$opt{regionCode},
 
         'orderby|order|order-by=s' => \$opt{order},
         'duration=s'               => \$opt{videoDuration},
@@ -1422,19 +1387,19 @@ sub parse_arguments {
 
         'playlists|p|pl|playlist:s' => \$opt{search_playlists},
         'pid|playlist-id=s'         => \$opt{playlist_id},
-        'course|course-id=s'        => \$opt{course_id},
-        'play-playlists|pp=s'       => \$opt{play_playlists},
-        'debug:1'                   => \$opt{debug},
-        'download|dl|d!'            => \$opt{download_video},
-        'safe-search|safeSearch=s'  => \$opt{safeSearch},
-        'vd|video-definition=s'     => \$opt{videoDefinition},
-        'hd|high-definition!'       => \$opt{hd},
-        'I|interactive!'            => \$opt{interactive},
-        'convert-to|convert_to=s'   => \$opt{convert_to},
-        'keep-original-video!'      => \$opt{keep_original_video},
-        'e|extract|extract-info=s'  => \$opt{extract_info},
-        'extract-file=s'            => \$opt{extract_info_file},
-        'escape-info!'              => \$opt{escape_info},
+
+        'play-playlists|pp=s'      => \$opt{play_playlists},
+        'debug:1'                  => \$opt{debug},
+        'download|dl|d!'           => \$opt{download_video},
+        'safe-search|safeSearch=s' => \$opt{safeSearch},
+        'vd|video-definition=s'    => \$opt{videoDefinition},
+        'hd|high-definition!'      => \$opt{hd},
+        'I|interactive!'           => \$opt{interactive},
+        'convert-to|convert_to=s'  => \$opt{convert_to},
+        'keep-original-video!'     => \$opt{keep_original_video},
+        'e|extract|extract-info=s' => \$opt{extract_info},
+        'extract-file=s'           => \$opt{extract_info_file},
+        'escape-info!'             => \$opt{escape_info},
 
         'dump=s' => sub {
             my (undef, $format) = @_;
@@ -2891,50 +2856,6 @@ sub print_categories {
     }
 
     __SUB__->(@_);
-}
-
-sub print_movies {
-    my $i = 0;
-
-    print "\n";
-    foreach my $id (@{WWW::YoutubeViewer::movie_IDs}) {
-        my $top_movie_name = uc $id;
-        $top_movie_name =~ tr/_/ /;
-        printf "%s. %s\n", colored(sprintf('%2d', ++$i), 'bold'), $top_movie_name;
-    }
-
-    my @keywords = get_input_for_video_tops();
-
-    foreach my $key (@keywords) {
-        if ($key =~ /$valid_opt_re/) {
-            given ($1) {
-                when (general_options(opt => $_)) { }
-                when (['h', 'help']) {
-                    print $general_help;
-                    press_enter_to_continue();
-                }
-                when (['r', 'return']) {
-                    return;
-                }
-                default {
-                    warn_invalid('option', $_);
-                }
-            }
-        }
-        else {
-            given ($key) {
-                when (\&youtube_urls) { }    # do nothing
-                when (valid_num($_, \@{WWW::YoutubeViewer::movie_IDs})) {
-                    print_videos($yv_obj->get_movies(${WWW::YoutubeViewer::movie_IDs}[$_ - 1]));
-                }
-                default {
-                    warn_invalid('keyword', $_);
-                }
-            }
-        }
-    }
-
-    __SUB__->();
 }
 
 sub print_video_tops {

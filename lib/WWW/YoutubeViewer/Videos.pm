@@ -20,7 +20,7 @@ WWW::YoutubeViewer::Videos - videos handler.
 
 sub _make_videos_url {
     my ($self, %opts) = @_;
-    return $self->_make_feed_url('videos', %opts,);
+    return $self->_make_feed_url('videos', %opts);
 }
 
 {
@@ -56,7 +56,12 @@ Get videos from a category ID.
 
 sub videos_from_category {
     my ($self, $cat_id) = @_;
-    $self->_get_results($self->_make_videos_url(chart => $self->get_chart, videoCategoryId => $cat_id));
+    $self->_get_results(
+                        $self->_make_videos_url(
+                                                chart           => $self->get_chart,
+                                                videoCategoryId => $cat_id,
+                                               )
+                       );
 }
 
 =head2 my_likes()

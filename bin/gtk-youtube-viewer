@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 26 January 2017
+#  Latest edit on: 29 April 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -26,7 +26,7 @@ use warnings;
 no warnings 'once';
 
 my $DEVEL;    # true in devel mode
-use if ($DEVEL = 0), lib => qw(../lib);    # devel only
+use if ($DEVEL = 1), lib => qw(../lib);    # devel only
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
@@ -218,7 +218,7 @@ my %CONFIG = (
     publishedBefore => undef,
     publishedAfter  => undef,
     hl              => 'en_US',
-    cats_region     => 'us',
+    regionCode      => undef,
 
     # URI options
     thumbnail_type       => 'medium',
@@ -1753,7 +1753,7 @@ sub append_categories {
     # Standard categories:
     add_category_header("Categories");
 
-    my $cats = $yv_obj->video_categories($CONFIG{cats_region});
+    my $cats = $yv_obj->video_categories();
     if (ref($cats) eq 'HASH' and ref($cats->{items}) eq 'ARRAY') {
 
         my $help_text = '';

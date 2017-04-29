@@ -450,6 +450,7 @@ sub default_arguments {
                     part        => 'snippet',
                     prettyPrint => 'false',
                     maxResults  => $self->get_maxResults,
+                    regionCode  => $self->get_regionCode,
                     %args,
                    );
 
