@@ -55,8 +55,7 @@ my $execname = 'gtk-youtube-viewer';
 # Share directory
 my $share_dir = $DEVEL ? '../share' : dist_dir('WWW-YoutubeViewer');
 
-sub VIDEO_PART () { 'contentDetails,statistics' }
-sub EXTRA_VIDEO_PART () { join(',', 'snippet', VIDEO_PART()) }
+sub VIDEO_PART () { 'contentDetails,statistics,snippet' }
 
 # Developer key
 my $key = 'aXalQYmzI8gPkMSLyMhpApfMAiU2b23Qz2nE3mq';
@@ -2099,7 +2098,7 @@ sub get_selected_entry_code {
 sub check_keywords {
     given ($_[0]) {
         when (/$get_video_id_re/o) {
-            my $info = $yv_obj->video_details($+{video_id}, EXTRA_VIDEO_PART);
+            my $info = $yv_obj->video_details($+{video_id}, VIDEO_PART);
 
             if ($yv_utils->has_entries($info)) {
                 if (not play_video($info->{results}{items}[0])) {
@@ -2335,7 +2334,8 @@ sub display_results {
             add_subscription_entry($item);
         }
         elsif ($yv_utils->is_video($item)) {
-            @{$item}{qw(contentDetails statistics)} = @{$video_details->[$pos{$i}]}{qw(contentDetails statistics)};
+            @{$item}{qw(contentDetails statistics snippet)} =
+              @{$video_details->[$pos{$i}]}{qw(contentDetails statistics snippet)};
             add_video_entry($item);
         }
     }

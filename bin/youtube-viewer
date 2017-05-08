@@ -163,8 +163,7 @@ my $term = Term::ReadLine->new("$appname $version");
 # Developer key
 my $key = 'aXalQYmzI8gPkMSLyMhpApfMAiU2b23Qz2nE3mq';
 
-sub VIDEO_PART () { 'contentDetails,statistics' }
-sub EXTRA_VIDEO_PART () { join(',', 'snippet', VIDEO_PART()) }
+sub VIDEO_PART () { 'contentDetails,statistics,snippet' }
 
 # Options (key=>value) goes here
 my %opt;
@@ -1859,7 +1858,7 @@ sub get_and_play_video_ids {
         return;
     }
 
-    my $info = $yv_obj->video_details(join(',', @ids), EXTRA_VIDEO_PART);
+    my $info = $yv_obj->video_details(join(',', @ids), VIDEO_PART);
 
     if ($yv_utils->has_entries($info)) {
         if (not play_videos($info->{results}{items})) {
@@ -1886,7 +1885,7 @@ sub get_and_print_video_info {
     foreach my $id (@_) {
 
         my $videoID = get_valid_video_id($id) // next;
-        my $info = $yv_obj->video_details($videoID, EXTRA_VIDEO_PART);
+        my $info = $yv_obj->video_details($videoID, VIDEO_PART);
 
         if ($yv_utils->has_entries($info)) {
             print_video_info($info->{results}{items}[0]);
@@ -3574,7 +3573,8 @@ sub print_videos {
         my $content_details = $yv_obj->video_details(join(',', map { $yv_utils->get_video_id($_) } @{$videos}), VIDEO_PART);
         my $video_details = $content_details->{results}{items};
         foreach my $i (0 .. $#{$videos}) {
-            @{$videos->[$i]}{qw(contentDetails statistics)} = @{$video_details->[$i]}{qw(contentDetails statistics)};
+            @{$videos->[$i]}{qw(contentDetails statistics snippet)} =
+              @{$video_details->[$i]}{qw(contentDetails statistics snippet)};
         }
         $results->{has_extra_info} = 1;
     }
