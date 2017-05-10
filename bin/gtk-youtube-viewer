@@ -204,6 +204,7 @@ my %CONFIG = (
     mainw_size                  => '700x400',
     mainw_maximized             => 0,
     mainw_fullscreen            => 0,
+    mainw_centered              => 0,
 
     # Youtube options
     dash_support    => 1,
@@ -825,8 +826,11 @@ sub apply_configuration {
     $resolution_combobox->set_active($CONFIG{active_resolution_combobox});
     $safesearch_combobox->set_active($CONFIG{active_safeSearch_combobox});
 
-    # Resize the main window
+    # Resize (and possibly center) the main window
     $mainw->set_default_size(split(/x/i, $CONFIG{mainw_size}, 2));
+    if ($CONFIG{mainw_centered}) {
+        $mainw->set_position("center");
+    }
     $mainw->reshow_with_initial_size;
 
     if ($CONFIG{mainw_maximized}) {
