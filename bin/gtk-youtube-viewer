@@ -2334,8 +2334,8 @@ sub display_results {
             add_subscription_entry($item);
         }
         elsif ($yv_utils->is_video($item)) {
-            @{$item}{qw(contentDetails statistics snippet)} =
-              @{$video_details->[$pos{$i}]}{qw(contentDetails statistics snippet)};
+            @{$item}{qw(id contentDetails statistics snippet)} =
+              @{$video_details->[$pos{$i}]}{qw(id contentDetails statistics snippet)};
             add_video_entry($item);
         }
     }
