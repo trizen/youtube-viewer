@@ -234,11 +234,12 @@ my %CONFIG = (
     cache_dir     => undef, # will be defined later
 
     # Others
-    env_proxy  => 1,
-    http_proxy => undef,
-    debug      => 0,
-    fullscreen => 0,
-    audio_only => 0,
+    env_proxy   => 1,
+    http_proxy  => undef,
+    prefer_fork => (($^O eq 'linux') ? 0 : 1),
+    debug       => 0,
+    fullscreen  => 0,
+    audio_only  => 0,
 
     use_threads            => 0,
     use_threads_for_thumbs => 0,    # this is unstable
@@ -2788,8 +2789,7 @@ sub get_options_as_arguments {
 sub execute_external_program {
     my ($cmd) = @_;
 
-    my $pid = fork();
-    if (defined $pid) {
+    if ($CONFIG{prefer_fork} and defined(my $pid = fork())) {
         if ($pid == 0) {
             say "** Forking process: $cmd" if $yv_obj->get_debug;
             $yv_obj->proxy_exec($cmd);
