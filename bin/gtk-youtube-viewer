@@ -846,6 +846,11 @@ sub apply_configuration {
     if ($CONFIG{history}) {
         set_history();
     }
+    # HPaned position correction
+    if ( $CONFIG{hpaned_position} > ($mainw->get_size)[0] * 0.75 )
+    {
+	    $CONFIG{hpaned_position} = ($mainw->get_size)[0] * 0.75; 
+    }
 
     # Set HPaned position
     $hbox2->set_position($CONFIG{hpaned_position});
