@@ -200,8 +200,6 @@
   <object class="GtkWindow" id="__MAIN__">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="window_position">mouse</property>
-    <property name="default_width">640</property>
     <signal name="destroy" handler="on_mainw_destroy" swapped="no"/>
     <signal name="window-state-event" handler="main_window_state_events" swapped="no"/>
     <signal name="delete-event" handler="on_mainw_destroy" swapped="no"/>

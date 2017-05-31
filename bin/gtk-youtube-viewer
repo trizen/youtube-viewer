@@ -827,11 +827,14 @@ sub apply_configuration {
     $resolution_combobox->set_active($CONFIG{active_resolution_combobox});
     $safesearch_combobox->set_active($CONFIG{active_safeSearch_combobox});
 
-    # Resize (and possibly center) the main window
+    # Resize the main window
     $mainw->set_default_size(split(/x/i, $CONFIG{mainw_size}, 2));
+
+    # Center the main window
     if ($CONFIG{mainw_centered}) {
         $mainw->set_position("center");
     }
+
     $mainw->reshow_with_initial_size;
 
     if ($CONFIG{mainw_maximized}) {
