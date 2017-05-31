@@ -206,6 +206,7 @@ my %CONFIG = (
     mainw_fullscreen            => 0,
     mainw_centered              => 0,
     hpaned_width                => 250,
+    hpaned_position             => 420,
 
     # Youtube options
     dash_support    => 1,
@@ -246,7 +247,6 @@ my %CONFIG = (
     use_threads            => 0,
     use_threads_for_thumbs => 0,    # this is unstable
 
-    hpaned_position        => 420,
     thousand_separator     => q{,},
     downloads_dir          => curdir(),
     web_browser            => undef,                 # defaults to $ENV{WEBBROWSER} or xdg-open
