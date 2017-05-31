@@ -205,6 +205,7 @@ my %CONFIG = (
     mainw_maximized             => 0,
     mainw_fullscreen            => 0,
     mainw_centered              => 0,
+    hpaned_width                => 250,
 
     # Youtube options
     dash_support    => 1,
@@ -849,10 +850,10 @@ sub apply_configuration {
     if ($CONFIG{history}) {
         set_history();
     }
+
     # HPaned position correction
-    if ( $CONFIG{hpaned_position} > ($mainw->get_size)[0] * 0.75 )
-    {
-	    $CONFIG{hpaned_position} = ($mainw->get_size)[0] * 0.75; 
+    if ($CONFIG{hpaned_position} >= ($mainw->get_size)[0] - 200) {
+        $CONFIG{hpaned_position} = ($mainw->get_size)[0] - $CONFIG{hpaned_width};
     }
 
     # Set HPaned position
