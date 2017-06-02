@@ -4,13 +4,13 @@
       "Trizen <trizenx@gmail.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4222",
+   "generated_by" : "Module::Build version 0.4224",
    "license" : [
       "perl_5"
    ],
    "meta-spec" : {
       "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
-      "version" : "2"
+      "version" : 2
    },
    "name" : "WWW-YoutubeViewer",
    "prereqs" : {
@@ -55,7 +55,7 @@
    "provides" : {
       "WWW::YoutubeViewer" : {
          "file" : "lib/WWW/YoutubeViewer.pm",
-         "version" : "v3.2.7"
+         "version" : "v3.2.8"
       },
       "WWW::YoutubeViewer::Activities" : {
          "file" : "lib/WWW/YoutubeViewer/Activities.pm"
@@ -115,6 +115,6 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "v3.2.7",
-   "x_serialization_backend" : "JSON::PP version 2.27400"
+   "version" : "v3.2.8",
+   "x_serialization_backend" : "JSON::PP version 2.94"
 }
