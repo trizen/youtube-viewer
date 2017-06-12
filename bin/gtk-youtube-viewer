@@ -709,7 +709,8 @@ if (not defined $CONFIG{terminal}) {
 
             # `st` requires changing the default value of `terminal_exec`.
             # Probably more terminals require this modification. PRs are welcome.
-            if ($term eq 'st') {
+            if (   $term eq 'st'
+                or $term eq 'lxterminal') {
                 $CONFIG{terminal_exec} = '-e %s';
             }
 
