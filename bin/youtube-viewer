@@ -449,7 +449,7 @@ STDIN_HELP
 EOD
 
     sub dump_configuration {
-        state $x = require Data::Dump;
+        require Data::Dump;
         open my $config_fh, '>', $config_file
           or do { warn "[!] Can't open '${config_file}' for write: $!"; return };
         my $dumped_config = q{our $CONFIG = } . Data::Dump::pp(\%CONFIG) . "\n";
@@ -780,7 +780,7 @@ HELP
 sub wrap_text {
     my (%args) = @_;
 
-    state $x = require Text::Wrap;
+    require Text::Wrap;
     local $Text::Wrap::columns = ($args{columns} || $term_width) - 8;
 
     my $text = "@{$args{text}}";
@@ -1025,7 +1025,7 @@ sub apply_configuration {
 
     if ($yv_obj->get_debug == 2
         or (defined($opt->{debug}) && $opt->{debug} == 2)) {
-        state $x = require Data::Dump;
+        require Data::Dump;
         say "=>> Options with keywords: <@{$keywords}>";
         Data::Dump::pp($opt);
     }
@@ -1107,7 +1107,7 @@ sub apply_configuration {
     if (defined $opt->{colors}) {
         $opt{_colors} = $opt->{colors};
         if (delete $opt->{colors}) {
-            state $x = require Term::ANSIColor;
+            require Term::ANSIColor;
             *colored    = \&Term::ANSIColor::colored;
             *colorstrip = \&Term::ANSIColor::colorstrip;
         }
@@ -1304,8 +1304,10 @@ sub apply_configuration {
 sub parse_arguments {
     my ($keywords) = @_;
 
-    state $x = require Getopt::Long;
-    state $y = Getopt::Long::Configure('no_ignore_case');
+    state $x = do {
+        require Getopt::Long;
+        Getopt::Long::Configure('no_ignore_case');
+    };
 
     Getopt::Long::GetOptions(
 
@@ -1613,8 +1615,8 @@ HELP
 }
 
 sub get_quotewords {
-    state $x = require Text::ParseWords;
-    return Text::ParseWords::quotewords(@_);
+    require Text::ParseWords;
+    Text::ParseWords::quotewords(@_);
 }
 
 # Straight copy of parse_options() from Term::UI
@@ -1704,7 +1706,7 @@ sub get_user_input {
 
     return q{:next} if $input eq q{};    # <ENTER> for the next page
 
-    state $x = require Encode;
+    require Encode;
     $input = Encode::decode_utf8($input);
 
     my ($args, $keywords) = parse_options($input);
@@ -2121,7 +2123,7 @@ sub general_options {
             if (my @nums = get_valid_numbers($#{$results}, $1)) {
                 print "\n";
                 foreach my $num (@nums) {
-                    state $x = require Data::Dump;
+                    require Data::Dump;
                     say Data::Dump::pp($results->[$num]);
                 }
                 press_enter_to_continue();
@@ -2374,7 +2376,7 @@ sub print_channels {
         }
         elsif ($opt{results_fixed_width}) {
 
-            state $x = require List::Util;
+            require List::Util;
 
             my @authors = map { $yv_utils->get_channel_title($_) } @{$channels};
             my @dates   = map { $yv_utils->get_publication_date($_) } @{$channels};
@@ -2569,7 +2571,7 @@ sub print_shows {
         }
         elsif ($opt{results_fixed_width}) {
 
-            state $x = require List::Util;
+            require List::Util;
 
             my $max_author_len = List::Util::min(List::Util::max(map { length($_->{name}) } @{$shows}), int($term_width / 5));
             my $count_width = List::Util::max(map { length($_->{seasons}) } @{$shows});
@@ -2922,7 +2924,7 @@ sub print_playlists {
     my $playlists = $info->{items} // [];
 
     if ($opt{shuffle}) {
-        state $x = require List::Util;
+        require List::Util;
         $playlists = [List::Util::shuffle(@{$playlists})];
     }
 
@@ -2951,7 +2953,7 @@ FORMAT
         }
         elsif ($opt{results_fixed_width}) {
 
-            state $x = require List::Util;
+            require List::Util;
 
             my @authors = map { $yv_utils->get_channel_title($_) } @{$playlists};
             my @dates   = map { $yv_utils->get_publication_date($_) } @{$playlists};
@@ -3134,7 +3136,7 @@ sub get_streaming_url {
     # Download the closed-captions
     my $srt_file;
     if (@captions and $opt{get_captions} and not $opt{novideo}) {
-        state $x = require WWW::YoutubeViewer::GetCaption;
+        require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
                                                          auto_captions => $opt{auto_captions},
                                                          captions_dir  => $opt{captions_dir},
@@ -3144,7 +3146,7 @@ sub get_streaming_url {
         $srt_file = $yv_cap->save_caption($video_id);
     }
 
-    state $x        = require WWW::YoutubeViewer::Itags;
+    require WWW::YoutubeViewer::Itags;
     state $yv_itags = WWW::YoutubeViewer::Itags->new();
 
     # Include DASH itags
@@ -3197,7 +3199,7 @@ sub download_video {
     my $naked_filename = $video_filename =~ s/\.\w+\z//r;
 
     if (not -d $opt{downloads_dir}) {
-        state $x = require File::Path;
+        require File::Path;
         unless (File::Path::make_path($opt{downloads_dir})) {
             warn colored("\n[!] Can't create directory '$opt{downloads_dir}': $1", 'bold red') . "\n";
         }
@@ -3314,7 +3316,7 @@ sub download_video {
         my $from = $streaming->{srt_file};
         my $to = catfile($opt{downloads_dir}, "$naked_filename.srt");
 
-        state $x = require File::Copy;
+        require File::Copy;
         File::Copy::cp($from, $to);
     }
 
@@ -3565,7 +3567,7 @@ sub print_videos {
     my $videos = $info->{items} // [];
 
     if ($opt{shuffle}) {
-        state $x = require List::Util;
+        require List::Util;
         $videos = [List::Util::shuffle(@{$videos})];
     }
 
@@ -3616,12 +3618,12 @@ sub print_videos {
         }
         elsif ($opt{results_fixed_width}) {
 
-            state $x = require List::Util;
+            require List::Util;
 
             my @durations = map { $yv_utils->get_duration($_) } @{$videos};
             my @authors   = map { $yv_utils->get_channel_title($_) } @{$videos};
 
-            my $author_width = List::Util::min(List::Util::max(map { length($_) } @authors), int($term_width / 5));
+            my $author_width = List::Util::min(List::Util::max(map { length($_) } @authors) || 1, int($term_width / 5));
             my $time_width = List::Util::first(sub { $_ >= 3600 }, @durations) ? 8 : 6;
             my $title_length = $term_width - ($author_width + $time_width + 3 + 2 + 1);
 
