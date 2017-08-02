@@ -15,7 +15,7 @@
 * Frugalware: http://frugalware.org/packages/203103
 * Gentoo: https://packages.gentoo.org/package/net-misc/youtube-viewer
 * Puppy Linux: http://www.murga-linux.com/puppy/viewtopic.php?t=76835
-* Slackware: http://slackbuilds.org/repository/14.1/multimedia/youtube-viewer/
+* Slackware: http://slackbuilds.org/repository/14.2/multimedia/youtube-viewer/
 * Ubuntu/Linux Mint: `sudo add-apt-repository ppa:nilarimogard/webupd8`
 
 ### INSTALLATION
