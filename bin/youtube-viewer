@@ -3299,6 +3299,7 @@ sub download_video {
     # Play the download video
     elsif ($opt{download_and_play}) {
 
+        local $streaming->{streaming}{url} = '';
         my $command = get_player_command($streaming, $info);
         say $command if $yv_obj->get_debug;
 
