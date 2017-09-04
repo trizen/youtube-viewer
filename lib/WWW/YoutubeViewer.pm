@@ -560,6 +560,16 @@ sub _get_formats_from_ytdl {
     return @array;
 }
 
+=head2 parse_query_string($string, multi => [0,1])
+
+Parse a query string and return a data structure back.
+
+When the B<multi> option is set to a true value, the function will store multiple values for a given key.
+
+Returns back a list of key-value pairs.
+
+=cut
+
 sub parse_query_string {
     my ($self, $str, %opt) = @_;
 
@@ -579,11 +589,6 @@ sub parse_query_string {
     my %result;
 
     foreach my $pair (@pairs) {
-
-        if ($pair eq '') {
-            next;
-        }
-
         my @pair = split(/=/, $pair, 2);
 
         if (@pair != 2) {
@@ -690,6 +695,7 @@ sub get_streaming_urls {
 
     if ($self->get_debug == 2) {
         require Data::Dump;
+        Data::Dump::pp(\%info);
         Data::Dump::pp(\@streaming_urls);
         Data::Dump::pp(\@caption_urls);
     }
