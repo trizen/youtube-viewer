@@ -30,13 +30,13 @@ The captions data.
 
  [
   # ...
-  {
-    lc => "da",
-    n  => "Danish",
-    t  => 1,
-    u  => 'https://...',
-    v  => ".da",
-  },
+    {
+      baseUrl => "https://...",
+      isTranslatable => '...',
+      languageCode => "ru",
+      name => { simpleText => "Russian" },
+      vssId => ".ru",
+    },
   # ...
  ]
 
@@ -84,12 +84,13 @@ sub find_caption_data {
 
     my @found;
     foreach my $caption (@{$self->{captions}}) {
-        if (exists $caption->{lc} and exists $caption->{u}) {
+        if (defined $caption->{languageCode}) {
             foreach my $i (0 .. $#{$self->{languages}}) {
                 my $lang = $self->{languages}[$i];
-                if ($caption->{lc} =~ /^\Q$lang\E(?:\z|[_-])/i) {
+                if ($caption->{languageCode} =~ /^\Q$lang\E(?:\z|[_-])/i) {
 
-                    my $auto = exists($caption->{k});
+                    # Automatic Speech Recognition
+                    my $auto = defined($caption->{kind}) && lc($caption->{kind}) eq 'asr';
 
                     # Check against auto-generated captions
                     if ($auto and not $self->{auto_captions}) {
@@ -97,7 +98,7 @@ sub find_caption_data {
                     }
 
                     # Fuzzy match or auto-generated caption
-                    if (lc($caption->{lc}) ne lc($lang) or $auto) {
+                    if (lc($caption->{languageCode}) ne lc($lang) or $auto) {
                         $found[$i + @{$self->{languages}} + ($auto || 0) * @{$self->{languages}}] = $caption;
                     }
 
@@ -145,7 +146,7 @@ Convert the XML data to SubRip format.
 sub xml2srt {
     my ($self, $xml) = @_;
 
-    state $x = require WWW::YoutubeViewer::ParseXML;
+    require WWW::YoutubeViewer::ParseXML;
     my $hash = eval { WWW::YoutubeViewer::ParseXML::xml2hash($xml) } // return;
 
     my $sections;
@@ -159,7 +160,7 @@ sub xml2srt {
         return;
     }
 
-    state $y = require HTML::Entities;
+    require HTML::Entities;
 
     my @text;
     foreach my $i (0 .. $#{$sections}) {
@@ -181,7 +182,7 @@ Get the XML content for a given caption data.
 =cut
 
 sub get_xml_data {
-    my ($self, $info) = @_;
+    my ($self, $url) = @_;
 
     require LWP::UserAgent;
     state $lwp = LWP::UserAgent->new(
@@ -190,7 +191,8 @@ sub get_xml_data {
           agent => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36',
     );
 
-    my $req = $lwp->get($info->{u});
+    my $req = $lwp->get($url);
+
     if ($req->is_success) {
         return $req->decoded_content;
     }
@@ -210,16 +212,16 @@ sub save_caption {
     # Find one of the prefered languages
     my $info = $self->find_caption_data() // return;
 
-    state $x = require File::Spec;
-    my $filename = "${video_id}_$info->{lc}.srt";
+    require File::Spec;
+    my $filename = "${video_id}_$info->{languageCode}.srt";
     my $srt_file = File::Spec->catfile($self->{captions_dir} // File::Spec->tmpdir, $filename);
 
     # Return the srt file if it already exists
     return $srt_file if (-e $srt_file);
 
     # Get XML data, then tranform it to SubRip data
-    my $xml = $self->get_xml_data($info) // return;
-    my $srt = $self->xml2srt($xml)       // return;
+    my $xml = $self->get_xml_data($info->{baseUrl} // return) // return;
+    my $srt = $self->xml2srt($xml) // return;
 
     # Write the SubRib data to the $srt_file
     open(my $fh, '>:utf8', $srt_file) or return;

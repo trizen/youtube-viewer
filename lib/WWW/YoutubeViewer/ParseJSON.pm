@@ -30,7 +30,7 @@ sub parse_json_string {
         return {};
     }
 
-    state $x = require JSON;
+    require JSON;
     my $hash = eval { JSON::decode_json($json) };
     return $@ ? do { warn "[JSON]: $@\n"; {} } : $hash;
 }
@@ -43,7 +43,8 @@ Create a JSON string from a HASH or ARRAY ref.
 
 sub make_json_string {
     my ($self, $ref) = @_;
-    state $x = require JSON;
+
+    require JSON;
     my $str = eval { JSON::encode_json($ref) };
     return $@ ? do { warn "[JSON]: $@\n"; '' } : $str;
 }

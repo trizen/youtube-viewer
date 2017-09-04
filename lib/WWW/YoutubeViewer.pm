@@ -177,7 +177,7 @@ sub page_token {
         push @f, $k + 1;
     }
 
-    state $x = require MIME::Base64;
+    require MIME::Base64;
     MIME::Base64::encode_base64(pack('C*', @f, 16, 0)) =~ tr/=\n//dr;
 }
 
@@ -190,7 +190,7 @@ Escapes a string with URI::Escape and returns it.
 sub escape_string {
     my ($self, $string) = @_;
 
-    state $x = require URI::Escape;
+    require URI::Escape;
 
     $self->get_escape_utf8
       ? URI::Escape::uri_escape_utf8($string)
@@ -349,7 +349,7 @@ sub lwp_get {
         }
     }
 
-    if ($response->status_line() =~ /^500 read timeout/i) {
+    if ($response->status_line() =~ /^500 /i) {
         return $self->lwp_get($url, $simple);    # try again
     }
 
@@ -560,60 +560,104 @@ sub _get_formats_from_ytdl {
     return @array;
 }
 
-sub _get_pairs_from_info_data {
-    my ($self, $content, $videoID) = @_;
+sub parse_query_string {
+    my ($self, $str, %opt) = @_;
 
-    my @array;
-    my $i = 0;
-
-    state $x = require URI::Escape;
-    foreach my $block (split(/,/, URI::Escape::uri_unescape($content))) {
-        foreach my $pair (split(/&/, $block)) {
-            $pair =~ s{^url_encoded_fmt_stream_map=(?=\w+=)}{}im;
-            my ($key, $value) = split(/=/, $pair);
-            $key // next;
-            $array[$i]->{$key} = URI::Escape::uri_unescape($value);
-        }
-        ++$i;
+    if (not defined($str)) {
+        return ();
     }
 
-    foreach my $hash_ref (@array) {
-        if (exists $hash_ref->{url}) {
+    require URI::Escape;
 
-            # Add signature
-            if (exists $hash_ref->{sig}) {
-                $hash_ref->{url} .= "&signature=$hash_ref->{sig}";
+    my @pairs;
+    foreach my $statement (split(/,/, $str)) {
+        foreach my $group (split(/&/, $statement)) {
+            push @pairs, $group;
+        }
+    }
+
+    my %result;
+
+    foreach my $pair (@pairs) {
+
+        if ($pair eq '') {
+            next;
+        }
+
+        my @pair = split(/=/, $pair, 2);
+
+        if (@pair != 2) {
+            next;
+        }
+
+        if ($pair[1] ne '') {
+            @pair = map { URI::Escape::uri_unescape(tr/+/ /r) } @pair;
+
+            if ($opt{multi}) {
+                push @{$result{$pair[0]}}, $pair[1];
             }
-            elsif (exists $hash_ref->{s}) {    # has an encrypted signature :(
+            else {
+                $result{$pair[0]} = $pair[1];
+            }
+        }
+    }
 
-                my @formats = $self->_get_formats_from_ytdl($videoID);
-                foreach my $format (@formats) {
+    return %result;
+}
 
-                    my $modified;
-                    foreach my $ref (@array) {
-                        if (defined($ref->{itag}) && ($ref->{itag} eq $format->{itag})) {
-                            $ref->{url} = $format->{url};
-                            $modified = 1;
-                            last;
-                        }
-                    }
+sub _group_keys_with_values {
+    my ($self, %data) = @_;
 
-                    if (not $modified) {
-                        push @array, $format;
+    my @hashes;
+
+    foreach my $key (keys %data) {
+        foreach my $i (0 .. $#{$data{$key}}) {
+            $hashes[$i]{$key} = $data{$key}[$i];
+        }
+    }
+
+    return @hashes;
+}
+
+sub _extract_streaming_urls {
+    my ($self, $info, $videoID) = @_;
+
+    my %stream_map = $self->parse_query_string($info->{url_encoded_fmt_stream_map}, multi => 1);
+    my %adaptive_fmts = $self->parse_query_string($info->{adaptive_fmts}, multi => 1);
+
+    my @result;
+
+    push @result, $self->_group_keys_with_values(%stream_map);
+    push @result, $self->_group_keys_with_values(%adaptive_fmts);
+
+    foreach my $video (@result) {
+        if (exists $video->{s}) {    # has an encrypted signature :(
+
+            my @formats = $self->_get_formats_from_ytdl($videoID);
+
+            foreach my $format (@formats) {
+                foreach my $ref (@result) {
+                    if (defined($ref->{itag}) and ($ref->{itag} eq $format->{itag})) {
+                        $ref->{url} = $format->{url};
+                        last;
                     }
                 }
-
-                last;
             }
-        }
-        elsif (exists $hash_ref->{hlsvp}) {
-            $hash_ref->{itag} = 38;
-            $hash_ref->{type} = 'video/ts';
-            $hash_ref->{url}  = $hash_ref->{hlsvp};
+
+            last;
         }
     }
 
-    return @array;
+    if (exists $info->{hlsvp}) {
+        push @result,
+          {
+            itag => 38,
+            type => 'video/ts',
+            url  => $info->{hlsvp},
+          };
+    }
+
+    return @result;
 }
 
 =head2 get_streaming_urls($videoID)
@@ -628,20 +672,34 @@ sub get_streaming_urls {
 
     my $url = ($self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID));
     my $content = $self->lwp_get($url) // return;
-    my @info = $self->_get_pairs_from_info_data($content, $videoID);
+    my %info = $self->parse_query_string($content);
+
+    my @streaming_urls = $self->_extract_streaming_urls(\%info, $videoID);
+
+    my @caption_urls;
+    if (exists $info{player_response}) {
+
+        require URI::Escape;
+        my $captions_json = URI::Escape::uri_unescape($info{player_response});
+        my $caption_data  = $self->parse_json_string($captions_json);
+
+        if (eval { ref($caption_data->{captions}{playerCaptionsTracklistRenderer}{captionTracks}) eq 'ARRAY' }) {
+            push @caption_urls, @{$caption_data->{captions}{playerCaptionsTracklistRenderer}{captionTracks}};
+        }
+    }
 
     if ($self->get_debug == 2) {
-        state $x = require Data::Dump;
-        Data::Dump::pp(\@info);
+        require Data::Dump;
+        Data::Dump::pp(\@streaming_urls);
+        Data::Dump::pp(\@caption_urls);
     }
 
-    my $error = $info[0]->{errorcode};
-    if (defined($error) && $error == 150) {    # sign in to confirm your age
-        my @ytdl_info = $self->_get_formats_from_ytdl($videoID);
-        return (@ytdl_info) if @ytdl_info;
+    my $error = $info{errorcode};
+    if (defined($error) && $error == 150) {    # try again with youtube-dl
+        @streaming_urls = $self->_get_formats_from_ytdl($videoID);
     }
 
-    return @info;
+    return (\@streaming_urls, \@caption_urls, \%info);
 }
 
 sub _request {
@@ -676,7 +734,7 @@ sub _prepare_request {
 sub _save {
     my ($self, $method, $uri, $content) = @_;
 
-    state $x = require HTTP::Request;
+    require HTTP::Request;
     my $req = HTTP::Request->new($method => $uri);
     $req->content_type('application/json; charset=UTF-8');
     $self->_prepare_request($req, length($content));

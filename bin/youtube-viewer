@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 02 June 2017
+#  Latest edit on: 04 September 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -3121,26 +3121,16 @@ sub get_valid_numbers {
 sub get_streaming_url {
     my ($video_id) = @_;
 
-    my @info = $yv_obj->get_streaming_urls($video_id);
-
-    my (@urls, @captions);
-    foreach my $entry (@info) {
-        if (exists $entry->{url} and exists $entry->{itag}) {
-            push @urls, $entry;
-        }
-        elsif (exists $entry->{lc} and exists $entry->{u}) {
-            push @captions, $entry;
-        }
-    }
+    my ($urls, $captions, $info) = $yv_obj->get_streaming_urls($video_id);
 
     # Download the closed-captions
     my $srt_file;
-    if (@captions and $opt{get_captions} and not $opt{novideo}) {
+    if (@$captions and $opt{get_captions} and not $opt{novideo}) {
         require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
                                                          auto_captions => $opt{auto_captions},
                                                          captions_dir  => $opt{captions_dir},
-                                                         captions      => \@captions,
+                                                         captions      => $captions,
                                                          languages     => $CONFIG{srt_languages},
                                                         );
         $srt_file = $yv_cap->save_caption($video_id);
@@ -3159,16 +3149,11 @@ sub get_streaming_url {
 
     my ($streaming, $resolution) =
       $yv_itags->find_streaming_url(
-                                    urls           => \@urls,
+                                    urls           => $urls,
                                     resolution     => $opt{resolution},
                                     dash           => $dash,
                                     dash_mp4_audio => $opt{dash_mp4_audio},
                                    );
-
-    my $info = {};
-    if (not @urls) {
-        %{$info} = map { ref($_) eq 'HASH' ? %{$_} : () } @info;
-    }
 
     return {
             streaming  => $streaming,

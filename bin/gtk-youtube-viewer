@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 04 June 2017
+#  Latest edit on: 04 September 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -271,7 +271,7 @@ EOD
 
     # Save hash config to file
     sub dump_configuration {
-        state $x = require Data::Dump;
+        require Data::Dump;
         open my $config_fh, '>', $config_file
           or do { warn "[!] Can't open '${config_file}' for write: $!"; return };
         my $dumped_config = q{our $CONFIG = } . Data::Dump::pp(\%CONFIG) . "\n";
@@ -1575,7 +1575,7 @@ sub hide_feeds_window {
 
 # Preferences window
 sub show_preferences_window {
-    state $x = require Data::Dump;
+    require Data::Dump;
     get_main_window_size();
     my $config_view_buffer = $config_view->get_buffer;
     $config_view_buffer->set_text(Data::Dump::dump(\%CONFIG));
@@ -2591,46 +2591,31 @@ sub _strip_edge_spaces {
 sub get_streaming_url {
     my ($video_id) = @_;
 
-    my @info = $yv_obj->get_streaming_urls($video_id);
-
-    my (@urls, @captions);
-    foreach my $entry (@info) {
-        if (exists $entry->{url} and exists $entry->{itag}) {
-            push @urls, $entry;
-        }
-        elsif (exists $entry->{lc} and exists $entry->{u}) {
-            push @captions, $entry;
-        }
-    }
+    my ($urls, $captions, $info) = $yv_obj->get_streaming_urls($video_id);
 
     # Download the closed-captions
     my $srt_file;
-    if (@captions and $CONFIG{get_captions}) {
-        state $x = require WWW::YoutubeViewer::GetCaption;
+    if (@$captions and $CONFIG{get_captions}) {
+        require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
                                                          auto_captions => $CONFIG{auto_captions},
                                                          captions_dir  => $CONFIG{captions_dir},
-                                                         captions      => \@captions,
+                                                         captions      => $captions,
                                                          languages     => $CONFIG{srt_languages},
                                                         );
         $srt_file = $yv_cap->save_caption($video_id);
     }
 
-    state $x        = require WWW::YoutubeViewer::Itags;
+    require WWW::YoutubeViewer::Itags;
     state $yv_itags = WWW::YoutubeViewer::Itags->new();
 
     my ($streaming, $resolution) =
       $yv_itags->find_streaming_url(
-                                    urls           => \@urls,
+                                    urls           => $urls,
                                     resolution     => $CONFIG{resolution},
                                     dash           => $CONFIG{dash_support},
                                     dash_mp4_audio => $CONFIG{dash_mp4_audio},
                                    );
-
-    my $info = {};
-    if (not @urls) {
-        %{$info} = map { ref($_) eq 'HASH' ? %{$_} : () } @info;
-    }
 
     return {
             streaming  => $streaming,
@@ -2641,7 +2626,7 @@ sub get_streaming_url {
 }
 
 sub get_quotewords {
-    state $x = require Text::ParseWords;
+    require Text::ParseWords;
     return Text::ParseWords::quotewords(@_);
 }
 
