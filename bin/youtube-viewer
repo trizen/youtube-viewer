@@ -3378,7 +3378,7 @@ sub play_videos {
 
         if (defined $streaming->{info}{status} and $streaming->{info}{status} =~ /\bfail/i) {
             warn colored("[x_x] Error on: ", 'bold red') . sprintf($CONFIG{youtube_video_url}, $video_id) . "\n";
-            warn colored("[x_x] Reason: ", 'bold red') . $streaming->{info}{reason} =~ s/\+/ /gr . "\n\n";
+            warn colored("[x_x] Reason: ", 'bold red') . $streaming->{info}{reason} =~ tr/+/ /r . "\n\n";
         }
 
         if (ref($streaming->{streaming}) ne 'HASH') {

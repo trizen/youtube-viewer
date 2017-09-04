@@ -2683,12 +2683,11 @@ sub play_video {
 
     if (defined $streaming->{info}{status} and $streaming->{info}{status} =~ /\bfail/i) {
         die "[x_x] Error on: " . sprintf($CONFIG{youtube_video_url}, $video_id) . "\n",
-          "[x_x] Reason: " . $streaming->{info}{reason} =~ s/\+/ /gr . "\n";
+          "[x_x] Reason: " . $streaming->{info}{reason} =~ tr/+/ /r . "\n";
     }
 
     if (ref($streaming->{streaming}) ne 'HASH') {
-        warn "Can't play this video: no streaming data has been found!\n";
-        return;
+        die "Can't play this video: no streaming data has been found!\n";
     }
 
     my $command = get_player_command($streaming, $video);

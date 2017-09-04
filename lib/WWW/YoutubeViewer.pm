@@ -700,8 +700,8 @@ sub get_streaming_urls {
         Data::Dump::pp(\@caption_urls);
     }
 
-    my $error = $info{errorcode};
-    if (defined($error) && $error == 150) {    # try again with youtube-dl
+    # Try again with youtube-dl
+    if (!@streaming_urls or $info{status} !~ /ok/i) {
         @streaming_urls = $self->_get_formats_from_ytdl($videoID);
     }
 
