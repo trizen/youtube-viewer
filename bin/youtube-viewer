@@ -3567,7 +3567,15 @@ sub print_videos {
     my $info   = $results->{results} // {};
     my $videos = $info->{items} // [];
 
-    @$videos = grep { $_->{id}{kind} eq 'youtube#video' } @$videos;
+#<<<
+    @$videos = grep {
+            ref($_) eq 'HASH' && ref($_->{id}) eq 'HASH'
+                ? (exists($_->{id}{kind})
+                    ? $_->{id}{kind} eq 'youtube#video'
+                    : 0)
+                : 1
+    } @$videos;
+#>>>
 
     if ($opt{shuffle}) {
         require List::Util;
