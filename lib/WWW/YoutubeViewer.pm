@@ -25,7 +25,7 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =cut
 
-our $VERSION = '3.2.8';
+our $VERSION = '3.2.9';
 
 =head1 SYNOPSIS
 
@@ -349,7 +349,7 @@ sub lwp_get {
         }
     }
 
-    if ($response->status_line() =~ /^500 /i) {
+    if ($response->status_line() =~ /^500 /) {
         return $self->lwp_get($url, $simple);    # try again
     }
 

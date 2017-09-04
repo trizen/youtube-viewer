@@ -137,7 +137,7 @@ use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
-use WWW::YoutubeViewer v3.2.8;
+use WWW::YoutubeViewer v3.2.9;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
