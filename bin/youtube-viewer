@@ -3567,6 +3567,8 @@ sub print_videos {
     my $info   = $results->{results} // {};
     my $videos = $info->{items} // [];
 
+    @$videos = grep { $_->{id}{kind} eq 'youtube#video' } @$videos;
+
     if ($opt{shuffle}) {
         require List::Util;
         $videos = [List::Util::shuffle(@{$videos})];
