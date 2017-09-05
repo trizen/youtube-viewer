@@ -95,6 +95,8 @@ To package this application, run the following commands:
     * http://compizomania.blogspot.com/2015/02/youtube-viewer-linux.html
 * [RU] Youtube Viewer / GTK Youtube Viewer
     * http://zenway.ru/page/gtk-youtube-viewer
+* [TR] Youtube Viewer Nedir? Nasıl Kurulur? (Ubuntu/Linux Mint)
+    * http://www.sistemlinux.org/2017/05/youtube-viewer-nedir-nasil-kurulur.html
 
 ### VIDEO REVIEWS
 
