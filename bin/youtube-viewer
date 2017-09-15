@@ -640,7 +640,7 @@ usage: $execname [options] ([url] | [keywords])
    --duration=s         : filter search results based on video length
                           valid values are: short, medium, long
    --caption=s          : only videos with/without closed captions
-                          valid values are: true, false
+                          valid values are: any, closedCaption, none
    --category=i         : search only for videos in a specific category ID
    --safe-search=s      : YouTube will skip restricted videos for your location
                           valid values are: none, moderate, strict

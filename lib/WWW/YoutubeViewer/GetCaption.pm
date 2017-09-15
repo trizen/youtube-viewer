@@ -164,12 +164,25 @@ sub xml2srt {
 
     my @text;
     foreach my $i (0 .. $#{$sections}) {
-        my $line  = $sections->[$i];
+        my $line = $sections->[$i];
+
+        if (not defined($line->{'-dur'})) {
+            if (exists $sections->[$i + 1]) {
+                $line->{'-dur'} = $sections->[$i + 1]{'-start'} - $line->{'-start'};
+            }
+            else {
+                $line->{'-dur'} = 10;
+            }
+        }
+
         my $start = $line->{'-start'};
         my $end   = $start + $line->{'-dur'};
 
         push @text,
-          join("\n", $i + 1, join(' --> ', $self->sec2time($start, $end)), HTML::Entities::decode_entities($line->{'#text'}));
+          join("\n",
+               $i + 1,
+               join(' --> ', $self->sec2time($start, $end)),
+               HTML::Entities::decode_entities($line->{'#text'} // ''));
     }
 
     return join("\n\n", @text);
