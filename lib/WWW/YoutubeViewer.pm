@@ -298,19 +298,26 @@ sub _get_lwp_header {
     return %lwp_header;
 }
 
-=head2 lwp_get($url)
+=head2 lwp_get($url, %opt)
 
 Get and return the content for $url.
+
+Where %opt can be:
+
+    simple => [bool]
+
+When the value of B<simple> is set to a true value, the
+authentication header will not be set in the HTTP request.
 
 =cut
 
 sub lwp_get {
-    my ($self, $url, $simple) = @_;
+    my ($self, $url, %opt) = @_;
 
     $url // return;
     $self->{lwp} // $self->set_lwp_useragent();
 
-    my %lwp_header = ($simple ? () : $self->_get_lwp_header);
+    my %lwp_header = ($opt{simple} ? () : $self->_get_lwp_header);
     my $response = $self->{lwp}->get($url, %lwp_header);
 
     if ($response->is_success) {
@@ -350,7 +357,7 @@ sub lwp_get {
     }
 
     if ($response->status_line() =~ /^500 /) {
-        return $self->lwp_get($url, $simple);    # try again
+        return $self->lwp_get($url, %opt);    # try again
     }
 
     warn '[' . $response->status_line . "] Error occured on URL: $url\n";
@@ -404,12 +411,12 @@ sub lwp_mirror {
 }
 
 sub _get_results {
-    my ($self, $url, $simple) = @_;
+    my ($self, $url, %opt) = @_;
 
     return
       scalar {
               url     => $url,
-              results => $self->parse_json_string($self->lwp_get($url, $simple)),
+              results => $self->parse_json_string($self->lwp_get($url, %opt)),
              };
 }
 
@@ -676,7 +683,7 @@ sub get_streaming_urls {
     my ($self, $videoID) = @_;
 
     my $url = ($self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID));
-    my $content = $self->lwp_get($url) // return;
+    my $content = $self->lwp_get($url, simple => 1) // return;
     my %info = $self->parse_query_string($content);
 
     my @streaming_urls = $self->_extract_streaming_urls(\%info, $videoID);

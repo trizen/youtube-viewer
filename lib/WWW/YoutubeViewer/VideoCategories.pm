@@ -61,7 +61,7 @@ sub video_categories {
         close $fh;
     }
     else {
-        $json = $self->lwp_get($url);
+        $json = $self->lwp_get($url, simple => 1);
         open my $fh, '>:utf8', $file;
         print {$fh} $json;
         close $fh;

@@ -2284,8 +2284,8 @@ sub _get_pixbuf_thumbnail {
 
     my $thumbnail =
       $CONFIG{use_threads_for_thumbs}
-      ? threads_lwp_get($yv_obj, $url, 1)
-      : $yv_obj->lwp_get($url, 1);
+      ? threads_lwp_get($yv_obj, $url, simple => 1)
+      : $yv_obj->lwp_get($url, simple => 1);
 
     my $pixbuf;
     if (defined $thumbnail) {
