@@ -581,36 +581,34 @@ sub parse_query_string {
     my ($self, $str, %opt) = @_;
 
     if (not defined($str)) {
-        return ();
+        return;
     }
 
     require URI::Escape;
 
     my @pairs;
     foreach my $statement (split(/,/, $str)) {
-        foreach my $group (split(/&/, $statement)) {
-            push @pairs, $group;
+        foreach my $pair (split(/&/, $statement)) {
+            push @pairs, $pair;
         }
     }
 
     my %result;
 
     foreach my $pair (@pairs) {
-        my @pair = split(/=/, $pair, 2);
+        my ($key, $value) = split(/=/, $pair, 2);
 
-        if (@pair != 2) {
+        if (not defined($value) or $value eq '') {
             next;
         }
 
-        if ($pair[1] ne '') {
-            @pair = map { URI::Escape::uri_unescape(tr/+/ /r) } @pair;
+        $value = URI::Escape::uri_unescape($value =~ tr/+/ /r);
 
-            if ($opt{multi}) {
-                push @{$result{$pair[0]}}, $pair[1];
-            }
-            else {
-                $result{$pair[0]} = $pair[1];
-            }
+        if ($opt{multi}) {
+            push @{$result{$key}}, $value;
+        }
+        else {
+            $result{$key} = $value;
         }
     }
 
