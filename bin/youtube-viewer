@@ -3376,14 +3376,16 @@ sub play_videos {
 
         my $streaming = get_streaming_url($video_id);
 
-        if (defined $streaming->{info}{status} and $streaming->{info}{status} =~ /\bfail/i) {
-            warn colored("[x_x] Error on: ", 'bold red') . sprintf($CONFIG{youtube_video_url}, $video_id) . "\n";
-            warn colored("[x_x] Reason: ", 'bold red') . $streaming->{info}{reason} =~ tr/+/ /r . "\n\n";
+        if (ref($streaming->{streaming}) ne 'HASH') {
+            warn colored("[!] No streaming URL has been found...", 'bold red') . "\n";
+            next;
         }
 
-        if (ref($streaming->{streaming}) ne 'HASH') {
-            warn colored("[x_x] No streaming URL has been found...", 'bold red') . "\n";
-            next;
+        if (   !defined($streaming->{streaming}{url})
+            and defined($streaming->{info}{status})
+            and $streaming->{info}{status} =~ /fail|error/i) {
+            warn colored("[!] Error on: ", 'bold red') . sprintf($CONFIG{youtube_video_url}, $video_id) . "\n";
+            warn colored("[*] Reason: ", 'bold red') . $streaming->{info}{reason} =~ tr/+/ /r . "\n\n";
         }
 
         # Dump metadata information
