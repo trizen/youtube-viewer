@@ -706,7 +706,7 @@ sub get_streaming_urls {
     }
 
     # Try again with youtube-dl
-    if (!@streaming_urls or $info{status} !~ /ok/i) {
+    if (!@streaming_urls or $info{status} =~ /fail|error/i) {
         @streaming_urls = $self->_get_formats_from_ytdl($videoID);
     }
 

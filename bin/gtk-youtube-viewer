@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 04 September 2017
+#  Latest edit on: 22 September 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -2681,13 +2681,15 @@ sub play_video {
     my $video_id  = $yv_utils->get_video_id($video);
     my $streaming = get_streaming_url($video_id);
 
-    if (defined $streaming->{info}{status} and $streaming->{info}{status} =~ /\bfail/i) {
-        die "[x_x] Error on: " . sprintf($CONFIG{youtube_video_url}, $video_id) . "\n",
-          "[x_x] Reason: " . $streaming->{info}{reason} =~ tr/+/ /r . "\n";
+    if (ref($streaming->{streaming}) ne 'HASH') {
+        die "[!] Can't play this video: no streaming URL has been found!\n";
     }
 
-    if (ref($streaming->{streaming}) ne 'HASH') {
-        die "Can't play this video: no streaming data has been found!\n";
+    if (    not defined($streaming->{streaming}{url})
+        and defined($streaming->{info}{status})
+        and $streaming->{info}{status} =~ /fail|error/i) {
+        die "[!] Error on: " . sprintf($CONFIG{youtube_video_url}, $video_id) . "\n",
+          "[*] Reason: " . $streaming->{info}{reason} =~ tr/+/ /r . "\n";
     }
 
     my $command = get_player_command($streaming, $video);
@@ -2701,7 +2703,7 @@ sub play_video {
     }
 
     my $code = execute_external_program($command);
-    warn "Can't play this video -- player exited with code: $code\n" if $code != 0;
+    warn "[!] Can't play this video -- player exited with code: $code\n" if $code != 0;
 
     return 1;
 }
