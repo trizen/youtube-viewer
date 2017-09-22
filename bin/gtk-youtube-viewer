@@ -30,7 +30,7 @@ use if ($DEVEL = 0), lib => qw(../lib);    # devel only
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
-use WWW::YoutubeViewer v3.2.9;
+use WWW::YoutubeViewer v3.3.0;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use Gtk2 qw(-init);

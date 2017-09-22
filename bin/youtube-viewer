@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 04 September 2017
+#  Latest edit on: 23 September 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -137,7 +137,7 @@ use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
-use WWW::YoutubeViewer v3.2.9;
+use WWW::YoutubeViewer v3.3.0;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
