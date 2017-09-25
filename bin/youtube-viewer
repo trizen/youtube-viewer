@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 23 September 2017
+#  Latest edit on: 25 September 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -1133,7 +1133,7 @@ sub apply_configuration {
     if (defined $opt->{playlist_save}) {
         my @ids = split(/[,\s]+/, delete $opt->{playlist_save});
         if (defined $opt->{playlist_id}) {
-            save_to_playlist(delete $opt->{playlist_id}, @ids);
+            save_to_playlist(get_valid_playlist_id(delete $opt->{playlist_id}) // (return), @ids);
         }
         else {
             select_and_save_to_playlist(@ids);
@@ -1157,7 +1157,7 @@ sub apply_configuration {
     }
 
     if (defined $opt->{playlist_id}) {
-        my $playlistID = delete($opt{playlist_id});
+        my $playlistID = get_valid_playlist_id(delete($opt->{playlist_id})) // return;
         get_and_print_videos_from_playlist($playlistID);
     }
 
