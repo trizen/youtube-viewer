@@ -41,7 +41,7 @@ our $get_course_id_re   = qr{/course\?list=$course_id_re};
 
 # Playlist ID
 our $valid_playlist_id_re = qr{^$generic_name_re\z};
-our $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p)=)|\w#p/c/)(?<playlist_id>$generic_name_re)\b};
+our $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p|list)=)|\w#p/c/)(?<playlist_id>$generic_name_re)\b};
 
 our $valid_opt_re = qr{^[$opt_begin_chars]([A-Za-z]++(?:-[A-Za-z]++)?(?>${digit_or_equal_re}.*)?)$};
 
