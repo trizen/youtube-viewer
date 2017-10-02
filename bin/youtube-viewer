@@ -3579,6 +3579,13 @@ sub print_videos {
         $results->{has_extra_info} = 1;
     }
 
+#<<<
+    # Filter out private or deleted videos
+    @$videos = grep {
+        defined($yv_utils->get_video_id($_))
+    } @$videos;
+#>>>
+
     my @formatted;
 
     foreach my $i (0 .. $#{$videos}) {
