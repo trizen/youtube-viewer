@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK Youtube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 22 September 2017
+#  Latest edit on: 04 October 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -258,6 +258,7 @@ my %CONFIG = (
     history                => 1,
     history_limit          => 10_000,
     history_file           => $history_file,
+    save_titles_to_history => 0,
     entry_completion_limit => 10,
 );
 
@@ -2353,7 +2354,15 @@ sub display_results {
         elsif ($yv_utils->is_video($item)) {
             @{$item}{qw(id contentDetails statistics snippet)} =
               @{$video_details->[$pos{$i}]}{qw(id contentDetails statistics snippet)};
-            $yv_utils->get_video_id($item) // next;    # filter out private or deleted videos
+
+            # Filter out private or deleted videos
+            $yv_utils->get_video_id($item) // next;
+
+            # Store the video title to history (when `save_titles_to_history` is true)
+            if ($CONFIG{save_titles_to_history}) {
+                append_to_history($yv_utils->get_title($item));
+            }
+
             add_video_entry($item);
         }
     }
