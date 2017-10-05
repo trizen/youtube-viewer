@@ -3700,7 +3700,7 @@ sub print_videos {
             else {
                 $opt{play_all}       = 0;
                 $opt{play_backwards} = 0;
-                return;
+                __SUB__->($results);
             }
         }
         else {
