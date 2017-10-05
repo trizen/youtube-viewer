@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 25 September 2017
+#  Latest edit on: 05 October 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -137,7 +137,7 @@ use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
 no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
-use WWW::YoutubeViewer v3.3.0;
+use WWW::YoutubeViewer v3.3.1;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
@@ -3683,7 +3683,7 @@ sub print_videos {
                     else {
                         $opt{play_backwards} = 0;
                         warn_first_page();
-                        __SUB__->($results);
+                        return;
                     }
                 }
                 else {
@@ -3693,14 +3693,14 @@ sub print_videos {
                     else {
                         $opt{play_all} = 0;
                         warn_last_page();
-                        __SUB__->($results);
+                        return;
                     }
                 }
             }
             else {
                 $opt{play_all}       = 0;
                 $opt{play_backwards} = 0;
-                __SUB__->($results);
+                return;
             }
         }
         else {

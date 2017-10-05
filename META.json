@@ -55,7 +55,7 @@
    "provides" : {
       "WWW::YoutubeViewer" : {
          "file" : "lib/WWW/YoutubeViewer.pm",
-         "version" : "v3.3.0"
+         "version" : "v3.3.1"
       },
       "WWW::YoutubeViewer::Activities" : {
          "file" : "lib/WWW/YoutubeViewer/Activities.pm"
@@ -115,6 +115,6 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "v3.3.0",
+   "version" : "v3.3.1",
    "x_serialization_backend" : "JSON::PP version 2.94"
 }
