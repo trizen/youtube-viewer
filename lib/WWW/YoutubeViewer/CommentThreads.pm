@@ -44,7 +44,7 @@ sub comments_from_video_id {
                                                           order      => 'time',
                                                           part       => 'snippet'
                                                          ),
-                          1
+                          simple => 1,
                          );
 }
 
