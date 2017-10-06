@@ -232,7 +232,7 @@
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="cli_version">
-                        <property name="label" translatable="yes">Youtube Viewer</property>
+                        <property name="label" translatable="yes">YouTube Viewer</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Search and play videos in command line interface (CTRL+Y)</property>
@@ -246,7 +246,7 @@
                         <property name="label" translatable="yes">Login to YouTube</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="tooltip_text" translatable="yes">Login to Youtube using email and password. (CTRL+L)</property>
+                        <property name="tooltip_text" translatable="yes">Login to YouTube using OAuth 2.0 authentication.</property>
                         <property name="image">image6</property>
                         <property name="use_stock">False</property>
                         <signal name="activate" handler="show_login_to_youtube_window" swapped="no"/>

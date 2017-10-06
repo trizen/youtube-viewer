@@ -13,7 +13,7 @@
 # See https://dev.perl.org/licenses/ for more information.
 #
 #-------------------------------------------------------
-#  GTK Youtube Viewer
+#  GTK YouTube Viewer
 #  Created on: 12 September 2010
 #  Latest edit on: 04 October 2017
 #  https://github.com/trizen/youtube-viewer
@@ -48,7 +48,7 @@ use File::Spec::Functions qw(
 
 binmode(STDOUT, ':utf8');
 
-my $appname  = 'GTK Youtube Viewer';
+my $appname  = 'GTK YouTube Viewer';
 my $version  = $WWW::YoutubeViewer::VERSION;
 my $execname = 'gtk-youtube-viewer';
 
