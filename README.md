@@ -9,7 +9,7 @@
 ### AVAILABILITY
 
 * Arch Linux (community): https://www.archlinux.org/packages/community/any/youtube-viewer/
-* Arch Linux (AUR): https://aur.archlinux.org/packages/gtk-youtube-viewer/
+* Arch Linux (AUR): https://aur.archlinux.org/packages/gtk-youtube-viewer-git/
 * Fedora: https://build.opensuse.org/package/show/home:zhonghuaren/youtube-viewer
 * Fresh ports: http://www.freshports.org/multimedia/gtk-youtube-viewer
 * Frugalware: http://frugalware.org/packages/203103
