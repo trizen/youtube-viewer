@@ -635,18 +635,18 @@ sub _extract_streaming_urls {
     my %stream_map = $self->parse_query_string($info->{url_encoded_fmt_stream_map}, multi => 1);
     my %adaptive_fmts = $self->parse_query_string($info->{adaptive_fmts}, multi => 1);
 
-    my @result;
+    my @results;
 
-    push @result, $self->_group_keys_with_values(%stream_map);
-    push @result, $self->_group_keys_with_values(%adaptive_fmts);
+    push @results, $self->_group_keys_with_values(%stream_map);
+    push @results, $self->_group_keys_with_values(%adaptive_fmts);
 
-    foreach my $video (@result) {
+    foreach my $video (@results) {
         if (exists $video->{s}) {    # has an encrypted signature :(
 
             my @formats = $self->_get_formats_from_ytdl($videoID);
 
             foreach my $format (@formats) {
-                foreach my $ref (@result) {
+                foreach my $ref (@results) {
                     if (defined($ref->{itag}) and ($ref->{itag} eq $format->{itag})) {
                         $ref->{url} = $format->{url};
                         last;
@@ -659,15 +659,20 @@ sub _extract_streaming_urls {
     }
 
     if (exists $info->{hlsvp}) {
-        push @result,
-          {
-            itag => 38,
-            type => 'video/ts',
-            url  => $info->{hlsvp},
-          };
+        if (my @formats = $self->_get_formats_from_ytdl($videoID)) {
+            @results = @formats;
+        }
+        else {
+            push @results,
+              {
+                itag => 38,
+                type => 'video/ts',
+                url  => $info->{hlsvp},
+              };
+        }
     }
 
-    return @result;
+    return @results;
 }
 
 =head2 get_streaming_urls($videoID)
