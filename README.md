@@ -1,13 +1,17 @@
 ## youtube-viewer
 
-* **youtube-viewer**
-    * a command-line interface to YouTube.
-    
+A lightweight application for searching and streaming videos from YouTube. 
+
+### youtube-viewer
+
+* command-line interface to YouTube.
+
 ![youtube-viewer](https://user-images.githubusercontent.com/614513/32416613-c3daa6a6-c254-11e7-9739-ed7bf93d188c.png)
 
-* **gtk-youtube-viewer**
-    * a Gtk2 interface to YouTube.
-    
+### gtk-youtube-viewer
+
+* Gtk2 interface to YouTube.
+
 ![gtk-youtube-viewer](https://user-images.githubusercontent.com/614513/32417392-a47e19f2-c261-11e7-9b74-1632d6954f48.png)
 
 ### AVAILABILITY
