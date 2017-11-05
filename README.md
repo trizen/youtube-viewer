@@ -8,7 +8,7 @@
 * **gtk-youtube-viewer**
     * a Gtk2 interface to YouTube.
     
-![gtk-youtube-viewer](https://user-images.githubusercontent.com/614513/32416615-c8440976-c254-11e7-8535-a691612328fe.png)
+![gtk-youtube-viewer](https://user-images.githubusercontent.com/614513/32417392-a47e19f2-c261-11e7-9b74-1632d6954f48.png)
 
 ### AVAILABILITY
 
