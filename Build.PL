@@ -18,7 +18,7 @@ my $gtk_youtube_viewer = grep { /^--?$gtk_re\z/ } @ARGV;
 my $builder = Module::Build->new(
     module_name       => 'WWW::YoutubeViewer',
     license           => 'perl',
-    dist_author       => q{Trizen <trizenx@gmail.com>},
+    dist_author       => q{Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>},
     dist_version_from => 'lib/WWW/YoutubeViewer.pm',
     release_status    => 'stable',
 

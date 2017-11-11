@@ -591,7 +591,6 @@ sub help {
     local $" = ', ';
     print <<"HELP";
 \n  $eqs \U$appname\E $eqs
-\t\t\t\t\t\t by Trizen (trizenx\@gmail.com)
 
 usage: $execname [options] ([url] | [keywords])
 

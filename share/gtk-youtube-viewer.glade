@@ -2111,7 +2111,7 @@ When the specified resolution is not found, it falls down to a lower resolution.
     <property name="website">https://github.com/trizen/youtube-viewer</property>
     <property name="website_label" translatable="yes">https://github.com/trizen/youtube-viewer</property>
     <property name="license" translatable="yes">
-Copyright (C) 2010-2017 Trizen &lt;trizenx@gmail.com&gt;.
+Copyright (C) 2010-2017 Trizen &lt;echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d&gt;.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
@@ -2124,7 +2124,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See &lt;https://dev.perl.org/licenses/&gt; for more information.
 </property>
     <property name="authors">[+] Developer/Maintainer:
- =&gt;  Trizen (&lt;trizenx@gmail.com&gt;)
+ =&gt;  Trizen (&lt;echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d&gt;)
     * Core
     * GUI
 

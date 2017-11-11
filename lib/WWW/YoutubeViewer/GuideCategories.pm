@@ -83,7 +83,7 @@ Return info for a list of comma-separated category IDs.
 
 =head1 AUTHOR
 
-Trizen, C<< <trizenx at gmail.com> >>
+Trizen, C<< <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d> >>
 
 
 =head1 SUPPORT
