@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 04 October 2017
+#  Latest edit on: 11 November 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -1312,22 +1312,23 @@ sub users_menu_popup {
 # Setting help text
 set_text(
     $textview_help, <<"HELP_TEXT"
-* Links
+# Links
     Github: https://github.com/trizen/youtube-viewer
 
-* Developer
-    Trizen <trizenx\@gmail.com>
+# Developer
+    Trizen <dHJpemVuQHByb3Rvbm1haWwuY29tCg==>
 
-* Contributor
+# Contributor
     Ovidiu D. Ni\x{21b}an <nitanovidiu\@gmail.com>
 
-* Key binds
+# Key binds
 
--Main window
+## Main window
 CTRL+H : help window
 CTRL+L : login window
 CTRL+P : preferences window
 CTRL+Y : start CLI youtube viewer
+CTRL+E : enqueue the selected video
 CTRL+U : show the saved user-list
 CTRL+D : show more video details for a selected video
 CTRL+C : show the comments for a selected video
@@ -1341,13 +1342,13 @@ CTRL+Q : close the application
 DEL : remove the selected entry from the list
 F11 : minimize-maximize the main window
 
--Preferences window
+## Preferences window
 CTRL+S : save the configuration
 
--Other windows
+## Other windows
 ESC : close the focused window
 
-* Configuration
+# Configuration
 
 use_threads
     1 for making HTTPS requests concurrently
@@ -1369,6 +1370,7 @@ HELP_TEXT
 # Main window
 my $accel = Gtk2::AccelGroup->new;
 $accel->connect(ord('h'), ['control-mask'], ['visible'], \&show_help_window);
+$accel->connect(ord('e'), ['control-mask'], ['visible'], \&enqueue_video);
 $accel->connect(ord('l'), ['control-mask'], ['visible'], \&show_login_to_youtube_window);
 $accel->connect(ord('p'), ['control-mask'], ['visible'], \&show_preferences_window);
 $accel->connect(ord('q'), ['control-mask'], ['visible'], \&on_mainw_destroy);
