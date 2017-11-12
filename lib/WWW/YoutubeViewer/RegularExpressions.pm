@@ -22,15 +22,15 @@ my $opt_begin_chars = q{:;=};    # stdin option valid begin chars
 
 # Options
 our $range_num_re        = qr{^([0-9]{1,2}+)(?>-|\.\.)([0-9]{1,2}+)?\z};
-our $digit_or_equal_re   = qr{(?(?=[1-9])|=)};
+our $digit_or_equal_re   = qr/(?(?=[1-9])|=)/;
 our $non_digit_or_opt_re = qr{^(?!$range_num_re)(?>[0-9]{1,2}[^0-9]|[0-9]{3}|[^0-9$opt_begin_chars])};
 
 # Generic name
-my $generic_name_re = qr{[a-zA-Z0-9_.\-]{11,34}};
+my $generic_name_re = qr/[a-zA-Z0-9_.\-]{11,34}/;
 our $valid_channel_id_re = qr{^(?:\w+(?:[-.]++\w++)*|$generic_name_re)\z};
 
 # Video ID
-my $video_id_re = qr{[0-9A-Za-z_\-]{11}};
+my $video_id_re = qr/[0-9A-Za-z_\-]{11}/;
 our $valid_video_id_re = qr{^$video_id_re\z};
 our $get_video_id_re   = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)(?<video_id>$video_id_re)};
 

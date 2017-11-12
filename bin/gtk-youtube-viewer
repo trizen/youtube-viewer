@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2010-2017 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
+# Copyright (C) 2010-2017 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of either: the GNU General Public License as published
@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 11 November 2017
+#  Latest edit on: 13 November 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -379,7 +379,7 @@ local $SIG{__WARN__} = sub {
     my $warning = _strip_edge_spaces(join('', @_));
 
     return if $warning =~ / at \(eval /;
-    return if $warning =~ m'\bunhandled exception in callback:';
+    return if $warning =~ /\bunhandled exception in callback:/;
 
     $warning = "[" . localtime(time) . "]: " . $warning . "\n";
     print STDERR $warning;
@@ -405,7 +405,7 @@ local $SIG{__DIE__} = sub {
     set_text(
         $errors_textview,
         $error . do {
-            if ($error =~ m{^Can't locate (.+?)\.pm\b}) {
+            if ($error =~ /^Can't locate (.+?)\.pm\b/) {
                 my $module = $1;
                 $module =~ s{[/\\]+}{::}g;
                 return if $module eq 'LWP::UserAgent::Cached';
@@ -2273,9 +2273,9 @@ sub determine_image_format {
     return "BMP"  if /^BM/;
     return "ICO"  if /^\000\000\001\000/;
     return "PPM"  if /^P[1-6]/;
-    return "XPM"  if m~(^\/\* XPM \*\/)|(static\s+char\s+\*\w+\[\]\s*=\s*\{\s*"\d+)~;
-    return "XBM"  if m~^(?:\/\*.*\*\/\n)?#define\s~;
-    return "SVG"  if /^(<\?xml|[\012\015\t ]*<svg\b)/;
+    return "XPM"  if m,(^\/\* XPM \*\/)|(static\s+char\s+\*\w+\[\]\s*=\s*\{\s*"\d+),;
+    return "XBM"  if m|^(?:\/\*.*\*\/\n)?#define\s|;
+    return "SVG"  if /^(?:[\012\015\t ]*<svg\b|<\?xml)/;
     return undef;
 }
 
@@ -2699,7 +2699,7 @@ sub play_video {
 
     if (    not defined($streaming->{streaming}{url})
         and defined($streaming->{info}{status})
-        and $streaming->{info}{status} =~ /fail|error/i) {
+        and $streaming->{info}{status} =~ /(?:error|fail)/i) {
         die "[!] Error on: " . sprintf($CONFIG{youtube_video_url}, $video_id) . "\n",
           "[*] Reason: " . $streaming->{info}{reason} =~ tr/+/ /r . "\n";
     }

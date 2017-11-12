@@ -1,6 +1,6 @@
 #!/usr/bin/perl
-#
-# Copyright (C) 2010-2017 Trizen <echo dHJpemVueEBnbWFpbC5jb20K | base64 -d>.
+
+# Copyright (C) 2010-2017 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of either: the GNU General Public License as published
@@ -3382,7 +3382,7 @@ sub play_videos {
 
         if (   !defined($streaming->{streaming}{url})
             and defined($streaming->{info}{status})
-            and $streaming->{info}{status} =~ /fail|error/i) {
+            and $streaming->{info}{status} =~ /(?:error|fail)/i) {
             warn colored("[!] Error on: ", 'bold red') . sprintf($CONFIG{youtube_video_url}, $video_id) . "\n";
             warn colored("[*] Reason: ", 'bold red') . $streaming->{info}{reason} =~ tr/+/ /r . "\n\n";
         }
