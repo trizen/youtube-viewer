@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 05 October 2017
+#  Latest edit on: 14 November 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -1181,7 +1181,7 @@ sub apply_configuration {
 
     if (defined $opt->{search_channels}) {
         my $value = delete $opt->{search_channels};
-        print_channels($yv_obj->search_channels($value, @{$keywords}));
+        print_channels($yv_obj->search_channels([$value, @{$keywords}]));
     }
 
     if (delete $opt->{categories}) {
@@ -2443,7 +2443,7 @@ sub print_channels {
     }
 
     if (@for_search) {
-        __SUB__->($yv_obj->search_channels(@for_search));
+        __SUB__->($yv_obj->search_channels(\@for_search));
     }
 
     __SUB__->(@_);
