@@ -356,8 +356,13 @@ sub lwp_get {
         }
     }
 
-    if ($response->status_line() =~ /^500 /) {
-        return $self->lwp_get($url, %opt);    # try again
+    $opt{depth} ||= 0;
+
+    # Try again on 500+ HTTP errors
+    if (    $opt{depth} <= 3
+        and $response->code() >= 500
+        and $response->status_line() =~ /(?:Temporary|Server) Error|Timeout|Service Unavailable/i) {
+        return $self->lwp_get($url, %opt, depth => $opt{depth} + 1);
     }
 
     warn '[' . $response->status_line . "] Error occured on URL: $url\n";
