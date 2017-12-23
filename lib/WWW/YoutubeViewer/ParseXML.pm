@@ -157,7 +157,7 @@ sub xml2hash {
                     ++$#{$ref} if ref $ref eq 'ARRAY';
                     redo;
                 }
-                elsif ($xml =~ /\G<!\[CDATA\[(.*?)\]\]>\s*/gcs or /\G([^<]+)(?=<)/gsc) {
+                elsif ($xml =~ /\G<!\[CDATA\[(.*?)\]\]>\s*/gcs or $xml =~ /\G([^<]+)(?=<)/gsc) {
                     my ($text) = $1;
 
                     if ($xml =~ m{\G<\s*/\s*\Q$tag\E\s*>\s*}gc) {
@@ -248,7 +248,7 @@ sub xml2hash {
         }
         elsif ($xml =~ /\G<!DOCTYPE\s+/gc) {
             $xml =~ /\G(?>$valid_tag|\s+|".*?"|'.*?')*\[.*?\]>\s*/sgco
-              or /\G.*?>\s*/sgc
+              or $xml =~ /\G.*?>\s*/sgc
               or die "DOCTYPE not closed!";
             redo;
         }
