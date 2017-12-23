@@ -1,10 +1,8 @@
 package WWW::YoutubeViewer;
 
 use utf8;
-use 5.014;
+use 5.016;
 use warnings;
-
-no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
 use parent qw(
   WWW::YoutubeViewer::Search
@@ -44,7 +42,7 @@ my %valid_options = (
     v               => {valid => q[],                                                    default => 3},
     page            => {valid => [qr/^(?!0+\z)\d+\z/],                                   default => 1},
     http_proxy      => {valid => [qr{^https?://}],                                       default => undef},
-    hl              => {valid => [qr/^\w+(?:[-_]\w+)?\z/],                               default => undef},
+    hl              => {valid => [qr/^\w+(?:[\-_]\w+)?\z/],                              default => undef},
     maxResults      => {valid => [1 .. 50],                                              default => 10},
     topicId         => {valid => [qr/^./],                                               default => undef},
     order           => {valid => [qw(relevance date rating viewCount title videoCount)], default => undef},
@@ -103,6 +101,28 @@ my %valid_options = (
     lwp_agent => {valid => [qr/^.{5}/], default => 'Mozilla/5.0 (X11; U; Linux i686; gzip; en-US) Chrome/10.0.648.45'},
 );
 
+sub _our_smartmatch {
+    my ($value, $arg) = @_;
+
+    $value // return 0;
+
+    if (ref($arg) eq '') {
+        return ($value eq $arg);
+    }
+
+    if (ref($arg) eq ref(qr//)) {
+        return scalar($value =~ $arg);
+    }
+
+    if (ref($arg) eq 'ARRAY') {
+        foreach my $item (@$arg) {
+            return 1 if __SUB__->($value, $item);
+        }
+    }
+
+    return 0;
+}
+
 {
     no strict 'refs';
 
@@ -114,7 +134,7 @@ my %valid_options = (
             *{__PACKAGE__ . '::set_' . $key} = sub {
                 my ($self, $value) = @_;
                 $self->{$key} =
-                    $value ~~ $valid_options{$key}{valid}
+                  _our_smartmatch($value, $valid_options{$key}{valid})
                   ? $value
                   : $valid_options{$key}{default};
             };
@@ -472,69 +492,6 @@ sub default_arguments {
 sub _make_feed_url {
     my ($self, $path, %args) = @_;
     $self->get_feeds_url() . $path . '?' . $self->default_arguments(%args);
-}
-
-=head2 get_courses_from_category($cat_id)
-
-Get the courses from a specific category ID.
-$cat_id can be any valid category ID from the EDU categories.
-
-=cut
-
-sub get_courses_from_category {
-    my ($self, $cat_id) = @_;
-
-    ...    # NEEDS WORK!!!
-}
-
-=head2 get_video_lectures_from_course($course_id)
-
-Get the video lectures from a specific course ID.
-$course_id can be any valid course ID from the EDU categories.
-
-=cut
-
-sub get_video_lectures_from_course {
-    my ($self, $course_id) = @_;
-
-    ...    # NEEDS WORK!!!
-}
-
-=head2 get_video_lectures_from_category($cat_id)
-
-Get the video lectures from a specific category ID.
-$cat_id can be any valid category ID from the EDU categories.
-
-=cut
-
-sub get_video_lectures_from_category {
-    my ($self, $cat_id) = @_;
-
-    ...    # NEEDS WORK!!!
-}
-
-=head2 get_movies($movieID)
-
-Get movie results for C<$movieID>.
-
-=cut
-
-sub get_movies {
-    my ($self, $movie_id) = @_;
-
-    ...    # NEEDS WORK!!!
-}
-
-=head2 get_video_tops(%opts)
-
-Returns the video tops for a specific feed_id.
-
-=cut
-
-sub get_video_tops {
-    my ($self, %opts) = @_;
-
-    ...    # NEEDS WORK!!!
 }
 
 sub _get_formats_from_ytdl {

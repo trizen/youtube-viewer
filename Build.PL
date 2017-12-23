@@ -38,6 +38,7 @@ my $builder = Module::Build->new(
                    },
 
     requires => {
+        'perl'                  => 5.016,
         'Data::Dump'            => 0,
         'File::Spec'            => 0,
         'File::Spec::Functions' => 0,

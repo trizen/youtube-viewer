@@ -74,6 +74,7 @@ requires:
   Text::ParseWords: '0'
   Text::Wrap: '0'
   URI::Escape: '0'
+  perl: '5.016'
 resources:
   license: http://dev.perl.org/licenses/
 version: v3.3.1

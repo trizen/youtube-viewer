@@ -34,11 +34,6 @@ my $video_id_re = qr/[0-9A-Za-z_\-]{11}/;
 our $valid_video_id_re = qr{^$video_id_re\z};
 our $get_video_id_re   = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)(?<video_id>$video_id_re)};
 
-# Course ID
-my $course_id_re = qr{EC(?<course_id>$generic_name_re)|(?<course_id>$generic_name_re)};
-our $valid_course_id_re = qr{^$course_id_re\z};
-our $get_course_id_re   = qr{/course\?list=$course_id_re};
-
 # Playlist ID
 our $valid_playlist_id_re = qr{^$generic_name_re\z};
 our $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p|list)=)|\w#p/c/)(?<playlist_id>$generic_name_re)\b};
@@ -52,8 +47,6 @@ our @EXPORT = qw(
   $valid_channel_id_re
   $valid_video_id_re
   $get_video_id_re
-  $valid_course_id_re
-  $get_course_id_re
   $valid_playlist_id_re
   $get_playlist_id_re
   $valid_opt_re

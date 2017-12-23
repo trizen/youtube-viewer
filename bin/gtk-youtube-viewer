@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 13 November 2017
+#  Latest edit on: 23 December 2017
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -27,8 +27,6 @@ no warnings 'once';
 
 my $DEVEL;    # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel only
-
-no if $] >= 5.018, warnings => 'experimental::smartmatch';
 
 use WWW::YoutubeViewer v3.3.1;
 use WWW::YoutubeViewer::RegularExpressions;
@@ -691,8 +689,17 @@ if (not defined $CONFIG{video_player_selected}) {
     }
 }
 
-if (not \%CONFIG ~~ $CONFIG) {
-    dump_configuration();
+{
+    my $update_config = 0;
+
+    foreach my $key (keys %CONFIG) {
+        if (not exists $CONFIG->{$key}) {
+            $update_config = 1;
+            last;
+        }
+    }
+
+    dump_configuration() if $update_config;
 }
 
 # Locate a terminal
@@ -1437,7 +1444,7 @@ sub show_user_panel {
 
             if (defined $info->{access_token}) {
 
-                $yv_obj->set_access_token($info->{access_token})   // return;
+                $yv_obj->set_access_token($info->{access_token}) // return;
                 $yv_obj->set_refresh_token($info->{refresh_token}) // return;
 
                 if ($gui->get_object('login_check_button')->get_active) {
@@ -1733,8 +1740,8 @@ sub main_window_state_events {
     my $windowstate = $state->new_window_state();
     my @states = split(' ', $windowstate);
 
-    $CONFIG{mainw_maximized}  = 'maximized'  ~~ \@states ? 1 : 0;
-    $CONFIG{mainw_fullscreen} = 'fullscreen' ~~ \@states ? 1 : 0;
+    $CONFIG{mainw_maximized}  = (grep { $_ eq 'maximized' } @states)  ? 1 : 0;
+    $CONFIG{mainw_fullscreen} = (grep { $_ eq 'fullscreen' } @states) ? 1 : 0;
 
     return 1;
 }
@@ -1960,8 +1967,8 @@ sub set_youtube_tops {
     }
 
     sub remove_selected_user {
-        my $selection = $users_treeview->get_selection // return;
-        my $iter      = $selection->get_selected       // return;
+        my $selection  = $users_treeview->get_selection // return;
+        my $iter       = $selection->get_selected // return;
         my $channel_id = $users_liststore->get($iter, 0);
         delete $channels{$channel_id};
         $users_liststore->remove($iter);
@@ -1986,7 +1993,7 @@ sub set_youtube_tops {
     # Get playlists from username
     sub playlists_from_selected_username {
         my $selection = $users_treeview->get_selection() // return;
-        my $iter      = $selection->get_selected()       // return;
+        my $iter      = $selection->get_selected() // return;
 
         my $type    = $users_liststore->get($iter, 2);
         my $channel = $users_liststore->get($iter, 0);
@@ -1996,7 +2003,7 @@ sub set_youtube_tops {
 
     sub videos_from_selected_username {
         my $selection = $users_treeview->get_selection() // return;
-        my $iter      = $selection->get_selected()       // return;
+        my $iter      = $selection->get_selected() // return;
 
         my $type    = $users_liststore->get($iter, 2);
         my $channel = $users_liststore->get($iter, 0);
@@ -2114,31 +2121,28 @@ sub get_selected_entry_code {
     return wantarray ? ($code, $iter) : $code;
 }
 
-# Check if keywords are actually something else
 sub check_keywords {
-    given ($_[0]) {
-        when (/$get_video_id_re/o) {
-            my $info = $yv_obj->video_details($+{video_id}, VIDEO_PART);
+    my ($key) = @_;
 
-            if ($yv_utils->has_entries($info)) {
-                if (not play_video($info->{results}{items}[0])) {
-                    return;
-                }
+    if ($key =~ /$get_video_id_re/o) {
+        my $info = $yv_obj->video_details($+{video_id}, VIDEO_PART);
+
+        if ($yv_utils->has_entries($info)) {
+            if (not play_video($info->{results}{items}[0])) {
+                return;
             }
-            else {
-                continue;
-            }
         }
-        when (/$get_playlist_id_re/o) {
-            list_playlist($+{playlist_id});
-        }
-        when (/$get_course_id_re/) {
-            display_results($yv_obj->get_video_lectures_from_course($+{course_id}));
-        }
-        default {
+        else {
             return;
         }
     }
+    elsif ($key =~ /$get_playlist_id_re/o) {
+        list_playlist($+{playlist_id});
+    }
+    else {
+        return;
+    }
+
     return 1;
 }
 

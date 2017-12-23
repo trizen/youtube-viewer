@@ -4,8 +4,6 @@ use utf8;
 use 5.014;
 use warnings;
 
-no if $] >= 5.018, warnings => 'experimental::smartmatch';
-
 =encoding utf8
 
 =head1 NAME
@@ -30,34 +28,112 @@ Parse XML and return an HASH ref.
 =cut
 
 sub xml2hash {
+    my $xml = shift() // return;
+
+    $xml = "$xml";    # copy the string
+
     my $xml_ref = {};
 
-    given (shift() // return) {
+    my %args = (
+                attr  => '-',
+                text  => '#text',
+                empty => q{},
+                @_
+               );
 
-        my %args = (
-                    attr  => '-',
-                    text  => '#text',
-                    empty => q{},
-                    @_
-                   );
+    my %ctags;
+    my $ref = $xml_ref;
 
-        my %ctags;
-        my $ref = $xml_ref;
-        state $inv_chars = q{!"#$@%&'()*+,/;\\<=>?\]\[^`{|}~};
-        state $valid_tag = qr{[^\-.\s0-9$inv_chars][^$inv_chars\s]*};
+    state $inv_chars = q{!"#$@%&'()*+,/;\\<=>?\]\[^`{|}~};
+    state $valid_tag = qr{[^\-.\s0-9$inv_chars][^$inv_chars\s]*};
 
-        {
-            when (
-                m{\G< \s*
+    {
+        if (
+            $xml =~ m{\G< \s*
                         ($valid_tag)  \s*
                         ((?>$valid_tag\s*=\s*(?>".*?"|'.*?')|\s+)+)? \s*
                         (/)?\s*> \s*
                     }gcsxo
-              ) {
+          ) {
 
-                my ($tag, $attrs, $closed) = ($1, $2, $3);
+            my ($tag, $attrs, $closed) = ($1, $2, $3);
 
-                if (defined $attrs) {
+            if (defined $attrs) {
+                push @{$ctags{$tag}}, $ref;
+
+                $ref =
+                    ref $ref eq 'HASH'
+                  ? ref $ref->{$tag}
+                      ? $ref->{$tag}
+                      : (
+                       defined $ref->{$tag}
+                       ? ($ref->{$tag} = [$ref->{$tag}])
+                       : ($ref->{$tag} //= [])
+                      )
+                  : ref $ref eq 'ARRAY' ? ref $ref->[-1]{$tag}
+                      ? $ref->[-1]{$tag}
+                      : (
+                       defined $ref->[-1]{$tag}
+                       ? ($ref->[-1]{$tag} = [$ref->[-1]{$tag}])
+                       : ($ref->[-1]{$tag} //= [])
+                      )
+                  : [];
+
+                ++$#{$ref} if ref $ref eq 'ARRAY';
+
+                while (
+                    $attrs =~ m{\G
+                        ($valid_tag) \s*=\s*
+                        (?>
+                            "(.*?)"
+                                    |
+                            '(.*?)'
+                        ) \s*
+                        }gsxo
+                  ) {
+                    my ($key, $value) = ($1, $+);
+                    $key = join(q{}, $args{attr}, $key);
+                    if (ref $ref eq 'ARRAY') {
+                        $ref->[-1]{$key} = _decode_entities($value);
+                    }
+                    elsif (ref $ref eq 'HASH') {
+                        $ref->{$key} = $value;
+                    }
+                }
+
+                if (defined $closed) {
+                    $ref = pop @{$ctags{$tag}};
+                }
+
+                if ($xml =~ m{\G<\s*/\s*\Q$tag\E\s*>\s*}gc) {
+                    $ref = pop @{$ctags{$tag}};
+                }
+                elsif ($xml =~ m{\G([^<]+)(?=<)}gsc) {
+                    if (ref $ref eq 'ARRAY') {
+                        $ref->[-1]{$args{text}} .= _decode_entities($1);
+                        $ref = pop @{$ctags{$tag}};
+                    }
+                    elsif (ref $ref eq 'HASH') {
+                        $ref->{$args{text}} .= $1;
+                        $ref = pop @{$ctags{$tag}};
+                    }
+                }
+            }
+            elsif (defined $closed) {
+                if (ref $ref eq 'ARRAY') {
+                    if (exists $ref->[-1]{$tag}) {
+                        if (ref $ref->[-1]{$tag} ne 'ARRAY') {
+                            $ref->[-1]{$tag} = [$ref->[-1]{$tag}];
+                        }
+                        push @{$ref->[-1]{$tag}}, $args{empty};
+                    }
+                    else {
+                        $ref->[-1]{$tag} = $args{empty};
+                    }
+                }
+            }
+            else {
+                if ($xml =~ /\G(?=<(?!!))/) {
                     push @{$ctags{$tag}}, $ref;
 
                     $ref =
@@ -79,60 +155,28 @@ sub xml2hash {
                       : [];
 
                     ++$#{$ref} if ref $ref eq 'ARRAY';
-
-                    while (
-                        $attrs =~ m{\G
-                        ($valid_tag) \s*=\s*
-                        (?>
-                            "(.*?)"
-                                    |
-                            '(.*?)'
-                        ) \s*
-                        }gsxo
-                      ) {
-                        my ($key, $value) = ($1, $+);
-                        $key = join(q{}, $args{attr}, $key);
-                        if (ref $ref eq 'ARRAY') {
-                            $ref->[-1]{$key} = _decode_entities($value);
-                        }
-                        elsif (ref $ref eq 'HASH') {
-                            $ref->{$key} = $value;
-                        }
-                    }
-
-                    if (defined $closed) {
-                        $ref = pop @{$ctags{$tag}};
-                    }
-
-                    if (m{\G<\s*/\s*\Q$tag\E\s*>\s*}gc) {
-                        $ref = pop @{$ctags{$tag}};
-                    }
-                    elsif (m{\G([^<]+)(?=<)}gsc) {
-                        if (ref $ref eq 'ARRAY') {
-                            $ref->[-1]{$args{text}} .= _decode_entities($1);
-                            $ref = pop @{$ctags{$tag}};
-                        }
-                        elsif (ref $ref eq 'HASH') {
-                            $ref->{$args{text}} .= $1;
-                            $ref = pop @{$ctags{$tag}};
-                        }
-                    }
+                    redo;
                 }
-                elsif (defined $closed) {
-                    if (ref $ref eq 'ARRAY') {
-                        if (exists $ref->[-1]{$tag}) {
-                            if (ref $ref->[-1]{$tag} ne 'ARRAY') {
-                                $ref->[-1]{$tag} = [$ref->[-1]{$tag}];
+                elsif ($xml =~ /\G<!\[CDATA\[(.*?)\]\]>\s*/gcs or /\G([^<]+)(?=<)/gsc) {
+                    my ($text) = $1;
+
+                    if ($xml =~ m{\G<\s*/\s*\Q$tag\E\s*>\s*}gc) {
+                        if (ref $ref eq 'ARRAY') {
+                            if (exists $ref->[-1]{$tag}) {
+                                if (ref $ref->[-1]{$tag} ne 'ARRAY') {
+                                    $ref->[-1]{$tag} = [$ref->[-1]{$tag}];
+                                }
+                                push @{$ref->[-1]{$tag}}, $text;
                             }
-                            push @{$ref->[-1]{$tag}}, $args{empty};
+                            else {
+                                $ref->[-1]{$tag} .= _decode_entities($text);
+                            }
                         }
-                        else {
-                            $ref->[-1]{$tag} = $args{empty};
+                        elsif (ref $ref eq 'HASH') {
+                            $ref->{$tag} .= $text;
                         }
                     }
-                }
-                else {
-                    if (/\G(?=<(?!!))/) {
+                    else {
                         push @{$ctags{$tag}}, $ref;
 
                         $ref =
@@ -154,112 +198,68 @@ sub xml2hash {
                           : [];
 
                         ++$#{$ref} if ref $ref eq 'ARRAY';
-                        redo;
-                    }
-                    elsif (/\G<!\[CDATA\[(.*?)\]\]>\s*/gcs or /\G([^<]+)(?=<)/gsc) {
-                        my ($text) = $1;
 
-                        if (m{\G<\s*/\s*\Q$tag\E\s*>\s*}gc) {
-                            if (ref $ref eq 'ARRAY') {
-                                if (exists $ref->[-1]{$tag}) {
-                                    if (ref $ref->[-1]{$tag} ne 'ARRAY') {
-                                        $ref->[-1]{$tag} = [$ref->[-1]{$tag}];
-                                    }
-                                    push @{$ref->[-1]{$tag}}, $text;
+                        if (ref $ref eq 'ARRAY') {
+                            if (exists $ref->[-1]{$tag}) {
+                                if (ref $ref->[-1]{$tag} ne 'ARRAY') {
+                                    $ref->[-1] = [$ref->[-1]{$tag}];
                                 }
-                                else {
-                                    $ref->[-1]{$tag} .= _decode_entities($text);
-                                }
+                                push @{$ref->[-1]}, {$args{text} => $text};
                             }
-                            elsif (ref $ref eq 'HASH') {
-                                $ref->{$tag} .= $text;
+                            else {
+                                $ref->[-1]{$args{text}} .= $text;
                             }
                         }
-                        else {
-                            push @{$ctags{$tag}}, $ref;
-
-                            $ref =
-                                ref $ref eq 'HASH'
-                              ? ref $ref->{$tag}
-                                  ? $ref->{$tag}
-                                  : (
-                                   defined $ref->{$tag}
-                                   ? ($ref->{$tag} = [$ref->{$tag}])
-                                   : ($ref->{$tag} //= [])
-                                  )
-                              : ref $ref eq 'ARRAY' ? ref $ref->[-1]{$tag}
-                                  ? $ref->[-1]{$tag}
-                                  : (
-                                   defined $ref->[-1]{$tag}
-                                   ? ($ref->[-1]{$tag} = [$ref->[-1]{$tag}])
-                                   : ($ref->[-1]{$tag} //= [])
-                                  )
-                              : [];
-
-                            ++$#{$ref} if ref $ref eq 'ARRAY';
-
-                            if (ref $ref eq 'ARRAY') {
-                                if (exists $ref->[-1]{$tag}) {
-                                    if (ref $ref->[-1]{$tag} ne 'ARRAY') {
-                                        $ref->[-1] = [$ref->[-1]{$tag}];
-                                    }
-                                    push @{$ref->[-1]}, {$args{text} => $text};
-                                }
-                                else {
-                                    $ref->[-1]{$args{text}} .= $text;
-                                }
-                            }
-                            elsif (ref $ref eq 'HASH') {
-                                $ref->{$tag} .= $text;
-                            }
+                        elsif (ref $ref eq 'HASH') {
+                            $ref->{$tag} .= $text;
                         }
                     }
                 }
+            }
 
-                if (m{\G<\s*/\s*\Q$tag\E\s*>\s*}gc) {
-                    ## tag closed - ok
-                }
+            if ($xml =~ m{\G<\s*/\s*\Q$tag\E\s*>\s*}gc) {
+                ## tag closed - ok
+            }
 
-                redo
+            redo;
+        }
+        elsif ($xml =~ m{\G<\s*/\s*($valid_tag)\s*>\s*}gco) {
+            if (exists $ctags{$1} and @{$ctags{$1}}) {
+                $ref = pop @{$ctags{$1}};
             }
-            when (m{\G<\s*/\s*($valid_tag)\s*>\s*}gco) {
-                if (exists $ctags{$1} and @{$ctags{$1}}) {
-                    $ref = pop @{$ctags{$1}};
-                }
-                redo
+            redo;
+        }
+        elsif ($xml =~ /\G<!\[CDATA\[(.*?)\]\]>\s*/gcs or $xml =~ m{\G([^<]+)(?=<)}gsc) {
+            if (ref $ref eq 'ARRAY') {
+                $ref->[-1]{$args{text}} .= $1;
             }
-            when (/\G<!\[CDATA\[(.*?)\]\]>\s*/gcs or m{\G([^<]+)(?=<)}gsc) {
-                if (ref $ref eq 'ARRAY') {
-                    $ref->[-1]{$args{text}} .= $1;
-                }
-                elsif (ref $ref eq 'HASH') {
-                    $ref->{$args{text}} .= $1;
-                }
-                redo
+            elsif (ref $ref eq 'HASH') {
+                $ref->{$args{text}} .= $1;
             }
-            when (/\G<\?/gc) {
-                /\G.*?\?>\s*/gcs or die "Invalid XML!";
-                redo
-            }
-            when (/\G<!--/gc) {
-                /\G.*?-->\s*/gcs or die "Comment not closed!";
-                redo
-            }
-            when (/\G<!DOCTYPE\s+/gc) {
-                /\G(?>$valid_tag|\s+|".*?"|'.*?')*\[.*?\]>\s*/sgco
-                  or /\G.*?>\s*/sgc
-                  or die "DOCTYPE not closed!";
-                redo
-            }
-            when (/\G\z/gc) {
-                break;
-            }
-            when (/\G\s+/gc) {
-                redo
-            }
-            default {
-                die "Syntax error near: --> ", [split(/\n/, substr($_, pos(), 2**6))]->[0], " <--\n";
-            }
+            redo;
+        }
+        elsif ($xml =~ /\G<\?/gc) {
+            $xml =~ /\G.*?\?>\s*/gcs or die "Invalid XML!";
+            redo;
+        }
+        elsif ($xml =~ /\G<!--/gc) {
+            $xml =~ /\G.*?-->\s*/gcs or die "Comment not closed!";
+            redo;
+        }
+        elsif ($xml =~ /\G<!DOCTYPE\s+/gc) {
+            $xml =~ /\G(?>$valid_tag|\s+|".*?"|'.*?')*\[.*?\]>\s*/sgco
+              or /\G.*?>\s*/sgc
+              or die "DOCTYPE not closed!";
+            redo;
+        }
+        elsif ($xml =~ /\G\z/gc) {
+            ## ok
+        }
+        elsif ($xml =~ /\G\s+/gc) {
+            redo;
+        }
+        else {
+            die "Syntax error near: --> ", [split(/\n/, substr($xml, pos(), 2**6))]->[0], " <--\n";
         }
     }
 
