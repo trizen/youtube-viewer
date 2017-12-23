@@ -538,25 +538,22 @@ if ($opt{history}) {
           or warn "[!] Can't create the history file `$opt{history_file}': $!";
     }
 
-    if ($term->can('ReadHistory')) {
+    # Add history to Term::ReadLine
+    $term->ReadHistory($opt{history_file});
 
-        # Add history to Term::ReadLine
-        $term->ReadHistory($opt{history_file});
+    # All history entries
+    my @entries = $term->history_list;
 
-        # All history entries
-        my @entries = $term->history_list;
+    # Rewrite the history file, when the history_limit has been reached.
+    if ($opt{history_limit} > 0 and @entries > $opt{history_limit}) {
 
-        # Rewrite the history file, when the history_limit has been reached.
-        if ($opt{history_limit} > 0 and @entries > $opt{history_limit}) {
+        # Try to create a backup, first
+        require File::Copy;
+        File::Copy::cp($opt{history_file}, "$opt{history_file}.bak");
 
-            # Try to create a backup, first
-            require File::Copy;
-            File::Copy::cp($opt{history_file}, "$opt{history_file}.bak");
-
-            if (open my $fh, '>', $opt{history_file}) {
-                say {$fh} join("\n", @entries[(@entries - $opt{history_limit} + rand($opt{history_limit} >> 1)) .. $#entries]);
-                close $fh;
-            }
+        if (open my $fh, '>', $opt{history_file}) {
+            say {$fh} join("\n", @entries[(@entries - $opt{history_limit} + rand($opt{history_limit} >> 1)) .. $#entries]);
+            close $fh;
         }
     }
 }
@@ -1670,7 +1667,7 @@ sub get_user_input {
 
     my ($args, $keywords) = parse_options($input);
 
-    if ($opt{history} and $term->can('append_history') and @{$keywords}) {
+    if ($opt{history} and @{$keywords}) {
         my $str = join(' ', grep { /\w/ and not /^[:;=]/ } @{$keywords});
         if ($str ne '' and $str !~ /^[0-9]{1,2}\z/) {
             $term->append_history(1, $opt{history_file});
