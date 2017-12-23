@@ -135,7 +135,7 @@ no warnings 'once';
 my $DEVEL;    # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
-use WWW::YoutubeViewer v3.3.1;
+use WWW::YoutubeViewer v3.3.2;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
@@ -989,21 +989,12 @@ Results: enqueue the selected videos to play them later.
 Command: :pq, :play-queue
 Results: play the videos enqueued by the :queue option.
 
-Command: :re="^Google Tricks"
+Command: :re="^Linux"
 Results: play videos matched by a regex.
-Example: valid title: "Google Tricks & Easter eggs"
+Example: valid title: "Linux video"
 
-Command: :regex="Google.*part \\d+/\\d+"
-Example: valid title: "The GOOGLE company (part 1/4)"
-
-Command: :kregex=author,^google\$
-Results: play only the videos uploaded by google.
-
-Command: :kre=category,"^(?:People & Blogs|Entertainment)\$"
-Results: play only the videos from the specified categories.
-
-Command: :kre=views,"^(\\d+)\\z(?(?{ \$1 > 1000 })(?=)|(?!))"
-Results: play only the videos which have more than 1000 of views.
+Command: :regex="linux.*part \\d+/\\d+"
+Example: valid title: "Introduction to Linux (part 1/4)"
 
 Command: :anp 1 2 3
 Results: play the first three videos from every page.
@@ -1936,10 +1927,6 @@ sub _bold_color {
     return colored($text, 'bold');
 }
 
-sub quit_required {
-    $_[0] =~ /^(?:q|quit|exit)\z/;
-}
-
 sub youtube_urls {
     my ($arg) = @_;
 
@@ -1969,7 +1956,7 @@ sub general_options {
         return;
     }
 
-    if (quit_required($option)) {
+    if ($option =~ /^(?:q|quit|exit)\z/) {
         main_quit(0);
     }
     elsif ($option =~ /^(?:n|next)\z/ and defined $url) {
