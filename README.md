@@ -1,6 +1,6 @@
 ## youtube-viewer
 
-A lightweight application for searching and streaming videos from YouTube. 
+A lightweight application for searching and streaming videos from YouTube.
 
 ### youtube-viewer
 
@@ -126,7 +126,7 @@ After installing, you can find documentation with the following commands:
 
 ### LICENSE AND COPYRIGHT
 
-Copyright (C) 2012-2017 Trizen
+Copyright (C) 2012-2018 Trizen
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
