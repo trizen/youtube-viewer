@@ -1049,7 +1049,7 @@ sub menu_popup {
             # Enqueue
             {
                 my $item = 'Gtk2::ImageMenuItem'->new("Enqueue");
-                $item->signal_connect(activate => sub { enqueue_video($video_id) });
+                $item->signal_connect(activate => sub { enqueue_video() });
                 $item->set_property(tooltip_text => "Enqueue video to play it later");
                 $item->set_image('Gtk2::Image'->new_from_icon_name("list-add", q{menu}));
                 $item->show;
@@ -2850,7 +2850,7 @@ sub open_external_url {
 }
 
 sub enqueue_video {
-    my ($video_id) = @_;
+    my $video_id = get_selected_entry_code(type => 'video') // return;
     print "[*] Added: <$video_id>\n" if $yv_obj->get_debug;
     push @VIDEO_QUEUE, $video_id;
     return 1;
