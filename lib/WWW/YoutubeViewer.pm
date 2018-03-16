@@ -41,7 +41,7 @@ my %valid_options = (
     # Main options
     v               => {valid => q[],                                                    default => 3},
     page            => {valid => [qr/^(?!0+\z)\d+\z/],                                   default => 1},
-    http_proxy      => {valid => [qr{^https?://}],                                       default => undef},
+    http_proxy      => {valid => [qr{.}],                                                default => undef},
     hl              => {valid => [qr/^\w+(?:[\-_]\w+)?\z/],                              default => undef},
     maxResults      => {valid => [1 .. 50],                                              default => 10},
     topicId         => {valid => [qr/^./],                                               default => undef},
