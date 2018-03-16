@@ -279,13 +279,13 @@ sub set_lwp_useragent {
     $agent->ssl_opts(Timeout => 30);
     $agent->default_header('Accept-Encoding' => $accepted_encodings);
     $agent->conn_cache($cache);
-    $agent->proxy('http', $self->get_http_proxy) if (defined($self->get_http_proxy));
+    $agent->proxy(['http', 'https'], $self->get_http_proxy) if defined($self->get_http_proxy);
 
-    my $http_proxy = $agent->proxy('http');
-    if (defined($http_proxy)) {
-        $agent->proxy('https', $http_proxy) if (!defined($agent->proxy('https')));
-        $agent->timeout(30);
-    }
+    #my $http_proxy = $agent->proxy('http');
+    #if (defined($http_proxy)) {
+    #    $agent->proxy('https', $http_proxy) if (!defined($agent->proxy('https')));
+    #    $agent->timeout(30);
+    #}
 
     push @{$self->{lwp}->requests_redirectable}, 'POST';
     return $self->{lwp};
