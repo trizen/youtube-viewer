@@ -758,6 +758,9 @@ sub post_as_json {
             local $ENV{http_proxy}  = $self->{lwp}->proxy('http');
             local $ENV{https_proxy} = $self->{lwp}->proxy('https');
 
+            local $ENV{HTTP_PROXY}  = $self->{lwp}->proxy('http');
+            local $ENV{HTTPS_PROXY} = $self->{lwp}->proxy('https');
+
                 $name eq 'exec'   ? exec(@args)
               : $name eq 'system' ? system(@args)
               : $name eq 'stdout' ? qx(@args)
