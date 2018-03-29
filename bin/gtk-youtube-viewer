@@ -2306,14 +2306,15 @@ sub _get_pixbuf_thumbnail {
             $pixbufloader = 'Gtk2::Gdk::PixbufLoader'->new;
         }
 
-        $pixbufloader->set_size($xsize, $ysize);
-        $pixbufloader->write($thumbnail);
-        $pixbuf = $pixbufloader->get_pixbuf;
-        $pixbufloader->close;
+        eval {
+            $pixbufloader->set_size($xsize, $ysize);
+            $pixbufloader->write($thumbnail);
+            $pixbuf = $pixbufloader->get_pixbuf;
+            $pixbufloader->close;
+        };
     }
-    else {
-        $pixbuf = $default_thumb;
-    }
+
+    $pixbuf //= $default_thumb;
 
     return $pixbuf;
 }
