@@ -1694,7 +1694,7 @@ sub authenticate {
 
     print <<"INFO";
 
-** Get the authentication code: $get_code_url
+[*] Get the authentication code: $get_code_url
 
                             |
 ... and paste it below.    \\|/
@@ -1727,10 +1727,8 @@ INFO
 
         return 1;
     }
-    else {
-        warn "[WARNING] There was a problem with the authentication...\n";
-    }
 
+    warn "[WARNING] There was a problem with the authentication...\n";
     return;
 }
 
@@ -1750,7 +1748,7 @@ sub favorite_videos {
         my $videoID = get_valid_video_id($id) // next;
 
         if ($yv_obj->favorite_video($videoID)) {
-            printf "\n** Video %s has been successfully favorited.\n", sprintf($CONFIG{youtube_video_url}, $videoID);
+            printf "\n[*] Video %s has been successfully favorited.\n", sprintf($CONFIG{youtube_video_url}, $videoID);
         }
         else {
             warn_cant_do('favorite', $videoID);
@@ -1782,7 +1780,7 @@ sub save_to_playlist {
         my $videoID = get_valid_video_id($id) // next;
 
         if ($yv_obj->add_video_to_playlist($playlistID, $videoID, $opt{position} || 1)) {
-            printf("\n** Video %s has been successfully added to playlistID: %s\n",
+            printf("\n[*] Video %s has been successfully added to playlistID: %s\n",
                    sprintf($CONFIG{youtube_video_url}, $videoID), $playlistID);
         }
         else {
@@ -1799,7 +1797,7 @@ sub rate_videos {
     foreach my $id (@_) {
         my $videoID = get_valid_video_id($id) // next;
         if ($yv_obj->send_rating_to_video($videoID, $rating)) {
-            print "\n** VideoID '$videoID' has been successfully ${rating}d.\n";
+            print "\n[*] VideoID '$videoID' has been successfully ${rating}d.\n";
         }
         else {
             warn colored("\n[!] VideoID '$videoID' has not been ${rating}d", 'bold red') . "\n";
@@ -1901,7 +1899,7 @@ sub subscribe_to {
     foreach my $channel (@ids) {
         if ($channel =~ /$valid_channel_id_re/) {
             if ($is_channel ? $yv_obj->subscribe_channel($channel) : $yv_obj->subscribe_channel_from_username($channel)) {
-                print "** Successfully subscribed to channel: $channel\n";
+                print "[*] Successfully subscribed to channel: $channel\n";
             }
             else {
                 warn colored("\n[!] Unable to subscribe to channel: $channel", 'bold red') . "\n";
@@ -2050,7 +2048,7 @@ sub warn_no_thing_selected {
 }
 
 sub warn_needs_auth {
-    warn colored("\n[!] This function needs authentication!", 'bold red') . "\n";
+    warn colored("\n[!] This functionality needs authentication!", 'bold red') . "\n";
 }
 
 # ... GET INPUT SUBS ... #
@@ -2356,7 +2354,7 @@ sub print_comments {
                         $comment =~ s/[^\s[:^cntrl:]]+//g;    # remove control characters
 
                         if (length($comment) and $yv_obj->comment_to_video_id($comment, $videoID)) {
-                            print "\n** Comment posted!\n";
+                            print "\n[*] Comment posted!\n";
                         }
                         else {
                             warn colored("\n[!] Your comment has NOT been posted!", 'bold red') . "\n";
@@ -2734,7 +2732,7 @@ sub download_video {
     $video_filename = catfile($opt{downloads_dir}, $video_filename);
 
     if ($opt{skip_if_exists} and -e $video_filename) {
-        print "** Video '$video_filename' already exists. Skipping...\n";
+        print "[*] Video '$video_filename' already exists. Skipping...\n";
     }
     else {
         my $i = 0;
