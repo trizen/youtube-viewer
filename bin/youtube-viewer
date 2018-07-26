@@ -293,7 +293,7 @@ my %CONFIG = (
     get_captions  => 1,
     auto_captions => 0,
     copy_caption  => 0,
-    cache_dir     => undef, # will be defined later
+    cache_dir     => undef,          # will be defined later
 
     # Others
     http_proxy           => undef,
@@ -687,7 +687,7 @@ usage: $execname [options] ([url] | [keywords])
    --vo=s             : specify the video output for MPlayer
    --af=s             : specify an audio filter for MPlayer
    --append-arg=s     : append some command-line parameters to the media player
-   --video-player=s   : select a video player to stream videos
+   --player=s         : select a player to stream videos
                         available players: @{[keys %{$CONFIG->{video_players}}]}
 
 
@@ -752,9 +752,9 @@ usage: $execname [options] ([url] | [keywords])
        --use-colors!    : enable or disable the ANSI colors for text
 
  * Other
-   --http_proxy=s       : HTTP proxy to use, format 'http://domain.tld:port/'.
+   --proxy=s            : set HTTP(S)/SOCKS proxy: 'proto://domain.tld:port/'
                           If authentication required,
-                          use 'http://user:pass\@domain.tld:port/'
+                          use 'proto://user:pass\@domain.tld:port/'
    --dash!              : include or exclude the DASH itags
    --dash-mp4a!         : include or exclude the itags for MP4 audio streams
 
@@ -1319,7 +1319,8 @@ sub parse_arguments {
         'user-favorites|uf=s'     => \$opt{user_favorited_videos},
         'user-likes|ul=s'         => \$opt{user_liked_videos},
         'related-videos|rl|rv=s'  => \$opt{related_videos},
-        'http_proxy=s'            => \$opt{http_proxy},
+
+        'http_proxy|http-proxy|proxy=s' => \$opt{http_proxy},
 
         'catlang|cl|hl=s'        => \$opt{hl},
         'category|cat-id|cat=i'  => \$opt{videoCategoryId},
