@@ -2658,9 +2658,16 @@ sub get_streaming_url {
 
     my ($urls, $captions, $info) = $yv_obj->get_streaming_urls($video_id);
 
+    if (not defined $urls) {
+        return scalar {};
+    }
+
     # Download the closed-captions
     my $srt_file;
-    if (@$captions and $opt{get_captions} and not $opt{novideo}) {
+    if (    ref($captions) eq 'ARRAY'
+        and @$captions
+        and $opt{get_captions}
+        and not $opt{novideo}) {
         require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
                                                          auto_captions => $opt{auto_captions},

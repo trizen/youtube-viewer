@@ -232,7 +232,7 @@ my %CONFIG = (
     captions_dir  => tmpdir(),
     get_captions  => 1,
     auto_captions => 0,
-    cache_dir     => undef, # will be defined later
+    cache_dir     => undef,          # will be defined later
 
     # Others
     env_proxy   => 1,
@@ -243,7 +243,7 @@ my %CONFIG = (
     audio_only  => 0,
 
     use_threads            => 0,
-    use_threads_for_thumbs => 0,    # this is unstable
+    use_threads_for_thumbs => 0,     # this is unstable
 
     thousand_separator     => q{,},
     downloads_dir          => curdir(),
@@ -2610,9 +2610,13 @@ sub get_streaming_url {
 
     my ($urls, $captions, $info) = $yv_obj->get_streaming_urls($video_id);
 
+    if (not defined $urls) {
+        return scalar {};
+    }
+
     # Download the closed-captions
     my $srt_file;
-    if (@$captions and $CONFIG{get_captions}) {
+    if (ref($captions) eq 'ARRAY' and @$captions and $CONFIG{get_captions}) {
         require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
                                                          auto_captions => $CONFIG{auto_captions},
