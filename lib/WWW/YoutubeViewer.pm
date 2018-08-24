@@ -80,6 +80,7 @@ my %valid_options = (
     # Booleans
     lwp_env_proxy => {valid => [1, 0], default => 1},
     escape_utf8   => {valid => [1, 0], default => 0},
+    prefer_mp4    => {valid => [1, 0], default => 0},
 
     # OAuth stuff
     client_id     => {valid => [qr/^.{5}/], default => undef},
@@ -675,6 +676,27 @@ sub get_streaming_urls {
     # Try again with youtube-dl
     if (!@streaming_urls or $info{status} =~ /fail|error/i) {
         @streaming_urls = $self->_get_formats_from_ytdl($videoID);
+    }
+
+    if ($self->get_prefer_mp4) {
+
+        my @mp4_urls;
+        my @audio_urls;
+
+        foreach my $url (@streaming_urls) {
+            if ($url->{type} =~ /\bvideo\b/) {
+                if ($url->{type} =~ /\bmp4\b/) {
+                    push @mp4_urls, $url;
+                }
+            }
+            else {
+                push @audio_urls, $url;
+            }
+        }
+
+        if (@mp4_urls) {
+            @streaming_urls = (@mp4_urls, @audio_urls);
+        }
     }
 
     return (\@streaming_urls, \@caption_urls, \%info);

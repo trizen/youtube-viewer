@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 06 January 2018
+#  Latest edit on: 24 August 2018
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -209,6 +209,7 @@ my %CONFIG = (
     # Youtube options
     dash_support    => 1,
     dash_mp4_audio  => 1,
+    prefer_mp4      => 0,
     maxResults      => 10,
     resolution      => 'original',
     videoDimension  => undef,
@@ -823,6 +824,9 @@ sub apply_configuration {
 
     # Checking thumbs button
     $thumbs_checkbutton->set_active($CONFIG{show_thumbs});
+
+    # Prefer MP4 over WEBM
+    $yv_obj->set_prefer_mp4($CONFIG{prefer_mp4} ? 1 : 0);
 
     # Setup threads
     if ($CONFIG{use_threads} || $CONFIG{use_threads_for_thumbs}) {
