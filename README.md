@@ -84,6 +84,8 @@ To package this application, run the following commands:
 
 * [EN] YOUTUBE VIEWER: A COMPLETE YOUTUBE CLIENT FOR LINUX [UBUNTU PPA]
     * http://www.webupd8.org/2015/02/youtube-viewer-complete-youtube-client.html
+* [EN] YOUTUBE-VIEWER – ALTERNATIVE WAY TO INTERACT WITH YOUTUBE
+    * http://www.ossblog.org/youtube-viewer-alternative-way-watch-youtube/
 * [EN] A YouTube CLI for Mac
     * http://blog.johnkrauss.com/installing-youtube-viewer/
 * [EN] Gtk Youtube Viewer
