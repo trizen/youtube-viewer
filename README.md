@@ -111,10 +111,12 @@ To package this application, run the following commands:
 
 ### VIDEO REVIEWS
 
-* [EN] Gentoo in Review - youtube-viewer CLI client
-    * https://www.youtube.com/watch?v=YzN2scO025I
 * [EN] Youtube-Viewer -- Search and Play Youtube Video - Linux CLI
     * https://www.youtube.com/watch?v=FnJ67oAxVQ4
+* [EN] youtube-viewer - Watch, Read and Post Youtube Comments - Linux CLI
+    * https://www.youtube.com/watch?v=3CNRRdyFwsY
+* [EN] Gentoo in Review - youtube-viewer CLI client
+    * https://www.youtube.com/watch?v=YzN2scO025I
 * [EN] GTK Youtube Viewer : A Complete Youtube Desktop Client For Linux Mint
     * https://www.youtube.com/watch?v=R5b12tvpe3E
 * [EN] GTK-YouTube Viewer for Puppy Linux
