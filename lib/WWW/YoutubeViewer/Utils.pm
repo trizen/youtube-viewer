@@ -169,7 +169,8 @@ sub normalize_video_title {
     my ($self, $title, $fat32safe) = @_;
 
     if ($fat32safe) {
-        $title =~ tr{:"*/?\\|}{;'+%$%%};    # "
+        $title =~ s/: / - /g;
+        $title =~ tr{:"*/?\\|}{;'+%!%%};    # "
         $title =~ tr/<>//d;
     }
     else {

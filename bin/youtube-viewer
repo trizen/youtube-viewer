@@ -15,14 +15,15 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 31 August 2018
+#  Latest edit on: 01 September 2018
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
 # youtube-viewer is a command line utility for streaming YouTube videos in mpv/vlc/mplayer.
 #
 # [CHANGELOG]
-# - Added the `--prefer-mp4` option to prefer videos in MP4 format, instead of WEBM.           - NEW (v3.3.5)
+# - Added support for downloading videos at 1080p (and other resolutions) with MKV merging.    - NEW (v3.4.0)
+# - Added the `--prefer-mp4` option to prefer videos in MP4 format, instead of WEBM.           - NEW (v3.4.0)
 # - Added the `--fat32safe` option to make filenames FAT32-safe, by replacing bad characters.  - NEW (v3.2.5)
 # - Added the `--highlight` option to remember and highlight watched videos in a session.      - NEW (v3.2.2)
 # - Added the `--channel-videos=s` command-line option to display videos from a channel ID.    - NEW (v3.2.1)
@@ -134,9 +135,9 @@ use warnings;
 no warnings 'once';
 
 my $DEVEL;    # true in devel mode
-use if ($DEVEL = 1), lib => qw(../lib);    # devel mode
+use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
-use WWW::YoutubeViewer v3.3.4;
+use WWW::YoutubeViewer v3.4.0;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
@@ -327,8 +328,10 @@ my %CONFIG = (
     history_limit        => 10_000,
     history_file         => $history_file,
     convert_cmd          => 'ffmpeg -i *IN* *OUT*',
-    ffmpeg_cmd           => 'ffmpeg',
     convert_to           => undef,
+
+    ffmpeg_cmd           => 'ffmpeg',
+    wget_cmd             => 'wget',
 
     merge_into_mkv      => undef,                                                                    # auto-defined later
     merge_into_mkv_args => '-loglevel warning -c:s srt -c:v copy -c:a copy -disposition:s forced',
@@ -519,7 +522,7 @@ my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 
     # Download with wget if it is installed
     if (not defined $CONFIG{download_with_wget}) {
-        if (-x '/usr/bin/wget') {
+        if (-x '/usr/bin/wget' or -x '/usr/local/bin/wget') {
             $CONFIG{download_with_wget} = 1;
         }
         else {
@@ -738,6 +741,8 @@ usage: $execname [options] ([url] | [keywords])
        --downloads-dir=s : downloads directory (set: '$opt{downloads_dir}')
        --filename=s      : set a custom format for the video filename (see: -T)
        --fat32safe!      : makes filenames FAT32 safe (includes Unicode)
+       --mkv-merge!      : merge audio and video into an MKV container
+       --merge-captions! : include closed-captions into the MKV container
 
  * Convert
    --convert-cmd=s      : command for converting videos after download
@@ -1429,6 +1434,9 @@ sub parse_arguments {
         'dash!'                 => \$opt{dash_support},
         'confirm!'              => \$opt{confirm},
         'prefer-mp4!'           => \$opt{prefer_mp4},
+
+        'merge-into-mkv|mkv-merge!'           => \$opt{merge_into_mkv},
+        'merge-with-captions|merge-captions!' => \$opt{merge_with_captions},
 
         'convert-command|convert-cmd=s'      => \$opt{convert_cmd},
         'dash-m4a|dash-mp4-audio|dash-mp4a!' => \$opt{dash_mp4_audio},
@@ -2767,7 +2775,7 @@ sub download_from_url {
 
     # Download video with wget
     if ($opt{download_with_wget}) {
-        my @cmd = ("wget", ($opt{clobber} ? () : q{-nc}), $url, q{-O}, $output_filename);
+        my @cmd = ($opt{wget_cmd}, ($opt{clobber} ? () : q{-nc}), $url, q{-O}, $output_filename);
 
         if ($opt{download_in_parallel}) {
             my $pid = fork() // warn "[ERROR] Can't fork: $!";
@@ -2960,7 +2968,10 @@ sub download_video {
     }
 
     # Copy the .srt file from captions-dir to downloads-dir
-    if ($opt{copy_caption} and -e $video_filename and defined($streaming->{srt_file})) {
+    if (    $opt{copy_caption}
+        and -e $video_filename
+        and defined($streaming->{srt_file})
+        and -e $streaming->{srt_file}) {
         my $from = $streaming->{srt_file};
         my $to = catfile($opt{downloads_dir}, $srt_filename);
 
