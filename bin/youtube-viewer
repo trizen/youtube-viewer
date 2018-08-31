@@ -134,7 +134,7 @@ use warnings;
 no warnings 'once';
 
 my $DEVEL;    # true in devel mode
-use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
+use if ($DEVEL = 1), lib => qw(../lib);    # devel mode
 
 use WWW::YoutubeViewer v3.3.4;
 use WWW::YoutubeViewer::RegularExpressions;
@@ -259,7 +259,7 @@ my %CONFIG = (
     video_player_selected => (
         $constant{win32}
         ? 'mplayer'
-        : undef            # autodetect it later
+        : undef            # auto-defined later
     ),
 
     combine_multiple_videos => 0,
@@ -313,7 +313,7 @@ my %CONFIG = (
     results_fixed_width  => 0,
     interactive          => 1,
     get_term_width       => $constant{win32} ^ 1,
-    download_with_wget   => 0,
+    download_with_wget   => undef,                    # auto-defined later
     download_in_parallel => 0,
     thousand_separator   => q{,},
     downloads_dir        => curdir(),
@@ -326,10 +326,15 @@ my %CONFIG = (
     history              => 0,
     history_limit        => 10_000,
     history_file         => $history_file,
-    convert_cmd          => q{ffmpeg -i *IN* *OUT*},
+    convert_cmd          => 'ffmpeg -i *IN* *OUT*',
+    ffmpeg_cmd           => 'ffmpeg',
     convert_to           => undef,
 
-    video_filename_format => q{*FTITLE*.*FORMAT*},
+    merge_into_mkv      => undef,                                                                    # auto-defined later
+    merge_into_mkv_args => '-loglevel warning -c:s srt -c:v copy -c:a copy -disposition:s forced',
+    merge_with_captions => 1,
+
+    video_filename_format => '*FTITLE* - *ID*.*FORMAT*',
 );
 
 local $SIG{__WARN__} = sub { warn @_; ++$opt{_error} };
@@ -510,6 +515,33 @@ my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
                 last;
             }
         }
+    }
+
+    # Download with wget if it is installed
+    if (not defined $CONFIG{download_with_wget}) {
+        if (-x '/usr/bin/wget') {
+            $CONFIG{download_with_wget} = 1;
+        }
+        else {
+            $CONFIG{download_with_wget} = 0;
+        }
+        $update_config = 1;
+    }
+
+    # Merge into MKV if ffmpeg is installed
+    if (not defined $CONFIG{merge_into_mkv}) {
+        if (-x '/usr/bin/ffmpeg') {
+            $CONFIG{ffmpeg_cmd}     = '/usr/bin/ffmpeg';
+            $CONFIG{merge_into_mkv} = 1;
+        }
+        elsif (-x '/usr/local/bin/ffmpeg') {
+            $CONFIG{ffmpeg_cmd}     = '/usr/local/bin/ffmpeg';
+            $CONFIG{merge_into_mkv} = 1;
+        }
+        else {
+            $CONFIG{merge_into_mkv} = 0;
+        }
+        $update_config = 1;
     }
 
     foreach my $key (keys %CONFIG) {
@@ -696,9 +728,9 @@ usage: $execname [options] ([url] | [keywords])
 
  * Download
    -d  --download!       : activate the download mode
-   -dp --downl-play!     : play the video after download (with -d)
+   -dp --dl-play!        : play the video after download (with -d)
    -rp --rem-played!     : delete a local video after played (with -dp)
-       --wget-dl!        : download videos with wget (default: LWP)
+       --wget-dl!        : download videos with wget (recommended)
        --dl-parallel     : download multiple videos at once
        --clobber!        : overwrite an existent video (with -d)
        --skip-if-exists! : don't download videos which already exists (with -d)
@@ -1374,11 +1406,19 @@ sub parse_arguments {
             );
         },
 
-        # MPlayer
-        'player|vplayer|video-player|video_player=s' => \$opt{video_player_selected},
-        'append-mplayer|append-arg|arg=s'            => \$MPLAYER{user_defined_arguments},
-        'vo=s'                                       => sub { $MPLAYER{video_output} = "-vo $_[1]" },
-        'af=s'                                       => sub { $MPLAYER{audio_filter} = "-af $_[1]" },
+        # Set a video player
+        'player|vplayer|video-player|video_player=s' => sub {
+
+            if (not exists $opt{video_players}{$_[1]}) {
+                die "[!] Unknown video player selected: <<$_[1]>>\n";
+            }
+
+            $opt{video_player_selected} = $_[1];
+        },
+
+        'append-mplayer|append-arg|arg=s' => \$MPLAYER{user_defined_arguments},
+        'vo=s'                            => sub { $MPLAYER{video_output} = "-vo $_[1]" },
+        'af=s'                            => sub { $MPLAYER{audio_filter} = "-af $_[1]" },
 
         # Others
         'colorful|colourful|C!' => \$opt{results_with_colors},
@@ -1395,7 +1435,6 @@ sub parse_arguments {
         'wget-dl|wget-download!'             => \$opt{download_with_wget},
         'dl-parallel|download-in-parallel!'  => \$opt{download_in_parallel},
         'filename|filename-format=s'         => \$opt{video_filename_format},
-        'dp|downl-play|download-and-play!'   => \$opt{download_and_play},
         'rp|rem-played|remove-played-file!'  => \$opt{remove_played_file},
         'clobber!'                           => \$opt{clobber},
         'info|i|video-info=s'                => \$opt{print_video_info},
@@ -1413,6 +1452,8 @@ sub parse_arguments {
 
         'quiet|q!'      => \$opt{quiet},
         'really-quiet!' => \$opt{really_quiet},
+
+        'dp|downl-play|download-and-play|dl-play!' => \$opt{download_and_play},
 
         'thousand-separator=s'           => \$opt{thousand_separator},
         'get-captions|get_captions!'     => \$opt{get_captions},
@@ -2692,8 +2733,11 @@ sub get_streaming_url {
     my $dash = 1;
 
     # Exclude DASH itags in download-mode or when no video output is required
-    if ($opt{download_video} or $opt{novideo} or not $opt{dash_support}) {
+    if ($opt{novideo} or not $opt{dash_support}) {
         $dash = 0;
+    }
+    elsif ($opt{download_video}) {
+        $dash = $opt{merge_into_mkv} ? 1 : 0;
     }
 
     my ($streaming, $resolution) =
@@ -2710,6 +2754,77 @@ sub get_streaming_url {
             info       => $info,
             resolution => $resolution,
            };
+}
+
+sub download_from_url {
+    my ($url, $output_filename) = @_;
+
+    my $i = 0;
+    while (-e $output_filename and not $opt{clobber} and ++$i) {
+        my $last_i = $i > 1 ? $i - 1 : q{/};
+        $output_filename =~ s{(?:_$last_i)?(\.\w{3,4})$}{_$i$1};
+    }
+
+    # Download video with wget
+    if ($opt{download_with_wget}) {
+        my @cmd = ("wget", ($opt{clobber} ? () : q{-nc}), $url, q{-O}, $output_filename);
+
+        if ($opt{download_in_parallel}) {
+            my $pid = fork() // warn "[ERROR] Can't fork: $!";
+            if ($pid == 0) {
+                $yv_obj->proxy_exec(@cmd, '--quiet');
+            }
+        }
+        else {
+            $yv_obj->proxy_system(@cmd);
+            return if $?;
+        }
+    }
+
+    # Download video with LWP::UserAgent
+    else {
+
+        require LWP::UserAgent;
+
+        my $lwp = LWP::UserAgent->new(
+                 show_progress => 1,
+                 agent =>
+                   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
+        );
+
+        $lwp->proxy(['http', 'https'], $yv_obj->get_http_proxy)
+          if defined($yv_obj->get_http_proxy);
+
+        if ($opt{download_in_parallel}) {
+            my $pid = fork() // warn "[ERROR] Can't fork: $!";
+            if ($pid == 0) {
+                $lwp->show_progress(0);
+                $lwp->mirror($url, $output_filename);
+                exit;
+            }
+        }
+        else {
+            my $resp = eval { $lwp->mirror($url, $output_filename) };
+
+            if ($@ =~ /\bread timeout\b/i or not defined($resp) or not $resp->is_success) {
+                warn "\n[!] Encountered an error while downloading... Trying again...\n\n";
+
+                if (-x '/usr/bin/wget') {
+                    $CONFIG{download_with_wget} = 1;
+                    dump_configuration();
+                }
+                else {
+                    warn "[!] Please install `wget` and try again...\n\n";
+                }
+
+                unlink($output_filename);
+                $opt{download_with_wget} = 1;
+                return download_from_url($url, $output_filename);
+            }
+        }
+    }
+
+    return $output_filename;
 }
 
 sub download_video {
@@ -2730,7 +2845,14 @@ sub download_video {
                                                 fat32safe => $fat32safe,
                                                );
 
+    my $audio_filename;
     my $naked_filename = $video_filename =~ s/\.\w+\z//r;
+
+    my $mkv_filename = "$naked_filename.mkv";
+    my $srt_filename = "$naked_filename.srt";
+
+    my $video_info = $streaming->{streaming};
+    my $audio_info = $streaming->{streaming}{__AUDIO__};
 
     if (not -d $opt{downloads_dir}) {
         require File::Path;
@@ -2741,66 +2863,57 @@ sub download_video {
 
     if (not -w $opt{downloads_dir}) {
         warn colored("\n[!] Can't write into directory '$opt{downloads_dir}': $!", 'bold red') . "\n";
-        $opt{downloads_dir} = -w curdir() ? curdir() : return;
+        $opt{downloads_dir} = (-w curdir()) ? curdir() : (-w $ENV{HOME}) ? $ENV{HOME} : return;
+        warn colored("[!] Video will be downloaded into directory: $opt{downloads_dir}", 'bold red') . "\n";
     }
 
     $video_filename = catfile($opt{downloads_dir}, $video_filename);
 
     if ($opt{skip_if_exists} and -e $video_filename) {
-        print "[*] Video '$video_filename' already exists. Skipping...\n";
+        say "[*] File `$video_filename` already exists. Skipping...";
+    }
+    elsif ($opt{skip_if_exists} and $audio_info and -e $mkv_filename) {
+        $video_filename = $mkv_filename;
+        say "[*] File `$mkv_filename` already exists. Skipping...";
     }
     else {
-        my $i = 0;
-        while (-e $video_filename and not $opt{clobber} and ++$i) {
-            my $last_i = $i > 1 ? $i - 1 : q{/};
-            $video_filename =~ s{(?:_$last_i)?(\.\w{3,4})$}{_$i$1};
+
+        # Disable `download in parallel` in combination with `download and play`
+        if ($opt{download_and_play}) {
+            $opt{download_in_parallel} = 0;
         }
 
-        # Download video with wget
-        if ($opt{download_with_wget}) {
-            my @cmd = ("wget", ($opt{clobber} ? () : q{-nc}), $streaming->{streaming}{url}, q{-O}, $video_filename);
+        $video_filename = download_from_url($video_info->{url}, $video_filename) // return;
+        $audio_filename =
+          download_from_url($audio_info->{url}, $naked_filename . ' - audio.' . $yv_utils->extension($audio_info->{type}))
+          if $audio_info;
+    }
 
-            if ($opt{download_in_parallel}) {
-                my $pid = fork() // warn "[ERROR] Can't fork: $!";
-                if ($pid == 0) {
-                    $yv_obj->proxy_exec(@cmd, '--quiet');
-                }
-            }
-            else {
-                $yv_obj->proxy_system(@cmd);
-                return if $?;
-            }
+    my @merge_files = ($video_filename);
+
+    if (defined($audio_filename)) {
+        push @merge_files, $audio_filename;
+    }
+
+    if (defined($streaming->{srt_file}) and $opt{merge_with_captions}) {
+        push @merge_files, $streaming->{srt_file};
+    }
+
+    if ($opt{merge_into_mkv} and @merge_files > 1) {
+
+        say "[*] Merging into MKV...";
+        my $merge_command =
+          join(' ', $opt{ffmpeg_cmd}, (map { "-i \Q$_\E" } @merge_files), $opt{merge_into_mkv_args}, "\Q$mkv_filename\E");
+
+        if ($yv_obj->get_debug) {
+            say "-> Command: $merge_command";
         }
 
-        # Download video with LWP::UserAgent
-        else {
+        $yv_obj->proxy_system($merge_command);
 
-            # Show progress while downloading
-            if (not $yv_obj->get_debug) {
-                $yv_obj->{lwp}->show_progress(1);
-            }
-
-            if ($opt{download_in_parallel}) {
-
-                # Don't show the progress while in parallel
-                if (not $yv_obj->get_debug) {
-                    $yv_obj->{lwp}->show_progress(0);
-                }
-
-                my $pid = fork() // warn "[ERROR] Can't fork: $!";
-                if ($pid == 0) {
-                    $yv_obj->lwp_mirror($streaming->{streaming}{url}, $video_filename);
-                    exit;
-                }
-            }
-            else {
-                $yv_obj->lwp_mirror($streaming->{streaming}{url}, $video_filename);
-            }
-
-            # No progress afterwards
-            if (not $yv_obj->get_debug) {
-                $yv_obj->{lwp}->show_progress(0);
-            }
+        if ($? == 0 and -e $mkv_filename) {
+            unlink @merge_files;
+            $video_filename = $mkv_filename;
         }
     }
 
@@ -2846,10 +2959,10 @@ sub download_video {
         }
     }
 
-    # Copy the .srt file from captions dir to downloads dir
+    # Copy the .srt file from captions-dir to downloads-dir
     if ($opt{copy_caption} and -e $video_filename and defined($streaming->{srt_file})) {
         my $from = $streaming->{srt_file};
-        my $to = catfile($opt{downloads_dir}, "$naked_filename.srt");
+        my $to = catfile($opt{downloads_dir}, $srt_filename);
 
         require File::Copy;
         File::Copy::cp($from, $to);
@@ -2878,7 +2991,7 @@ sub get_player_command {
                : ()
             ),
 
-            (    # Caption file (.srt)
+            (    # Subtitle file (.srt)
                defined($streaming->{srt_file})
                  && exists($opt{video_players}{$opt{video_player_selected}}{srt})
                ? $opt{video_players}{$opt{video_player_selected}}{srt}

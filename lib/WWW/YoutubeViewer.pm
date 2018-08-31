@@ -420,20 +420,9 @@ Downloads the $url into $output_file. Returns true on success.
 =cut
 
 sub lwp_mirror {
-    my ($self, $url, $name) = @_;
-
+    my ($self, $url, $output_file) = @_;
     $self->{lwp} // $self->set_lwp_useragent();
-
-    my $response = $self->{lwp}->mirror($url, $name);
-
-    if ($response->is_success) {
-        return 1;
-    }
-    else {
-        warn '[' . $response->status_line() . "] Error occured on URL: $url\n";
-    }
-
-    return;
+    $self->{lwp}->mirror($url, $output_file);
 }
 
 sub _get_results {
