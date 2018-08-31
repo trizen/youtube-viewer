@@ -2895,7 +2895,7 @@ sub download_video {
             }
 
             # Disable `download in parallel` in combination with `merge into mkv`
-            if ($opt{merge_into_mkv} and $audio_info) {
+            if ($opt{merge_into_mkv}) {
                 warn "[!] Downloading in parallel is not supported with `--mkv-merge`...\n";
                 $opt{download_in_parallel} = 0;
             }
