@@ -52,7 +52,7 @@ sub get_itags {
             [
              315,    # webm HFR (v)
              272,    # webm (v)
-             313,    # mp4 (v)
+             313,    # webm (v)
             ],
         ],
 
@@ -85,7 +85,6 @@ sub get_itags {
             [247,    # webm (v)
              136,    # mp4 (v)
             ],
-
             120,     # flv (live) (v-a)
             95,      # ts (live) (v-a)
         ],
@@ -130,13 +129,13 @@ sub get_itags {
         ],
 
         'audio' => [172,     # webm (192 kbps)
-                    251,     # webm (160 kbps)
-                    171,     # webm (128 kbps)
-                    140,     # m4a (128 kbps)
-                    141,     # m4a (256 kbps)
-                    250,     # webm (64 kbps)
-                    249,     # webm (48 kbps)
-                    139,     # m4a (48 kbps)
+                    251,     # webm opus (128-160 kbps)
+                    171,     # webm vorbis (92-128 kbps)
+                    140,     # mp4a (128 kbps)
+                    141,     # mp4a (256 kbps)
+                    250,     # webm opus (64 kbps)
+                    249,     # webm opus (48 kbps)
+                    139,     # mp4a (48 kbps)
                    ],
            };
 #>>>

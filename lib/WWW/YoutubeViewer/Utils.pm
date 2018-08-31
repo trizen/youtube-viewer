@@ -370,6 +370,11 @@ sub get_channel_id {
     $info->{snippet}{resourceId}{channelId} // $info->{snippet}{channelId};
 }
 
+sub get_category_id {
+    my ($self, $info) = @_;
+    $info->{snippet}{resourceId}{categoryId} // $info->{snippet}{categoryId};
+}
+
 sub get_publication_date {
     my ($self, $info) = @_;
     $self->format_date($info->{snippet}{publishedAt});
