@@ -420,7 +420,7 @@ $action_options
 <number>          : play the corresponding video
 3-8, 3..8         : same as 3 4 5 6 7 8
 8-3, 8..3         : same as 8 7 6 5 4 3
-8 2 12 4 6 5 1    : play the videos in your order
+8 2 12 4 6 5 1    : play the videos in a specific order
 10..              : play all the videos onwards from 10
 :q(ueue)=i,i,...  : enqueue videos for playing them later
 :pq, :play-queue  : play the enqueued videos (if any)
@@ -433,9 +433,8 @@ $other_options
 $notes_options
 ** Examples:
 :regex="\\w \\d" -> play videos matched by a regular expression.
-:info=1,4      -> show informations for the first and 4th video.
-:d18-20,1,2    -> download the videos: 18, 19, 20, 1 and 2.
--u=google -D   -> list videos from google with extra details.
+:info=1        -> show extra information for the first video.
+:d18-20,1,2    -> download the selected videos: 18, 19, 20, 1 and 2.
 3 4 :next 9    -> play the 3rd and 4th videos from the current
                   page, go to the next page and play the 9th video.
 STDIN_HELP
@@ -954,7 +953,7 @@ Command: :b, :back (:r, :return)
 Results: get the previous page of results.
 
 Command: :i4..6, :i7-9, :i20-4, :i2, :i=4, :info=4
-Results: show video informations for the selected videos.
+Results: show extra information for the selected videos.
 
 Command: :d5,2, :d=3, :download=8
 Results: download the selected videos.
