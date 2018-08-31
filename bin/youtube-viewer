@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 24 August 2018
+#  Latest edit on: 31 August 2018
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -3075,6 +3075,7 @@ sub print_video_info {
           (
            ['Channel'    => $yv_utils->get_channel_title($video)],
            ['ChannelID'  => $yv_utils->get_channel_id($video)],
+           ['Category'   => $yv_utils->get_category_name($video)],
            ['Definition' => $yv_utils->get_definition($video)],
            ['Duration'   => $yv_utils->format_time($yv_utils->get_duration($video))],
            ['Likes'      => $yv_utils->set_thousands($yv_utils->get_likes($video))],

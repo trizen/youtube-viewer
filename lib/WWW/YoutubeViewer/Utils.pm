@@ -375,6 +375,30 @@ sub get_category_id {
     $info->{snippet}{resourceId}{categoryId} // $info->{snippet}{categoryId};
 }
 
+sub get_category_name {
+    my ($self, $info) = @_;
+
+    state $categories = {
+                         1  => 'Film & Animation',
+                         2  => 'Autos & Vehicles',
+                         10 => 'Music',
+                         15 => 'Pets & Animals',
+                         17 => 'Sports',
+                         19 => 'Travel & Events',
+                         20 => 'Gaming',
+                         22 => 'People & Blogs',
+                         23 => 'Comedy',
+                         24 => 'Entertainment',
+                         25 => 'News & Politics',
+                         26 => 'Howto & Style',
+                         27 => 'Education',
+                         28 => 'Science & Technology',
+                         29 => 'Nonprofits & Activism',
+                        };
+
+    $categories->{$self->get_category_id($info)} // 'Unknown';
+}
+
 sub get_publication_date {
     my ($self, $info) = @_;
     $self->format_date($info->{snippet}{publishedAt});

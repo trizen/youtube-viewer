@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 24 August 2018
+#  Latest edit on: 31 August 2018
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -2422,24 +2422,6 @@ sub add_video_entry {
     my $iter       = $liststore->append;
     my $channel_id = $yv_utils->get_channel_id($video);
 
-    state $categories = {
-                         1  => 'Film & Animation',
-                         2  => 'Autos & Vehicles',
-                         10 => 'Music',
-                         15 => 'Pets & Animals',
-                         17 => 'Sports',
-                         19 => 'Travel & Events',
-                         20 => 'Gaming',
-                         22 => 'People & Blogs',
-                         23 => 'Comedy',
-                         24 => 'Entertainment',
-                         25 => 'News & Politics',
-                         26 => 'Howto & Style',
-                         27 => 'Education',
-                         28 => 'Science & Technology',
-                         29 => 'Nonprofits & Activism',
-                        };
-
     my $row_description = $yv_utils->get_description($video);
     $liststore->set($iter, 4, $row_description);
     $liststore->set($iter, 6, $channel_id);
@@ -2459,7 +2441,7 @@ sub add_video_entry {
                       . "<b>$symbols{down_arrow}\t</b> "
                       . $yv_utils->set_thousands($yv_utils->get_dislikes($video)) . "\n"
                       . "<b>$symbols{ellipsis}\t</b> "
-                      . encode_entities($categories->{$yv_utils->get_category_id($video)}) . "\n"
+                      . encode_entities($yv_utils->get_category_name($video)) . "\n"
                       . "<b>$symbols{face}\t</b> "
                       . encode_entities($yv_utils->get_channel_title($video)) . "\n" . "<i>"
                       . encode_entities($row_description) . "</i>"
