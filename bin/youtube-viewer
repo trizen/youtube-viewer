@@ -330,8 +330,8 @@ my %CONFIG = (
     convert_cmd          => 'ffmpeg -i *IN* *OUT*',
     convert_to           => undef,
 
-    ffmpeg_cmd           => 'ffmpeg',
-    wget_cmd             => 'wget',
+    ffmpeg_cmd => 'ffmpeg',
+    wget_cmd   => 'wget',
 
     merge_into_mkv      => undef,                                                                    # auto-defined later
     merge_into_mkv_args => '-loglevel warning -c:s srt -c:v copy -c:a copy -disposition:s forced',
@@ -2886,9 +2886,19 @@ sub download_video {
     }
     else {
 
-        # Disable `download in parallel` in combination with `download and play`
-        if ($opt{download_and_play}) {
-            $opt{download_in_parallel} = 0;
+        if ($opt{download_in_parallel}) {
+
+            # Disable `download in parallel` in combination with `download and play`
+            if ($opt{download_and_play}) {
+                warn "[!] Downloading in parallel is not supported with `--dl-play`...\n";
+                $opt{download_in_parallel} = 0;
+            }
+
+            # Disable `download in parallel` in combination with `merge into mkv`
+            if ($opt{merge_into_mkv} and $audio_info) {
+                warn "[!] Downloading in parallel is not supported with `--mkv-merge`...\n";
+                $opt{download_in_parallel} = 0;
+            }
         }
 
         $video_filename = download_from_url($video_info->{url}, $video_filename) // return;
