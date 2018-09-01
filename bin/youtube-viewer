@@ -2815,14 +2815,14 @@ sub download_from_url {
             my $resp = eval { $lwp->mirror($url, $output_filename) };
 
             if ($@ =~ /\bread timeout\b/i or not defined($resp) or not $resp->is_success) {
-                warn "\n[!] Encountered an error while downloading... Trying again...\n\n";
+                warn colored("\n[!] Encountered an error while downloading... Trying again...", 'bold red') . "\n\n";
 
                 if (-x '/usr/bin/wget') {
                     $CONFIG{download_with_wget} = 1;
                     dump_configuration();
                 }
                 else {
-                    warn "[!] Please install `wget` and try again...\n\n";
+                    warn colored("[!] Please install `wget` and try again...", 'bold red') . "\n\n";
                 }
 
                 unlink($output_filename);
@@ -2890,13 +2890,13 @@ sub download_video {
 
             # Disable `download in parallel` in combination with `download and play`
             if ($opt{download_and_play}) {
-                warn "[!] Downloading in parallel is not supported with `--dl-play`...\n";
+                warn colored("[!] Downloading in parallel is not supported with `--dl-play`...", 'bold red') . "\n";
                 $opt{download_in_parallel} = 0;
             }
 
             # Disable `download in parallel` in combination with `merge into mkv`
             if ($opt{merge_into_mkv}) {
-                warn "[!] Downloading in parallel is not supported with `--mkv-merge`...\n";
+                warn colored("[!] Downloading in parallel is not supported with `--mkv-merge`...", 'bold red') . "\n";
                 $opt{download_in_parallel} = 0;
             }
         }
@@ -2917,7 +2917,7 @@ sub download_video {
         push @merge_files, $streaming->{srt_file};
     }
 
-    if ($opt{merge_into_mkv} and @merge_files > 1) {
+    if ($opt{merge_into_mkv} and @merge_files > 1 and not -e $mkv_filename) {
 
         say "[*] Merging into MKV...";
         my $merge_command =
@@ -2955,18 +2955,26 @@ sub download_video {
 
         $yv_obj->proxy_system($convert_cmd);
 
-        if ($? == 0 and not $opt{keep_original_video}) {
-            unlink $video_filename
-              or warn colored("\n[!] Can't unlink file '$video_filename': $!", 'bold red') . "\n\n";
+        if ($? == 0) {
+
+            if (not $opt{keep_original_video}) {
+                unlink $video_filename
+                  or warn colored("\n[!] Can't unlink file '$video_filename': $!", 'bold red') . "\n\n";
+            }
+
+            $video_filename = $convert_filename if -e $convert_filename;
         }
     }
 
     # Play the download video
-    elsif ($opt{download_and_play}) {
+    if ($opt{download_and_play}) {
 
-        local $streaming->{streaming}{url} = '';
+        local $streaming->{streaming}{url}       = '';
+        local $streaming->{streaming}{__AUDIO__} = undef;
+        local $streaming->{srt_file} = undef if ($opt{merge_into_mkv} && $opt{merge_with_captions});
+
         my $command = get_player_command($streaming, $info);
-        say $command if $yv_obj->get_debug;
+        say "-> Command: ", $command if $yv_obj->get_debug;
 
         $yv_obj->proxy_system(join(q{ }, $command, quotemeta($video_filename)));
 
@@ -2982,6 +2990,7 @@ sub download_video {
         and -e $video_filename
         and defined($streaming->{srt_file})
         and -e $streaming->{srt_file}) {
+
         my $from = $streaming->{srt_file};
         my $to = catfile($opt{downloads_dir}, $srt_filename);
 
