@@ -711,12 +711,12 @@ if (not defined $CONFIG{terminal}) {
                       'superterm',      'terminator', 'kterm',    'mlterm',
                       'mrxvt',          'rxvt',       'urxvt',    'termite',
                       'termit',         'fbterm',     'stjerm',   'yakuake',
-                      'roxterm',        'xterm'
+                      'tilix',          'roxterm',    'xterm',
       ) {
         if (defined(my $abs_path = which_command($term))) {
             $CONFIG{terminal} = $abs_path;
 
-            # `st` requires changing the default value of `terminal_exec`.
+            # Some terminals require changing the default value of `terminal_exec`.
             # Probably more terminals require this modification. PRs are welcome.
             if (   $term eq 'st'
                 or $term eq 'lxterminal') {
