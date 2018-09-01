@@ -522,7 +522,12 @@ my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 
     # Download with wget if it is installed
     if (not defined $CONFIG{download_with_wget}) {
-        if (-x '/usr/bin/wget' or -x '/usr/local/bin/wget') {
+        if (-x '/usr/bin/wget') {
+            $CONFIG{wget_cmd}           = '/usr/bin/wget';
+            $CONFIG{download_with_wget} = 1;
+        }
+        elsif (-x '/usr/local/bin/wget') {
+            $CONFIG{wget_cmd}           = '/usr/local/bin/wget';
             $CONFIG{download_with_wget} = 1;
         }
         else {
@@ -2886,19 +2891,16 @@ sub download_video {
     }
     else {
 
-        if ($opt{download_in_parallel}) {
+        # Disable `download in parallel` in combination with `download and play`
+        if ($opt{download_in_parallel} and $opt{download_and_play}) {
+            warn colored("[!] Downloading in parallel is not supported with `--dl-play`...", 'bold red') . "\n";
+            $opt{download_in_parallel} = 0;
+        }
 
-            # Disable `download in parallel` in combination with `download and play`
-            if ($opt{download_and_play}) {
-                warn colored("[!] Downloading in parallel is not supported with `--dl-play`...", 'bold red') . "\n";
-                $opt{download_in_parallel} = 0;
-            }
-
-            # Disable `download in parallel` in combination with `merge into mkv`
-            if ($opt{merge_into_mkv}) {
-                warn colored("[!] Downloading in parallel is not supported with `--mkv-merge`...", 'bold red') . "\n";
-                $opt{download_in_parallel} = 0;
-            }
+        # Disable `download in parallel` in combination with `merge into mkv`
+        if ($opt{download_in_parallel} and $opt{merge_into_mkv}) {
+            warn colored("[!] Downloading in parallel is not supported with `--mkv-merge`...", 'bold red') . "\n";
+            $opt{download_in_parallel} = 0;
         }
 
         $video_filename = download_from_url($video_info->{url}, $video_filename) // return;
