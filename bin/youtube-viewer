@@ -305,7 +305,7 @@ my %CONFIG = (
     page                 => 1,
     colors               => $constant{win32} ^ 1,
     clobber              => 0,
-    skip_if_exists       => 0,
+    skip_if_exists       => 1,
     prefer_mp4           => 0,
     fat32safe            => $constant{win32},
     fullscreen           => 0,
@@ -321,7 +321,7 @@ my %CONFIG = (
     keep_original_video  => 0,
     download_and_play    => 0,
     autohide_watched     => 0,
-    highlight_watched    => 0,
+    highlight_watched    => 1,
     highlight_color      => 'bold',
     remove_played_file   => 0,
     history              => 0,
@@ -2880,7 +2880,7 @@ sub download_video {
     if ($opt{skip_if_exists} and -e $video_filename) {
         say "[*] File `$video_filename` already exists. Skipping...";
     }
-    elsif ($opt{skip_if_exists} and $audio_info and -e $mkv_filename) {
+    elsif ($opt{skip_if_exists} and -e $mkv_filename) {
         $video_filename = $mkv_filename;
         say "[*] File `$mkv_filename` already exists. Skipping...";
     }
