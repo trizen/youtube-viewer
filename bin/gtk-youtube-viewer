@@ -3028,6 +3028,7 @@ sub set_entry_details {
     # Setting title
     my $title = substr($main_details, 0, index($main_details, '</big>') + 6, '');
     $gui->get_object('video_title_label')->set_label("<big>$title</big>");
+    $gui->get_object('video_title_label')->set_tooltip_markup("$title");
 
     # Setting video details
     $main_details =~ s/^\s+//;
