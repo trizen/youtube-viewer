@@ -1572,6 +1572,7 @@ sub show_feeds_window {
     my ($video_title) = $info =~ m{^(<big><b>.*?</b></big>)}s;
 
     $feeds_title->set_markup("<big>$video_title</big>");
+    $feeds_title->set_tooltip_markup("$video_title");
 
     $feeds_window->show;
     $feeds_statusbar->pop(0);
