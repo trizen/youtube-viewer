@@ -1572,6 +1572,7 @@ sub show_feeds_window {
     my ($video_title) = $info =~ m{^(<big><b>.*?</b></big>)}s;
 
     $feeds_title->set_markup("<big>$video_title</big>");
+    $feeds_title->set_tooltip_markup("$video_title");
 
     $feeds_window->show;
     $feeds_statusbar->pop(0);
@@ -3028,6 +3029,7 @@ sub set_entry_details {
     # Setting title
     my $title = substr($main_details, 0, index($main_details, '</big>') + 6, '');
     $gui->get_object('video_title_label')->set_label("<big>$title</big>");
+    $gui->get_object('video_title_label')->set_tooltip_markup("$title");
 
     # Setting video details
     $main_details =~ s/^\s+//;

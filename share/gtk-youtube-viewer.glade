@@ -363,6 +363,7 @@
                     <property name="model">liststore1</property>
                     <property name="reorderable">True</property>
                     <property name="search_column">0</property>
+                    <property name="tooltip_column">0</property>
                     <signal name="row-activated" handler="get_code" swapped="no"/>
                     <child>
                       <object class="GtkTreeViewColumn" id="treeviewcolumn2">
