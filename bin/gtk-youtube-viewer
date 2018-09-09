@@ -735,6 +735,11 @@ if (not defined $CONFIG{terminal}) {
     $key =~ s/(.{$i})(.)/$2$1/g while --$i;
 }
 
+my $ResultsHistory = {
+	current => -1,
+	results => [],
+};
+
 # Locate youtube-viewer
 $CONFIG{youtube_viewer} //= which_command('youtube-viewer') // 'youtube-viewer';
 
@@ -2325,11 +2330,13 @@ sub _get_pixbuf_thumbnail {
 }
 
 sub display_results {
-    my ($results) = @_;
+    my ($results, $dont_append_to_results_history) = @_;
 
     if (not $yv_utils->has_entries($results)) {
         die "No results...\n";
     }
+
+	add_results_to_history($results) unless $dont_append_to_results_history;
 
     my $url   = $results->{url};
     my $info  = $results->{results} // {};
@@ -3002,6 +3009,49 @@ sub display_comments {
     }
 
     return 1;
+}
+
+sub add_results_to_history
+{
+	my ($results) = @_;
+	require Storable;
+	my $results_copy = Storable::dclone($results);
+	$ResultsHistory->{current}++;
+	{
+		no warnings 'misc';
+		splice @{$ResultsHistory->{results}}, $ResultsHistory->{current}, 0, $results_copy;
+	}
+	set_prev_next_results_sensitivity();
+}
+sub display_previous_results
+{
+	if($ResultsHistory->{current} > 0)
+	{
+		$ResultsHistory->{current}--;
+		display_relative_results($ResultsHistory->{current});
+	}
+}
+sub display_next_results
+{
+	if($ResultsHistory->{current} < $#{$ResultsHistory->{results}})
+	{
+		$ResultsHistory->{current}++;
+		display_relative_results($ResultsHistory->{current});
+	}
+}
+sub display_relative_results
+{
+	my ($nth_item) = @_;
+	$liststore->clear if $CONFIG{clear_search_list};
+	require Storable;
+	my $results_copy = Storable::dclone($ResultsHistory->{results}->[$nth_item]);
+	display_results($results_copy, 1);
+	set_prev_next_results_sensitivity();
+}
+sub set_prev_next_results_sensitivity
+{
+	$gui->get_object('show_prev_results')->set_sensitive($ResultsHistory->{current} > 0);
+	$gui->get_object('show_next_results')->set_sensitive($ResultsHistory->{current} < $#{$ResultsHistory->{results}});
 }
 
 sub show_videos_from_selected_author {

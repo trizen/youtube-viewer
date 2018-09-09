@@ -126,6 +126,16 @@
     <property name="can_focus">False</property>
     <property name="icon_name">mail-send</property>
   </object>
+  <object class="GtkImage" id="icon-next">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-go-forward</property>
+  </object>
+  <object class="GtkImage" id="icon-previous">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-go-back</property>
+  </object>
   <object class="GtkListStore" id="liststore1">
     <columns>
       <!-- column-name name -->
@@ -288,6 +298,41 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_mainw_destroy" swapped="no"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuItem" id="main-menu-view">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">View</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="main-menu-view-menu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="show_prev_results">
+                        <property name="label" translatable="yes">Previous results</property>
+                        <property name="sensitive">False</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_stock">False</property>
+                        <property name="image">icon-previous</property>
+                        <signal name="activate" handler="display_previous_results" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="show_next_results">
+                        <property name="label" translatable="yes">Next results</property>
+                        <property name="sensitive">False</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_stock">False</property>
+                        <property name="image">icon-next</property>
+                        <signal name="activate" handler="display_next_results" swapped="no"/>
                       </object>
                     </child>
                   </object>
