@@ -3021,6 +3021,7 @@ sub add_results_to_history
 		no warnings 'misc';
 		splice @{$ResultsHistory->{results}}, $ResultsHistory->{current}, 0, $results_copy;
 	}
+	set_prev_next_results_sensitivity();
 }
 sub display_previous_results
 {
@@ -3045,6 +3046,12 @@ sub display_relative_results
 	require Storable;
 	my $results_copy = Storable::dclone($ResultsHistory->{results}->[$nth_item]);
 	display_results($results_copy, 1);
+	set_prev_next_results_sensitivity();
+}
+sub set_prev_next_results_sensitivity
+{
+	$gui->get_object('show_prev_results')->set_sensitive($ResultsHistory->{current} > 0);
+	$gui->get_object('show_next_results')->set_sensitive($ResultsHistory->{current} < $#{$ResultsHistory->{results}});
 }
 
 sub show_videos_from_selected_author {

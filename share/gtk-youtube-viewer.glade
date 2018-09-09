@@ -316,6 +316,7 @@
                     <child>
                       <object class="GtkImageMenuItem" id="show_prev_results">
                         <property name="label" translatable="yes">Previous results</property>
+                        <property name="sensitive">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_stock">False</property>
@@ -326,6 +327,7 @@
                     <child>
                       <object class="GtkImageMenuItem" id="show_next_results">
                         <property name="label" translatable="yes">Next results</property>
+                        <property name="sensitive">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_stock">False</property>
