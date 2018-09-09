@@ -126,6 +126,16 @@
     <property name="can_focus">False</property>
     <property name="icon_name">mail-send</property>
   </object>
+  <object class="GtkImage" id="icon-next">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-go-forward</property>
+  </object>
+  <object class="GtkImage" id="icon-previous">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-go-back</property>
+  </object>
   <object class="GtkListStore" id="liststore1">
     <columns>
       <!-- column-name name -->
@@ -303,6 +313,26 @@
                   <object class="GtkMenu" id="main-menu-view-menu">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="show_prev_results">
+                        <property name="label" translatable="yes">Previous results</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_stock">False</property>
+                        <property name="image">icon-previous</property>
+                        <signal name="activate" handler="display_previous_results" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="show_next_results">
+                        <property name="label" translatable="yes">Next results</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_stock">False</property>
+                        <property name="image">icon-next</property>
+                        <signal name="activate" handler="display_next_results" swapped="no"/>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>
