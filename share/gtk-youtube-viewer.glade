@@ -295,6 +295,19 @@
               </object>
             </child>
             <child>
+              <object class="GtkMenuItem" id="main-menu-view">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">View</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="main-menu-view-menu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
               <object class="GtkMenuItem" id="menuitem4">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
