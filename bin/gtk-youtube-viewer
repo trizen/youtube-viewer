@@ -99,26 +99,6 @@ foreach my $dir ($config_dir) {
     }
 }
 
-## Backwards compatibility for moving the configuration files in the new directory
-{
-    my $old_config_dir = catdir($xdg_config_home, $execname);
-    my $old_config_file        = catfile($old_config_dir, "$execname.conf");
-    my $old_youtube_users_file = catfile($old_config_dir, 'youtube_users.txt');
-
-    if (-e $old_config_file and not -e $config_file) {
-        require File::Copy;
-        File::Copy::move($old_config_file, $config_file)
-          or warn "[!] Can't move the configuration file `$old_config_file' to `$config_file': $!";
-    }
-
-    if (-e $old_youtube_users_file and not -e $youtube_users_file) {
-        require File::Copy;
-        File::Copy::move($old_youtube_users_file, $youtube_users_file)
-          or warn "[!] Can't move the youtube users file `$old_youtube_users_file' to `$youtube_users_file': $!";
-    }
-}
-## end of compatibility
-
 # Video queue for the enqueue feature
 my @VIDEO_QUEUE;
 
@@ -735,10 +715,10 @@ if (not defined $CONFIG{terminal}) {
     $key =~ s/(.{$i})(.)/$2$1/g while --$i;
 }
 
-my $ResultsHistory = {
-	current => -1,
-	results => [],
-};
+my %ResultsHistory = (
+                      current => -1,
+                      results => [],
+                     );
 
 # Locate youtube-viewer
 $CONFIG{youtube_viewer} //= which_command('youtube-viewer') // 'youtube-viewer';
@@ -782,7 +762,6 @@ $spin_start_with_page->set_value(1);
 # Set search for videos
 $search_for_videos_checkbox->set_active(1);
 
-# Set config file to $CONFIG hash ref
 sub apply_configuration {
 
     # Fullscreen mode
@@ -801,7 +780,6 @@ sub apply_configuration {
 
     $published_within_combobox->set_active(0);
 
-    # Others
     foreach my $option_name (
                              qw(
                              videoSyndicated
@@ -824,10 +802,10 @@ sub apply_configuration {
         }
     }
 
-    # Spin button results setting config value
+    # Maximum number of results per page
     $spin_results->set_value($CONFIG{maxResults});
 
-    # Checking thumbs button
+    # Enable/disable thumbnails
     $thumbs_checkbutton->set_active($CONFIG{show_thumbs});
 
     # Prefer MP4 over WEBM
@@ -2330,13 +2308,13 @@ sub _get_pixbuf_thumbnail {
 }
 
 sub display_results {
-    my ($results, $dont_append_to_results_history) = @_;
+    my ($results, $from_history) = @_;
 
     if (not $yv_utils->has_entries($results)) {
         die "No results...\n";
     }
 
-	add_results_to_history($results) unless $dont_append_to_results_history;
+    add_results_to_history($results) if not $from_history;
 
     my $url   = $results->{url};
     my $info  = $results->{results} // {};
@@ -2347,7 +2325,9 @@ sub display_results {
     my %pos;
     my $pos = 0;
     my @video_ids;
-    while (my ($i, $item) = each @{$items}) {
+
+    foreach my $i (0 .. $#{$items}) {
+        my $item = $items->[$i];
         if ($yv_utils->is_video($item)) {
             $pos{$i} = $pos++;
             push @video_ids, $yv_utils->get_video_id($item);
@@ -2355,12 +2335,14 @@ sub display_results {
     }
 
     my $video_details;
+
     if (@video_ids) {
         my $content_details = $yv_obj->video_details(join(',', @video_ids), VIDEO_PART);
         $video_details = $content_details->{results}{items};
     }
 
-    while (my ($i, $item) = each @{$items}) {
+    foreach my $i (0 .. $#{$items}) {
+        my $item = $items->[$i];
         if ($yv_utils->is_playlist($item)) {
             add_playlist_entry($item);
         }
@@ -2371,8 +2353,11 @@ sub display_results {
             add_subscription_entry($item);
         }
         elsif ($yv_utils->is_video($item)) {
-            @{$item}{qw(id contentDetails statistics snippet)} =
-              @{$video_details->[$pos{$i}]}{qw(id contentDetails statistics snippet)};
+
+            if (ref($video_details) eq 'ARRAY') {
+                @{$item}{qw(id contentDetails statistics snippet)} =
+                  @{$video_details->[$pos{$i}]}{qw(id contentDetails statistics snippet)};
+            }
 
             # Filter out private or deleted videos
             $yv_utils->get_video_id($item) // next;
@@ -3011,47 +2996,41 @@ sub display_comments {
     return 1;
 }
 
-sub add_results_to_history
-{
-	my ($results) = @_;
-	require Storable;
-	my $results_copy = Storable::dclone($results);
-	$ResultsHistory->{current}++;
-	{
-		no warnings 'misc';
-		splice @{$ResultsHistory->{results}}, $ResultsHistory->{current}, 0, $results_copy;
-	}
-	set_prev_next_results_sensitivity();
+sub add_results_to_history {
+    my ($results) = @_;
+    require Storable;
+    my $results_copy = Storable::dclone($results);
+    $ResultsHistory{current}++;
+    splice @{$ResultsHistory{results}}, $ResultsHistory{current}, 0, $results_copy;
+    set_prev_next_results_sensitivity();
 }
-sub display_previous_results
-{
-	if($ResultsHistory->{current} > 0)
-	{
-		$ResultsHistory->{current}--;
-		display_relative_results($ResultsHistory->{current});
-	}
+
+sub display_previous_results {
+    if ($ResultsHistory{current} > 0) {
+        $ResultsHistory{current}--;
+        display_relative_results($ResultsHistory{current});
+    }
 }
-sub display_next_results
-{
-	if($ResultsHistory->{current} < $#{$ResultsHistory->{results}})
-	{
-		$ResultsHistory->{current}++;
-		display_relative_results($ResultsHistory->{current});
-	}
+
+sub display_next_results {
+    if ($ResultsHistory{current} < $#{$ResultsHistory{results}}) {
+        $ResultsHistory{current}++;
+        display_relative_results($ResultsHistory{current});
+    }
 }
-sub display_relative_results
-{
-	my ($nth_item) = @_;
-	$liststore->clear if $CONFIG{clear_search_list};
-	require Storable;
-	my $results_copy = Storable::dclone($ResultsHistory->{results}->[$nth_item]);
-	display_results($results_copy, 1);
-	set_prev_next_results_sensitivity();
+
+sub display_relative_results {
+    my ($nth_item) = @_;
+    $liststore->clear if $CONFIG{clear_search_list};
+    require Storable;
+    my $results_copy = Storable::dclone($ResultsHistory{results}[$nth_item]);
+    display_results($results_copy, 1);
+    set_prev_next_results_sensitivity();
 }
-sub set_prev_next_results_sensitivity
-{
-	$gui->get_object('show_prev_results')->set_sensitive($ResultsHistory->{current} > 0);
-	$gui->get_object('show_next_results')->set_sensitive($ResultsHistory->{current} < $#{$ResultsHistory->{results}});
+
+sub set_prev_next_results_sensitivity {
+    $gui->get_object('show_prev_results')->set_sensitive($ResultsHistory{current} > 0);
+    $gui->get_object('show_next_results')->set_sensitive($ResultsHistory{current} < $#{$ResultsHistory{results}});
 }
 
 sub show_videos_from_selected_author {
