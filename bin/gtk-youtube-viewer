@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 31 August 2018
+#  Latest edit on: 14 September 2018
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -2322,27 +2322,27 @@ sub display_results {
 
     hide_feeds_window();
 
-    my %pos;
-    my $pos = 0;
-    my @video_ids;
+    my $video_details;
 
-    foreach my $i (0 .. $#{$items}) {
-        my $item = $items->[$i];
-        if ($yv_utils->is_video($item)) {
-            $pos{$i} = $pos++;
-            push @video_ids, $yv_utils->get_video_id($item);
+    if (not $from_history) {
+        my @video_ids;
+
+        foreach my $i (0 .. $#{$items}) {
+            my $item = $items->[$i];
+            if ($yv_utils->is_video($item)) {
+                push @video_ids, $yv_utils->get_video_id($item);
+            }
+        }
+
+        if (@video_ids) {
+            my $content_details = $yv_obj->video_details(join(',', @video_ids), VIDEO_PART);
+            $video_details = $content_details->{results}{items};
         }
     }
 
-    my $video_details;
-
-    if (@video_ids) {
-        my $content_details = $yv_obj->video_details(join(',', @video_ids), VIDEO_PART);
-        $video_details = $content_details->{results}{items};
-    }
-
     foreach my $i (0 .. $#{$items}) {
         my $item = $items->[$i];
+
         if ($yv_utils->is_playlist($item)) {
             add_playlist_entry($item);
         }
@@ -2352,11 +2352,11 @@ sub display_results {
         elsif ($yv_utils->is_subscription($item)) {
             add_subscription_entry($item);
         }
-        elsif ($yv_utils->is_video($item)) {
+        else {
 
             if (ref($video_details) eq 'ARRAY') {
                 @{$item}{qw(id contentDetails statistics snippet)} =
-                  @{$video_details->[$pos{$i}]}{qw(id contentDetails statistics snippet)};
+                  @{shift @{$video_details}}{qw(id contentDetails statistics snippet)};
             }
 
             # Filter out private or deleted videos
@@ -2998,8 +2998,7 @@ sub display_comments {
 
 sub add_results_to_history {
     my ($results) = @_;
-    require Storable;
-    my $results_copy = Storable::dclone($results);
+    my $results_copy = $results;
     $ResultsHistory{current}++;
     splice @{$ResultsHistory{results}}, $ResultsHistory{current}, 0, $results_copy;
     set_prev_next_results_sensitivity();
@@ -3022,8 +3021,7 @@ sub display_next_results {
 sub display_relative_results {
     my ($nth_item) = @_;
     $liststore->clear if $CONFIG{clear_search_list};
-    require Storable;
-    my $results_copy = Storable::dclone($ResultsHistory{results}[$nth_item]);
+    my $results_copy = $ResultsHistory{results}[$nth_item];
     display_results($results_copy, 1);
     set_prev_next_results_sensitivity();
 }
