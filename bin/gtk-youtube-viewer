@@ -130,6 +130,7 @@ my %symbols = (
                heart       => '❤',
                right_arrow => '→',
                crazy_arrow => '↬',
+               numero      => '№',
               );
 
 # Main configuration
@@ -2525,7 +2526,9 @@ sub add_playlist_entry {
                       . encode_entities($row_description) . '</i>'
                    );
 
-    $liststore->set($iter, 2, "<b>$symbols{diamond}</b>  " . 'Playlist' . "\n");
+    $liststore->set($iter, 2, "<b>$symbols{diamond}</b>  " . 'Playlist' . "\n"
+                      . "<b>$symbols{numero}</b>  $playlist->{contentDetails}->{itemCount} items\n"
+                   );
 
     if ($CONFIG{show_thumbs}) {
         my $pixbuf = _get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($playlist, $CONFIG{thumbnail_type}));
