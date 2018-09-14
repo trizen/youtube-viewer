@@ -2353,11 +2353,11 @@ sub display_results {
         elsif ($yv_utils->is_subscription($item)) {
             add_subscription_entry($item);
         }
-        else {
+        elsif ($from_history ? $yv_utils->get_video_id($item) : $yv_utils->is_video($item)) {
 
             if (ref($video_details) eq 'ARRAY') {
                 @{$item}{qw(id contentDetails statistics snippet)} =
-                  @{shift @{$video_details}}{qw(id contentDetails statistics snippet)};
+                  @{(shift @{$video_details}) // next}{qw(id contentDetails statistics snippet)};
             }
 
             # Filter out private or deleted videos
@@ -2526,8 +2526,15 @@ sub add_playlist_entry {
                       . encode_entities($row_description) . '</i>'
                    );
 
-    $liststore->set($iter, 2, "<b>$symbols{diamond}</b>  " . 'Playlist' . "\n"
-                      . "<b>$symbols{numero}</b>  $playlist->{contentDetails}->{itemCount} items\n"
+    $liststore->set(
+                    $iter, 2,
+                    "<b>$symbols{diamond}</b>  "
+                      . 'Playlist' . "\n"
+                      . (
+                         defined($playlist->{contentDetails}{itemCount})
+                         ? "<b>$symbols{numero}</b>  $playlist->{contentDetails}->{itemCount} items\n"
+                         : ''
+                        )
                    );
 
     if ($CONFIG{show_thumbs}) {
