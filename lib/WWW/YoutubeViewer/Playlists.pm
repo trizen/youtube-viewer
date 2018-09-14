@@ -20,6 +20,10 @@ WWW::YoutubeViewer::Playlists - Youtube playlists handle.
 
 sub _make_playlists_url {
     my ($self, %opts) = @_;
+    if(not exists $opts{'part'})
+    {
+    	$opts{'part'} = 'snippet,contentDetails';
+    }
     $self->_make_feed_url(
                           'playlists',
                           pageToken => $self->page_token,
