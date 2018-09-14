@@ -2323,14 +2323,17 @@ sub display_results {
 
     hide_feeds_window();
 
-    my $video_details;
-
     if (not $from_history) {
         my @video_ids;
+
+        my $position = 0;
+        my $video_details;
+        my %video_position;
 
         foreach my $i (0 .. $#{$items}) {
             my $item = $items->[$i];
             if ($yv_utils->is_video($item)) {
+                $video_position{$i} = $position++;
                 push @video_ids, $yv_utils->get_video_id($item);
             }
         }
@@ -2338,6 +2341,9 @@ sub display_results {
         if (@video_ids) {
             my $content_details = $yv_obj->video_details(join(',', @video_ids), VIDEO_PART);
             $video_details = $content_details->{results}{items};
+
+            $info->{__pos__}     = \%video_position;
+            $info->{__details__} = $video_details;
         }
     }
 
@@ -2353,15 +2359,18 @@ sub display_results {
         elsif ($yv_utils->is_subscription($item)) {
             add_subscription_entry($item);
         }
-        elsif ($from_history ? $yv_utils->get_video_id($item) : $yv_utils->is_video($item)) {
+        elsif ($yv_utils->is_video($item) or $item->{__is_video__}) {
 
-            if (ref($video_details) eq 'ARRAY') {
-                @{$item}{qw(id contentDetails statistics snippet)} =
-                  @{(shift @{$video_details}) // next}{qw(id contentDetails statistics snippet)};
-            }
+            exists($info->{__pos__}{$i}) || next;
+
+            @{$item}{qw(id contentDetails statistics snippet)} =
+              @{$info->{__details__}[$info->{__pos__}{$i}]}{qw(id contentDetails statistics snippet)};
 
             # Filter out private or deleted videos
-            $yv_utils->get_video_id($item) // next;
+            $yv_utils->get_video_id($item) || next;
+
+            # Mark as video
+            $item->{__is_video__} = 1;
 
             # Store the video title to history (when `save_titles_to_history` is true)
             if ($CONFIG{save_titles_to_history}) {
