@@ -156,6 +156,8 @@
       <column type="gchararray"/>
       <!-- column-name json_data -->
       <column type="gchararray"/>
+      <!-- column-name tooltip -->
+      <column type="gchararray"/>
     </columns>
   </object>
   <object class="GtkListStore" id="liststore11">
@@ -408,7 +410,7 @@
                     <property name="model">liststore1</property>
                     <property name="reorderable">True</property>
                     <property name="search_column">0</property>
-                    <property name="tooltip_column">0</property>
+                    <property name="tooltip_column">9</property>
                     <signal name="row-activated" handler="get_code" swapped="no"/>
                     <child>
                       <object class="GtkTreeViewColumn" id="treeviewcolumn2">

@@ -2189,13 +2189,27 @@ sub search {
     return 1;
 }
 
-#---------------------- PRINT VIDEO RESULTS ----------------------#
 sub encode_entities {
     my ($text) = @_;
+
     return q{} if not defined $text;
+
     $text =~ s/&/&amp;/g;
     $text =~ s/</&lt;/g;
     $text =~ s/>/&gt;/g;
+
+    return $text;
+}
+
+sub decode_entities {
+    my ($text) = @_;
+
+    return q{} if not defined $text;
+
+    $text =~ s/&amp;/&/g;
+    $text =~ s/&lt;/</g;
+    $text =~ s/&gt;/>/g;
+
     return $text;
 }
 
@@ -2384,15 +2398,23 @@ sub display_results {
     _append_next_page($url, $info->{nextPageToken});
 }
 
+sub set_entry_tooltip {
+    my ($iter, $title, $description) = @_;
+    $liststore->set($iter, 9, "<b>" . encode_entities($title) . "</b>" . "\n\n" . encode_entities($description));
+}
+
 sub add_subscription_entry {
     my ($subscription) = @_;
 
     my $iter            = $liststore->append;
-    my $row_description = $yv_utils->get_description($subscription);
+    my $title           = $yv_utils->get_title($subscription);
+    my $description     = $yv_utils->get_description($subscription);
+    my $row_description = _make_row_description($description);
 
-    $liststore->set($iter, 4, $row_description);
+    set_entry_tooltip($iter, $title, $description);
+
+    $liststore->set($iter, 4, encode_entities($description));
     $liststore->set($iter, 7, 'subscription');
-    $row_description = _make_row_description($row_description);
 
     my $channel_id = $yv_utils->get_channel_id($subscription);
     $liststore->set($iter, 3, $channel_id);
@@ -2401,7 +2423,7 @@ sub add_subscription_entry {
                     $iter,
                     0,
                     '<big><b>'
-                      . encode_entities($yv_utils->get_title($subscription))
+                      . encode_entities($title)
                       . "</b></big>\n\n"
                       . "<b>$symbols{face}\t</b> "
                       . encode_entities($channel_id) . "\n"
@@ -2422,22 +2444,25 @@ sub add_subscription_entry {
 sub add_video_entry {
     my ($video) = @_;
 
-    my $iter       = $liststore->append;
-    my $channel_id = $yv_utils->get_channel_id($video);
+    my $iter            = $liststore->append;
+    my $title           = $yv_utils->get_title($video);
+    my $channel_id      = $yv_utils->get_channel_id($video);
+    my $description     = $yv_utils->get_description($video);
+    my $row_description = _make_row_description($description);
 
-    my $row_description = $yv_utils->get_description($video);
-    $liststore->set($iter, 4, $row_description);
+    set_entry_tooltip($iter, $title, $description);
+
+    $liststore->set($iter, 4, encode_entities($description));
     $liststore->set($iter, 6, $channel_id);
     $liststore->set($iter, 7, 'video');
     $liststore->set($iter, 8, $yv_obj->make_json_string($video));
-    $row_description = _make_row_description($row_description);
 
     $liststore->set($iter, 3, $yv_utils->get_video_id($video));
     $liststore->set(
                     $iter,
                     0,
                     "<big><b>"
-                      . encode_entities($yv_utils->get_title($video))
+                      . encode_entities($title)
                       . "</b></big>\n"
                       . "<b>$symbols{up_arrow}\t</b> "
                       . $yv_utils->set_thousands($yv_utils->get_likes($video)) . "\n"
@@ -2474,11 +2499,14 @@ sub add_channel_entry {
     my ($channel) = @_;
 
     my $iter            = $liststore->append;
-    my $row_description = $yv_utils->get_description($channel);
+    my $title           = $yv_utils->get_title($channel);
+    my $description     = $yv_utils->get_description($channel);
+    my $row_description = _make_row_description($description);
 
-    $liststore->set($iter, 4, $row_description);
+    set_entry_tooltip($iter, $title, $description);
+
+    $liststore->set($iter, 4, encode_entities($description));
     $liststore->set($iter, 7, 'channel');
-    $row_description = _make_row_description($row_description);
 
     my $channel_id = $yv_utils->get_channel_id($channel);
     $liststore->set($iter, 3, $channel_id);
@@ -2487,7 +2515,7 @@ sub add_channel_entry {
                     $iter,
                     0,
                     '<big><b>'
-                      . encode_entities($yv_utils->get_title($channel))
+                      . encode_entities($title)
                       . "</b></big>\n\n"
                       . "<b>$symbols{face}\t</b> "
                       . encode_entities($yv_utils->get_channel_title($channel)) . "\n"
@@ -2511,12 +2539,14 @@ sub add_playlist_entry {
     my ($playlist) = @_;
 
     my $iter            = $liststore->append;
-    my $row_description = $yv_utils->get_description($playlist);
+    my $title           = $yv_utils->get_title($playlist);
+    my $description     = $yv_utils->get_description($playlist);
     my $playlist_id     = $yv_utils->get_playlist_id($playlist);
+    my $row_description = _make_row_description($description);
 
-    $liststore->set($iter, 4, $row_description);
-    $row_description = _make_row_description($row_description);
+    set_entry_tooltip($iter, $title, $description);
 
+    $liststore->set($iter, 4, encode_entities($description));
     $liststore->set($iter, 6, $yv_utils->get_channel_id($playlist));
     $liststore->set($iter, 7, 'playlist');
     $liststore->set($iter, 3, $playlist_id);
@@ -2524,7 +2554,7 @@ sub add_playlist_entry {
                     $iter,
                     0,
                     '<big><b>'
-                      . encode_entities($yv_utils->get_title($playlist))
+                      . encode_entities($title)
                       . "</b></big>\n\n"
                       . "<b>$symbols{face}\t</b> "
                       . encode_entities($yv_utils->get_channel_title($playlist)) . "\n"
@@ -3107,7 +3137,7 @@ sub set_entry_details {
     }
 
     # Setting textview description
-    set_text($gui->get_object('description_textview'), $liststore->get($iter, 4));
+    set_text($gui->get_object('description_textview'), decode_entities($liststore->get($iter, 4)));
     return 1;
 }
 
