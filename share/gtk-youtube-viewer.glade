@@ -32,6 +32,16 @@
     <signal name="deleted-text" handler="analyze_text" swapped="no"/>
     <signal name="inserted-text" handler="analyze_text" swapped="no"/>
   </object>
+  <object class="GtkImage" id="icon-next">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-go-forward</property>
+  </object>
+  <object class="GtkImage" id="icon-previous">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-go-back</property>
+  </object>
   <object class="GtkImage" id="icon_from_pixbuf">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -125,16 +135,6 @@
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">mail-send</property>
-  </object>
-  <object class="GtkImage" id="icon-next">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-go-forward</property>
-  </object>
-  <object class="GtkImage" id="icon-previous">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-go-back</property>
   </object>
   <object class="GtkListStore" id="liststore1">
     <columns>
@@ -318,22 +318,22 @@
                     <child>
                       <object class="GtkImageMenuItem" id="show_prev_results">
                         <property name="label" translatable="yes">Previous results</property>
-                        <property name="sensitive">False</property>
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
-                        <property name="use_stock">False</property>
                         <property name="image">icon-previous</property>
+                        <property name="use_stock">False</property>
                         <signal name="activate" handler="display_previous_results" swapped="no"/>
                       </object>
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="show_next_results">
                         <property name="label" translatable="yes">Next results</property>
-                        <property name="sensitive">False</property>
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
-                        <property name="use_stock">False</property>
                         <property name="image">icon-next</property>
+                        <property name="use_stock">False</property>
                         <signal name="activate" handler="display_next_results" swapped="no"/>
                       </object>
                     </child>
@@ -638,6 +638,22 @@
                                                   </packing>
                                                 </child>
                                                 <child>
+                                                  <object class="GtkButton" id="button10">
+                                                    <property name="label" translatable="yes">Playlists</property>
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">True</property>
+                                                    <property name="receives_default">True</property>
+                                                    <property name="image">image14</property>
+                                                    <property name="image_position">top</property>
+                                                    <signal name="clicked" handler="playlists_button" swapped="no"/>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="expand">False</property>
+                                                    <property name="fill">False</property>
+                                                    <property name="position">5</property>
+                                                  </packing>
+                                                </child>
+                                                <child>
                                                   <object class="GtkButton" id="button7">
                                                     <property name="label" translatable="yes">Log out</property>
                                                     <property name="visible">True</property>
@@ -650,7 +666,7 @@
                                                   <packing>
                                                     <property name="expand">False</property>
                                                     <property name="fill">False</property>
-                                                    <property name="position">5</property>
+                                                    <property name="position">6</property>
                                                   </packing>
                                                 </child>
                                               </object>

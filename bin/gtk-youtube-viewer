@@ -2069,6 +2069,12 @@ sub dislikes_button {
     dislikes($type, $username);
 }
 
+sub playlists_button {
+    my $type     = $panel_account_type_combobox->get_active_text;
+    my $username = $panel_user_entry->get_text;
+    playlists($type, $username);
+}
+
 {
     no strict 'refs';
     foreach my $name (qw(favorites uploads likes dislikes playlists subscriptions)) {
@@ -2080,6 +2086,10 @@ sub dislikes_button {
             if (not $type =~ /^(?:user|channel)/i) {
                 if ($name eq 'likes') {
                     $method = 'my_likes';
+                }
+
+                if ($name eq 'playlists') {
+                    $method = 'my_playlists';
                 }
             }
 
