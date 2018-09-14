@@ -1227,16 +1227,23 @@ sub apply_configuration {
     }
 
     if (defined $opt->{user_videos}) {
-        if ($opt->{user_videos} =~ /$valid_channel_id_re/) {
-            print_videos($yv_obj->uploads_from_username(delete $opt->{user_videos}));
+        my $id = delete $opt->{user_videos};
+        if ($id =~ /$valid_channel_id_re/) {
+            print_videos($yv_obj->uploads_from_username($+{channel_id}));
         }
         else {
-            warn_invalid("username", $opt->{user_videos});
+            warn_invalid("username", $id);
         }
     }
 
     if (defined $opt->{channel_id_videos}) {
-        print_videos($yv_obj->uploads(delete $opt->{channel_id_videos}));
+        my $id = delete $opt->{channel_id_videos};
+        if ($id =~ /$valid_channel_id_re/) {
+            print_videos($yv_obj->uploads($+{channel_id}));
+        }
+        else {
+            warn_invalid("channelID", $id);
+        }
     }
 
     if (defined $opt->{subscriptions}) {
@@ -1254,15 +1261,30 @@ sub apply_configuration {
     }
 
     if (defined $opt->{user_playlists}) {
-        print_playlists($yv_obj->playlists_from_username(delete $opt->{user_playlists}));
+        my $id = delete $opt->{user_playlists};
+
+        if ($id =~ /$valid_channel_id_re/) {
+            print_playlists($yv_obj->playlists_from_username($+{channel_id}));
+        }
+        else {
+            warn_invalid("username", $id);
+        }
     }
 
     if (defined $opt->{channel_playlists}) {
-        print_playlists($yv_obj->playlists(delete $opt->{channel_playlists}));
+        my $id = delete $opt->{channel_playlists};
+
+        if ($id =~ /$valid_channel_id_re/) {
+            print_playlists($yv_obj->playlists($+{channel_id}));
+        }
+        else {
+            warn_invalid("channelID", $id);
+        }
     }
 
     if (defined $opt->{favorites}) {
         my $channel_id = delete($opt->{favorites});
+
         print_videos(
                        $channel_id
                      ? $yv_obj->favorites($channel_id)
@@ -1272,6 +1294,7 @@ sub apply_configuration {
 
     if (defined $opt->{likes}) {
         my $channel_id = delete($opt->{likes});
+
         print_videos(
                        $channel_id
                      ? $yv_obj->likes($channel_id)
@@ -1286,8 +1309,9 @@ sub apply_configuration {
 
     if (defined $opt->{user_favorited_videos}) {
         my $username = delete $opt->{user_favorited_videos};
+
         if ($username =~ /$valid_channel_id_re/) {
-            print_videos($yv_obj->favorites_from_username($username));
+            print_videos($yv_obj->favorites_from_username($+{channel_id}));
         }
         else {
             warn_invalid("username", $username);
@@ -1296,8 +1320,9 @@ sub apply_configuration {
 
     if (defined $opt->{user_liked_videos}) {
         my $username = delete $opt->{user_liked_videos};
+
         if ($username =~ /$valid_channel_id_re/) {
-            print_videos($yv_obj->likes_from_username($username));
+            print_videos($yv_obj->likes_from_username($+{channel_id}));
         }
         else {
             warn_invalid("username", $username);
@@ -1960,7 +1985,11 @@ sub subscribe_to {
 
     foreach my $channel (@ids) {
         if ($channel =~ /$valid_channel_id_re/) {
-            if ($is_channel ? $yv_obj->subscribe_channel($channel) : $yv_obj->subscribe_channel_from_username($channel)) {
+            if (
+                  $is_channel
+                ? $yv_obj->subscribe_channel($+{channel_id})
+                : $yv_obj->subscribe_channel_from_username($+{channel_id})
+              ) {
                 print "[*] Successfully subscribed to channel: $channel\n";
             }
             else {
@@ -1992,6 +2021,12 @@ sub youtube_urls {
     }
     elsif ($arg =~ /$get_playlist_id_re/) {
         get_and_print_videos_from_playlist($+{playlist_id});
+    }
+    elsif ($arg =~ /$get_channel_playlists_id/) {
+        print_playlists($yv_obj->playlists($+{channel_id}));
+    }
+    elsif ($arg =~ /$get_channel_videos_id/) {
+        print_videos($yv_obj->uploads($+{channel_id}));
     }
     else {
         return;

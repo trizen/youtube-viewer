@@ -27,7 +27,10 @@ our $non_digit_or_opt_re = qr{^(?!$range_num_re)(?>[0-9]{1,2}[^0-9]|[0-9]{3}|[^0
 
 # Generic name
 my $generic_name_re = qr/[a-zA-Z0-9_.\-]{11,34}/;
-our $valid_channel_id_re = qr{^(?:\w+(?:[-.]++\w++)*|$generic_name_re)\z};
+our $valid_channel_id_re = qr{^(?:.*/channel/)?(?<channel_id>(?:\w+(?:[-.]++\w++)*|$generic_name_re))(?:/.*)?\z};
+
+our $get_channel_videos_id    = qr{^.*/channel/(?<channel_id>(?:\w+(?:[-.]++\w++)*|$generic_name_re))};
+our $get_channel_playlists_id = qr{$get_channel_videos_id/playlists};
 
 # Video ID
 my $video_id_re = qr/[0-9A-Za-z_\-]{11}/;
@@ -50,6 +53,8 @@ our @EXPORT = qw(
   $valid_playlist_id_re
   $get_playlist_id_re
   $valid_opt_re
+  $get_channel_videos_id
+  $get_channel_playlists_id
   );
 
 =head1 AUTHOR

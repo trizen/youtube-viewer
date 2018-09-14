@@ -356,7 +356,7 @@ while (my ($key, $value) = each %objects) {
 
 # __WARN__ handle
 local $SIG{__WARN__} = sub {
-    my $warning = _strip_edge_spaces(join('', @_));
+    my $warning = strip_spaces(join('', @_));
 
     return if $warning =~ / at \(eval /;
     return if $warning =~ /\bunhandled exception in callback:/;
@@ -1826,6 +1826,7 @@ sub set_youtube_tops {
                     my ($channel, $label) = split(' ', $entry, 2);
 
                     if (defined($channel) and $channel =~ /$valid_channel_id_re/) {
+                        $channel = $+{channel_id};
                         if (defined($label) and $label =~ /\S/) {
                             $channels{$channel} = $label;
                         }
@@ -1899,13 +1900,17 @@ sub set_youtube_tops {
         # Validate the channel id
         if (defined($channel_id) and $channel_id =~ /$valid_channel_id_re/) {
 
+            $channel_id = $+{channel_id};
+
             # Get the channel name when empty
             if (not defined($channel_name) or not $channel_name =~ /\S/) {
                 $channel_name = $yv_obj->channel_title_from_id($channel_id) // die "Invalid channel ID: <<$channel_id>>";
             }
         }
         elsif (defined($channel_name) and $channel_name =~ /$valid_channel_id_re/) {
-            $channel_id = $yv_obj->channel_id_from_username($channel_name);
+
+            $channel_name = $+{channel_id};
+            $channel_id   = $yv_obj->channel_id_from_username($channel_name);
 
             if (not defined $channel_id) {
                 die "Can't get channel ID from username: <<$channel_name>>";
@@ -1927,6 +1932,10 @@ sub set_youtube_tops {
         # Validate the channel ID
         if (not defined($channel_id) or not $channel_id =~ /$valid_channel_id_re/) {
             return;
+        }
+
+        if ($channel_id =~ /$valid_channel_id_re/) {
+            $channel_id = $+{channel_id};
         }
 
         # Channel ID already exists in the list
@@ -2128,6 +2137,14 @@ sub check_keywords {
     elsif ($key =~ /$get_playlist_id_re/o) {
         list_playlist($+{playlist_id});
     }
+    elsif ($key =~ /$get_channel_playlists_id/) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($yv_obj->playlists($+{channel_id}));
+    }
+    elsif ($key =~ /$get_channel_videos_id/) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($yv_obj->uploads($+{channel_id}));
+    }
     else {
         return;
     }
@@ -2139,6 +2156,7 @@ sub search {
     my $keywords = $search_entry->get_text();
 
     return if check_keywords($keywords);
+
     $liststore->clear if $CONFIG{clear_search_list};
 
     # Remember the input text when "history" is enabled
@@ -2249,12 +2267,11 @@ sub get_code {
       : return;
 }
 
-sub _make_row_description {
-    (my $row_description = join(q{ }, split(q{ }, $_[0]))) =~ s/(.)\1{3,}/$1/sg;
-    return $row_description;
+sub make_row_description {
+    join(q{ }, split(q{ }, $_[0])) =~ s/(.)\1{3,}/$1/sgr;
 }
 
-sub _append_next_page {
+sub append_next_page {
     my ($url, $token) = @_;
 
     $token // return;    # no next page is available
@@ -2286,7 +2303,7 @@ sub determine_image_format {
     return undef;
 }
 
-sub _get_pixbuf_thumbnail {
+sub get_pixbuf_thumbnail {
     my ($url, $xsize, $ysize) = @_;
 
     $xsize //= 160;
@@ -2395,7 +2412,7 @@ sub display_results {
         }
     }
 
-    _append_next_page($url, $info->{nextPageToken});
+    append_next_page($url, $info->{nextPageToken});
 }
 
 sub set_entry_tooltip {
@@ -2409,7 +2426,7 @@ sub add_subscription_entry {
     my $iter            = $liststore->append;
     my $title           = $yv_utils->get_title($subscription);
     my $description     = $yv_utils->get_description($subscription);
-    my $row_description = _make_row_description($description);
+    my $row_description = make_row_description($description);
 
     set_entry_tooltip($iter, $title, $description);
 
@@ -2436,7 +2453,7 @@ sub add_subscription_entry {
     $liststore->set($iter, 2, "<b>$symbols{diamond}</b>  " . 'Subscription' . "\n");
 
     if ($CONFIG{show_thumbs}) {
-        my $pixbuf = _get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($subscription, $CONFIG{thumbnail_type}));
+        my $pixbuf = get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($subscription, $CONFIG{thumbnail_type}));
         $liststore->set_value($iter, 1, $pixbuf);
     }
 }
@@ -2448,7 +2465,7 @@ sub add_video_entry {
     my $title           = $yv_utils->get_title($video);
     my $channel_id      = $yv_utils->get_channel_id($video);
     my $description     = $yv_utils->get_description($video);
-    my $row_description = _make_row_description($description);
+    my $row_description = make_row_description($description);
 
     set_entry_tooltip($iter, $title, $description);
 
@@ -2490,7 +2507,7 @@ sub add_video_entry {
 
     if ($CONFIG{show_thumbs}) {
         my $thumb_url = $yv_utils->get_thumbnail_url($video, $CONFIG{thumbnail_type});
-        my $pixbuf = _get_pixbuf_thumbnail($thumb_url);
+        my $pixbuf = get_pixbuf_thumbnail($thumb_url);
         $liststore->set_value($iter, 1, $pixbuf);
     }
 }
@@ -2501,7 +2518,7 @@ sub add_channel_entry {
     my $iter            = $liststore->append;
     my $title           = $yv_utils->get_title($channel);
     my $description     = $yv_utils->get_description($channel);
-    my $row_description = _make_row_description($description);
+    my $row_description = make_row_description($description);
 
     set_entry_tooltip($iter, $title, $description);
 
@@ -2530,7 +2547,7 @@ sub add_channel_entry {
     $liststore->set($iter, 2, "<b>$symbols{diamond}</b>  " . 'Channel' . "\n");
 
     if ($CONFIG{show_thumbs}) {
-        my $pixbuf = _get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($channel, $CONFIG{thumbnail_type}));
+        my $pixbuf = get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($channel, $CONFIG{thumbnail_type}));
         $liststore->set_value($iter, 1, $pixbuf);
     }
 }
@@ -2542,7 +2559,7 @@ sub add_playlist_entry {
     my $title           = $yv_utils->get_title($playlist);
     my $description     = $yv_utils->get_description($playlist);
     my $playlist_id     = $yv_utils->get_playlist_id($playlist);
-    my $row_description = _make_row_description($description);
+    my $row_description = make_row_description($description);
 
     set_entry_tooltip($iter, $title, $description);
 
@@ -2577,7 +2594,7 @@ sub add_playlist_entry {
                    );
 
     if ($CONFIG{show_thumbs}) {
-        my $pixbuf = _get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($playlist, $CONFIG{thumbnail_type}));
+        my $pixbuf = get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($playlist, $CONFIG{thumbnail_type}));
         $liststore->set_value($iter, 1, $pixbuf);
     }
 }
@@ -2645,7 +2662,7 @@ sub is_valid_username {
     return 1;
 }
 
-sub _strip_edge_spaces {
+sub strip_spaces {
     my ($text) = @_;
     $text =~ s/^\s+//;
     return unpack 'A*', $text;
@@ -3128,7 +3145,7 @@ sub set_entry_details {
     # Getting thumbs
     foreach my $nr (qw(1 2 3)) {
         if ($code =~ /$valid_video_id_re/) {
-            my $pixbuf = _get_pixbuf_thumbnail(sprintf($CONFIG{youtube_thumb_url}, $code, $nr), 120, 90);
+            my $pixbuf = get_pixbuf_thumbnail(sprintf($CONFIG{youtube_thumb_url}, $code, $nr), 120, 90);
             $gui->get_object("image$nr")->set_from_pixbuf($pixbuf);
         }
         else {
