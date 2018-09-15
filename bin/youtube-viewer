@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 01 September 2018
+#  Latest edit on: 15 September 2018
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -2022,11 +2022,17 @@ sub youtube_urls {
     elsif ($arg =~ /$get_playlist_id_re/) {
         get_and_print_videos_from_playlist($+{playlist_id});
     }
-    elsif ($arg =~ /$get_channel_playlists_id/) {
+    elsif ($arg =~ /$get_channel_playlists_id_re/) {
         print_playlists($yv_obj->playlists($+{channel_id}));
     }
-    elsif ($arg =~ /$get_channel_videos_id/) {
+    elsif ($arg =~ /$get_channel_videos_id_re/) {
         print_videos($yv_obj->uploads($+{channel_id}));
+    }
+    elsif ($arg =~ /$get_username_playlists_re/) {
+        print_playlists($yv_obj->playlists_from_username($+{username}));
+    }
+    elsif ($arg =~ /$get_username_videos_re/) {
+        print_videos($yv_obj->uploads_from_username($+{username}));
     }
     else {
         return;

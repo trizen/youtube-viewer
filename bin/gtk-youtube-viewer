@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 14 September 2018
+#  Latest edit on: 15 September 2018
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -2147,13 +2147,17 @@ sub check_keywords {
     elsif ($key =~ /$get_playlist_id_re/o) {
         list_playlist($+{playlist_id});
     }
-    elsif ($key =~ /$get_channel_playlists_id/) {
-        $liststore->clear if $CONFIG{clear_search_list};
-        display_results($yv_obj->playlists($+{channel_id}));
+    elsif ($key =~ /$get_channel_playlists_id_re/) {
+        list_channel_playlists($+{channel_id});
     }
-    elsif ($key =~ /$get_channel_videos_id/) {
-        $liststore->clear if $CONFIG{clear_search_list};
-        display_results($yv_obj->uploads($+{channel_id}));
+    elsif ($key =~ /$get_channel_videos_id_re/) {
+        list_channel_videos($+{channel_id});
+    }
+    elsif ($key =~ /$get_username_playlists_re/) {
+        list_username_playlists($+{username});
+    }
+    elsif ($key =~ /$get_username_videos_re/) {
+        list_username_videos($+{username});
     }
     else {
         return;
@@ -2624,6 +2628,70 @@ sub list_playlist {
     return;
 }
 
+sub list_channel_videos {
+    my ($channel_id) = @_;
+
+    my $results = $yv_obj->uploads($channel_id);
+
+    if ($yv_utils->has_entries($results)) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($results);
+        return 1;
+    }
+    else {
+        die "[!] No videos for channel ID: $channel_id\n";
+    }
+    return;
+}
+
+sub list_username_videos {
+    my ($username) = @_;
+
+    my $results = $yv_obj->uploads_from_username($username);
+
+    if ($yv_utils->has_entries($results)) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($results);
+        return 1;
+    }
+    else {
+        die "[!] No videos for user: $username\n";
+    }
+    return;
+}
+
+sub list_channel_playlists {
+    my ($channel_id) = @_;
+
+    my $results = $yv_obj->playlists($channel_id);
+
+    if ($yv_utils->has_entries($results)) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($results);
+        return 1;
+    }
+    else {
+        die "[!] No playlists for channel ID: $channel_id\n";
+    }
+    return;
+}
+
+sub list_username_playlists {
+    my ($username) = @_;
+
+    my $results = $yv_obj->playlists_from_username($username);
+
+    if ($yv_utils->has_entries($results)) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($results);
+        return 1;
+    }
+    else {
+        die "[!] No playlists for user: $username\n";
+    }
+    return;
+}
+
 sub favorites_from_text_entry {
     my ($text_entry) = @_;
     favorites($channel_type_combobox->get_active_text, $text_entry->get_text);
@@ -2647,29 +2715,6 @@ sub likes_from_text_entry {
 sub subscriptions_from_text_entry {
     my ($text_entry) = @_;
     subscriptions($channel_type_combobox->get_active_text, $text_entry->get_text);
-}
-
-# Get videos from username
-sub videos_from_username {
-    my ($username) = @_;
-    is_valid_username($username) or return;
-
-    my $results = $yv_obj->get_videos_from_username($username);
-    if ($yv_utils->has_entries($results)) {
-        $liststore->clear if $CONFIG{clear_search_list};
-        display_results($results);
-    }
-    else {
-        die "No video uploaded by: <$username>\n";
-    }
-    return 1;
-}
-
-sub is_valid_username {
-    my ($username) = @_;
-    die "Invalid username: <$username>\n"
-      unless $username =~ /$valid_channel_id_re/;
-    return 1;
 }
 
 sub strip_spaces {
