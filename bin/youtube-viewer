@@ -330,6 +330,9 @@ my %CONFIG = (
     convert_cmd          => 'ffmpeg -i *IN* *OUT*',
     convert_to           => undef,
 
+    custom_layout        => 0,
+    custom_layout_format => '*NO*. *TITLE* (*AUTHOR*) (*RATING*) [*TIME*]\n',
+
     ffmpeg_cmd => 'ffmpeg',
     wget_cmd   => 'wget',
 
@@ -785,6 +788,7 @@ usage: $execname [options] ([url] | [keywords])
    -C  --colorful!      : use colors to delimit the video results
    -D  --details!       : a new look for the results, with more details
    -W  --fixed-width!   : adjust the results to fit inside the term width
+       --custom-layout! : display the results using a custom layout (see conf)
    -i  --info=s         : show some info for a videoID or URL
    -e  --extract=s      : extract information from videos (see: -T)
        --extract-file=s : extract the information from videos in this file
@@ -899,6 +903,7 @@ sub tricks {
   *VIEWS*       : the number of views
   *LIKES*       : the number of likes
   *DISLIKES*    : the number of dislikes
+  *RATING*      : the rating of the video from 0 to 5
   *COMMENTS*    : the number of comments
   *DURATION*    : the duration of the video in seconds
   *DIMENSION*   : the dimension of the video (2D or 3D)
@@ -1464,6 +1469,9 @@ sub parse_arguments {
         'dash!'                 => \$opt{dash_support},
         'confirm!'              => \$opt{confirm},
         'prefer-mp4!'           => \$opt{prefer_mp4},
+
+        'custom-layout!'         => \$opt{custom_layout},
+        'custom-layout-format=s' => \$opt{custom_layout_format},
 
         'merge-into-mkv|mkv-merge!'           => \$opt{merge_into_mkv},
         'merge-with-captions|merge-captions!' => \$opt{merge_with_captions},
@@ -3327,7 +3335,20 @@ sub print_videos {
     foreach my $i (0 .. $#{$videos}) {
         my $video = $videos->[$i];
 
-        if ($opt{results_with_details}) {
+        if ($opt{custom_layout}) {
+
+            my $entry = $opt{custom_layout_format};
+            $entry =~ s/\*NO\*/sprintf('%2d', $i+1)/ge;
+
+            $entry = $yv_utils->format_text(
+                                            info   => $video,
+                                            text   => $entry,
+                                            escape => 0,
+                                           );
+
+            push @formatted, $entry;
+        }
+        elsif ($opt{results_with_details}) {
             push @formatted,
               ($i == 0 ? '' : "\n")
               . sprintf(

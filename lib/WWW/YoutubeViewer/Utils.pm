@@ -222,28 +222,41 @@ sub format_text {
         CAPTION     => sub { $self->get_caption($info) },
         DESCRIPTION => sub { $self->get_description($info) },
 
-        RESOLUTION => sub {
-            $streaming->{resolution} =~ /^\d+\z/
-              ? $streaming->{resolution} . 'p'
-              : $streaming->{resolution};
+        RATING => sub {
+            my $likes    = $self->get_likes($info);
+            my $dislikes = $self->get_dislikes($info);
+
+            sprintf('%.2f', $likes / ($likes + $dislikes) * 5);
         },
 
-        ITAG   => sub { $streaming->{streaming}{itag} },
-        SUB    => sub { $streaming->{srt_file} },
-        VIDEO  => sub { $streaming->{streaming}{url} },
-        FORMAT => sub { $self->extension($streaming->{streaming}{type}) },
+        (
+         defined($streaming)
+         ? (
+            RESOLUTION => sub {
+                $streaming->{resolution} =~ /^\d+\z/
+                  ? $streaming->{resolution} . 'p'
+                  : $streaming->{resolution};
+            },
 
-        AUDIO => sub {
-            ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
-              ? $streaming->{streaming}{__AUDIO__}{url}
-              : q{};
-        },
+            ITAG   => sub { $streaming->{streaming}{itag} },
+            SUB    => sub { $streaming->{srt_file} },
+            VIDEO  => sub { $streaming->{streaming}{url} },
+            FORMAT => sub { $self->extension($streaming->{streaming}{type}) },
 
-        AOV => sub {
-            ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
-              ? $streaming->{streaming}{__AUDIO__}{url}
-              : $streaming->{streaming}{url};
-        },
+            AUDIO => sub {
+                ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
+                  ? $streaming->{streaming}{__AUDIO__}{url}
+                  : q{};
+            },
+
+            AOV => sub {
+                ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
+                  ? $streaming->{streaming}{__AUDIO__}{url}
+                  : $streaming->{streaming}{url};
+            },
+           )
+         : ()
+        ),
 
         URL => sub { sprintf($self->{youtube_url_format}, $self->get_video_id($info)) },
                          );
