@@ -2596,15 +2596,42 @@ sub add_playlist_entry {
                       . encode_entities($row_description) . '</i>'
                    );
 
+    my $num_items_template = "<b>$symbols{numero}</b>  %d items\n";
+    my $num_items_text = "";
+    if(defined($playlist->{contentDetails}{itemCount}))
+    {
+        $num_items_text = sprintf $num_items_template, $playlist->{contentDetails}->{itemCount};
+    }
+    else
+    {
+        # append number of items delayed
+        Glib::Idle->add(
+            sub {
+                my ($liststore, $iter, $text_column, $playlist_id, $playlist_id_column, $num_items_template) = @{$_[0]};
+                # fetch contentDetails of playlist
+                my $results = $yv_obj->playlist_from_id($playlist_id);
+                my $info = $results->{results};
+                my $items = $info->{items};
+                my $item = $items->[0];
+                # ensure the given iter still represents the given playlist
+                if($liststore->get($iter, $playlist_id_column) eq $playlist_id)
+                {
+                    my $text = $liststore->get($iter, $text_column);
+                    $text .= sprintf $num_items_template, $item->{contentDetails}->{itemCount};
+                    $liststore->set($iter, $text_column, $text);
+                }
+                return 0;
+            },
+            [$liststore, $iter, 2, $playlist_id, 3, $num_items_template],
+            Glib::G_PRIORITY_DEFAULT_IDLE
+        );
+    }
+
     $liststore->set(
                     $iter, 2,
                     "<b>$symbols{diamond}</b>  "
                       . 'Playlist' . "\n"
-                      . (
-                         defined($playlist->{contentDetails}{itemCount})
-                         ? "<b>$symbols{numero}</b>  $playlist->{contentDetails}->{itemCount} items\n"
-                         : ''
-                        )
+                      . $num_items_text
                    );
 
     if ($CONFIG{show_thumbs}) {
