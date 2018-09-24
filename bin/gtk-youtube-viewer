@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 31 August 2018
+#  Latest edit on: 15 September 2018
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -28,7 +28,7 @@ no warnings 'once';
 my $DEVEL;    # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel only
 
-use WWW::YoutubeViewer v3.4.1;
+use WWW::YoutubeViewer v3.5.0;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use Gtk2 qw(-init);
@@ -130,6 +130,7 @@ my %symbols = (
                heart       => '❤',
                right_arrow => '→',
                crazy_arrow => '↬',
+               numero      => '№',
               );
 
 # Main configuration
@@ -355,7 +356,7 @@ while (my ($key, $value) = each %objects) {
 
 # __WARN__ handle
 local $SIG{__WARN__} = sub {
-    my $warning = _strip_edge_spaces(join('', @_));
+    my $warning = strip_spaces(join('', @_));
 
     return if $warning =~ / at \(eval /;
     return if $warning =~ /\bunhandled exception in callback:/;
@@ -1825,6 +1826,7 @@ sub set_youtube_tops {
                     my ($channel, $label) = split(' ', $entry, 2);
 
                     if (defined($channel) and $channel =~ /$valid_channel_id_re/) {
+                        $channel = $+{channel_id};
                         if (defined($label) and $label =~ /\S/) {
                             $channels{$channel} = $label;
                         }
@@ -1898,13 +1900,17 @@ sub set_youtube_tops {
         # Validate the channel id
         if (defined($channel_id) and $channel_id =~ /$valid_channel_id_re/) {
 
+            $channel_id = $+{channel_id};
+
             # Get the channel name when empty
             if (not defined($channel_name) or not $channel_name =~ /\S/) {
                 $channel_name = $yv_obj->channel_title_from_id($channel_id) // die "Invalid channel ID: <<$channel_id>>";
             }
         }
         elsif (defined($channel_name) and $channel_name =~ /$valid_channel_id_re/) {
-            $channel_id = $yv_obj->channel_id_from_username($channel_name);
+
+            $channel_name = $+{channel_id};
+            $channel_id   = $yv_obj->channel_id_from_username($channel_name);
 
             if (not defined $channel_id) {
                 die "Can't get channel ID from username: <<$channel_name>>";
@@ -1926,6 +1932,10 @@ sub set_youtube_tops {
         # Validate the channel ID
         if (not defined($channel_id) or not $channel_id =~ /$valid_channel_id_re/) {
             return;
+        }
+
+        if ($channel_id =~ /$valid_channel_id_re/) {
+            $channel_id = $+{channel_id};
         }
 
         # Channel ID already exists in the list
@@ -2059,6 +2069,12 @@ sub dislikes_button {
     dislikes($type, $username);
 }
 
+sub playlists_button {
+    my $type     = $panel_account_type_combobox->get_active_text;
+    my $username = $panel_user_entry->get_text;
+    playlists($type, $username);
+}
+
 {
     no strict 'refs';
     foreach my $name (qw(favorites uploads likes dislikes playlists subscriptions)) {
@@ -2070,6 +2086,10 @@ sub dislikes_button {
             if (not $type =~ /^(?:user|channel)/i) {
                 if ($name eq 'likes') {
                     $method = 'my_likes';
+                }
+
+                if ($name eq 'playlists') {
+                    $method = 'my_playlists';
                 }
             }
 
@@ -2127,6 +2147,18 @@ sub check_keywords {
     elsif ($key =~ /$get_playlist_id_re/o) {
         list_playlist($+{playlist_id});
     }
+    elsif ($key =~ /$get_channel_playlists_id_re/) {
+        list_channel_playlists($+{channel_id});
+    }
+    elsif ($key =~ /$get_channel_videos_id_re/) {
+        list_channel_videos($+{channel_id});
+    }
+    elsif ($key =~ /$get_username_playlists_re/) {
+        list_username_playlists($+{username});
+    }
+    elsif ($key =~ /$get_username_videos_re/) {
+        list_username_videos($+{username});
+    }
     else {
         return;
     }
@@ -2138,6 +2170,7 @@ sub search {
     my $keywords = $search_entry->get_text();
 
     return if check_keywords($keywords);
+
     $liststore->clear if $CONFIG{clear_search_list};
 
     # Remember the input text when "history" is enabled
@@ -2188,13 +2221,27 @@ sub search {
     return 1;
 }
 
-#---------------------- PRINT VIDEO RESULTS ----------------------#
 sub encode_entities {
     my ($text) = @_;
+
     return q{} if not defined $text;
+
     $text =~ s/&/&amp;/g;
     $text =~ s/</&lt;/g;
     $text =~ s/>/&gt;/g;
+
+    return $text;
+}
+
+sub decode_entities {
+    my ($text) = @_;
+
+    return q{} if not defined $text;
+
+    $text =~ s/&amp;/&/g;
+    $text =~ s/&lt;/</g;
+    $text =~ s/&gt;/>/g;
+
     return $text;
 }
 
@@ -2234,12 +2281,11 @@ sub get_code {
       : return;
 }
 
-sub _make_row_description {
-    (my $row_description = join(q{ }, split(q{ }, $_[0]))) =~ s/(.)\1{3,}/$1/sg;
-    return $row_description;
+sub make_row_description {
+    join(q{ }, split(q{ }, $_[0])) =~ s/(.)\1{3,}/$1/sgr;
 }
 
-sub _append_next_page {
+sub append_next_page {
     my ($url, $token) = @_;
 
     $token // return;    # no next page is available
@@ -2271,7 +2317,7 @@ sub determine_image_format {
     return undef;
 }
 
-sub _get_pixbuf_thumbnail {
+sub get_pixbuf_thumbnail {
     my ($url, $xsize, $ysize) = @_;
 
     $xsize //= 160;
@@ -2322,27 +2368,33 @@ sub display_results {
 
     hide_feeds_window();
 
-    my %pos;
-    my $pos = 0;
-    my @video_ids;
+    if (not $from_history) {
+        my @video_ids;
 
-    foreach my $i (0 .. $#{$items}) {
-        my $item = $items->[$i];
-        if ($yv_utils->is_video($item)) {
-            $pos{$i} = $pos++;
-            push @video_ids, $yv_utils->get_video_id($item);
+        my $position = 0;
+        my $video_details;
+        my %video_position;
+
+        foreach my $i (0 .. $#{$items}) {
+            my $item = $items->[$i];
+            if ($yv_utils->is_video($item)) {
+                $video_position{$i} = $position++;
+                push @video_ids, $yv_utils->get_video_id($item);
+            }
+        }
+
+        if (@video_ids) {
+            my $content_details = $yv_obj->video_details(join(',', @video_ids), VIDEO_PART);
+            $video_details = $content_details->{results}{items};
+
+            $info->{__pos__}     = \%video_position;
+            $info->{__details__} = $video_details;
         }
     }
 
-    my $video_details;
-
-    if (@video_ids) {
-        my $content_details = $yv_obj->video_details(join(',', @video_ids), VIDEO_PART);
-        $video_details = $content_details->{results}{items};
-    }
-
     foreach my $i (0 .. $#{$items}) {
         my $item = $items->[$i];
+
         if ($yv_utils->is_playlist($item)) {
             add_playlist_entry($item);
         }
@@ -2352,15 +2404,18 @@ sub display_results {
         elsif ($yv_utils->is_subscription($item)) {
             add_subscription_entry($item);
         }
-        elsif ($yv_utils->is_video($item)) {
+        elsif ($yv_utils->is_video($item) or $item->{__is_video__}) {
 
-            if (ref($video_details) eq 'ARRAY') {
-                @{$item}{qw(id contentDetails statistics snippet)} =
-                  @{$video_details->[$pos{$i}]}{qw(id contentDetails statistics snippet)};
-            }
+            exists($info->{__pos__}{$i}) || next;
+
+            @{$item}{qw(id contentDetails statistics snippet)} =
+              @{$info->{__details__}[$info->{__pos__}{$i}]}{qw(id contentDetails statistics snippet)};
 
             # Filter out private or deleted videos
-            $yv_utils->get_video_id($item) // next;
+            $yv_utils->get_video_id($item) || next;
+
+            # Mark as video
+            $item->{__is_video__} = 1;
 
             # Store the video title to history (when `save_titles_to_history` is true)
             if ($CONFIG{save_titles_to_history}) {
@@ -2371,18 +2426,26 @@ sub display_results {
         }
     }
 
-    _append_next_page($url, $info->{nextPageToken});
+    append_next_page($url, $info->{nextPageToken});
+}
+
+sub set_entry_tooltip {
+    my ($iter, $title, $description) = @_;
+    $liststore->set($iter, 9, "<b>" . encode_entities($title) . "</b>" . "\n\n" . encode_entities($description));
 }
 
 sub add_subscription_entry {
     my ($subscription) = @_;
 
     my $iter            = $liststore->append;
-    my $row_description = $yv_utils->get_description($subscription);
+    my $title           = $yv_utils->get_title($subscription);
+    my $description     = $yv_utils->get_description($subscription);
+    my $row_description = make_row_description($description);
 
-    $liststore->set($iter, 4, $row_description);
+    set_entry_tooltip($iter, $title, $description);
+
+    $liststore->set($iter, 4, encode_entities($description));
     $liststore->set($iter, 7, 'subscription');
-    $row_description = _make_row_description($row_description);
 
     my $channel_id = $yv_utils->get_channel_id($subscription);
     $liststore->set($iter, 3, $channel_id);
@@ -2391,7 +2454,7 @@ sub add_subscription_entry {
                     $iter,
                     0,
                     '<big><b>'
-                      . encode_entities($yv_utils->get_title($subscription))
+                      . encode_entities($title)
                       . "</b></big>\n\n"
                       . "<b>$symbols{face}\t</b> "
                       . encode_entities($channel_id) . "\n"
@@ -2404,7 +2467,7 @@ sub add_subscription_entry {
     $liststore->set($iter, 2, "<b>$symbols{diamond}</b>  " . 'Subscription' . "\n");
 
     if ($CONFIG{show_thumbs}) {
-        my $pixbuf = _get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($subscription, $CONFIG{thumbnail_type}));
+        my $pixbuf = get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($subscription, $CONFIG{thumbnail_type}));
         $liststore->set_value($iter, 1, $pixbuf);
     }
 }
@@ -2412,22 +2475,25 @@ sub add_subscription_entry {
 sub add_video_entry {
     my ($video) = @_;
 
-    my $iter       = $liststore->append;
-    my $channel_id = $yv_utils->get_channel_id($video);
+    my $iter            = $liststore->append;
+    my $title           = $yv_utils->get_title($video);
+    my $channel_id      = $yv_utils->get_channel_id($video);
+    my $description     = $yv_utils->get_description($video);
+    my $row_description = make_row_description($description);
 
-    my $row_description = $yv_utils->get_description($video);
-    $liststore->set($iter, 4, $row_description);
+    set_entry_tooltip($iter, $title, $description);
+
+    $liststore->set($iter, 4, encode_entities($description));
     $liststore->set($iter, 6, $channel_id);
     $liststore->set($iter, 7, 'video');
     $liststore->set($iter, 8, $yv_obj->make_json_string($video));
-    $row_description = _make_row_description($row_description);
 
     $liststore->set($iter, 3, $yv_utils->get_video_id($video));
     $liststore->set(
                     $iter,
                     0,
                     "<big><b>"
-                      . encode_entities($yv_utils->get_title($video))
+                      . encode_entities($title)
                       . "</b></big>\n"
                       . "<b>$symbols{up_arrow}\t</b> "
                       . $yv_utils->set_thousands($yv_utils->get_likes($video)) . "\n"
@@ -2455,7 +2521,7 @@ sub add_video_entry {
 
     if ($CONFIG{show_thumbs}) {
         my $thumb_url = $yv_utils->get_thumbnail_url($video, $CONFIG{thumbnail_type});
-        my $pixbuf = _get_pixbuf_thumbnail($thumb_url);
+        my $pixbuf = get_pixbuf_thumbnail($thumb_url);
         $liststore->set_value($iter, 1, $pixbuf);
     }
 }
@@ -2464,11 +2530,14 @@ sub add_channel_entry {
     my ($channel) = @_;
 
     my $iter            = $liststore->append;
-    my $row_description = $yv_utils->get_description($channel);
+    my $title           = $yv_utils->get_title($channel);
+    my $description     = $yv_utils->get_description($channel);
+    my $row_description = make_row_description($description);
 
-    $liststore->set($iter, 4, $row_description);
+    set_entry_tooltip($iter, $title, $description);
+
+    $liststore->set($iter, 4, encode_entities($description));
     $liststore->set($iter, 7, 'channel');
-    $row_description = _make_row_description($row_description);
 
     my $channel_id = $yv_utils->get_channel_id($channel);
     $liststore->set($iter, 3, $channel_id);
@@ -2477,7 +2546,7 @@ sub add_channel_entry {
                     $iter,
                     0,
                     '<big><b>'
-                      . encode_entities($yv_utils->get_title($channel))
+                      . encode_entities($title)
                       . "</b></big>\n\n"
                       . "<b>$symbols{face}\t</b> "
                       . encode_entities($yv_utils->get_channel_title($channel)) . "\n"
@@ -2492,7 +2561,7 @@ sub add_channel_entry {
     $liststore->set($iter, 2, "<b>$symbols{diamond}</b>  " . 'Channel' . "\n");
 
     if ($CONFIG{show_thumbs}) {
-        my $pixbuf = _get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($channel, $CONFIG{thumbnail_type}));
+        my $pixbuf = get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($channel, $CONFIG{thumbnail_type}));
         $liststore->set_value($iter, 1, $pixbuf);
     }
 }
@@ -2501,12 +2570,14 @@ sub add_playlist_entry {
     my ($playlist) = @_;
 
     my $iter            = $liststore->append;
-    my $row_description = $yv_utils->get_description($playlist);
+    my $title           = $yv_utils->get_title($playlist);
+    my $description     = $yv_utils->get_description($playlist);
     my $playlist_id     = $yv_utils->get_playlist_id($playlist);
+    my $row_description = make_row_description($description);
 
-    $liststore->set($iter, 4, $row_description);
-    $row_description = _make_row_description($row_description);
+    set_entry_tooltip($iter, $title, $description);
 
+    $liststore->set($iter, 4, encode_entities($description));
     $liststore->set($iter, 6, $yv_utils->get_channel_id($playlist));
     $liststore->set($iter, 7, 'playlist');
     $liststore->set($iter, 3, $playlist_id);
@@ -2514,7 +2585,7 @@ sub add_playlist_entry {
                     $iter,
                     0,
                     '<big><b>'
-                      . encode_entities($yv_utils->get_title($playlist))
+                      . encode_entities($title)
                       . "</b></big>\n\n"
                       . "<b>$symbols{face}\t</b> "
                       . encode_entities($yv_utils->get_channel_title($playlist)) . "\n"
@@ -2525,10 +2596,19 @@ sub add_playlist_entry {
                       . encode_entities($row_description) . '</i>'
                    );
 
-    $liststore->set($iter, 2, "<b>$symbols{diamond}</b>  " . 'Playlist' . "\n");
+    $liststore->set(
+                    $iter, 2,
+                    "<b>$symbols{diamond}</b>  "
+                      . 'Playlist' . "\n"
+                      . (
+                         defined($playlist->{contentDetails}{itemCount})
+                         ? "<b>$symbols{numero}</b>  $playlist->{contentDetails}->{itemCount} items\n"
+                         : ''
+                        )
+                   );
 
     if ($CONFIG{show_thumbs}) {
-        my $pixbuf = _get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($playlist, $CONFIG{thumbnail_type}));
+        my $pixbuf = get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($playlist, $CONFIG{thumbnail_type}));
         $liststore->set_value($iter, 1, $pixbuf);
     }
 }
@@ -2544,6 +2624,70 @@ sub list_playlist {
     }
     else {
         die "[!] Inexistent playlist...\n";
+    }
+    return;
+}
+
+sub list_channel_videos {
+    my ($channel_id) = @_;
+
+    my $results = $yv_obj->uploads($channel_id);
+
+    if ($yv_utils->has_entries($results)) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($results);
+        return 1;
+    }
+    else {
+        die "[!] No videos for channel ID: $channel_id\n";
+    }
+    return;
+}
+
+sub list_username_videos {
+    my ($username) = @_;
+
+    my $results = $yv_obj->uploads_from_username($username);
+
+    if ($yv_utils->has_entries($results)) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($results);
+        return 1;
+    }
+    else {
+        die "[!] No videos for user: $username\n";
+    }
+    return;
+}
+
+sub list_channel_playlists {
+    my ($channel_id) = @_;
+
+    my $results = $yv_obj->playlists($channel_id);
+
+    if ($yv_utils->has_entries($results)) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($results);
+        return 1;
+    }
+    else {
+        die "[!] No playlists for channel ID: $channel_id\n";
+    }
+    return;
+}
+
+sub list_username_playlists {
+    my ($username) = @_;
+
+    my $results = $yv_obj->playlists_from_username($username);
+
+    if ($yv_utils->has_entries($results)) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($results);
+        return 1;
+    }
+    else {
+        die "[!] No playlists for user: $username\n";
     }
     return;
 }
@@ -2573,30 +2717,7 @@ sub subscriptions_from_text_entry {
     subscriptions($channel_type_combobox->get_active_text, $text_entry->get_text);
 }
 
-# Get videos from username
-sub videos_from_username {
-    my ($username) = @_;
-    is_valid_username($username) or return;
-
-    my $results = $yv_obj->get_videos_from_username($username);
-    if ($yv_utils->has_entries($results)) {
-        $liststore->clear if $CONFIG{clear_search_list};
-        display_results($results);
-    }
-    else {
-        die "No video uploaded by: <$username>\n";
-    }
-    return 1;
-}
-
-sub is_valid_username {
-    my ($username) = @_;
-    die "Invalid username: <$username>\n"
-      unless $username =~ /$valid_channel_id_re/;
-    return 1;
-}
-
-sub _strip_edge_spaces {
+sub strip_spaces {
     my ($text) = @_;
     $text =~ s/^\s+//;
     return unpack 'A*', $text;
@@ -2998,8 +3119,7 @@ sub display_comments {
 
 sub add_results_to_history {
     my ($results) = @_;
-    require Storable;
-    my $results_copy = Storable::dclone($results);
+    my $results_copy = $results;
     $ResultsHistory{current}++;
     splice @{$ResultsHistory{results}}, $ResultsHistory{current}, 0, $results_copy;
     set_prev_next_results_sensitivity();
@@ -3022,8 +3142,7 @@ sub display_next_results {
 sub display_relative_results {
     my ($nth_item) = @_;
     $liststore->clear if $CONFIG{clear_search_list};
-    require Storable;
-    my $results_copy = Storable::dclone($ResultsHistory{results}[$nth_item]);
+    my $results_copy = $ResultsHistory{results}[$nth_item];
     display_results($results_copy, 1);
     set_prev_next_results_sensitivity();
 }
@@ -3081,7 +3200,7 @@ sub set_entry_details {
     # Getting thumbs
     foreach my $nr (qw(1 2 3)) {
         if ($code =~ /$valid_video_id_re/) {
-            my $pixbuf = _get_pixbuf_thumbnail(sprintf($CONFIG{youtube_thumb_url}, $code, $nr), 120, 90);
+            my $pixbuf = get_pixbuf_thumbnail(sprintf($CONFIG{youtube_thumb_url}, $code, $nr), 120, 90);
             $gui->get_object("image$nr")->set_from_pixbuf($pixbuf);
         }
         else {
@@ -3090,7 +3209,7 @@ sub set_entry_details {
     }
 
     # Setting textview description
-    set_text($gui->get_object('description_textview'), $liststore->get($iter, 4));
+    set_text($gui->get_object('description_textview'), decode_entities($liststore->get($iter, 4)));
     return 1;
 }
 

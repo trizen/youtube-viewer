@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 01 September 2018
+#  Latest edit on: 15 September 2018
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -137,7 +137,7 @@ no warnings 'once';
 my $DEVEL;    # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
-use WWW::YoutubeViewer v3.4.1;
+use WWW::YoutubeViewer v3.5.0;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
@@ -329,6 +329,9 @@ my %CONFIG = (
     history_file         => $history_file,
     convert_cmd          => 'ffmpeg -i *IN* *OUT*',
     convert_to           => undef,
+
+    custom_layout        => 0,
+    custom_layout_format => '*NO*. *TITLE* (*AUTHOR*) (*RATING*) [*TIME*]\n',
 
     ffmpeg_cmd => 'ffmpeg',
     wget_cmd   => 'wget',
@@ -785,6 +788,7 @@ usage: $execname [options] ([url] | [keywords])
    -C  --colorful!      : use colors to delimit the video results
    -D  --details!       : a new look for the results, with more details
    -W  --fixed-width!   : adjust the results to fit inside the term width
+       --custom-layout! : display the results using a custom layout (see conf)
    -i  --info=s         : show some info for a videoID or URL
    -e  --extract=s      : extract information from videos (see: -T)
        --extract-file=s : extract the information from videos in this file
@@ -899,6 +903,7 @@ sub tricks {
   *VIEWS*       : the number of views
   *LIKES*       : the number of likes
   *DISLIKES*    : the number of dislikes
+  *RATING*      : the rating of the video from 0 to 5
   *COMMENTS*    : the number of comments
   *DURATION*    : the duration of the video in seconds
   *DIMENSION*   : the dimension of the video (2D or 3D)
@@ -1227,16 +1232,23 @@ sub apply_configuration {
     }
 
     if (defined $opt->{user_videos}) {
-        if ($opt->{user_videos} =~ /$valid_channel_id_re/) {
-            print_videos($yv_obj->uploads_from_username(delete $opt->{user_videos}));
+        my $id = delete $opt->{user_videos};
+        if ($id =~ /$valid_channel_id_re/) {
+            print_videos($yv_obj->uploads_from_username($+{channel_id}));
         }
         else {
-            warn_invalid("username", $opt->{user_videos});
+            warn_invalid("username", $id);
         }
     }
 
     if (defined $opt->{channel_id_videos}) {
-        print_videos($yv_obj->uploads(delete $opt->{channel_id_videos}));
+        my $id = delete $opt->{channel_id_videos};
+        if ($id =~ /$valid_channel_id_re/) {
+            print_videos($yv_obj->uploads($+{channel_id}));
+        }
+        else {
+            warn_invalid("channelID", $id);
+        }
     }
 
     if (defined $opt->{subscriptions}) {
@@ -1254,15 +1266,30 @@ sub apply_configuration {
     }
 
     if (defined $opt->{user_playlists}) {
-        print_playlists($yv_obj->playlists_from_username(delete $opt->{user_playlists}));
+        my $id = delete $opt->{user_playlists};
+
+        if ($id =~ /$valid_channel_id_re/) {
+            print_playlists($yv_obj->playlists_from_username($+{channel_id}));
+        }
+        else {
+            warn_invalid("username", $id);
+        }
     }
 
     if (defined $opt->{channel_playlists}) {
-        print_playlists($yv_obj->playlists(delete $opt->{channel_playlists}));
+        my $id = delete $opt->{channel_playlists};
+
+        if ($id =~ /$valid_channel_id_re/) {
+            print_playlists($yv_obj->playlists($+{channel_id}));
+        }
+        else {
+            warn_invalid("channelID", $id);
+        }
     }
 
     if (defined $opt->{favorites}) {
         my $channel_id = delete($opt->{favorites});
+
         print_videos(
                        $channel_id
                      ? $yv_obj->favorites($channel_id)
@@ -1272,6 +1299,7 @@ sub apply_configuration {
 
     if (defined $opt->{likes}) {
         my $channel_id = delete($opt->{likes});
+
         print_videos(
                        $channel_id
                      ? $yv_obj->likes($channel_id)
@@ -1286,8 +1314,9 @@ sub apply_configuration {
 
     if (defined $opt->{user_favorited_videos}) {
         my $username = delete $opt->{user_favorited_videos};
+
         if ($username =~ /$valid_channel_id_re/) {
-            print_videos($yv_obj->favorites_from_username($username));
+            print_videos($yv_obj->favorites_from_username($+{channel_id}));
         }
         else {
             warn_invalid("username", $username);
@@ -1296,8 +1325,9 @@ sub apply_configuration {
 
     if (defined $opt->{user_liked_videos}) {
         my $username = delete $opt->{user_liked_videos};
+
         if ($username =~ /$valid_channel_id_re/) {
-            print_videos($yv_obj->likes_from_username($username));
+            print_videos($yv_obj->likes_from_username($+{channel_id}));
         }
         else {
             warn_invalid("username", $username);
@@ -1439,6 +1469,9 @@ sub parse_arguments {
         'dash!'                 => \$opt{dash_support},
         'confirm!'              => \$opt{confirm},
         'prefer-mp4!'           => \$opt{prefer_mp4},
+
+        'custom-layout!'         => \$opt{custom_layout},
+        'custom-layout-format=s' => \$opt{custom_layout_format},
 
         'merge-into-mkv|mkv-merge!'           => \$opt{merge_into_mkv},
         'merge-with-captions|merge-captions!' => \$opt{merge_with_captions},
@@ -1960,7 +1993,11 @@ sub subscribe_to {
 
     foreach my $channel (@ids) {
         if ($channel =~ /$valid_channel_id_re/) {
-            if ($is_channel ? $yv_obj->subscribe_channel($channel) : $yv_obj->subscribe_channel_from_username($channel)) {
+            if (
+                  $is_channel
+                ? $yv_obj->subscribe_channel($+{channel_id})
+                : $yv_obj->subscribe_channel_from_username($+{channel_id})
+              ) {
                 print "[*] Successfully subscribed to channel: $channel\n";
             }
             else {
@@ -1992,6 +2029,18 @@ sub youtube_urls {
     }
     elsif ($arg =~ /$get_playlist_id_re/) {
         get_and_print_videos_from_playlist($+{playlist_id});
+    }
+    elsif ($arg =~ /$get_channel_playlists_id_re/) {
+        print_playlists($yv_obj->playlists($+{channel_id}));
+    }
+    elsif ($arg =~ /$get_channel_videos_id_re/) {
+        print_videos($yv_obj->uploads($+{channel_id}));
+    }
+    elsif ($arg =~ /$get_username_playlists_re/) {
+        print_playlists($yv_obj->playlists_from_username($+{username}));
+    }
+    elsif ($arg =~ /$get_username_videos_re/) {
+        print_videos($yv_obj->uploads_from_username($+{username}));
     }
     else {
         return;
@@ -3286,7 +3335,20 @@ sub print_videos {
     foreach my $i (0 .. $#{$videos}) {
         my $video = $videos->[$i];
 
-        if ($opt{results_with_details}) {
+        if ($opt{custom_layout}) {
+
+            my $entry = $opt{custom_layout_format};
+            $entry =~ s/\*NO\*/sprintf('%2d', $i+1)/ge;
+
+            $entry = $yv_utils->format_text(
+                                            info   => $video,
+                                            text   => $entry,
+                                            escape => 0,
+                                           );
+
+            push @formatted, $entry;
+        }
+        elsif ($opt{results_with_details}) {
             push @formatted,
               ($i == 0 ? '' : "\n")
               . sprintf(
