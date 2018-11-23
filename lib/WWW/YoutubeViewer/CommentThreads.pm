@@ -42,7 +42,7 @@ sub comments_from_video_id {
                                                           videoId    => $video_id,
                                                           textFormat => 'plainText',
                                                           order      => 'time',
-                                                          part       => 'snippet'
+                                                          part       => 'snippet,replies'
                                                          ),
                           simple => 1,
                          );

@@ -200,7 +200,7 @@ else {
 }
 
 # Configuration dir/file
-my $config_dir = catdir($xdg_config_home, $execname);
+my $config_dir          = catdir($xdg_config_home, $execname);
 my $config_file         = catfile($config_dir, "$execname.conf");
 my $authentication_file = catfile($config_dir, 'reg.dat');
 my $history_file        = catfile($config_dir, 'history.txt');
@@ -1442,7 +1442,7 @@ sub parse_arguments {
                 ($format =~ /json/i) ? 'json' : ($format =~ /perl/i) ? 'perl' : do {
                     warn "[!] Invalid format <<$format>> for option --dump\n";
                     undef;
-                  }
+                }
             );
         },
 
@@ -1805,7 +1805,7 @@ INFO
 
     if (defined $info->{access_token}) {
 
-        $yv_obj->set_access_token($info->{access_token}) // return;
+        $yv_obj->set_access_token($info->{access_token})   // return;
         $yv_obj->set_refresh_token($info->{refresh_token}) // return;
 
         my $remember_me = ask_yn(prompt  => colored("\nRemember me", 'bold'),
@@ -1936,7 +1936,7 @@ sub get_and_print_video_info {
     foreach my $id (@_) {
 
         my $videoID = get_valid_video_id($id) // next;
-        my $info = $yv_obj->video_details($videoID, VIDEO_PART);
+        my $info    = $yv_obj->video_details($videoID, VIDEO_PART);
 
         if ($yv_utils->has_entries($info)) {
             print_video_info($info->{results}{items}[0]);
@@ -2245,7 +2245,7 @@ sub adj_width {
         } // do {
             warn "[WARN] Please install Unicode::GCString or Text::CharWidth in order to use this functionality.\n";
             '';
-          }
+        }
     );
 
     #
@@ -2258,7 +2258,7 @@ sub adj_width {
 
         if ($str_width != $len) {
             while ($str_width > $len) {
-                $gcstr = $gcstr->substr(0, -1);
+                $gcstr     = $gcstr->substr(0, -1);
                 $str_width = $gcstr->columns;
             }
 
@@ -2333,7 +2333,7 @@ sub print_channels {
             my @dates   = map { $yv_utils->get_publication_date($_) } @{$channels};
 
             my $author_width = List::Util::min(List::Util::max(map { length($_) } @authors), int($term_width / 5));
-            my $dates_width = List::Util::max(map { length($_) } @dates);
+            my $dates_width  = List::Util::max(map { length($_) } @dates);
             my $title_length = $term_width - ($author_width + $dates_width + 2 + 3 + 1 + 2);
 
             print "\n";
@@ -2417,15 +2417,30 @@ sub print_comments {
         my $snippet = (($comment->{snippet} // next)->{topLevelComment} // next)->{snippet};
 
         printf(
-               "\n%s on %s said:\n%s\n",
+               "\n%s on %s commented:\n%s\n",
                colored($snippet->{authorDisplayName}, 'bold'),
                $yv_utils->format_date($snippet->{publishedAt}),
                wrap_text(
-                         i_tab => q{ } x 4,
-                         s_tab => q{ } x 4,
+                         i_tab => q{ } x 3,
+                         s_tab => q{ } x 3,
                          text  => [$snippet->{textDisplay} // 'Empty comment...']
                         ),
               );
+
+        if (exists $comment->{replies}) {
+            foreach my $reply (reverse @{$comment->{replies}{comments}}) {
+                printf(
+                       "\n   %s on %s replied:\n%s\n",
+                       colored($reply->{snippet}{authorDisplayName}, 'bold'),
+                       $yv_utils->format_date($reply->{snippet}{publishedAt}),
+                       wrap_text(
+                                 i_tab => q{ } x 6,
+                                 s_tab => q{ } x 6,
+                                 text  => [$reply->{snippet}{textDisplay} // 'Empty comment...']
+                                ),
+                      );
+            }
+        }
     }
 
     my @keywords = get_input_for_comments();
@@ -2604,7 +2619,7 @@ FORMAT
             my @dates   = map { $yv_utils->get_publication_date($_) } @{$playlists};
 
             my $author_width = List::Util::min(List::Util::max(map { length($_) } @authors), int($term_width / 5));
-            my $dates_width = List::Util::max(map { length($_) } @dates);
+            my $dates_width  = List::Util::max(map { length($_) } @dates);
             my $title_length = $term_width - ($author_width + $dates_width + 2 + 3 + 1 + 2);
 
             print "\n";
@@ -3043,7 +3058,7 @@ sub download_video {
         and -e $streaming->{srt_file}) {
 
         my $from = $streaming->{srt_file};
-        my $to = catfile($opt{downloads_dir}, $srt_filename);
+        my $to   = catfile($opt{downloads_dir}, $srt_filename);
 
         require File::Copy;
         File::Copy::cp($from, $to);
@@ -3055,7 +3070,7 @@ sub download_video {
 sub get_player_command {
     my ($streaming, $video) = @_;
 
-    $MPLAYER{fullscreen} = $opt{fullscreen} ? $opt{video_players}{$opt{video_player_selected}}{fs} // ''      : q{};
+    $MPLAYER{fullscreen} = $opt{fullscreen} ? $opt{video_players}{$opt{video_player_selected}}{fs}      // '' : q{};
     $MPLAYER{novideo}    = $opt{novideo}    ? $opt{video_players}{$opt{video_player_selected}}{novideo} // '' : q{};
     $MPLAYER{mplayer_arguments} = $opt{video_players}{$opt{video_player_selected}}{arg} // q{};
 
@@ -3315,7 +3330,7 @@ sub print_videos {
 
     if (@{$videos} and not $results->{has_extra_info}) {
         my $content_details = $yv_obj->video_details(join(',', map { $yv_utils->get_video_id($_) } @{$videos}), VIDEO_PART);
-        my $video_details = $content_details->{results}{items};
+        my $video_details   = $content_details->{results}{items};
         foreach my $i (0 .. $#{$videos}) {
             @{$videos->[$i]}{qw(id contentDetails statistics snippet)} =
               @{$video_details->[$i]}{qw(id contentDetails statistics snippet)};
@@ -3386,7 +3401,7 @@ sub print_videos {
             my @authors   = map { $yv_utils->get_channel_title($_) } @{$videos};
 
             my $author_width = List::Util::min(List::Util::max(map { length($_) } @authors) || 1, int($term_width / 5));
-            my $time_width = List::Util::first(sub { $_ >= 3600 }, @durations) ? 8 : 6;
+            my $time_width   = List::Util::first(sub { $_ >= 3600 }, @durations) ? 8 : 6;
             my $title_length = $term_width - ($author_width + $time_width + 3 + 2 + 1);
 
             foreach my $i (0 .. $#{$videos}) {
@@ -3479,7 +3494,7 @@ sub print_videos {
     state @for_search;
     state @for_play;
 
-    my @copy_of_keywords = @keywords;
+    my @copy_of_keywords  = @keywords;
     my $contains_keywords = grep /$non_digit_or_opt_re/, @keywords;
 
     while (@keywords) {

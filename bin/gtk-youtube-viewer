@@ -84,7 +84,7 @@ else {
 }
 
 # Configuration dir/file
-my $config_dir = catdir($xdg_config_home, 'youtube-viewer');
+my $config_dir          = catdir($xdg_config_home, 'youtube-viewer');
 my $config_file         = catfile($config_dir, "$execname.conf");
 my $youtube_users_file  = catfile($config_dir, 'youtube_users.txt');
 my $history_file        = catfile($config_dir, 'history.txt');
@@ -369,7 +369,7 @@ local $SIG{__WARN__} = sub {
 
 # __DIE__ handle
 local $SIG{__DIE__} = sub {
-    my $error = join('', @_);
+    my $error  = join('', @_);
     my $caller = [caller]->[0];
 
     # Ignore eval() errors
@@ -400,11 +400,11 @@ local $SIG{__DIE__} = sub {
 };
 
 #---------------------- LOAD IMAGES ----------------------#
-my $app_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file(catfile($icons_path, "$execname.png"));
-my $user_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "user.png"),          16,  16);
-my $feed_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "feed_icon.png"),     16,  16);
+my $app_icon_pixbuf  = 'Gtk2::Gdk::Pixbuf'->new_from_file(catfile($icons_path, "$execname.png"));
+my $user_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "user.png"), 16, 16);
+my $feed_icon_pixbuf = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "feed_icon.png"), 16, 16);
 my $default_thumb    = 'Gtk2::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "default_thumb.jpg"), 160, 90);
-my $animation = 'Gtk2::Gdk::PixbufAnimation'->new_from_file(catfile($icons_path, "spinner.gif"));
+my $animation        = 'Gtk2::Gdk::PixbufAnimation'->new_from_file(catfile($icons_path, "spinner.gif"));
 
 # Setting application title and icon
 $mainw->set_title("$appname $version");
@@ -1432,7 +1432,7 @@ sub show_user_panel {
 
             if (defined $info->{access_token}) {
 
-                $yv_obj->set_access_token($info->{access_token}) // return;
+                $yv_obj->set_access_token($info->{access_token})   // return;
                 $yv_obj->set_refresh_token($info->{refresh_token}) // return;
 
                 if ($gui->get_object('login_check_button')->get_active) {
@@ -1727,7 +1727,7 @@ sub main_window_state_events {
     my (undef, $state) = @_;
 
     my $windowstate = $state->new_window_state();
-    my @states = split(' ', $windowstate);
+    my @states      = split(' ', $windowstate);
 
     $CONFIG{mainw_maximized}  = (grep { $_ eq 'maximized' } @states)  ? 1 : 0;
     $CONFIG{mainw_fullscreen} = (grep { $_ eq 'fullscreen' } @states) ? 1 : 0;
@@ -1965,8 +1965,8 @@ sub set_youtube_tops {
     }
 
     sub remove_selected_user {
-        my $selection  = $users_treeview->get_selection // return;
-        my $iter       = $selection->get_selected // return;
+        my $selection = $users_treeview->get_selection // return;
+        my $iter      = $selection->get_selected       // return;
         my $channel_id = $users_liststore->get($iter, 0);
         delete $channels{$channel_id};
         $users_liststore->remove($iter);
@@ -1991,7 +1991,7 @@ sub set_youtube_tops {
     # Get playlists from username
     sub playlists_from_selected_username {
         my $selection = $users_treeview->get_selection() // return;
-        my $iter      = $selection->get_selected() // return;
+        my $iter      = $selection->get_selected()       // return;
 
         my $type    = $users_liststore->get($iter, 2);
         my $channel = $users_liststore->get($iter, 0);
@@ -2001,7 +2001,7 @@ sub set_youtube_tops {
 
     sub videos_from_selected_username {
         my $selection = $users_treeview->get_selection() // return;
-        my $iter      = $selection->get_selected() // return;
+        my $iter      = $selection->get_selected()       // return;
 
         my $type    = $users_liststore->get($iter, 2);
         my $channel = $users_liststore->get($iter, 0);
@@ -2180,7 +2180,7 @@ sub search {
 
     if ((my $period = $published_within_combobox->get_active_text) !~ /^any/i) {
         my $amount = $spin_published_within->get_value;
-        my $date = $yv_utils->period_to_date($amount, $period);
+        my $date   = $yv_utils->period_to_date($amount, $period);
         $yv_obj->set_publishedAfter($date);
     }
 
@@ -2260,7 +2260,7 @@ sub get_code {
       : $type eq 'next_page' && $code ne '' ? do {
 
         my $next_page_token = $liststore->get($iter, 5);
-        my $results = $yv_obj->next_page($code, $next_page_token);
+        my $results         = $yv_obj->next_page($code, $next_page_token);
 
         if ($yv_utils->has_entries($results)) {
             $liststore->set($iter, 0, get_next_page_spaces() . '<big><b>' . ('=' x 20) . '</b></big>');
@@ -2521,7 +2521,7 @@ sub add_video_entry {
 
     if ($CONFIG{show_thumbs}) {
         my $thumb_url = $yv_utils->get_thumbnail_url($video, $CONFIG{thumbnail_type});
-        my $pixbuf = get_pixbuf_thumbnail($thumb_url);
+        my $pixbuf    = get_pixbuf_thumbnail($thumb_url);
         $liststore->set_value($iter, 1, $pixbuf);
     }
 }
@@ -2597,25 +2597,24 @@ sub add_playlist_entry {
                    );
 
     my $num_items_template = "<b>$symbols{numero}</b>  %d items\n";
-    my $num_items_text = "";
-    if(defined($playlist->{contentDetails}{itemCount}))
-    {
+    my $num_items_text     = "";
+    if (defined($playlist->{contentDetails}{itemCount})) {
         $num_items_text = sprintf $num_items_template, $playlist->{contentDetails}->{itemCount};
     }
-    else
-    {
+    else {
         # append number of items delayed
         Glib::Idle->add(
             sub {
                 my ($liststore, $iter, $text_column, $playlist_id, $playlist_id_column, $num_items_template) = @{$_[0]};
+
                 # fetch contentDetails of playlist
                 my $results = $yv_obj->playlist_from_id($playlist_id);
-                my $info = $results->{results};
-                my $items = $info->{items};
-                my $item = $items->[0];
+                my $info    = $results->{results};
+                my $items   = $info->{items};
+                my $item    = $items->[0];
+
                 # ensure the given iter still represents the given playlist
-                if($liststore->get($iter, $playlist_id_column) eq $playlist_id)
-                {
+                if ($liststore->get($iter, $playlist_id_column) eq $playlist_id) {
                     my $text = $liststore->get($iter, $text_column);
                     $text .= sprintf $num_items_template, $item->{contentDetails}->{itemCount};
                     $liststore->set($iter, $text_column, $text);
@@ -2624,15 +2623,10 @@ sub add_playlist_entry {
             },
             [$liststore, $iter, 2, $playlist_id, 3, $num_items_template],
             Glib::G_PRIORITY_DEFAULT_IDLE
-        );
+                       );
     }
 
-    $liststore->set(
-                    $iter, 2,
-                    "<b>$symbols{diamond}</b>  "
-                      . 'Playlist' . "\n"
-                      . $num_items_text
-                   );
+    $liststore->set($iter, 2, "<b>$symbols{diamond}</b>  " . 'Playlist' . "\n" . $num_items_text);
 
     if ($CONFIG{show_thumbs}) {
         my $pixbuf = get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($playlist, $CONFIG{thumbnail_type}));
@@ -2801,7 +2795,7 @@ sub get_player_command {
     my ($streaming, $video) = @_;
 
     my %MPLAYER;
-    $MPLAYER{fullscreen} = $CONFIG{fullscreen} ? $CONFIG{video_players}{$CONFIG{video_player_selected}}{fs} : q{};
+    $MPLAYER{fullscreen}        = $CONFIG{fullscreen} ? $CONFIG{video_players}{$CONFIG{video_player_selected}}{fs} : q{};
     $MPLAYER{mplayer_arguments} = $CONFIG{video_players}{$CONFIG{video_player_selected}}{arg} // q{};
 
     my $cmd = join(
@@ -2948,8 +2942,8 @@ sub get_options_as_arguments {
                 $value              ? '--' . $argv . '=' . $value
                   : defined($value) ? '--' . $argv
                   :                   next;
-              }
-            );
+            }
+        );
     }
     return @args;
 }
@@ -3060,7 +3054,7 @@ sub download_video {
 }
 
 sub comments_row_activated {
-    my $iter = $feeds_treeview->get_selection->get_selected() or return;
+    my $iter  = $feeds_treeview->get_selection->get_selected() or return;
     my $value = $feeds_liststore->get($iter, 1);
 
     if (defined $value and $value =~ m{^https?://}) {
@@ -3219,7 +3213,7 @@ sub set_entry_details {
     $gui->get_object('video_details_label')->set_label($main_details . $secondary_details);
 
     # Setting the link button
-    my $url = make_youtube_url($type, $code);
+    my $url        = make_youtube_url($type, $code);
     my $linkbutton = $gui->get_object('linkbutton1');
     $linkbutton->set_label($url);
     $linkbutton->set_uri($url);
