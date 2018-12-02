@@ -220,6 +220,7 @@ sub format_text {
         TITLE       => sub { $self->get_title($info) },
         FTITLE      => sub { $self->normalize_video_title($self->get_title($info), $fat32safe) },
         CAPTION     => sub { $self->get_caption($info) },
+        PUBLISHED   => sub { $self->get_publication_date($info) },
         DESCRIPTION => sub { $self->get_description($info) },
 
         RATING => sub {

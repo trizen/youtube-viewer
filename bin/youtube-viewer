@@ -906,9 +906,10 @@ sub tricks {
   *RATING*      : the rating of the video from 0 to 5
   *COMMENTS*    : the number of comments
   *DURATION*    : the duration of the video in seconds
+  *PUBLISHED*   : the publication date as "DD MMM YYYY"
   *DIMENSION*   : the dimension of the video (2D or 3D)
   *DEFINITION*  : the definition of the video (HD or SD)
-  *TIME*        : the duration of the video in HH::MM::SS
+  *TIME*        : the duration of the video as "HH::MM::SS"
   *TITLE*       : the title of the video
   *FTITLE*      : the title of the video (filename safe)
   *DESCRIPTION* : the description of the video
