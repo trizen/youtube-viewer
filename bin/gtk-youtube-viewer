@@ -3143,23 +3143,22 @@ sub display_comments {
 
         my $iter = $feeds_liststore->append;
         $feeds_liststore->set(
-            $iter, 0,
-            reflow_text(
-                    "<big><b>"
-                  . encode_entities($snippet->{authorDisplayName})
-                  . "</b> ("
-                  . $yv_utils->format_date($snippet->{publishedAt})
-                  . ") said:</big>\n"
-                  . encode_entities(
-
-                    wrap_text(
-                              i_tab => "\t",
-                              s_tab => "\t",
-                              text  => [$snippet->{textDisplay} // 'Empty comment...'],
-                             )
-                  )
-            )
-        );
+                              $iter, 0,
+                              reflow_text(
+                                              "<big><b>"
+                                            . encode_entities($snippet->{authorDisplayName})
+                                            . "</b> ("
+                                            . $yv_utils->format_date($snippet->{publishedAt})
+                                            . ") said:</big>\n"
+                                            . encode_entities(
+                                                              wrap_text(
+                                                                       i_tab => "\t",
+                                                                       s_tab => "\t",
+                                                                       text => [$snippet->{textDisplay} // 'Empty comment...'],
+                                                              )
+                                                             )
+                                         )
+                             );
 
         if (exists $comment->{replies}) {
             foreach my $reply (reverse @{$comment->{replies}{comments}}) {
