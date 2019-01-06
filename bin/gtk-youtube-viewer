@@ -3130,14 +3130,15 @@ sub display_comments {
 
         my $iter = $feeds_liststore->append;
         $feeds_liststore->set(
-                              $iter,
-                              0,
-                              "<big><b>"
-                                . encode_entities($snippet->{authorDisplayName})
-                                . "</b> ("
-                                . $yv_utils->format_date($snippet->{publishedAt})
-                                . ") said:</big>\n\t"
-                                . encode_entities($snippet->{textDisplay} // 'Empty comment...')
+                              $iter, 0,
+                              reflow_text(
+                                              "<big><b>"
+                                            . encode_entities($snippet->{authorDisplayName})
+                                            . "</b> ("
+                                            . $yv_utils->format_date($snippet->{publishedAt})
+                                            . ") said:</big>\n\t"
+                                            . encode_entities($snippet->{textDisplay} // 'Empty comment...')
+                                         )
                              );
 
         if (exists $comment->{replies}) {
@@ -3146,14 +3147,15 @@ sub display_comments {
                 my $iter = $feeds_liststore->append;
 
                 $feeds_liststore->set(
-                                      $iter,
-                                      0,
-                                      "\t<big><b>"
-                                        . encode_entities($reply->{snippet}{authorDisplayName})
-                                        . "</b> ("
-                                        . $yv_utils->format_date($reply->{snippet}{publishedAt})
-                                        . ") replied:</big>\n\t\t"
-                                        . encode_entities($reply->{snippet}{textDisplay} // 'Empty comment...')
+                                      $iter, 0,
+                                      reflow_text(
+                                                      "\t<big><b>"
+                                                    . encode_entities($reply->{snippet}{authorDisplayName})
+                                                    . "</b> ("
+                                                    . $yv_utils->format_date($reply->{snippet}{publishedAt})
+                                                    . ") replied:</big>\n\t\t"
+                                                    . encode_entities($reply->{snippet}{textDisplay} // 'Empty comment...')
+                                                 )
                                      );
             }
         }
