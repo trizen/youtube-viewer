@@ -28,7 +28,7 @@ no warnings 'once';
 my $DEVEL;    # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel only
 
-use WWW::YoutubeViewer v3.5.0;
+use WWW::YoutubeViewer v3.5.1;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use Gtk2 qw(-init);
@@ -201,6 +201,8 @@ my %CONFIG = (
     publishedAfter  => undef,
     hl              => 'en_US',
     regionCode      => undef,
+
+    comments_order => 'time',    # valid values: time, relevance
 
     # URI options
     thumbnail_type       => 'medium',
@@ -783,7 +785,7 @@ sub apply_configuration {
 
     foreach my $option_name (
                              qw(
-                             videoSyndicated
+                             videoSyndicated comments_order
                              maxResults videoDimension
                              videoEmbeddable videoLicense
                              publishedAfter publishedBefore
@@ -1553,7 +1555,7 @@ sub show_feeds_window {
     $videoID // return;
 
     my $info = $liststore->get($iter, 0);
-    my ($video_title) = $info =~ m{^(<big><b>.*?</b></big>)}s;
+    my ($video_title) = $info =~ m{^.*?(<big><b>.*?</b></big>)}s;
 
     $feeds_title->set_markup("<big>$video_title</big>");
     $feeds_title->set_tooltip_markup("$video_title");
@@ -3137,6 +3139,24 @@ sub display_comments {
                                 . ") said:</big>\n\t"
                                 . encode_entities($snippet->{textDisplay} // 'Empty comment...')
                              );
+
+        if (exists $comment->{replies}) {
+            foreach my $reply (reverse @{$comment->{replies}{comments}}) {
+
+                my $iter = $feeds_liststore->append;
+
+                $feeds_liststore->set(
+                                      $iter,
+                                      0,
+                                      "\t<big><b>"
+                                        . encode_entities($reply->{snippet}{authorDisplayName})
+                                        . "</b> ("
+                                        . $yv_utils->format_date($reply->{snippet}{publishedAt})
+                                        . ") replied:</big>\n\t\t"
+                                        . encode_entities($reply->{snippet}{textDisplay} // 'Empty comment...')
+                                     );
+            }
+        }
     }
 
     if (exists $res->{nextPageToken}) {
@@ -3220,7 +3240,8 @@ sub set_entry_details {
     $secondary_details =~ s{\h+}{ }g;
     $secondary_details =~ s{^<b>.*?</b>\K\h*}{\t}gm;
 
-    $gui->get_object('video_details_label')->set_label($main_details . $secondary_details);
+    my $text_info = join("\n", grep { !/^&#\w+;$/ } split(/\R/, "$main_details$secondary_details"));
+    $gui->get_object('video_details_label')->set_label($text_info);
 
     # Setting the link button
     my $url        = make_youtube_url($type, $code);

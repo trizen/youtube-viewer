@@ -41,7 +41,7 @@ sub comments_from_video_id {
                           $self->_make_commentThreads_url(
                                                           videoId    => $video_id,
                                                           textFormat => 'plainText',
-                                                          order      => 'time',
+                                                          order      => $self->get_comments_order,
                                                           part       => 'snippet,replies'
                                                          ),
                           simple => 1,

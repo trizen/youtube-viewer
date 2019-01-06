@@ -23,7 +23,7 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =cut
 
-our $VERSION = '3.5.0';
+our $VERSION = '3.5.1';
 
 =head1 SYNOPSIS
 
@@ -68,6 +68,7 @@ my %valid_options = (
     safeSearch        => {valid => [qw(none moderate strict)], default => undef},
     videoType         => {valid => [qw(any episode movie)],    default => undef},
 
+    comments_order      => {valid => [qw(time relevance)],                default => 'time'},
     subscriptions_order => {valid => [qw(alphabetical relevance unread)], default => undef},
 
     # Others
@@ -339,7 +340,7 @@ sub lwp_get {
     $self->{lwp} // $self->set_lwp_useragent();
 
     my %lwp_header = ($opt{simple} ? () : $self->_get_lwp_header);
-    my $response = $self->{lwp}->get($url, %lwp_header);
+    my $response   = $self->{lwp}->get($url, %lwp_header);
 
     if ($response->is_success) {
         return $response->decoded_content;
@@ -639,7 +640,7 @@ sub get_streaming_urls {
 
     my $url = ($self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID));
     my $content = $self->lwp_get($url, simple => 1) // return;
-    my %info = $self->parse_query_string($content);
+    my %info    = $self->parse_query_string($content);
 
     my @streaming_urls = $self->_extract_streaming_urls(\%info, $videoID);
 

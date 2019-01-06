@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2010-2018 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
+# Copyright (C) 2010-2019 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of either: the GNU General Public License as published
@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 15 September 2018
+#  Latest edit on: 06 January 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -114,7 +114,7 @@ See: youtube-viewer --help
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2018 Trizen.
+Copyright 2010-2019 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
@@ -137,7 +137,7 @@ no warnings 'once';
 my $DEVEL;    # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
-use WWW::YoutubeViewer v3.5.0;
+use WWW::YoutubeViewer v3.5.1;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
@@ -281,7 +281,8 @@ my %CONFIG = (
     publishedAfter  => undef,
     order           => undef,
 
-    subscriptions_order => 'relevance',
+    comments_order      => 'time',         # valid values: time, relevance
+    subscriptions_order => 'relevance',    # valid values: alphabetical, relevance, unread
 
     hl         => 'en_US',
     regionCode => undef,
@@ -679,6 +680,8 @@ usage: $execname [options] ([url] | [keywords])
 
 * Comments
    --comments=s         : display comments for a YouTube video by ID or URL
+   --comments-order=s   : change the order of YouTube comments
+                          valid values: relevance, time
 
  * Filtering
    --author=s           : search in videos uploaded by a specific user
@@ -1093,7 +1096,8 @@ sub apply_configuration {
                              videoSyndicated channelId
                              publishedAfter publishedBefore
                              safeSearch regionCode debug hl
-                             http_proxy page subscriptions_order
+                             http_proxy page comments_order
+                             subscriptions_order
                              )
       ) {
 
@@ -1371,6 +1375,7 @@ sub parse_arguments {
         'res|resolution=s' => \$opt{resolution},
 
         'comments=s'                  => \$opt{get_comments},
+        'comments-order=s'            => \$opt{comments_order},
         'search|videos|V:s'           => \$opt{search_videos},
         'video-ids|videoids|id|ids=s' => \$opt{play_video_ids},
 
