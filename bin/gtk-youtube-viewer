@@ -202,6 +202,7 @@ my %CONFIG = (
     hl              => 'en_US',
     regionCode      => undef,
 
+    comments_width => 80,        # wrap comments longer than `n` characters
     comments_order => 'time',    # valid values: time, relevance
 
     # URI options
@@ -3118,6 +3119,18 @@ sub send_comment_to_video {
                            : 'Error!');
 }
 
+sub wrap_text {
+    my (%args) = @_;
+
+    require Text::Wrap;
+    local $Text::Wrap::columns = $CONFIG{comments_width};
+
+    my $text = "@{$args{text}}";
+    $text =~ tr{\r}{}d;
+
+    eval { Text::Wrap::wrap($args{i_tab}, $args{s_tab}, $text) } // $text;
+}
+
 sub display_comments {
     my ($results) = @_;
 
@@ -3130,16 +3143,23 @@ sub display_comments {
 
         my $iter = $feeds_liststore->append;
         $feeds_liststore->set(
-                              $iter, 0,
-                              reflow_text(
-                                              "<big><b>"
-                                            . encode_entities($snippet->{authorDisplayName})
-                                            . "</b> ("
-                                            . $yv_utils->format_date($snippet->{publishedAt})
-                                            . ") said:</big>\n\t"
-                                            . encode_entities($snippet->{textDisplay} // 'Empty comment...')
-                                         )
-                             );
+            $iter, 0,
+            reflow_text(
+                    "<big><b>"
+                  . encode_entities($snippet->{authorDisplayName})
+                  . "</b> ("
+                  . $yv_utils->format_date($snippet->{publishedAt})
+                  . ") said:</big>\n"
+                  . encode_entities(
+
+                    wrap_text(
+                              i_tab => "\t",
+                              s_tab => "\t",
+                              text  => [$snippet->{textDisplay} // 'Empty comment...'],
+                             )
+                  )
+            )
+        );
 
         if (exists $comment->{replies}) {
             foreach my $reply (reverse @{$comment->{replies}{comments}}) {
@@ -3153,8 +3173,14 @@ sub display_comments {
                                                     . encode_entities($reply->{snippet}{authorDisplayName})
                                                     . "</b> ("
                                                     . $yv_utils->format_date($reply->{snippet}{publishedAt})
-                                                    . ") replied:</big>\n\t\t"
-                                                    . encode_entities($reply->{snippet}{textDisplay} // 'Empty comment...')
+                                                    . ") replied:</big>\n"
+                                                    . encode_entities(
+                                                             wrap_text(
+                                                                 i_tab => "\t\t",
+                                                                 s_tab => "\t\t",
+                                                                 text => [$reply->{snippet}{textDisplay} // 'Empty comment...']
+                                                             )
+                                                    )
                                                  )
                                      );
             }
