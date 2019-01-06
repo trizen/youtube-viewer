@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2010-2018 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
+# Copyright (C) 2010-2019 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of either: the GNU General Public License as published
@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 15 September 2018
+#  Latest edit on: 06 January 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -2472,6 +2472,11 @@ sub add_subscription_entry {
     }
 }
 
+sub reflow_text {
+    my ($text) = @_;
+    $text =~ s/^/&#x200e;/gmr;
+}
+
 sub add_video_entry {
     my ($video) = @_;
 
@@ -2490,33 +2495,36 @@ sub add_video_entry {
 
     $liststore->set($iter, 3, $yv_utils->get_video_id($video));
     $liststore->set(
-                    $iter,
-                    0,
-                    "<big><b>"
-                      . encode_entities($title)
-                      . "</b></big>\n"
-                      . "<b>$symbols{up_arrow}\t</b> "
-                      . $yv_utils->set_thousands($yv_utils->get_likes($video)) . "\n"
-                      . "<b>$symbols{down_arrow}\t</b> "
-                      . $yv_utils->set_thousands($yv_utils->get_dislikes($video)) . "\n"
-                      . "<b>$symbols{ellipsis}\t</b> "
-                      . encode_entities($yv_utils->get_category_name($video)) . "\n"
-                      . "<b>$symbols{face}\t</b> "
-                      . encode_entities($yv_utils->get_channel_title($video)) . "\n" . "<i>"
-                      . encode_entities($row_description) . "</i>"
+                    $iter, 0,
+                    reflow_text(
+                                    "<big><b>"
+                                  . encode_entities($title)
+                                  . "</b></big>\n"
+                                  . "<b>$symbols{up_arrow}\t</b> "
+                                  . $yv_utils->set_thousands($yv_utils->get_likes($video)) . "\n"
+                                  . "<b>$symbols{down_arrow}\t</b> "
+                                  . $yv_utils->set_thousands($yv_utils->get_dislikes($video)) . "\n"
+                                  . "<b>$symbols{ellipsis}\t</b> "
+                                  . encode_entities($yv_utils->get_category_name($video)) . "\n"
+                                  . "<b>$symbols{face}\t</b> "
+                                  . encode_entities($yv_utils->get_channel_title($video)) . "\n" . "<i>"
+                                  . encode_entities($row_description) . "</i>"
+                               )
                    );
 
     $liststore->set(
         $iter, 2,
-        "<b>$symbols{play}\t</b> "
-          . $yv_utils->format_time($yv_utils->get_duration($video)) . "\n"
-          . "<b>$symbols{diamond}\t</b> "
-          . $yv_utils->get_definition($video) . "\n"
+        reflow_text(
+                "<b>$symbols{play}\t</b> "
+              . $yv_utils->format_time($yv_utils->get_duration($video)) . "\n"
+              . "<b>$symbols{diamond}\t</b> "
+              . $yv_utils->get_definition($video) . "\n"
 
-          . "<b>$symbols{views}\t</b> "
-          . $yv_utils->set_thousands($yv_utils->get_views($video)) . "\n"
-          . "<b>$symbols{right_arrow}\t </b>"
-          . $yv_utils->get_publication_date($video)
+              . "<b>$symbols{views}\t</b> "
+              . $yv_utils->set_thousands($yv_utils->get_views($video)) . "\n"
+              . "<b>$symbols{right_arrow}\t </b>"
+              . $yv_utils->get_publication_date($video)
+        )
     );
 
     if ($CONFIG{show_thumbs}) {
@@ -2543,22 +2551,23 @@ sub add_channel_entry {
     $liststore->set($iter, 3, $channel_id);
     $liststore->set($iter, 6, $channel_id);
     $liststore->set(
-                    $iter,
-                    0,
-                    '<big><b>'
-                      . encode_entities($title)
-                      . "</b></big>\n\n"
-                      . "<b>$symbols{face}\t</b> "
-                      . encode_entities($yv_utils->get_channel_title($channel)) . "\n"
-                      . "<b>$symbols{play}\t</b> "
-                      . encode_entities($channel_id) . "\n"
-                      . "<b>$symbols{crazy_arrow}\t</b> "
-                      . $yv_utils->get_publication_date($channel)
-                      . "\n\n<i>"
-                      . encode_entities($row_description) . '</i>'
+                    $iter, 0,
+                    reflow_text(
+                                    '<big><b>'
+                                  . encode_entities($title)
+                                  . "</b></big>\n\n"
+                                  . "<b>$symbols{face}\t</b> "
+                                  . encode_entities($yv_utils->get_channel_title($channel)) . "\n"
+                                  . "<b>$symbols{play}\t</b> "
+                                  . encode_entities($channel_id) . "\n"
+                                  . "<b>$symbols{crazy_arrow}\t</b> "
+                                  . $yv_utils->get_publication_date($channel)
+                                  . "\n\n<i>"
+                                  . encode_entities($row_description) . '</i>'
+                               )
                    );
 
-    $liststore->set($iter, 2, "<b>$symbols{diamond}</b>  " . 'Channel' . "\n");
+    $liststore->set($iter, 2, reflow_text("<b>$symbols{diamond}</b>  " . 'Channel' . "\n"));
 
     if ($CONFIG{show_thumbs}) {
         my $pixbuf = get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($channel, $CONFIG{thumbnail_type}));
@@ -2582,18 +2591,19 @@ sub add_playlist_entry {
     $liststore->set($iter, 7, 'playlist');
     $liststore->set($iter, 3, $playlist_id);
     $liststore->set(
-                    $iter,
-                    0,
-                    '<big><b>'
-                      . encode_entities($title)
-                      . "</b></big>\n\n"
-                      . "<b>$symbols{face}\t</b> "
-                      . encode_entities($yv_utils->get_channel_title($playlist)) . "\n"
-                      . "<b>$symbols{play}\t</b> "
-                      . encode_entities($playlist_id) . "\n"
-                      . "<b>$symbols{crazy_arrow}\t</b> "
-                      . $yv_utils->format_date($yv_utils->get_publication_date($playlist)) . "\n\n" . '<i>'
-                      . encode_entities($row_description) . '</i>'
+                    $iter, 0,
+                    reflow_text(
+                                    '<big><b>'
+                                  . encode_entities($title)
+                                  . "</b></big>\n\n"
+                                  . "<b>$symbols{face}\t</b> "
+                                  . encode_entities($yv_utils->get_channel_title($playlist)) . "\n"
+                                  . "<b>$symbols{play}\t</b> "
+                                  . encode_entities($playlist_id) . "\n"
+                                  . "<b>$symbols{crazy_arrow}\t</b> "
+                                  . $yv_utils->format_date($yv_utils->get_publication_date($playlist)) . "\n\n" . '<i>'
+                                  . encode_entities($row_description) . '</i>'
+                               )
                    );
 
     my $num_items_template = "<b>$symbols{numero}</b>  %d items\n";
@@ -2626,7 +2636,7 @@ sub add_playlist_entry {
                        );
     }
 
-    $liststore->set($iter, 2, "<b>$symbols{diamond}</b>  " . 'Playlist' . "\n" . $num_items_text);
+    $liststore->set($iter, 2, reflow_text("<b>$symbols{diamond}</b>  " . 'Playlist' . "\n" . $num_items_text));
 
     if ($CONFIG{show_thumbs}) {
         my $pixbuf = get_pixbuf_thumbnail($yv_utils->get_thumbnail_url($playlist, $CONFIG{thumbnail_type}));
