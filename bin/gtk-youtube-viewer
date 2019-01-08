@@ -3261,11 +3261,11 @@ sub set_entry_details {
     $main_details =~ s/^\s+//;
     $main_details =~ s{\s*<i>.+</i>\s*}{\n};
     $main_details =~ s{\h+}{ }g;
-    $main_details =~ s{^<b>.*?</b>\K\h*}{\t}gm;
+    $main_details =~ s{^.*?<b>.*?</b>\K\h*}{\t}gm;
 
     my $secondary_details = $liststore->get($iter, 2);
     $secondary_details =~ s{\h+}{ }g;
-    $secondary_details =~ s{^<b>.*?</b>\K\h*}{\t}gm;
+    $secondary_details =~ s{^.*?<b>.*?</b>\K\h*}{\t}gm;
 
     my $text_info = join("\n", grep { !/^&#\w+;$/ } split(/\R/, "$main_details$secondary_details"));
     $gui->get_object('video_details_label')->set_label($text_info);
