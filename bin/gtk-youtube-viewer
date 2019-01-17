@@ -176,7 +176,7 @@ my %CONFIG = (
     video_player_selected => undef,    # autodetect it later
 
     # GUI options
-    clean_text_entries_on_click => 1,
+    clear_text_entries_on_click => 0,
     show_thumbs                 => 1,
     clear_search_list           => 1,
     default_notebook_page       => 1,
@@ -2928,7 +2928,12 @@ sub list_tops {
 }
 
 sub clear_text {
-    $_[0]->set_text('') if $CONFIG{clean_text_entries_on_click};
+    my ($entry) = @_;
+
+    if ($entry->get_text() =~ /\.\.\.\z/ or $CONFIG{clear_text_entries_on_click}) {
+        $entry->set_text('');
+    }
+
     return 0;
 }
 
