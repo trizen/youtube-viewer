@@ -41,7 +41,6 @@
 # - Added support for more video players (--player=s) // Added support for shows (--us=author) - NEW (v3.1.0)
 # - Added support to --copy-caption for downloaded videos // Added fixed-width for playlists   - NEW (v3.1.0)
 # - Added the ':play' stdin option // Added the support for 'watch_later' videos (-L)          - NEW (v3.1.0)
-# - Added a new option to combine multiple videos into one play instance (--combine-multiple)  - NEW (v3.1.0)
 # - New authentication support (OAuth 2.0) // Added support for download & play (-dp)          - (v3.0.7)
 # - Added support for YouTube EDU categories (-edu) // Options: :dv, :lec, :courses, :course   - (v3.0.4)
 # - Some minor bug-fixes // New options has been added: --pp, :pp, :anp, :kregex               - (v3.0.3)
@@ -262,8 +261,6 @@ my %CONFIG = (
         ? 'mplayer'
         : undef            # auto-defined later
     ),
-
-    combine_multiple_videos => 0,
 
     # YouTube options
     dash_support    => 1,
@@ -772,7 +769,6 @@ usage: $execname [options] ([url] | [keywords])
        --std-input=s     : use this value as the first standard input
        --max-seconds=i   : ignore videos longer than i seconds
        --min-seconds=i   : ignore videos shorter than i seconds
-       --combine-multi!  : combine multiple videos into one play instance
        --get-term-width! : allow $execname to read your terminal width
        --autohide!       : automatically hide watched videos
        --highlight!      : remember and highlight selected videos
@@ -1498,7 +1494,6 @@ sub parse_arguments {
         'results=i'                          => \$opt{maxResults},
         'shuffle|s!'                         => \$opt{shuffle},
         'more|m!'                            => \$opt{more_results},
-        'combine-multiple-videos|combine!'   => \$opt{combine_multiple_videos},
         'pos|position=i'                     => \$opt{position},
         'ps|playlist-save=s'                 => \$opt{playlist_save},
 
@@ -3189,10 +3184,6 @@ sub play_videos {
                                      fat32safe => $opt{fat32safe},
                                     );
         }
-        elsif ($opt{combine_multiple_videos}) {
-            print_video_info($video);
-            push @streaming_urls, $streaming;
-        }
         else {
             print_video_info($video);
             my $command = get_player_command($streaming, $video);
@@ -3214,16 +3205,6 @@ sub play_videos {
         }
 
         press_enter_to_continue() if $opt{confirm};
-    }
-
-    if ($opt{combine_multiple_videos} && @streaming_urls) {
-        my $streaming = $streaming_urls[0];
-
-        my $command = get_player_command($streaming, $videos->[0]);
-        say $command if $yv_obj->get_debug;
-
-        $yv_obj->proxy_system(join(q{ }, $command, map { quotemeta($_->{streaming}{url}) } @streaming_urls));
-        return if $?;
     }
 
     return 1;
