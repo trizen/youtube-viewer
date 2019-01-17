@@ -97,7 +97,7 @@ To package this application, run the following commands:
 * [GR] YOUTUBE VIEWER: ΤΟ YOUTUBE ΚΥΡΙΟΛΕΚΤΙΚΑ ΣΤΟ DESKTOP ΣΑΣ
     * http://osarena.net/youyubeviewer-to-youtube-olokliro-sto-desktop-sas-se-linux
 * [HU] GTK Youtube Viewer
-    * http://ubuntu.hu/node/23555
+    * https://linuxmint.hu/blog/2018/09/gtk-youtube-viewer
 * [PT] YouTube Viewer: um completo cliente YouTube para Linux
     * http://www.edivaldobrito.com.br/youtube-viewer-um-cliente-completo/
 * [RO] youtube-viewer
