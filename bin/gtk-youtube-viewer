@@ -1008,7 +1008,7 @@ sub menu_popup {
         {
             my $item = 'Gtk2::ImageMenuItem'->new("YouTube comments");
             $item->set_image('Gtk2::Image'->new_from_icon_name("edit-copy", q{menu}));
-            $item->signal_connect(activate => \&show_feeds_window);
+            $item->signal_connect(activate => \&show_comments_window);
             $item->show;
             $menu->append($item);
         }
@@ -1329,7 +1329,6 @@ CTRL+Y : start CLI youtube viewer
 CTRL+E : enqueue the selected video
 CTRL+U : show the saved user-list
 CTRL+D : show more video details for a selected video
-CTRL+C : show the comments for a selected video
 CTRL+W : show the warnings window
 CTRL+G : show videos favorited by the author of a selected video
 CTRL+R : show related videos for a selected video
@@ -1375,7 +1374,8 @@ $accel->connect(ord('q'), ['control-mask'], ['visible'], \&on_mainw_destroy);
 $accel->connect(ord('u'), ['control-mask'], ['visible'], \&show_users_list_window);
 $accel->connect(ord('y'), ['control-mask'], ['visible'], \&run_cli_youtube_viewer);
 $accel->connect(ord('d'), ['control-mask'], ['visible'], \&show_details_window);
-$accel->connect(ord('c'), ['control-mask'], ['visible'], \&show_feeds_window);
+
+#$accel->connect(ord('c'), ['control-mask'], ['visible'], \&show_comments_window);
 $accel->connect(ord('s'), ['control-mask'], ['visible'], \&add_user_to_favorites);
 $accel->connect(ord('r'), ['control-mask'], ['visible'], \&show_related_videos);
 $accel->connect(ord('g'), ['control-mask'], ['visible'], \&show_user_favorited_videos);
@@ -1550,8 +1550,8 @@ sub set_comments {
     display_comments($yv_obj->comments_from_video_id($videoID));
 }
 
-# Feeds window
-sub show_feeds_window {
+# Comments window
+sub show_comments_window {
     my ($videoID, $iter) = get_selected_entry_code(type => 'video');
     $videoID // return;
 
