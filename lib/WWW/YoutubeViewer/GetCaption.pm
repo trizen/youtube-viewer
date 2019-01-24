@@ -197,12 +197,32 @@ Get the XML content for a given caption data.
 sub get_xml_data {
     my ($self, $url) = @_;
 
-    require LWP::UserAgent;
-    state $lwp = LWP::UserAgent->new(
-          timeout   => 30,
-          env_proxy => 1,
-          agent => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36',
-    );
+    state $lwp = do {
+
+        require LWP::UserAgent;
+
+        my $agent = LWP::UserAgent->new(
+                 timeout   => 30,
+                 env_proxy => 1,
+                 agent =>
+                   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36',
+        );
+
+        require LWP::ConnCache;
+        my $cache = LWP::ConnCache->new;
+        $cache->total_capacity(undef);    # no limit
+
+        my $accepted_encodings = do {
+            require HTTP::Message;
+            HTTP::Message::decodable();
+        };
+
+        $agent->ssl_opts(Timeout => 30);
+        $agent->default_header('Accept-Encoding' => $accepted_encodings);
+        $agent->conn_cache($cache);
+
+        $agent;
+    };
 
     my $req = $lwp->get($url);
 
