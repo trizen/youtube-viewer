@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 06 January 2019
+#  Latest edit on: 25 January 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -693,7 +693,7 @@ usage: $execname [options] ([url] | [keywords])
    --order=s            : order the results using a specific sorting method
                           valid values: date rating viewCount title videoCount
    --within=s           : show only videos uploaded within the specified time
-                          valid values are: Nd, Nm, Ny, where N is a number
+                          valid values are: Nd, Nw, Nm, Ny, where N is a number
    --hd!                : search only for videos available in at least 720p
    --vd=s               : set the video definition (any, high or standard)
    --page=i             : get results starting with a specific page
@@ -1124,7 +1124,7 @@ sub apply_configuration {
     if (defined $opt->{within}) {
         my $value = delete $opt->{within};
 
-        if ($value =~ /^\s*(\d+(?:\.\d+)?)([dmy])/i) {
+        if ($value =~ /^\s*(\d+(?:\.\d+)?)([dwmy])/i) {
             my $date = $yv_utils->period_to_date($1, $2);
             $yv_obj->set_publishedAfter($date);
         }

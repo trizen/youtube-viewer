@@ -1272,6 +1272,7 @@ Recommended: 10</property>
                                                             <items>
                                                             <item translatable="yes">anytime</item>
                                                             <item translatable="yes">days</item>
+                                                            <item translatable="yes">weeks</item>
                                                             <item translatable="yes">months</item>
                                                             <item translatable="yes">years</item>
                                                             </items>

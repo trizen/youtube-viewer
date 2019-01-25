@@ -491,11 +491,13 @@ sub period_to_date {
     my ($self, $amount, $period) = @_;
 
     state $day   = 60 * 60 * 24;
+    state $week  = $day * 7;
     state $month = $day * 30.4368;
     state $year  = $day * 365.242;
 
     my $time = $amount * (
                             $period =~ /^d/i ? $day
+                          : $period =~ /^w/i ? $week
                           : $period =~ /^m/i ? $month
                           : $period =~ /^y/i ? $year
                           : 0
