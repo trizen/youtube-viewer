@@ -3256,6 +3256,7 @@ sub set_entry_details {
 
     my $type         = $liststore->get($iter, 7);
     my $main_details = $liststore->get($iter, 0);
+    my $channel_id   = get_channel_id_for_selected_video();
 
     # Setting title
     my $title = substr($main_details, 0, index($main_details, '</big>') + 6, '');
@@ -3271,6 +3272,7 @@ sub set_entry_details {
     my $secondary_details = $liststore->get($iter, 2);
     $secondary_details =~ s{\h+}{ }g;
     $secondary_details =~ s{^.*?<b>.*?</b>\K\h*}{\t}gm;
+    $secondary_details .= "\n🖝\t$channel_id";
 
     my $text_info = join("\n", grep { !/^&#\w+;$/ } split(/\R/, "$main_details$secondary_details"));
     $gui->get_object('video_details_label')->set_label($text_info);
