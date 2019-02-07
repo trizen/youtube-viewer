@@ -320,6 +320,11 @@ sub _get_lwp_header {
     return %lwp_header;
 }
 
+sub _warn_reponse_error {
+    my ($resp, $url) = @_;
+    warn sprintf("[%s] Error occured on URL: %s\n", $resp->status_line, $url =~ s/([&?])key=(.*?)&/${1}key=[...]&/r);
+}
+
 =head2 lwp_get($url, %opt)
 
 Get and return the content for $url.
@@ -387,7 +392,7 @@ sub lwp_get {
         return $self->lwp_get($url, %opt, depth => $opt{depth} + 1);
     }
 
-    warn '[' . $response->status_line . "] Error occured on URL: $url\n";
+    _warn_reponse_error($response, $url);
     return;
 }
 
@@ -408,7 +413,7 @@ sub lwp_post {
         return $response->decoded_content;
     }
     else {
-        warn '[' . $response->status_line() . "] Error occurred on URL: $url\n";
+        _warn_reponse_error($response, $url);
     }
 
     return;
