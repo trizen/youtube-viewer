@@ -2337,10 +2337,10 @@ sub print_channels {
         }
         elsif ($opt{results_with_colors}) {
             print "\n" if $i == 0;
-            printf("%s. %s | %s\n",
+            printf("%s. %s (%s)\n",
                    colored(sprintf('%2d', $i + 1), 'bold'),
-                   colored($yv_utils->get_title($channel),            'bold blue'),
-                   colored($yv_utils->get_publication_date($channel), 'bold magenta'),
+                   colored($yv_utils->get_title($channel),            'blue'),
+                   colored($yv_utils->get_publication_date($channel), 'magenta'),
                   );
         }
         elsif ($opt{results_fixed_width}) {
@@ -2635,11 +2635,11 @@ FORMAT
         elsif ($opt{results_with_colors}) {
             print "\n" if $i == 0;
             printf(
-                   "%s. %s | %s | %s\n",
+                   "%s. %s (%s) %s\n",
                    colored(sprintf('%2d', $i + 1), 'bold'),
-                   colored($yv_utils->get_title($playlist),            'bold blue'),
-                   colored($yv_utils->get_channel_title($playlist),    'bold green'),
-                   colored($yv_utils->get_publication_date($playlist), 'bold magenta'),
+                   colored($yv_utils->get_title($playlist),            'blue'),
+                   colored($yv_utils->get_publication_date($playlist), 'magenta'),
+                   colored($yv_utils->get_channel_title($playlist),    'green'),
                   );
         }
         elsif ($opt{results_fixed_width}) {
@@ -3395,11 +3395,12 @@ sub print_videos {
         elsif ($opt{results_with_colors}) {
             my $definition = $yv_utils->get_definition($video);
             push @formatted,
-              sprintf("%s. %s (%s) by %s\n",
+              sprintf(
+                      "%s. %s (%s) %s\n",
                       colored(sprintf('%2d', $i + 1), 'bold'),
-                      colored($yv_utils->get_title($video),         'bold blue'),
+                      colored($yv_utils->get_title($video),         'blue'),
                       colored($yv_utils->get_time($video),          'magenta'),
-                      colored($yv_utils->get_channel_title($video), 'bold green'),
+                      colored($yv_utils->get_channel_title($video), 'green'),
                      );
         }
         elsif ($opt{results_fixed_width}) {
