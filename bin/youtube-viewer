@@ -3273,7 +3273,7 @@ sub print_video_info {
            ['ChannelID'  => $yv_utils->get_channel_id($video)],
            ['Category'   => $yv_utils->get_category_name($video)],
            ['Definition' => $yv_utils->get_definition($video)],
-           ['Duration'   => $yv_utils->format_time($yv_utils->get_duration($video))],
+           ['Duration'   => $yv_utils->get_time($video)],
            ['Likes'      => $yv_utils->set_thousands($yv_utils->get_likes($video))],
            ['Dislikes'   => $yv_utils->set_thousands($yv_utils->get_dislikes($video))],
            ['Comments'   => $yv_utils->set_thousands($yv_utils->get_comments($video))],
@@ -3360,7 +3360,7 @@ sub print_videos {
                         colored('Likes'     => 'bold') => $yv_utils->set_thousands($yv_utils->get_likes($video)),
                         colored('Dislikes'  => 'bold') => $yv_utils->set_thousands($yv_utils->get_dislikes($video)),
                         colored('Published' => 'bold') => $yv_utils->get_publication_date($video),
-                        colored('Duration'  => 'bold') => $yv_utils->format_time($yv_utils->get_duration($video)),
+                        colored('Duration'  => 'bold') => $yv_utils->get_time($video),
                         colored('Author'    => 'bold') => $yv_utils->get_channel_title($video),
                         wrap_text(
                                   i_tab => q{ } x 4,
@@ -3375,9 +3375,9 @@ sub print_videos {
               sprintf(
                       "%s. %s (%s) [%s]\n",
                       colored(sprintf('%2d', $i + 1), 'bold'),
-                      colored($yv_utils->get_title($video),                            'bold green'),
-                      colored("by " . $yv_utils->get_channel_title($video),            'bold yellow'),
-                      colored($yv_utils->format_time($yv_utils->get_duration($video)), 'bold bright_blue'),
+                      colored($yv_utils->get_title($video),                 'bold green'),
+                      colored("by " . $yv_utils->get_channel_title($video), 'bold yellow'),
+                      colored($yv_utils->get_time($video),                  'bold bright_blue'),
                      );
         }
         elsif ($opt{results_fixed_width}) {
@@ -3399,7 +3399,7 @@ sub print_videos {
                           adj_width($yv_utils->get_title($video), $title_length),
                           adj_width($yv_utils->get_channel_title($video), $author_width, 1),
                           $time_width,
-                          $yv_utils->format_time($durations[$i]));
+                          $yv_utils->get_time($video));
             }
             last;
         }
@@ -3408,7 +3408,7 @@ sub print_videos {
               sprintf(
                       "%s. %s (by %s) [%s]\n",
                       colored(sprintf('%2d', $i + 1), 'bold'), $yv_utils->get_title($video),
-                      $yv_utils->get_channel_title($video), $yv_utils->format_time($yv_utils->get_duration($video)),
+                      $yv_utils->get_channel_title($video), $yv_utils->get_time($video),
                      );
         }
     }

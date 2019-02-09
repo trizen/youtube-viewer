@@ -216,7 +216,7 @@ sub format_text {
         DISLIKES    => sub { $self->get_dislikes($info) },
         COMMENTS    => sub { $self->get_comments($info) },
         DURATION    => sub { $self->get_duration($info) },
-        TIME        => sub { $self->format_time($self->get_duration($info)) },
+        TIME        => sub { $self->get_time($info) },
         TITLE       => sub { $self->get_title($info) },
         FTITLE      => sub { $self->normalize_video_title($self->get_title($info), $fat32safe) },
         CAPTION     => sub { $self->get_caption($info) },
@@ -422,6 +422,16 @@ sub get_publication_date {
 sub get_duration {
     my ($self, $info) = @_;
     $self->format_duration($info->{contentDetails}{duration});
+}
+
+sub get_time {
+    my ($self, $info) = @_;
+
+    if ($info->{snippet}{liveBroadcastContent} eq 'live') {
+        return 'LIVE';
+    }
+
+    $self->format_time($self->get_duration($info));
 }
 
 sub get_definition {

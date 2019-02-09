@@ -2519,7 +2519,7 @@ sub add_video_entry {
         $iter, 2,
         reflow_text(
                 "<b>$symbols{play}\t</b> "
-              . $yv_utils->format_time($yv_utils->get_duration($video)) . "\n"
+              . $yv_utils->get_time($video) . "\n"
               . "<b>$symbols{diamond}\t</b> "
               . $yv_utils->get_definition($video) . "\n"
 
