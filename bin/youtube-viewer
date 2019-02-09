@@ -3395,12 +3395,11 @@ sub print_videos {
         elsif ($opt{results_with_colors}) {
             my $definition = $yv_utils->get_definition($video);
             push @formatted,
-              sprintf(
-                      "%s. %s | %s | %s\n",
+              sprintf("%s. %s (%s) by %s\n",
                       colored(sprintf('%2d', $i + 1), 'bold'),
                       colored($yv_utils->get_title($video),         'bold blue'),
+                      colored($yv_utils->get_time($video),          'magenta'),
                       colored($yv_utils->get_channel_title($video), 'bold green'),
-                      colored($yv_utils->get_time($video),          'bold magenta'),
                      );
         }
         elsif ($opt{results_fixed_width}) {
