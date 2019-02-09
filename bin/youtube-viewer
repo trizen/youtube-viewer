@@ -1671,6 +1671,15 @@ sub get_quotewords {
     Text::ParseWords::quotewords(@_);
 }
 
+sub clear_title {
+    my ($title) = @_;
+
+    $title =~ s/[^\w\s[:punct:]]//g;
+    $title = join(' ', split(' ', $title));
+
+    return $title;
+}
+
 # Straight copy of parse_options() from Term::UI
 sub _parse_options {
     my ($input) = @_;
@@ -2339,9 +2348,12 @@ sub print_channels {
 
             print "\n";
             foreach my $i (0 .. $#{$channels}) {
+
                 my $channel = $channels->[$i];
+                my $title   = clear_title($yv_utils->get_title($channel));
+
                 printf "%s. %s %s [%*s]\n", colored(sprintf('%2d', $i + 1), 'bold'),
-                  adj_width($yv_utils->get_title($channel), $title_length),
+                  adj_width($title, $title_length),
                   adj_width($authors[$i], $author_width, 1),
                   $dates_width, $dates[$i];
             }
@@ -2625,9 +2637,12 @@ FORMAT
 
             print "\n";
             foreach my $i (0 .. $#{$playlists}) {
+
                 my $playlist = $playlists->[$i];
+                my $title    = clear_title($yv_utils->get_title($playlist));
+
                 printf "%s. %s %s [%*s]\n", colored(sprintf('%2d', $i + 1), 'bold'),
-                  adj_width($yv_utils->get_title($playlist), $title_length),
+                  adj_width($title, $title_length),
                   adj_width($authors[$i], $author_width, 1),
                   $dates_width, $dates[$i];
             }
@@ -3392,14 +3407,16 @@ sub print_videos {
             my $title_length = $term_width - ($author_width + $time_width + 3 + 2 + 1);
 
             foreach my $i (0 .. $#{$videos}) {
+
                 my $video = $videos->[$i];
+                my $title = clear_title($yv_utils->get_title($video));
+
                 push @formatted,
                   sprintf("%s. %s %s %*s\n",
                           colored(sprintf('%2d', $i + 1), 'bold'),
-                          adj_width($yv_utils->get_title($video), $title_length),
+                          adj_width($title, $title_length),
                           adj_width($yv_utils->get_channel_title($video), $author_width, 1),
-                          $time_width,
-                          $yv_utils->get_time($video));
+                          $time_width, $yv_utils->get_time($video));
             }
             last;
         }
