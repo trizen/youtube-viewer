@@ -2319,13 +2319,13 @@ sub print_channels {
     my $info     = $results->{results} // {};
     my $channels = $info->{items} // [];
 
-    my $i = 0;
-    foreach my $channel (@{$channels}) {
+    foreach my $i (0 .. $#{$channels}) {
+        my $channel = $channels->[$i];
 
         if ($opt{results_with_details}) {
             printf(
                    "\n%s. %s\n    %s: %-23s %s: %-12s\n%s\n",
-                   colored(sprintf('%2d', ++$i), 'bold') => colored($yv_utils->get_title($channel), 'bold blue'),
+                   colored(sprintf('%2d', $i + 1), 'bold') => colored($yv_utils->get_title($channel), 'bold blue'),
                    colored('Updated' => 'bold') => $yv_utils->get_publication_date($channel),
                    colored('Author'  => 'bold') => $yv_utils->get_channel_title($channel),
                    wrap_text(
@@ -2335,11 +2335,19 @@ sub print_channels {
                             ),
                   );
         }
+        elsif ($opt{results_with_colors}) {
+            print "\n" if $i == 0;
+            printf("%s. %s | %s\n",
+                   colored(sprintf('%2d', $i + 1), 'bold'),
+                   colored($yv_utils->get_title($channel),            'bold blue'),
+                   colored($yv_utils->get_publication_date($channel), 'bold magenta'),
+                  );
+        }
         elsif ($opt{results_fixed_width}) {
 
             require List::Util;
 
-            my @authors = map { $yv_utils->get_channel_title($_) } @{$channels};
+            my @authors = map { $yv_utils->get_channel_id($_) } @{$channels};
             my @dates   = map { $yv_utils->get_publication_date($_) } @{$channels};
 
             my $author_width = List::Util::min(List::Util::max(map { length($_) } @authors), int($term_width / 5));
@@ -2361,8 +2369,8 @@ sub print_channels {
         }
         else {
             print "\n" if $i == 0;
-            printf "%s. %s (by %s)\n", colored(sprintf('%2d', ++$i), 'bold'), $yv_utils->get_title($channel),
-              $yv_utils->get_channel_title($channel);
+            printf "%s. %s [%s]\n", colored(sprintf('%2d', $i + 1), 'bold'), $yv_utils->get_title($channel),
+              $yv_utils->get_publication_date($channel);
         }
     }
 
@@ -2624,6 +2632,16 @@ FORMAT
                             ),
                   );
         }
+        elsif ($opt{results_with_colors}) {
+            print "\n" if $i == 0;
+            printf(
+                   "%s. %s | %s | %s\n",
+                   colored(sprintf('%2d', $i + 1), 'bold'),
+                   colored($yv_utils->get_title($playlist),            'bold blue'),
+                   colored($yv_utils->get_channel_title($playlist),    'bold green'),
+                   colored($yv_utils->get_publication_date($playlist), 'bold magenta'),
+                  );
+        }
         elsif ($opt{results_fixed_width}) {
 
             require List::Util;
@@ -2647,16 +2665,6 @@ FORMAT
                   $dates_width, $dates[$i];
             }
             last;
-        }
-        elsif ($opt{results_with_colors}) {
-            print "\n" if $i == 0;
-            printf(
-                   "%s. %s (%s) [%s]\n",
-                   colored(sprintf('%2d', $i + 1), 'bold'),
-                   colored($yv_utils->get_title($playlist),                 'bold green'),
-                   colored("by " . $yv_utils->get_channel_title($playlist), 'bold yellow'),
-                   colored($yv_utils->get_publication_date($playlist),      'bold blue'),
-                  );
         }
         else {
             print "\n" if $i == 0;
@@ -3388,11 +3396,11 @@ sub print_videos {
             my $definition = $yv_utils->get_definition($video);
             push @formatted,
               sprintf(
-                      "%s. %s (%s) [%s]\n",
+                      "%s. %s | %s | %s\n",
                       colored(sprintf('%2d', $i + 1), 'bold'),
-                      colored($yv_utils->get_title($video),                 'bold green'),
-                      colored("by " . $yv_utils->get_channel_title($video), 'bold yellow'),
-                      colored($yv_utils->get_time($video),                  'bold bright_blue'),
+                      colored($yv_utils->get_title($video),         'bold blue'),
+                      colored($yv_utils->get_channel_title($video), 'bold green'),
+                      colored($yv_utils->get_time($video),          'bold magenta'),
                      );
         }
         elsif ($opt{results_fixed_width}) {
