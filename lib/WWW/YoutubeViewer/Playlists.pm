@@ -52,8 +52,8 @@ PlaylistIDs can be separated by commas.
 =cut
 
 sub playlist_from_id {
-    my ($self, $id) = @_;
-    $self->_get_results($self->_make_playlists_url(id => $id));
+    my ($self, $id, $part) = @_;
+    $self->_get_results($self->_make_playlists_url(id => $id, part => ($part // 'snippet')));
 }
 
 =head2 playlists($channel_id)

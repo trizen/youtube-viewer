@@ -2232,6 +2232,8 @@ See &lt;https://dev.perl.org/licenses/&gt; for more information.
     <property name="title" translatable="yes">Video details</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
+    <property name="default_width">300</property>
+    <property name="default_height">400</property>
     <property name="transient_for">__MAIN__</property>
     <signal name="destroy" handler="hide_details_window" swapped="no"/>
     <signal name="delete-event" handler="hide_details_window" swapped="no"/>
