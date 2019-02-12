@@ -1387,18 +1387,20 @@ $accel->connect(0xffc8,   ['lock-mask'],    ['visible'], \&maximize_unmaximize_m
 $mainw->add_accel_group($accel);
 
 # Support for navigating back and forth using the side buttons of the mouse
-$mainw->signal_connect('button-release-event' => sub {
-    my (undef, $event) = @_;
+$mainw->signal_connect(
+    'button-release-event' => sub {
+        my (undef, $event) = @_;
 
-    my $button = $event->button;
+        my $button = $event->button;
 
-    if ($button == 8) {
-        display_previous_results();
+        if ($button == 8) {
+            display_previous_results();
+        }
+        elsif ($button == 9) {
+            display_next_results();
+        }
     }
-    elsif ($button == 9) {
-        display_next_results();
-    }
-});
+);
 
 # Other windows (ESC key to close them)
 $accel = Gtk2::AccelGroup->new;
