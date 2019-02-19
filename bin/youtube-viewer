@@ -3339,12 +3339,15 @@ sub print_videos {
     }
 
     if (@{$videos} and not $results->{has_extra_info}) {
+
         my $content_details = $yv_obj->video_details(join(',', map { $yv_utils->get_video_id($_) } @{$videos}), VIDEO_PART);
         my $video_details   = $content_details->{results}{items};
+
         foreach my $i (0 .. $#{$videos}) {
             @{$videos->[$i]}{qw(id contentDetails statistics snippet)} =
               @{$video_details->[$i]}{qw(id contentDetails statistics snippet)};
         }
+
         $results->{has_extra_info} = 1;
     }
 
@@ -3549,6 +3552,7 @@ sub print_videos {
             }
             elsif ($opt =~ /^(?:R|refresh)\z/) {
                 @{$videos} = @{$yv_obj->_get_results($url)->{results}{items}};
+                $results->{has_extra_info} = 0;
             }
             elsif ($opt =~ /^(?:r|return)\z/) {
                 return;
