@@ -414,7 +414,7 @@
                     <property name="can_focus">True</property>
                     <property name="model">liststore1</property>
                     <property name="reorderable">True</property>
-                    <property name="search_column">0</property>
+                    <property name="search_column">1</property>
                     <property name="tooltip_column">9</property>
                     <signal name="row-activated" handler="get_code" swapped="no"/>
                     <child>
@@ -2228,11 +2228,12 @@ See &lt;https://dev.perl.org/licenses/&gt; for more information.
   </object>
   <object class="GtkWindow" id="details_window">
     <property name="can_focus">False</property>
-    <property name="border_width">2</property>
     <property name="title" translatable="yes">Video details</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
     <property name="default_height">400</property>
+    <property name="destroy_with_parent">True</property>
+    <property name="gravity">static</property>
     <property name="transient_for">__MAIN__</property>
     <signal name="destroy" handler="hide_details_window" swapped="no"/>
     <signal name="delete-event" handler="hide_details_window" swapped="no"/>

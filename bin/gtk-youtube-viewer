@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 12 February 2019
+#  Latest edit on: 20 February 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -3125,7 +3125,14 @@ sub comments_row_activated {
     my $iter  = $feeds_treeview->get_selection->get_selected() or return;
     my $value = $feeds_liststore->get($iter, 1);
 
-    if (defined $value and $value =~ m{^https?://}) {
+    $value // return 1;
+
+    if ($value =~ m{^https://www\.youtube\.com/watch\?}) {
+        open_external_url($value);
+        return 1;
+    }
+
+    if ($value =~ m{^https?://}) {
         $feeds_liststore->remove($iter);
         my ($url, $token) = split(/;/, $value);
         my $results = $yv_obj->next_page($url, $token);
@@ -3197,6 +3204,7 @@ sub display_comments {
         my $snippet = (($comment->{snippet} // next)->{topLevelComment} // next)->{snippet};
 
         my $iter = $feeds_liststore->append;
+
         $feeds_liststore->set(
                               $iter, 0,
                               reflow_text(
@@ -3213,6 +3221,14 @@ sub display_comments {
                                                               )
                                                              )
                                          )
+                             );
+
+        $feeds_liststore->set(
+                              $iter, 1,
+                              sprintf(
+                                      "https://www.youtube.com/watch?v=%s&lc=%s",
+                                      $snippet->{videoId}, $comment->{snippet}{topLevelComment}{id}
+                                     )
                              );
 
         if (exists $comment->{replies}) {
@@ -3236,6 +3252,15 @@ sub display_comments {
                                                              )
                                                     )
                                                  )
+                                     );
+
+                $feeds_liststore->set(
+                                      $iter, 1,
+                                      sprintf(
+                                              "https://www.youtube.com/watch?v=%s&lc=%s",
+                                              $reply->{snippet}{videoId},
+                                              $reply->{id}
+                                             )
                                      );
             }
         }
