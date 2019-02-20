@@ -3362,17 +3362,17 @@ sub set_entry_details {
 
                 if ($code =~ /$valid_video_id_re/) {
 
-                    my $thumbnail = $info->{snippet}{thumbnails}{default};
+                    my $thumbnail = $info->{snippet}{thumbnails}{medium};
                     my $url       = $thumbnail->{url};
 
                     if ($url =~ /_live\.\w+\z/) {
                         ## no extra thumbnails available while video is LIVE
                     }
                     else {
-                        $url =~ s{/\w+\.(\w+)\z}{/$nr.$1};
+                        $url =~ s{/\w+\.(\w+)\z}{/mq$nr.$1};
                     }
 
-                    my $pixbuf = get_pixbuf_thumbnail($url, $thumbnail->{width} // 120, $thumbnail->{height} // 90);
+                    my $pixbuf = get_pixbuf_thumbnail($url, 160, 90);
                     $gui->get_object("image$nr")->set_from_pixbuf($pixbuf);
                 }
                 else {
