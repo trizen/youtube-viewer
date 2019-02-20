@@ -2271,10 +2271,6 @@ sub decode_entities {
     return $text;
 }
 
-sub get_next_page_spaces {
-    $CONFIG{show_thumbs} ? "\t" x 10 : "\t" x 20;
-}
-
 sub get_code {
     my ($code, $iter) = get_selected_entry_code();
 
@@ -2294,7 +2290,7 @@ sub get_code {
                 my $results         = $yv_obj->next_page($code, $next_page_token);
 
                 if ($yv_utils->has_entries($results)) {
-                    $liststore->set($iter, 0, get_next_page_spaces() . '<big><b>' . ('=' x 20) . '</b></big>');
+                    $liststore->set($iter, 0, '<big><b>' . ('=' x 20) . '</b></big>');
                     $liststore->set($iter, 3, q{});
                 }
                 else {
@@ -2328,7 +2324,7 @@ sub append_next_page {
     $token // return;    # no next page is available
 
     my $iter = $liststore->append;
-    $liststore->set($iter, 0, get_next_page_spaces() . "<big><b>LOAD MORE</b></big>");
+    $liststore->set($iter, 0, "<big><b>LOAD MORE</b></big>");
     $liststore->set($iter, 3, $url);
     $liststore->set($iter, 5, $token);
     $liststore->set($iter, 7, 'next_page');
@@ -3122,27 +3118,32 @@ sub download_video {
 }
 
 sub comments_row_activated {
-    my $iter  = $feeds_treeview->get_selection->get_selected() or return;
-    my $value = $feeds_liststore->get($iter, 1);
 
-    $value // return 1;
+    my $iter = $feeds_treeview->get_selection->get_selected() or return;
+    my $url  = $feeds_liststore->get($iter, 1);
 
-    if ($value =~ m{^https://www\.youtube\.com/watch\?}) {
-        open_external_url($value);
-        return 1;
-    }
+    if (defined($url) and $url =~ m{^https?://}) {    # load more comments
 
-    if ($value =~ m{^https?://}) {
+        my $token = $feeds_liststore->get($iter, 2);
         $feeds_liststore->remove($iter);
-        my ($url, $token) = split(/;/, $value);
         my $results = $yv_obj->next_page($url, $token);
+
         if ($yv_utils->has_entries($results)) {
             display_comments($results);
         }
         else {
             die "This is the last page of comments.\n";
         }
+
+        return 1;
     }
+
+    my $video_id   = $feeds_liststore->get($iter, 3);
+    my $comment_id = $feeds_liststore->get($iter, 4);
+
+    my $comment_url = sprintf("https://www.youtube.com/watch?v=%s&lc=%s", $video_id, $comment_id,);
+
+    open_external_url($comment_url);
 
     return 1;
 }
@@ -3223,13 +3224,8 @@ sub display_comments {
                                          )
                              );
 
-        $feeds_liststore->set(
-                              $iter, 1,
-                              sprintf(
-                                      "https://www.youtube.com/watch?v=%s&lc=%s",
-                                      $snippet->{videoId}, $comment->{snippet}{topLevelComment}{id}
-                                     )
-                             );
+        $feeds_liststore->set($iter, 3, $snippet->{videoId});
+        $feeds_liststore->set($iter, 4, $comment->{snippet}{topLevelComment}{id});
 
         if (exists $comment->{replies}) {
             foreach my $reply (reverse @{$comment->{replies}{comments}}) {
@@ -3254,22 +3250,17 @@ sub display_comments {
                                                  )
                                      );
 
-                $feeds_liststore->set(
-                                      $iter, 1,
-                                      sprintf(
-                                              "https://www.youtube.com/watch?v=%s&lc=%s",
-                                              $reply->{snippet}{videoId},
-                                              $reply->{id}
-                                             )
-                                     );
+                $feeds_liststore->set($iter, 3, $reply->{snippet}{videoId});
+                $feeds_liststore->set($iter, 4, $reply->{id});
             }
         }
     }
 
     if (exists $res->{nextPageToken}) {
         my $iter = $feeds_liststore->append;
-        $feeds_liststore->set($iter, 0, "\n<big><b>LOAD MORE...</b></big>\n");
-        $feeds_liststore->set($iter, 1, "$url;$res->{nextPageToken}");
+        $feeds_liststore->set($iter, 0, "<big><b>LOAD MORE</b></big>");
+        $feeds_liststore->set($iter, 1, $url);
+        $feeds_liststore->set($iter, 2, $res->{nextPageToken});
     }
 
     return 1;
