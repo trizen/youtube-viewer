@@ -226,9 +226,6 @@ my %CONFIG = (
     fullscreen  => 0,
     audio_only  => 0,
 
-    use_threads            => 0,
-    use_threads_for_thumbs => 0,     # this is unstable
-
     thousand_separator     => q{,},
     downloads_dir          => curdir(),
     web_browser            => undef,                 # defaults to $ENV{WEBBROWSER} or xdg-open
@@ -814,12 +811,6 @@ sub apply_configuration {
     # Prefer MP4 over WEBM
     $yv_obj->set_prefer_mp4($CONFIG{prefer_mp4} ? 1 : 0);
 
-    # Setup threads
-    if ($CONFIG{use_threads} || $CONFIG{use_threads_for_thumbs}) {
-        $ENV{PERL_JSON_BACKEND} = 'JSON::PP';
-        set_threads();
-    }
-
     # Set the "More options" expander
     $more_options_expander->set_expanded($CONFIG{active_more_options_expander});
 
@@ -870,55 +861,6 @@ set_usernames();
 
 sub donate {
     open_external_url('https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=75FUVBE6Q73T8');
-}
-
-# ---------------- Threads ---------------- #
-my ($queue, $jobs);
-
-sub set_threads {
-    return 1 if defined $queue;
-
-    $gif_spinner->set_from_animation($animation);
-    warn "* Initializing threads...\n";
-
-    require threads;
-    require Thread::Queue;
-
-    no warnings 'redefine';
-    state $lwp_get = \&WWW::YoutubeViewer::lwp_get;
-    *WWW::YoutubeViewer::lwp_get = \&threads_lwp_get;
-
-    $queue = 'Thread::Queue'->new;
-    $jobs  = 'Thread::Queue'->new;
-    threads->create(
-        sub {
-            while (my $arg = $jobs->dequeue) {
-                $queue->enqueue($yv_obj->$lwp_get(@$arg));
-            }
-        }
-    )->detach();
-}
-
-sub threads_lwp_get {
-    my ($self, @arg) = @_;
-
-    if (not defined($queue) or not defined($jobs)) {
-        set_threads();
-    }
-
-    $gif_spinner->show;
-
-    $jobs->enqueue(\@arg);
-    while ($queue->pending == 0) {
-        'Gtk2'->main_iteration;
-        if (defined(my $lwp_result = $queue->dequeue_nb)) {
-            $gif_spinner->hide;
-            return $lwp_result;
-        }
-    }
-
-    undef $queue;
-    undef $jobs;
 }
 
 # Set text to a 'textview' object
@@ -1345,12 +1287,6 @@ CTRL+S : save the configuration
 ESC : close the focused window
 
 # Configuration
-
-use_threads
-    1 for making HTTPS requests concurrently
-
-use_threads_for_thumbs
-    1 for getting the thumbnail images concurrently
 
 srt_languages
     a list with the preferred subtitle languages
@@ -2355,10 +2291,7 @@ sub get_pixbuf_thumbnail {
     $xsize //= 160;
     $ysize //= 90;
 
-    my $thumbnail =
-      $CONFIG{use_threads_for_thumbs}
-      ? threads_lwp_get($yv_obj, $url, simple => 1)
-      : $yv_obj->lwp_get($url, simple => 1);
+    my $thumbnail = $yv_obj->lwp_get($url, simple => 1);
 
     my $pixbuf;
     if (defined $thumbnail) {
