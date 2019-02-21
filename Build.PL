@@ -80,20 +80,6 @@ my $builder = Module::Build->new(
                                              #'Text::CharWidth' => 0,           # this works as fallback
                                             },
                                },
-
-        (
-         $gtk_youtube_viewer
-         ? (
-            threads_support => {
-                                description => "Threads support for gtk-youtube-viewer. (with use_threads => 1)",
-                                requires    => {
-                                             'threads'       => 0,
-                                             'Thread::Queue' => 0,
-                                            },
-                               },
-           )
-         : ()
-        ),
     },
 
     add_to_cleanup     => ['WWW-YoutubeViewer-*'],
