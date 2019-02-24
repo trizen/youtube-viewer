@@ -2377,7 +2377,6 @@ sub display_results {
 
         if ($yv_utils->is_playlist($item)) {
 
-            # Filter out deleted playlists
             my $playlist_id = $yv_utils->get_playlist_id($item) || next;
 
             if (exists($info->{__extra_info__}{$playlist_id})) {
@@ -2395,13 +2394,15 @@ sub display_results {
         }
         elsif ($yv_utils->is_video($item) or $item->{__is_video__}) {
 
-            # Filter out private or deleted videos
             my $video_id = $yv_utils->get_video_id($item) || next;
 
             if (exists($info->{__extra_info__}{$video_id})) {
                 @{$item}{qw(id contentDetails statistics snippet)} =
                   @{$info->{__extra_info__}{$video_id}}{qw(id contentDetails statistics snippet)};
             }
+
+            # Filter out private or deleted videos
+            $yv_utils->get_video_id($item) || next;
 
             # Mark as video
             $item->{__is_video__} = 1;
