@@ -1276,6 +1276,11 @@ set_text(
 HELP_TEXT
         );
 
+{
+    my $font = Pango::FontDescription->from_string('Monospace 8');
+    $textview_help->modify_font($font);
+}
+
 # ------------------- Accels ------------------- #
 
 # Main window
