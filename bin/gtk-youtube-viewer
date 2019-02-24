@@ -1251,48 +1251,27 @@ sub users_menu_popup {
 # Setting help text
 set_text(
     $textview_help, <<"HELP_TEXT"
-# Links
-    Github: https://github.com/trizen/youtube-viewer
-
-# Developer
-    Trizen <dHJpemVuQHByb3Rvbm1haWwuY29tCg==>
-
-# Contributor
-    Ovidiu D. Ni\x{21b}an <nitanovidiu\@gmail.com>
 
 # Key binds
 
-## Main window
-CTRL+H : help window
-CTRL+L : login window
-CTRL+P : preferences window
-CTRL+Y : start CLI youtube viewer
-CTRL+E : enqueue the selected video
-CTRL+U : show the saved user-list
-CTRL+D : show more video details for a selected video
-CTRL+W : show the warnings window
-CTRL+G : show videos favorited by the author of a selected video
-CTRL+R : show related videos for a selected video
-CTRL+M : show videos from the author of a selected video
-CTRL+K : show playlists from the author of a selected video
-CTRL+S : add the author of a selected video to the user-list
-CTRL+Q : close the application
-DEL : remove the selected entry from the list
-F11 : minimize-maximize the main window
+    CTRL+H : help window
+    CTRL+L : login window
+    CTRL+P : preferences window
+    CTRL+Y : start CLI youtube viewer
+    CTRL+E : enqueue the selected video
 
-## Preferences window
-CTRL+S : save the configuration
+    CTRL+U : show the saved user-list
+    CTRL+D : show more video details for a selected video
+    CTRL+W : show the warnings window
+    CTRL+G : show videos favorited by the author of a selected video
+    CTRL+R : show related videos for a selected video
+    CTRL+M : show videos from the author of a selected video
+    CTRL+K : show playlists from the author of a selected video
+    CTRL+S : add the author of a selected video to the user-list
+    CTRL+Q : close the application
 
-## Other windows
-ESC : close the focused window
-
-# Configuration
-
-srt_languages
-    a list with the preferred subtitle languages
-
-captions_dir
-    the directory where to store the closed-captions from YouTube (.srt files)
+    DEL    : remove the selected entry from the list
+    F11    : minimize-maximize the main window
 
 HELP_TEXT
         );
