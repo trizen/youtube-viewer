@@ -616,11 +616,11 @@ sub _extract_streaming_urls {
         }
     }
 
-    if (exists $info->{hlsvp}) {
+    if ($info->{livestream} or $info->{live_playback}) {
         if (my @formats = $self->_get_formats_from_ytdl($videoID)) {
             @results = @formats;
         }
-        else {
+        elsif (exists $info->{hlsvp}) {
             push @results,
               {
                 itag => 38,
