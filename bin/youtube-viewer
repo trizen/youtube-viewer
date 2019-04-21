@@ -2949,6 +2949,8 @@ sub download_video {
     my $audio_filename;
     my $naked_filename = $video_filename =~ s/\.\w+\z//r;
 
+    $naked_filename =~ s/:\h*/ - /g;    # replace colons (":") with dashes ("-")
+
     my $mkv_filename = "$naked_filename.mkv";
     my $srt_filename = "$naked_filename.srt";
 
@@ -2991,10 +2993,10 @@ sub download_video {
             $opt{download_in_parallel} = 0;
         }
 
+#<<<
         $video_filename = download_from_url($video_info->{url}, $video_filename) // return;
-        $audio_filename =
-          download_from_url($audio_info->{url}, $naked_filename . ' - audio.' . $yv_utils->extension($audio_info->{type}))
-          if $audio_info;
+        $audio_filename = download_from_url($audio_info->{url}, $naked_filename . ' - audio.' . $yv_utils->extension($audio_info->{type})) if $audio_info;
+#>>>
     }
 
     my @merge_files = ($video_filename);
