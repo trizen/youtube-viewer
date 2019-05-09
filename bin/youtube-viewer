@@ -3733,15 +3733,21 @@ sub print_videos {
                     $#{$videos} + 1;
                 };
                 my @ids = get_valid_numbers($#{$videos}, "$from..$to");
-                continue if not @ids;
-                push @for_play, @ids;
+                if (@ids) {
+                    push @for_play, @ids;
+                }
+                else {
+                    push @for_search, $key;
+                }
             }
             else {
                 push @for_play, $key - 1;
             }
-            if (not play_videos([@{$videos}[@for_play]])) {
+
+            if (@for_play and not play_videos([@{$videos}[@for_play]])) {
                 __SUB__->($results);
             }
+
             if ($opt{autohide_watched}) {
                 splice(@{$videos}, $key, 1) for @for_play;
             }
