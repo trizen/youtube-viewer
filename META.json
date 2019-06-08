@@ -4,7 +4,7 @@
       "Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4224",
+   "generated_by" : "Module::Build version 0.4229",
    "license" : [
       "perl_5"
    ],
@@ -117,5 +117,5 @@
       ]
    },
    "version" : "v3.5.4",
-   "x_serialization_backend" : "JSON::PP version 4.00"
+   "x_serialization_backend" : "JSON::PP version 4.02"
 }
