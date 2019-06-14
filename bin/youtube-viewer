@@ -1083,7 +1083,8 @@ sub apply_configuration {
     }
 
     # ... YOUTUBE OPTIONS ... #
-    foreach my $option_name (qw(
+    foreach my $option_name (
+                             qw(
                              videoCaption maxResults order
                              videoDefinition videoCategoryId
                              videoDimension videoDuration
@@ -1093,7 +1094,8 @@ sub apply_configuration {
                              safeSearch regionCode debug hl
                              http_proxy page comments_order
                              subscriptions_order
-    )) {
+                             )
+      ) {
 
         if (defined $opt->{$option_name}) {
             my $code      = \&{"WWW::YoutubeViewer::set_$option_name"};
@@ -1456,9 +1458,9 @@ sub parse_arguments {
             $opt{video_player_selected} = $_[1];
         },
 
-        'append-mplayer|append-arg|arg=s' => \$MPLAYER{user_defined_arguments},
-        'vo=s'                            => sub { $MPLAYER{video_output} = "-vo $_[1]" },
-        'af=s'                            => sub { $MPLAYER{audio_filter} = "-af $_[1]" },
+        'append-arg|append-args=s' => \$MPLAYER{user_defined_arguments},
+        'vo=s'                     => sub { $MPLAYER{video_output} = "-vo $_[1]" },
+        'af=s'                     => sub { $MPLAYER{audio_filter} = "-af $_[1]" },
 
         # Others
         'colorful|colourful|C!' => \$opt{results_with_colors},
@@ -2380,13 +2382,15 @@ sub print_channels {
 
             my $opt = $1;
 
-            if (general_options(
+            if (
+                general_options(
                                 opt  => $opt,
                                 sub  => __SUB__,
                                 url  => $url,
                                 res  => $channels,
                                 info => $info,
-            )) {
+                               )
+              ) {
                 ## ok
             }
             elsif ($opt =~ /^(?:h|help)\z/) {
@@ -2467,7 +2471,8 @@ sub print_comments {
 
             my $opt = $1;
 
-            if (general_options(
+            if (
+                general_options(
                                 opt  => $opt,
                                 sub  => __SUB__,
                                 url  => $url,
@@ -2475,7 +2480,8 @@ sub print_comments {
                                 info => $info,
                                 mode => 'comments',
                                 args => [$videoID],
-            )) {
+                               )
+              ) {
                 ## ok
             }
             elsif ($opt =~ /^(?:h|help)\z/) {
@@ -2548,11 +2554,13 @@ sub print_categories {
 
             my $opt = $1;
 
-            if (general_options(
+            if (
+                general_options(
                                 opt => $opt,
                                 sub => __SUB__,
                                 res => $results,
-            )) {
+                               )
+              ) {
                 ## ok
             }
             elsif ($opt =~ /^(?:h|help)\z/) {
@@ -2685,14 +2693,16 @@ FORMAT
 
             my $opt = $1;
 
-            if (general_options(
+            if (
+                general_options(
                                 opt  => $opt,
                                 sub  => __SUB__,
                                 url  => $url,
                                 res  => $playlists,
                                 info => $info,
                                 mode => 'playlists',
-            )) {
+                               )
+              ) {
                 ## ok
             }
             elsif ($opt =~ /^(?:h|help)\z/) {
@@ -3449,11 +3459,13 @@ sub print_videos {
 
     if ($opt{play_all} || $opt{play_backwards}) {
         if (@{$videos}) {
-            if (play_videos(
+            if (
+                play_videos(
                             $opt{play_backwards}
                             ? [reverse @{$videos}]
                             : $videos
-            )) {
+                           )
+              ) {
                 if ($opt{play_backwards}) {
                     if (defined $info->{prevPageToken}) {
                         __SUB__->($yv_obj->previous_page($url, $info->{prevPageToken}), auto => 1);
@@ -3509,10 +3521,10 @@ sub print_videos {
 
             my $opt = $1;
 
-            if (general_options(
-                                opt => $opt,
-                                res => $videos,
-            )) {
+            if (
+                general_options(opt => $opt,
+                                res => $videos,)
+              ) {
                 ## ok
             }
             elsif ($opt =~ /^(?:h|help)\z/) {

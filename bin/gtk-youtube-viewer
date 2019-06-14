@@ -780,14 +780,16 @@ sub apply_configuration {
 
     $published_within_combobox->set_active(0);
 
-    foreach my $option_name (qw(
+    foreach my $option_name (
+                             qw(
                              videoSyndicated comments_order
                              maxResults videoDimension
                              videoEmbeddable videoLicense
                              publishedAfter publishedBefore
                              regionCode videoCategoryId
                              debug http_proxy
-    )) {
+                             )
+      ) {
 
         if (defined $CONFIG{$option_name}) {
             my $code      = \&{"WWW::YoutubeViewer::set_$option_name"};
@@ -3132,11 +3134,13 @@ sub display_comments {
                                             . "</b> ("
                                             . $yv_utils->format_date($snippet->{publishedAt})
                                             . ") said:</big>\n"
-                                            . encode_entities(wrap_text(
+                                            . encode_entities(
+                                                              wrap_text(
                                                                        i_tab => "\t",
                                                                        s_tab => "\t",
                                                                        text => [$snippet->{textDisplay} // 'Empty comment...'],
-                                            ))
+                                                              )
+                                                             )
                                          )
                              );
 
@@ -3156,11 +3160,13 @@ sub display_comments {
                                                     . "</b> ("
                                                     . $yv_utils->format_date($reply->{snippet}{publishedAt})
                                                     . ") replied:</big>\n"
-                                                    . encode_entities(wrap_text(
+                                                    . encode_entities(
+                                                             wrap_text(
                                                                  i_tab => "\t\t",
                                                                  s_tab => "\t\t",
                                                                  text => [$reply->{snippet}{textDisplay} // 'Empty comment...']
-                                                    ))
+                                                             )
+                                                    )
                                                  )
                                      );
 
