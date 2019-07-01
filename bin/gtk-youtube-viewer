@@ -737,7 +737,7 @@ if (defined $yv_obj->get_access_token()) {
     show_user_panel();
 }
 else {
-    $statusbar->push(1, 'Not logged');
+    $statusbar->push(1, 'Not logged in.');
 }
 
 {
