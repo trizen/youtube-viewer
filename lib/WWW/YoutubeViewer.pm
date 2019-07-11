@@ -523,7 +523,7 @@ sub _fallback_extract_urls {
     if ($self->get_use_invidious_api) {    # use the API of invidio.us
 
         if ($self->get_debug) {
-            say STDERR ":: Using the API of invidio.us...";
+            say STDERR ":: Using invidio.us to extract the streaming URLs...";
         }
 
         push @array, $self->_extract_from_indivious($videoID);
@@ -541,7 +541,7 @@ sub _fallback_extract_urls {
       || return;
 
     if ($self->get_debug) {
-        say STDERR ":: Using youtube-dl to extract streaming URLs...";
+        say STDERR ":: Using youtube-dl to extract the streaming URLs...";
     }
 
     my $json = $self->proxy_stdout('youtube-dl', '--all-formats', '--dump-single-json',

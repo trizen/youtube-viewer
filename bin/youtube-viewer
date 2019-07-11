@@ -1096,7 +1096,7 @@ sub apply_configuration {
                              publishedAfter publishedBefore
                              safeSearch regionCode debug hl
                              http_proxy page comments_order
-                             subscriptions_order
+                             subscriptions_order use_invidious_api
                              )
       ) {
 
