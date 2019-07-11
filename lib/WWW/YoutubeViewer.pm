@@ -83,6 +83,8 @@ my %valid_options = (
     escape_utf8   => {valid => [1, 0], default => 0},
     prefer_mp4    => {valid => [1, 0], default => 0},
 
+    use_invidious_api => {valid => [1, 0], default => 0},
+
     # OAuth stuff
     client_id     => {valid => [qr/^.{5}/], default => undef},
     client_secret => {valid => [qr/^.{5}/], default => undef},
@@ -251,15 +253,15 @@ sub set_lwp_useragent {
                  or $response->request->method ne 'GET'    # cache only GET requests
 
                  # don't cache if "cache-control" specifies "max-age=0" or "no-store"
-                 or $response->header('cache-control') =~ /\b(?:max-age=0|no-store)\b/
+                 or (($response->header('cache-control') // '') =~ /\b(?:max-age=0|no-store)\b/)
 
                  # don't cache video or audio files
-                 or $response->header('content-type') =~ /\b(?:video|audio)\b/;
+                 or (($response->header('content-type') // '') =~ /\b(?:video|audio)\b/);
            },
 
            recache_if => sub {
                my ($response, $path) = @_;
-               not($response->is_fresh)                    # recache if the response expired
+               not($response->is_fresh)                          # recache if the response expired
                  or ($response->code == 404 && -M $path > 1);    # recache any 404 response older than 1 day
            }
           )
@@ -269,10 +271,10 @@ sub set_lwp_useragent {
     );
 
     require LWP::ConnCache;
-    my $cache = LWP::ConnCache->new;
+    state $cache = LWP::ConnCache->new;
     $cache->total_capacity(undef);                               # no limit
 
-    my $accepted_encodings = do {
+    state $accepted_encodings = do {
         require HTTP::Message;
         HTTP::Message::decodable();
     };
@@ -309,7 +311,7 @@ sub prepare_access_token {
     return;
 }
 
-sub _get_lwp_header {
+sub _auth_lwp_header {
     my ($self) = @_;
 
     my %lwp_header;
@@ -344,7 +346,7 @@ sub lwp_get {
     $url // return;
     $self->{lwp} // $self->set_lwp_useragent();
 
-    my %lwp_header = ($opt{simple} ? () : $self->_get_lwp_header);
+    my %lwp_header = ($opt{simple} ? () : $self->_auth_lwp_header);
     my $response   = $self->{lwp}->get($url, %lwp_header);
 
     if ($response->is_success) {
@@ -358,7 +360,7 @@ sub lwp_get {
                 $self->set_access_token($refresh_token->{access_token});
 
                 # Don't be tempted to use recursion here, because bad things will happen!
-                $response = $self->{lwp}->get($url, $self->_get_lwp_header);
+                $response = $self->{lwp}->get($url, $self->_auth_lwp_header);
 
                 if ($response->is_success) {
                     $self->save_authentication_tokens();
@@ -490,36 +492,87 @@ sub _make_feed_url {
     $self->get_feeds_url() . $path . '?' . $self->default_arguments(%args);
 }
 
-sub _get_formats_from_ytdl {
+sub _extract_from_indivious {
     my ($self, $videoID) = @_;
+
+    my $url = sprintf("https://invidio.us/api/v1/videos/%s?fields=formatStreams,adaptiveFormats", $videoID);
+
+    (my $resp = $self->{lwp}->get($url))->is_success() || return;
+    my $json = $resp->decoded_content()        // return;
+    my $ref  = $self->parse_json_string($json) // return;
+
+    my @formats;
+
+    # The entries are already in the format that we want.
+    if (exists($ref->{adaptiveFormats}) and ref($ref->{adaptiveFormats}) eq 'ARRAY') {
+        push @formats, @{$ref->{adaptiveFormats}};
+    }
+
+    if (exists($ref->{formatStreams}) and ref($ref->{formatStreams}) eq 'ARRAY') {
+        push @formats, @{$ref->{formatStreams}};
+    }
+
+    return @formats;
+}
+
+sub _fallback_extract_urls {
+    my ($self, $videoID) = @_;
+
+    my @array;
+
+    if ($self->get_use_invidious_api) {    # use the API of invidio.us
+
+        if ($self->get_debug) {
+            say STDERR ":: Using the API of invidio.us...";
+        }
+
+        push @array, $self->_extract_from_indivious($videoID);
+
+        if ($self->get_debug) {
+            say STDERR ":: Found ", scalar(@array), " streaming URLs.";
+        }
+
+        if (@array) {
+            return @array;
+        }
+    }
 
     ((state $x = $self->proxy_system('youtube-dl', '--version')) == 0)
       || return;
 
+    if ($self->get_debug) {
+        say STDERR ":: Using youtube-dl to extract streaming URLs...";
+    }
+
     my $json = $self->proxy_stdout('youtube-dl', '--all-formats', '--dump-single-json',
                                    quotemeta("https://www.youtube.com/watch?v=" . $videoID));
 
-    my @array;
     my $ref = $self->parse_json_string($json) // return;
+
     if (ref($ref) eq 'HASH' and exists($ref->{formats}) and ref($ref->{formats}) eq 'ARRAY') {
         foreach my $format (@{$ref->{formats}}) {
             if (exists($format->{format_id}) and exists($format->{url})) {
 
-                push @array,
-                  {
-                    itag => $format->{format_id},
-                    url  => $format->{url},
-                    type => (
-                             (
-                              (defined($format->{format_note}) && $format->{format_note} eq 'DASH audio')
-                              ? 'audio/'
-                              : 'video/'
-                             )
-                             . $format->{ext}
-                            ),
-                  };
+                my $entry = {
+                             itag => $format->{format_id},
+                             url  => $format->{url},
+                             type => (
+                                      (
+                                       (defined($format->{format_note}) and $format->{format_note} eq 'DASH audio')
+                                       ? 'audio/'
+                                       : 'video/'
+                                      )
+                                      . $format->{ext}
+                                     ),
+                            };
+
+                push @array, $entry;
             }
         }
+    }
+
+    if ($self->get_debug) {
+        say STDERR ":: Found ", scalar(@array), " streaming URLs.";
     }
 
     return @array;
@@ -601,7 +654,7 @@ sub _extract_streaming_urls {
     foreach my $video (@results) {
         if (exists $video->{s}) {    # has an encrypted signature :(
 
-            my @formats = $self->_get_formats_from_ytdl($videoID);
+            my @formats = $self->_fallback_extract_urls($videoID);
 
             foreach my $format (@formats) {
                 foreach my $ref (@results) {
@@ -617,7 +670,7 @@ sub _extract_streaming_urls {
     }
 
     if ($info->{livestream} or $info->{live_playback}) {
-        if (my @formats = $self->_get_formats_from_ytdl($videoID)) {
+        if (my @formats = $self->_fallback_extract_urls($videoID)) {
             @results = @formats;
         }
         elsif (exists $info->{hlsvp}) {
@@ -643,7 +696,7 @@ Returns a list of streaming URLs for a videoID.
 sub get_streaming_urls {
     my ($self, $videoID) = @_;
 
-    my $url = ($self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID));
+    my $url     = ($self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID));
     my $content = $self->lwp_get($url, simple => 1) // return;
     my %info    = $self->parse_query_string($content);
 
@@ -670,7 +723,7 @@ sub get_streaming_urls {
 
     # Try again with youtube-dl
     if (!@streaming_urls or $info{status} =~ /fail|error/i) {
-        @streaming_urls = $self->_get_formats_from_ytdl($videoID);
+        @streaming_urls = $self->_fallback_extract_urls($videoID);
     }
 
     if ($self->get_prefer_mp4) {

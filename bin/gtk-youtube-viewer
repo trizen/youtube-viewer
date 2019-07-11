@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 20 February 2019
+#  Latest edit on: 11 July 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -225,6 +225,8 @@ my %CONFIG = (
     debug       => 0,
     fullscreen  => 0,
     audio_only  => 0,
+
+    use_invidious_api => 0,
 
     thousand_separator     => q{,},
     downloads_dir          => curdir(),
@@ -730,6 +732,7 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      hl                  => $CONFIG{hl},
                                      lwp_env_proxy       => $CONFIG{env_proxy},
                                      cache_dir           => $CONFIG{cache_dir},
+                                     use_invidious_api   => $CONFIG{use_invidious_api},
                                      authentication_file => $authentication_file,
                                     );
 
@@ -787,7 +790,7 @@ sub apply_configuration {
                              videoEmbeddable videoLicense
                              publishedAfter publishedBefore
                              regionCode videoCategoryId
-                             debug http_proxy
+                             debug http_proxy use_invidious_api
                              )
       ) {
 

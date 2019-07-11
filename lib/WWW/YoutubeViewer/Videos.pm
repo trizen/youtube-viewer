@@ -97,7 +97,7 @@ sub send_rating_to_video {
 
     if ($rating eq 'none' or $rating eq 'like' or $rating eq 'dislike') {
         my $url = $self->_simple_feeds_url('videos/rate', id => $video_id, rating => $rating);
-        return defined($self->lwp_post($url, $self->_get_lwp_header()));
+        return defined($self->lwp_post($url, $self->_auth_lwp_header()));
     }
 
     return;

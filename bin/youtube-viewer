@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 10 February 2019
+#  Latest edit on: 11 July 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -296,6 +296,7 @@ my %CONFIG = (
     cache_dir     => undef,          # will be defined later
 
     # Others
+    use_invidious_api    => 0,
     http_proxy           => undef,
     env_proxy            => 1,
     confirm              => 0,
@@ -611,6 +612,7 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      config_dir          => $config_dir,
                                      cache_dir           => $opt{cache_dir},
                                      lwp_env_proxy       => $opt{env_proxy},
+                                     use_invidious_api   => $opt{use_invidious_api},
                                      authentication_file => $authentication_file,
                                     );
 
@@ -799,6 +801,7 @@ usage: $execname [options] ([url] | [keywords])
        --use-colors!    : enable or disable the ANSI colors for text
 
  * Other
+   --invidious!         : use the API of invidio.us to get the streaming URLs
    --proxy=s            : set HTTP(S)/SOCKS proxy: 'proto://domain.tld:port/'
                           If authentication required,
                           use 'proto://user:pass\@domain.tld:port/'
@@ -1478,6 +1481,7 @@ sub parse_arguments {
         'merge-into-mkv|mkv-merge!'           => \$opt{merge_into_mkv},
         'merge-with-captions|merge-captions!' => \$opt{merge_with_captions},
 
+        'invidious!'                         => \$opt{use_invidious_api},
         'convert-command|convert-cmd=s'      => \$opt{convert_cmd},
         'dash-m4a|dash-mp4-audio|dash-mp4a!' => \$opt{dash_mp4_audio},
         'wget-dl|wget-download!'             => \$opt{download_with_wget},

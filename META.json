@@ -117,5 +117,5 @@
       ]
    },
    "version" : "v3.5.4",
-   "x_serialization_backend" : "JSON::PP version 4.02"
+   "x_serialization_backend" : "JSON::PP version 4.04"
 }
