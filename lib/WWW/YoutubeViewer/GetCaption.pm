@@ -209,10 +209,10 @@ sub get_xml_data {
         );
 
         require LWP::ConnCache;
-        my $cache = LWP::ConnCache->new;
+        state $cache = LWP::ConnCache->new;
         $cache->total_capacity(undef);    # no limit
 
-        my $accepted_encodings = do {
+        state $accepted_encodings = do {
             require HTTP::Message;
             HTTP::Message::decodable();
         };
