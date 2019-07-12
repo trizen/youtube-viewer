@@ -492,7 +492,7 @@ sub _make_feed_url {
     $self->get_feeds_url() . $path . '?' . $self->default_arguments(%args);
 }
 
-sub _extract_from_indivious {
+sub _extract_from_invidious {
     my ($self, $videoID) = @_;
 
     my $url = sprintf("https://invidio.us/api/v1/videos/%s?fields=formatStreams,adaptiveFormats", $videoID);
@@ -526,7 +526,7 @@ sub _fallback_extract_urls {
             say STDERR ":: Using invidio.us to extract the streaming URLs...";
         }
 
-        push @array, $self->_extract_from_indivious($videoID);
+        push @array, $self->_extract_from_invidious($videoID);
 
         if ($self->get_debug) {
             say STDERR ":: Found ", scalar(@array), " streaming URLs.";
