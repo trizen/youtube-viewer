@@ -518,7 +518,7 @@ sub _extract_from_invidious {
 sub _fallback_extract_urls {
     my ($self, $videoID) = @_;
 
-    my @array;
+    my @formats;
 
     if ($self->get_use_invidious_api) {    # use the API of invidio.us
 
@@ -526,19 +526,16 @@ sub _fallback_extract_urls {
             say STDERR ":: Using invidio.us to extract the streaming URLs...";
         }
 
-        push @array, $self->_extract_from_invidious($videoID);
+        push @formats, $self->_extract_from_invidious($videoID);
 
         if ($self->get_debug) {
-            say STDERR ":: Found ", scalar(@array), " streaming URLs.";
+            say STDERR ":: Found ", scalar(@formats), " streaming URLs.";
         }
 
-        if (@array) {
-            return @array;
-        }
+        @formats && return @formats;
     }
 
-    ((state $x = $self->proxy_system('youtube-dl', '--version')) == 0)
-      || return;
+    ((state $x = system('youtube-dl', '--version')) == 0) || return;
 
     if ($self->get_debug) {
         say STDERR ":: Using youtube-dl to extract the streaming URLs...";
@@ -556,26 +553,19 @@ sub _fallback_extract_urls {
                 my $entry = {
                              itag => $format->{format_id},
                              url  => $format->{url},
-                             type => (
-                                      (
-                                       (defined($format->{format_note}) and $format->{format_note} eq 'DASH audio')
-                                       ? 'audio/'
-                                       : 'video/'
-                                      )
-                                      . $format->{ext}
-                                     ),
+                             type => ((($format->{format_note} // '') eq 'DASH audio') ? 'audio/' : 'video/') . $format->{ext},
                             };
 
-                push @array, $entry;
+                push @formats, $entry;
             }
         }
     }
 
     if ($self->get_debug) {
-        say STDERR ":: Found ", scalar(@array), " streaming URLs.";
+        say STDERR ":: Found ", scalar(@formats), " streaming URLs.";
     }
 
-    return @array;
+    return @formats;
 }
 
 =head2 parse_query_string($string, multi => [0,1])
