@@ -3151,7 +3151,7 @@ sub get_player_command {
 }
 
 sub autoplay {
-    my ($video_id) = get_valid_video_id(shift);
+    my $video_id = get_valid_video_id(shift) // return;
 
     my %seen = ($video_id => 1);    # make sure we don't get stuck in a loop
     local $yv_obj->{maxResults} = 10;
