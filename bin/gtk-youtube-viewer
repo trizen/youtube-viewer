@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 11 July 2019
+#  Latest edit on: 27 July 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -2424,7 +2424,7 @@ sub set_thumbnail {
             my ($entry, $liststore, $iter) = @{$_[0]};
 
             my $thumb_url = $yv_utils->get_thumbnail_url($entry, $CONFIG{thumbnail_type});
-            my $pixbuf    = get_pixbuf_thumbnail($thumb_url);
+            my $pixbuf    = get_pixbuf_thumbnail($thumb_url, ($yv_utils->is_channel($entry) ? (160, 160) : ()));
             $liststore->set_value($iter, 1, $pixbuf);
 
             return 0;
