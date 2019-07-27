@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 11 July 2019
+#  Latest edit on: 27 July 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -29,7 +29,7 @@
 # - Added the `--channel-videos=s` command-line option to display videos from a channel ID.    - NEW (v3.2.1)
 # - Added the `i..` range, which plays all the videos, starting with video `i`. (#114)         - NEW (v3.2.1)
 # - Added support for downloading multiple videos in parallel (--dl-parallel)                  - NEW (v3.1.4)
-# - Migration to APIv3; some features has been lost in the process, but nothing too critical.  - NEW (v3.1.4)
+# - Migration to APIv3; some features have been lost in the process, but nothing too critical. - NEW (v3.1.4)
 # - Added built-in support for [auto-generated] closed-captions (gcap is no longer required)   - NEW (v3.1.3)
 # - Added support for specifying the filename format when downloading videos (--filename=s)    - NEW (v3.1.3)
 # - Added support for special tokens and for extracting information about videos (--extract=s) - NEW (v3.1.3)
@@ -296,6 +296,7 @@ my %CONFIG = (
     cache_dir     => undef,          # will be defined later
 
     # Others
+    random_autoplay      => 0,
     use_invidious_api    => 0,
     http_proxy           => undef,
     env_proxy            => 1,
@@ -425,6 +426,7 @@ $action_options
 :subscribe=i      : subscribe to author's channel
 :(dis)like=i      : like or dislike a video
 :fav(orite)=i     : favorite a video
+:autoplay=i       : autoplay mode, starting from video i
 
 # Playing
 <number>          : play the corresponding video
@@ -768,6 +770,7 @@ usage: $execname [options] ([url] | [keywords])
    -B  --backwards!      : play all video results in reverse order
    -s  --shuffle!        : shuffle the results of videos and playlists
    -I  --interactive!    : interactive mode, prompting for user input
+       --autoplay=s      : autoplay mode, starting from a given video ID
        --std-input=s     : use this value as the first standard input
        --max-seconds=i   : ignore videos longer than i seconds
        --min-seconds=i   : ignore videos shorter than i seconds
@@ -1345,6 +1348,10 @@ sub apply_configuration {
     if (defined $opt->{print_video_info}) {
         get_and_print_video_info(split(/[,\s]+/, delete $opt->{print_video_info}));
     }
+
+    if (defined $opt->{autoplay}) {
+        autoplay(delete $opt{autoplay});
+    }
 }
 
 sub parse_arguments {
@@ -1427,6 +1434,8 @@ sub parse_arguments {
 
         'playlists|p|pl|playlist:s' => \$opt{search_playlists},
         'pid|playlist-id=s'         => \$opt{playlist_id},
+
+        'autoplay=s' => \$opt{autoplay},
 
         'play-playlists|pp=s'      => \$opt{play_playlists},
         'debug:1'                  => \$opt{debug},
@@ -3141,6 +3150,22 @@ sub get_player_command {
     $has_video ? $cmd : join(' ', $cmd, quotemeta($streaming->{streaming}{url}));
 }
 
+sub autoplay {
+    my ($video_id) = get_valid_video_id(shift);
+
+    my %seen = ($video_id => 1);    # make sure we don't get stuck in a loop
+    local $yv_obj->{maxResults} = 10;
+
+    while (1) {
+        get_and_play_video_ids($video_id) || return;
+        my $related = $yv_obj->related_to_videoID($video_id);
+        (my @video_ids = grep { !$seen{$_}++ } map { $yv_utils->get_video_id($_) } @{$related->{results}{items}}) || return;
+        $video_id = $opt{random_autoplay} ? $video_ids[rand @video_ids] : $video_ids[0];
+    }
+
+    return 1;
+}
+
 sub play_videos {
     my ($videos) = @_;
 
@@ -3658,6 +3683,14 @@ sub print_videos {
             elsif ($opt =~ /^r(?:elated)?${digit_or_equal_re}(.*)/) {
                 if (my ($id) = get_valid_numbers($#{$videos}, $1)) {
                     get_and_print_related_videos($yv_utils->get_video_id($videos->[$id]));
+                }
+                else {
+                    warn_no_thing_selected('video');
+                }
+            }
+            elsif ($opt =~ /^(?:ap|autoplay)${digit_or_equal_re}(.*)/) {
+                if (my ($id) = get_valid_numbers($#{$videos}, $1)) {
+                    autoplay($yv_utils->get_video_id($videos->[$id]));
                 }
                 else {
                     warn_no_thing_selected('video');

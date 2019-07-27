@@ -411,7 +411,7 @@ sub get_category_name {
                          29 => 'Nonprofits & Activism',
                         };
 
-    $categories->{$self->get_category_id($info)} // 'Unknown';
+    $categories->{$self->get_category_id($info) // ''} // 'Unknown';
 }
 
 sub get_publication_date {
