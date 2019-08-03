@@ -1525,7 +1525,7 @@ sub show_preferences_window {
     require Data::Dump;
     get_main_window_size();
     my $config_view_buffer = $config_view->get_buffer;
-    $config_view_buffer->set_text(Data::Dump::dump(\%CONFIG));
+    $config_view_buffer->set_text(Data::Dump::dump({map { ($_, $CONFIG{$_}) } grep { not /^active_/ } keys %CONFIG}));
     $config_view->set_buffer($config_view_buffer);
     state $font = Pango::FontDescription->from_string('Monospace 8');
     $config_view->modify_font($font);
@@ -1547,7 +1547,7 @@ sub save_configuration {
     print STDERR $@ if $@;
     die $@ if $@;
 
-    %CONFIG = %{$hash_ref};
+    %CONFIG = (%CONFIG, %{$hash_ref});
     dump_configuration();
 
     apply_configuration();
