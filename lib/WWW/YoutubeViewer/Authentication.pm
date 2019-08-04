@@ -24,7 +24,7 @@ sub _get_token_oauth_url {
 
 =head2 oauth_refresh_token()
 
-Refresh the access_token using the refresh_token. Returns a JSON string or undef.
+Refresh the access_token using the refresh_token. Returns a HASH ref with the `access_token` or undef.
 
 =cut
 

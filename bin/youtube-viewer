@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 27 July 2019
+#  Latest edit on: 04 August 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -265,6 +265,7 @@ my %CONFIG = (
     # YouTube options
     dash_support    => 1,
     dash_mp4_audio  => 1,
+    dash_segmented  => 1,            # may load slow
     maxResults      => 20,
     resolution      => 'original',
     videoDefinition => undef,
@@ -810,6 +811,7 @@ usage: $execname [options] ([url] | [keywords])
                           use 'proto://user:pass\@domain.tld:port/'
    --dash!              : include or exclude the DASH itags
    --dash-mp4a!         : include or exclude the itags for MP4 audio streams
+   --dash-segmented!    : include or exclude segmented DASH streams
 
 
 Help options:
@@ -1493,6 +1495,7 @@ sub parse_arguments {
         'invidious!'                         => \$opt{use_invidious_api},
         'convert-command|convert-cmd=s'      => \$opt{convert_cmd},
         'dash-m4a|dash-mp4-audio|dash-mp4a!' => \$opt{dash_mp4_audio},
+        'dash-segmented!'                    => \$opt{dash_segmented},
         'wget-dl|wget-download!'             => \$opt{download_with_wget},
         'dl-parallel|download-in-parallel!'  => \$opt{download_in_parallel},
         'filename|filename-format=s'         => \$opt{video_filename_format},
@@ -2826,10 +2829,7 @@ sub get_streaming_url {
 
     # Download the closed-captions
     my $srt_file;
-    if (    ref($captions) eq 'ARRAY'
-        and @$captions
-        and $opt{get_captions}
-        and not $opt{novideo}) {
+    if (ref($captions) eq 'ARRAY' and @$captions and $opt{get_captions} and not $opt{novideo}) {
         require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
                                                          auto_captions => $opt{auto_captions},
@@ -2860,6 +2860,7 @@ sub get_streaming_url {
                                     resolution     => $opt{resolution},
                                     dash           => $dash,
                                     dash_mp4_audio => $opt{dash_mp4_audio},
+                                    dash_segmented => ($opt{download_video} ? 0 : $opt{dash_segmented}),
                                    );
 
     return {

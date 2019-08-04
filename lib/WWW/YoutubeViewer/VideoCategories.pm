@@ -51,8 +51,8 @@ sub video_categories {
     require File::Spec;
 
     my $region = $self->get_regionCode() // 'US';
-    my $url = $self->_make_videoCategories_url(regionCode => $region);
-    my $file = File::Spec->catfile($self->get_config_dir, "categories-$region-" . $self->get_hl() . ".json");
+    my $url    = $self->_make_videoCategories_url(regionCode => $region);
+    my $file   = File::Spec->catfile($self->get_config_dir, "categories-$region-" . $self->get_hl() . ".json");
 
     my $json;
     if (open(my $fh, '<:utf8', $file)) {
