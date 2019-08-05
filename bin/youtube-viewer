@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 04 August 2019
+#  Latest edit on: 05 August 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -134,9 +134,9 @@ use warnings;
 no warnings 'once';
 
 my $DEVEL;    # true in devel mode
-use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
+use if ($DEVEL = 1), lib => qw(../lib);    # devel mode
 
-use WWW::YoutubeViewer v3.5.4;
+use WWW::YoutubeViewer v3.5.5;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
@@ -1352,7 +1352,7 @@ sub apply_configuration {
     }
 
     if (defined $opt->{autoplay}) {
-        autoplay(delete $opt{autoplay});
+        autoplay(delete $opt->{autoplay});
     }
 }
 
