@@ -1570,7 +1570,7 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                         <property name="visible">True</property>
                                                         <property name="can_focus">False</property>
                                                         <property name="tooltip_text" translatable="yes">Video resolution (default: original)
-When the specified resolution is not found, it falls down to a lower resolution.</property>
+When the specified resolution is not found, the best available resolution is used.</property>
                                                         <property name="active">0</property>
                                                         <items>
                                                           <item translatable="yes">original</item>
