@@ -99,7 +99,7 @@ sub find_caption_data {
 
                     # Fuzzy match or auto-generated caption
                     if (lc($caption->{languageCode}) ne lc($lang) or $auto) {
-                        $found[$i + @{$self->{languages}} + ($auto || 0) * @{$self->{languages}}] = $caption;
+                        $found[$i + (($auto ? 2 : 1) * scalar(@{$self->{languages}}))] = $caption;
                     }
 
                     # Perfect match

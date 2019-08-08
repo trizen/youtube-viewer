@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 05 August 2019
+#  Latest edit on: 09 August 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -681,7 +681,7 @@ usage: $execname [options] ([url] | [keywords])
    --channels         : search for Youtube channels
 
 * Comments
-   --comments=s         : display comments for a YouTube video by ID or URL
+   --comments=s         : display comments for a video by ID or URL
    --comments-order=s   : change the order of YouTube comments
                           valid values: relevance, time
 
@@ -714,7 +714,7 @@ usage: $execname [options] ([url] | [keywords])
  * [GET] Personal
    -F  --favorites:s     : show the latest favorited videos *
    -S  --subscriptions:s : show the subscribed channels *
-   -SV --subs-videos:s   : show the subscription videos *
+   -SV --subs-videos:s   : show the subscription videos (slow) *
        --subs-order=s    : change the subscription order
                            valid values: alphabetical, relevance, unread
    -L  --likes           : show the videos that you liked on YouTube *
@@ -723,7 +723,7 @@ usage: $execname [options] ([url] | [keywords])
 * [POST] Personal
    --subscribe=s        : subscribe to a channel *
    --user-subscribe=s   : subscribe to a channel via username *
-   --favorite=s         : favorite a YouTube video by URL or ID *
+   --favorite=s         : favorite a video by URL or ID *
    --like=s             : send a 'like' rating to a video URL or ID *
    --dislike=s          : send a 'dislike' rating to a video URL or ID *
 
@@ -731,10 +731,8 @@ usage: $execname [options] ([url] | [keywords])
 == Player Options ==
 
  * Arguments
-   -f  --fullscreen!  : set the fullscreen mode for the selected video player
-   -n  --novideo!     : play the music only without a video in the foreground
-   --vo=s             : specify the video output for MPlayer
-   --af=s             : specify an audio filter for MPlayer
+   -f  --fullscreen!  : play videos in fullscreen mode
+   -n  --novideo!     : play audio only, without displaying video
    --append-arg=s     : append some command-line parameters to the media player
    --player=s         : select a player to stream videos
                         available players: @{[keys %{$CONFIG->{video_players}}]}
@@ -749,13 +747,13 @@ usage: $execname [options] ([url] | [keywords])
        --wget-dl!        : download videos with wget (recommended)
        --dl-parallel     : download multiple videos at once
        --clobber!        : overwrite an existent video (with -d)
-       --skip-if-exists! : don't download videos which already exists (with -d)
+       --skip-if-exists! : don't download videos which already exist (with -d)
        --copy-caption!   : copy and rename the caption for downloaded videos
        --downloads-dir=s : downloads directory (set: '$opt{downloads_dir}')
        --filename=s      : set a custom format for the video filename (see: -T)
        --fat32safe!      : makes filenames FAT32 safe (includes Unicode)
        --mkv-merge!      : merge audio and video into an MKV container
-       --merge-captions! : include closed-captions into the MKV container
+       --merge-captions! : include closed-captions in the MKV container
 
  * Convert
    --convert-cmd=s      : command for converting videos after download
@@ -767,8 +765,8 @@ usage: $execname [options] ([url] | [keywords])
 == Other Options ==
 
  * Behavior
-   -A  --all!            : play all the video results in order
-   -B  --backwards!      : play all video results in reverse order
+   -A  --all!            : play the video results in order
+   -B  --backwards!      : play the video results in reverse order
    -s  --shuffle!        : shuffle the results of videos and playlists
    -I  --interactive!    : interactive mode, prompting for user input
        --autoplay=s      : autoplay mode, starting from a given video ID
@@ -782,21 +780,21 @@ usage: $execname [options] ([url] | [keywords])
        --prefer-mp4!     : prefer videos in MP4 format, instead of WEBM
 
  * Closed-captions
-   --get-captions!      : download the closed captions for videos
+   --get-captions!      : download closed-captions for videos
    --auto-captions!     : include or exclude auto-generated captions
-   --captions-dir=s     : the directory where to download the .srt files
+   --captions-dir=s     : directory where to save the .srt files
 
  * Config
    -U  --update-config! : update the configuration file before exit
 
  * Output
    -C  --colorful!      : use colors to delimit the video results
-   -D  --details!       : a new look for the results, with more details
+   -D  --details!       : display the results with extra details
    -W  --fixed-width!   : adjust the results to fit inside the term width
        --custom-layout! : display the results using a custom layout (see conf)
-   -i  --info=s         : show some info for a videoID or URL
+   -i  --info=s         : show information for a video ID or URL
    -e  --extract=s      : extract information from videos (see: -T)
-       --extract-file=s : extract the information from videos in this file
+       --extract-file=s : extract information from videos in this file
        --dump=format    : dump metadata information in `videoID.format` files
                           valid formats: json, perl
    -q  --quiet          : do not display any warning
@@ -816,7 +814,7 @@ usage: $execname [options] ([url] | [keywords])
 
 Help options:
    -T  --tricks         : show more 'hidden' features of $execname
-   -E  --examples       : show some useful usage examples for $execname
+   -E  --examples       : show several usage examples of $execname
    -H  --stdin-help     : show the valid stdin options for $execname
    -v  --version        : print version and exit
    -h  --help           : print help and exit
@@ -981,7 +979,7 @@ Command: $execname --author=UCBerkeley atom
 Results: search only in videos uploaded by a specific author
 
 Command: $execname -S=vsauce
-Results: get the video subscriptions for a username
+Results: get the subscriptions for a username
 
 Command: $execname --page=2 -u=Google
 Results: show latest videos uploaded by Google,
@@ -1473,8 +1471,6 @@ sub parse_arguments {
         },
 
         'append-arg|append-args=s' => \$MPLAYER{user_defined_arguments},
-        'vo=s'                     => sub { $MPLAYER{video_output} = "-vo $_[1]" },
-        'af=s'                     => sub { $MPLAYER{audio_filter} = "-af $_[1]" },
 
         # Others
         'colorful|colourful|C!' => \$opt{results_with_colors},
