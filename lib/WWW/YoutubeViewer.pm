@@ -94,7 +94,7 @@ my %valid_options = (
 
     authentication_file => {valid => [qr/^./], default => undef},
 
-    # No input value alowed
+    # No input value allowed
     feeds_url        => {valid => q[], default => 'https://www.googleapis.com/youtube/v3/'},
     video_info_url   => {valid => q[], default => 'https://www.youtube.com/get_video_info'},
     oauth_url        => {valid => q[], default => 'https://accounts.google.com/o/oauth2/'},
@@ -223,7 +223,7 @@ sub escape_string {
 
 =head2 set_lwp_useragent()
 
-Intializes the LWP::UserAgent module and returns it.
+Initializes the LWP::UserAgent module and returns it.
 
 =cut
 
@@ -324,7 +324,7 @@ sub _auth_lwp_header {
 
 sub _warn_reponse_error {
     my ($resp, $url) = @_;
-    warn sprintf("[%s] Error occured on URL: %s\n", $resp->status_line, $url =~ s/([&?])key=(.*?)&/${1}key=[...]&/r);
+    warn sprintf("[%s] Error occurred on URL: %s\n", $resp->status_line, $url =~ s/([&?])key=(.*?)&/${1}key=[...]&/r);
 }
 
 =head2 lwp_get($url, %opt)
@@ -737,6 +737,9 @@ sub get_streaming_urls {
         }
     }
 
+    # Filter out streams with `clen = 0`.
+    @streaming_urls = grep { defined($_->{clen}) ? ($_->{clen} > 0) : 1 } @streaming_urls;
+
     return (\@streaming_urls, \@caption_urls, \%info);
 }
 
@@ -787,7 +790,7 @@ sub post_as_json {
     $self->_save('POST', $url, $json_str);
 }
 
-# SOUBROUTINE FACTORY
+# SUBROUTINE FACTORY
 {
     no strict 'refs';
 

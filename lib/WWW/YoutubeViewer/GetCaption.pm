@@ -242,7 +242,7 @@ Save the caption in a .srt file and return its file path.
 sub save_caption {
     my ($self, $video_id) = @_;
 
-    # Find one of the prefered languages
+    # Find one of the preferred languages
     my $info = $self->find_caption_data() // return;
 
     require File::Spec;
@@ -252,7 +252,7 @@ sub save_caption {
     # Return the srt file if it already exists
     return $srt_file if (-e $srt_file);
 
-    # Get XML data, then tranform it to SubRip data
+    # Get XML data, then transform it to SubRip data
     my $xml = $self->get_xml_data($info->{baseUrl} // return) // return;
     my $srt = $self->xml2srt($xml) // return;
 
