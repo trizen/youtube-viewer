@@ -740,6 +740,17 @@ sub get_streaming_urls {
     # Filter out streams with `clen = 0`.
     @streaming_urls = grep { defined($_->{clen}) ? ($_->{clen} > 0) : 1 } @streaming_urls;
 
+    # Return the YouTube URL when there are no streaming URLs
+    if (!@streaming_urls) {
+        push @streaming_urls,
+          {
+            itag    => 22,
+            quality => "hd720",
+            type    => "video/mp4",
+            url     => "https://www.youtube.com/watch?v=$videoID",
+          };
+    }
+
     return (\@streaming_urls, \@caption_urls, \%info);
 }
 

@@ -3144,6 +3144,10 @@ sub get_player_command {
                                   escape    => 1,
                                  );
 
+    if ($streaming->{streaming}{url} =~ m{^https://www\.youtube\.com/watch\?v=}) {
+        $cmd =~ s{ --no-ytdl\b}{ }g;
+    }
+
     $has_video ? $cmd : join(' ', $cmd, quotemeta($streaming->{streaming}{url}));
 }
 
