@@ -313,6 +313,7 @@ my %CONFIG = (
     results_with_details => 0,
     results_with_colors  => 0,
     results_fixed_width  => 0,
+    show_video_info      => 1,
     interactive          => 1,
     get_term_width       => $constant{win32} ^ 1,
     download_with_wget   => undef,                    # auto-defined later
@@ -799,6 +800,7 @@ usage: $execname [options] ([url] | [keywords])
                           valid formats: json, perl
    -q  --quiet          : do not display any warning
        --really-quiet   : do not display any warning or output
+       --video-info!    : show video information before playing
        --escape-info!   : quotemeta() the fields of the `--extract`
        --use-colors!    : enable or disable the ANSI colors for text
 
@@ -1511,6 +1513,7 @@ sub parse_arguments {
 
         'quiet|q!'      => \$opt{quiet},
         'really-quiet!' => \$opt{really_quiet},
+        'video-info!'   => \$opt{show_video_info},
 
         'dp|downl-play|download-and-play|dl-play!' => \$opt{download_and_play},
 
@@ -1961,6 +1964,7 @@ sub get_and_print_video_info {
         my $info    = $yv_obj->video_details($videoID, VIDEO_PART);
 
         if ($yv_utils->has_entries($info)) {
+            local $opt{show_video_info} = 1;
             print_video_info($info->{results}{items}[0]);
         }
         else {
@@ -3297,6 +3301,8 @@ sub play_videos_matched_by_regex {
 sub print_video_info {
     my ($video) = @_;
 
+    $opt{show_video_info} || return 1;
+
     my $hr = '-' x ($opt{get_term_width} ? get_term_width() : $term_width);
 
     printf(
@@ -3719,6 +3725,7 @@ sub print_videos {
             elsif ($opt =~ /^i(?:nfo)?${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     foreach my $num (@nums) {
+                        local $opt{show_video_info} = 1;
                         print_video_info($videos->[$num]);
                     }
                     press_enter_to_continue();
