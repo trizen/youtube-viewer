@@ -771,8 +771,7 @@ usage: $execname [options] ([url] | [keywords])
    -B  --backwards!      : play the video results in reverse order
    -s  --shuffle!        : shuffle the results of videos and playlists
    -I  --interactive!    : interactive mode, prompting for user input
-       --autoplay        : autoplay mode, automatically playing related videos
-       --autoplay=s      : autoplay mode, starting from a given video ID
+       --autoplay!       : autoplay mode, automatically playing related videos
        --std-input=s     : use this value as the first standard input
        --max-seconds=i   : ignore videos longer than i seconds
        --min-seconds=i   : ignore videos shorter than i seconds
@@ -1352,17 +1351,6 @@ sub apply_configuration {
     if (defined $opt->{print_video_info}) {
         get_and_print_video_info(split(/[,\s]+/, delete $opt->{print_video_info}));
     }
-
-    if (defined $opt->{autoplay}) {
-        my $value = delete $opt->{autoplay};
-        if (($value =~ /$get_video_id_re/ or $value =~ /$valid_video_id_re/) and not @{$keywords}) {
-            autoplay($value);
-        }
-        else {
-            $opt{autoplay_mode} = 1;
-            unshift(@{$keywords}, $value) if length($value);
-        }
-    }
 }
 
 sub parse_arguments {
@@ -1446,7 +1434,7 @@ sub parse_arguments {
         'playlists|p|pl|playlist:s' => \$opt{search_playlists},
         'pid|playlist-id=s'         => \$opt{playlist_id},
 
-        'autoplay:s' => \$opt{autoplay},
+        'autoplay!' => \$opt{autoplay_mode},
 
         'play-playlists|pp=s'      => \$opt{play_playlists},
         'debug:1'                  => \$opt{debug},
