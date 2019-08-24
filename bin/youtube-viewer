@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 15 August 2019
+#  Latest edit on: 24 August 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -297,6 +297,7 @@ my %CONFIG = (
     cache_dir     => undef,          # will be defined later
 
     # Others
+    autoplay_mode        => 0,
     random_autoplay      => 0,
     use_invidious_api    => 0,
     http_proxy           => undef,
@@ -770,6 +771,7 @@ usage: $execname [options] ([url] | [keywords])
    -B  --backwards!      : play the video results in reverse order
    -s  --shuffle!        : shuffle the results of videos and playlists
    -I  --interactive!    : interactive mode, prompting for user input
+       --autoplay        : autoplay mode, automatically playing related videos
        --autoplay=s      : autoplay mode, starting from a given video ID
        --std-input=s     : use this value as the first standard input
        --max-seconds=i   : ignore videos longer than i seconds
@@ -1352,7 +1354,14 @@ sub apply_configuration {
     }
 
     if (defined $opt->{autoplay}) {
-        autoplay(delete $opt->{autoplay});
+        my $value = delete $opt->{autoplay};
+        if (($value =~ /$get_video_id_re/ or $value =~ /$valid_video_id_re/) and not @{$keywords}) {
+            autoplay($value);
+        }
+        else {
+            $opt{autoplay_mode} = 1;
+            unshift(@{$keywords}, $value) if length($value);
+        }
     }
 }
 
@@ -1437,7 +1446,7 @@ sub parse_arguments {
         'playlists|p|pl|playlist:s' => \$opt{search_playlists},
         'pid|playlist-id=s'         => \$opt{playlist_id},
 
-        'autoplay=s' => \$opt{autoplay},
+        'autoplay:s' => \$opt{autoplay},
 
         'play-playlists|pp=s'      => \$opt{play_playlists},
         'debug:1'                  => \$opt{debug},
@@ -3178,6 +3187,12 @@ sub play_videos {
     foreach my $video (@{$videos}) {
 
         my $video_id = $yv_utils->get_video_id($video);
+
+        if ($opt{autoplay_mode}) {
+            local $opt{autoplay_mode} = 0;
+            autoplay($video_id);
+            next;
+        }
 
         # It may be downloaded, but that's OK...
         if ($opt{highlight_watched}) {
