@@ -2854,9 +2854,9 @@ sub get_streaming_url {
     my ($streaming, $resolution) =
       $yv_itags->find_streaming_url(
                                     urls           => $urls,
-                                    resolution     => $opt{resolution},
+                                    resolution     => ($opt{novideo} ? 'audio' : $opt{resolution}),
                                     dash           => $dash,
-                                    dash_mp4_audio => $opt{dash_mp4_audio},
+                                    dash_mp4_audio => ($opt{novideo} ? 1 : $opt{dash_mp4_audio}),
                                     dash_segmented => ($opt{download_video} ? 0 : $opt{dash_segmented}),
                                    );
 
