@@ -3171,7 +3171,6 @@ sub autoplay {
 sub play_videos {
     my ($videos) = @_;
 
-    my @streaming_urls;
     foreach my $video (@{$videos}) {
 
         my $video_id = $yv_utils->get_video_id($video);
