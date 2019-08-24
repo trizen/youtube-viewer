@@ -41,7 +41,7 @@ Reference: http://en.wikipedia.org/wiki/YouTube#Quality_and_formats
 sub get_itags {
 #<<<
     scalar {
-        'original' => [
+        'best' => [
             38,      # mp4 (3072p) (v-a)
             [138,    # mp4 (2160p-4320p) (v)
              266,    # mp4 (2160p-2304p) (v)
@@ -154,7 +154,7 @@ sub get_resolutions {
     return [
         grep { exists $itags->{$_} }
           qw(
-          original
+          best
           2160
           1440
           1080

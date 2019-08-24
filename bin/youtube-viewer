@@ -265,9 +265,9 @@ my %CONFIG = (
     # YouTube options
     dash_support    => 1,
     dash_mp4_audio  => 1,
-    dash_segmented  => 1,            # may load slow
+    dash_segmented  => 1,        # may load slow
     maxResults      => 20,
-    resolution      => 'original',
+    resolution      => 'best',
     videoDefinition => undef,
     videoDimension  => undef,
     videoLicense    => undef,
@@ -706,7 +706,7 @@ usage: $execname [options] ([url] | [keywords])
    --page=i             : get results starting with a specific page
    --results=i          : how many results to display per page (max: 50)
    -2  -3  -4  -7  -1   : resolutions: 240p, 360p, 480p, 720p and 1080p
-   --resolution=s       : supported resolutions: original, 2160p, 1440p,
+   --resolution=s       : supported resolutions: best, 2160p, 1440p,
                           1080p, 720p, 480p, 360p, 240p, 144p, audio.
 
  * Account

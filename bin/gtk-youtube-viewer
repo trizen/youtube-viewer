@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 15 August 2019
+#  Latest edit on: 24 August 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -190,10 +190,10 @@ my %CONFIG = (
     # Youtube options
     dash_support    => 1,
     dash_mp4_audio  => 1,
-    dash_segmented  => 1,            # may load slow
+    dash_segmented  => 1,         # may load slow
     prefer_mp4      => 0,
     maxResults      => 10,
-    resolution      => 'original',
+    resolution      => 'best',
     videoDimension  => undef,
     videoEmbeddable => undef,
     videoLicense    => undef,
@@ -822,14 +822,14 @@ sub apply_configuration {
     $safesearch_combobox->set_active($CONFIG{active_safeSearch_combobox});
 
     my %resolution = (
-                      'original' => 0,
-                      '2160'     => 1,
-                      '1440'     => 2,
-                      '1080'     => 3,
-                      '720'      => 4,
-                      '480'      => 5,
-                      '360'      => 6,
-                      '240'      => 7,
+                      'best' => 0,
+                      '2160' => 1,
+                      '1440' => 2,
+                      '1080' => 3,
+                      '720'  => 4,
+                      '480'  => 5,
+                      '360'  => 6,
+                      '240'  => 7,
                      );
 
     my $name = ($CONFIG{resolution} =~ /^(\d+)/) ? $1 : $CONFIG{resolution};
