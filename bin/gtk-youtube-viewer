@@ -227,8 +227,10 @@ my %CONFIG = (
     fullscreen  => 0,
     audio_only  => 0,
 
-    use_invidious_api => 0,
+    tooltips => 1,
     tooltip_max_len   => 512,        # max length of description in tooltips
+
+    use_invidious_api => 0,
 
     thousand_separator     => q{,},
     downloads_dir          => curdir(),
@@ -2432,6 +2434,8 @@ sub display_results {
 
 sub set_entry_tooltip {
     my ($iter, $title, $description) = @_;
+
+    $CONFIG{tooltips} || return 1;
 
     if (length($description) > $CONFIG{tooltip_max_len}) {
         $description = substr($description, 0, $CONFIG{tooltip_max_len}) . '...';
