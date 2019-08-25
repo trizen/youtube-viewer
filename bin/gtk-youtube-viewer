@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 24 August 2019
+#  Latest edit on: 25 August 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -228,6 +228,7 @@ my %CONFIG = (
     audio_only  => 0,
 
     use_invidious_api => 0,
+    tooltip_max_len   => 512,        # max length of description in tooltips
 
     thousand_separator     => q{,},
     downloads_dir          => curdir(),
@@ -2431,6 +2432,11 @@ sub display_results {
 
 sub set_entry_tooltip {
     my ($iter, $title, $description) = @_;
+
+    if (length($description) > $CONFIG{tooltip_max_len}) {
+        $description = substr($description, 0, $CONFIG{tooltip_max_len}) . '...';
+    }
+
     $liststore->set($iter, 9, "<b>" . encode_entities($title) . "</b>" . "\n\n" . encode_entities($description));
 }
 
