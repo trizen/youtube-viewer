@@ -22,6 +22,7 @@
 # youtube-viewer is a command line utility for streaming YouTube videos in mpv/vlc/mplayer.
 #
 # [CHANGELOG]
+# - Added the `--autoplay` option to automatically play related videos of related videos.      - NEW (v3.5.7)
 # - Added support for downloading videos at 1080p (and other resolutions) with MKV merging.    - NEW (v3.4.0)
 # - Added the `--prefer-mp4` option to prefer videos in MP4 format, instead of WEBM.           - NEW (v3.4.0)
 # - Added the `--fat32safe` option to make filenames FAT32-safe, by replacing bad characters.  - NEW (v3.2.5)
@@ -136,7 +137,7 @@ no warnings 'once';
 my $DEVEL;    # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
-use WWW::YoutubeViewer v3.5.6;
+use WWW::YoutubeViewer v3.5.7;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
