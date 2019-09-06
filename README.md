@@ -85,29 +85,29 @@ To package this application, run the following commands:
 * [EN] YOUTUBE VIEWER: A COMPLETE YOUTUBE CLIENT FOR LINUX [UBUNTU PPA]
     * http://www.webupd8.org/2015/02/youtube-viewer-complete-youtube-client.html
 * [EN] YOUTUBE-VIEWER – ALTERNATIVE WAY TO INTERACT WITH YOUTUBE
-    * http://www.ossblog.org/youtube-viewer-alternative-way-watch-youtube/
+    * https://www.ossblog.org/youtube-viewer-alternative-way-watch-youtube/
 * [EN] A YouTube CLI for Mac
-    * http://blog.johnkrauss.com/installing-youtube-viewer/
-* [EN] Gtk Youtube Viewer
-    * http://puppylinux.org/wikka/GtkYoutubeViewer
+    * https://blog.johnkrauss.com/installing-youtube-viewer/
+* [EN] Gtk Youtube Viewer (for lots of pups)
+    * http://www.murga-linux.com/puppy/viewtopic.php?t=76835
 * [ES] Este es el mejor cliente de YouTube para Linux
-    * http://rootear.com/ubuntu-linux/cliente-youtube-linux
+    * https://rootear.com/ubuntu-linux/cliente-youtube-linux
 * [ES] YouTube Viewer: busca, reproduce y descarga vídeos de YouTube desde el escritorio
-    * http://www.linuxadictos.com/youtube-viewer-busca-reproduce-y-descarga-videos-de-youtube-desde-el-escritorio.html
-* [GR] YOUTUBE VIEWER: ΤΟ YOUTUBE ΚΥΡΙΟΛΕΚΤΙΚΑ ΣΤΟ DESKTOP ΣΑΣ
-    * http://osarena.net/youyubeviewer-to-youtube-olokliro-sto-desktop-sas-se-linux
+    * https://www.linuxadictos.com/youtube-viewer-busca-reproduce-y-descarga-videos-de-youtube-desde-el-escritorio.html
 * [HU] GTK Youtube Viewer
     * https://linuxmint.hu/blog/2018/09/gtk-youtube-viewer
+* [JP] GTK Youtube Viewer 試してみた
+    * https://tamahamster.blogspot.com/2016/06/type-p-debiandog-gtk-youtube-viewer.html
 * [PT] YouTube Viewer: um completo cliente YouTube para Linux
-    * http://www.edivaldobrito.com.br/youtube-viewer-um-cliente-completo/
+    * https://www.edivaldobrito.com.br/youtube-viewer-um-cliente-completo/
 * [RO] youtube-viewer
-    * http://stressat.blogspot.ro/2012/01/youtube-viewer.html
+    * https://stressat.blogspot.com/2012/01/youtube-viewer.html
 * [RU] Установить клиент Youtube Viewer в Linux
     * http://compizomania.blogspot.com/2015/02/youtube-viewer-linux.html
 * [RU] Youtube Viewer / GTK Youtube Viewer
-    * http://zenway.ru/page/gtk-youtube-viewer
+    * https://zenway.ru/page/gtk-youtube-viewer
 * [TR] Youtube Viewer Nedir? Nasıl Kurulur? (Ubuntu/Linux Mint)
-    * http://www.sistemlinux.org/2017/05/youtube-viewer-nedir-nasil-kurulur.html
+    * https://www.sistemlinux.org/2017/05/youtube-viewer-nedir-nasil-kurulur.html
 
 ### VIDEO REVIEWS
 
