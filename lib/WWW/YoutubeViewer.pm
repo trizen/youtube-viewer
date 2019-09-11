@@ -699,15 +699,34 @@ sub _extract_streaming_urls {
         if (exists $json->{streamingData}{adaptiveFormats}) {
             push @results, @{$json->{streamingData}{adaptiveFormats}};
         }
+
+        if (exists $json->{streamingData}{formats}) {
+            push @results, @{$json->{streamingData}{formats}};
+        }
     }
 
     foreach my $item (@results) {
-        if (exists $item->{cipher}) {    # this currently doesn't work
+
+        if (exists $item->{cipher} and not exists $item->{url}) {
             my (%data) = $self->parse_query_string($item->{cipher});
+
             $item->{url} = $data{url} if defined($data{url});
-            $item->{url} .= "&sig=$data{s}" if defined($data{s});
+
+            if (defined($data{s})) {    # unclear how this can be decrypted...
+                require URI::Escape;
+                my $sig = $data{s};
+                $sig = URI::Escape::uri_escape($sig);
+                $item->{url} .= "&sig=$sig";
+            }
+        }
+
+        if (exists $item->{mimeType}) {
+            $item->{type} = $item->{mimeType};
         }
     }
+
+    # Cipher streaming URLs are currently unsupported, so let's filter them out.
+    @results = grep { not exists $_->{cipher} } @results;
 
     if ($self->get_debug) {
         my $count = scalar(@results);
@@ -745,7 +764,7 @@ sub get_streaming_urls {
         }
     }
 
-    if ($self->get_debug == 2) {
+    if ($self->get_debug == 3) {
         require Data::Dump;
         Data::Dump::pp(\%info);
         Data::Dump::pp(\@streaming_urls);

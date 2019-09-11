@@ -2875,8 +2875,8 @@ sub play_video {
         say "-> Resolution: $streaming->{resolution}";
         say "-> Video itag: $streaming->{streaming}{itag}";
         say "-> Audio itag: $streaming->{streaming}{__AUDIO__}{itag}" if exists $streaming->{streaming}{__AUDIO__};
-        say "-> Video type: $streaming->{streaming}{mimeType}";
-        say "-> Audio type: $streaming->{streaming}{__AUDIO__}{mimeType}" if exists $streaming->{streaming}{__AUDIO__};
+        say "-> Video type: $streaming->{streaming}{type}";
+        say "-> Audio type: $streaming->{streaming}{__AUDIO__}{type}" if exists $streaming->{streaming}{__AUDIO__};
     }
 
     my $code = execute_external_program($command);
