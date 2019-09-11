@@ -728,6 +728,9 @@ sub _extract_streaming_urls {
     # Cipher streaming URLs are currently unsupported, so let's filter them out.
     @results = grep { not exists $_->{cipher} } @results;
 
+    # Keep only streams with contentLength > 0.
+    @results = grep { exists($_->{contentLength}) and $_->{contentLength} > 0 } @results;
+
     if ($self->get_debug) {
         my $count = scalar(@results);
         say STDERR ":: Found $count streaming URLs...";
