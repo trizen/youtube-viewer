@@ -497,7 +497,15 @@ sub _extract_from_invidious {
 
     my $url = sprintf("https://invidio.us/api/v1/videos/%s?fields=formatStreams,adaptiveFormats", $videoID);
 
-    (my $resp = $self->{lwp}->get($url))->is_success() || return;
+    my $tries = 3;
+    my $resp  = $self->{lwp}->get($url);
+
+    while (not $resp->is_success() and $resp->status_line() =~ /read timeout/i and --$tries >= 0) {
+        $resp = $self->{lwp}->get($url);
+    }
+
+    $resp->is_success() || return;
+
     my $json = $resp->decoded_content()        // return;
     my $ref  = $self->parse_json_string($json) // return;
 
