@@ -630,7 +630,7 @@ sub _group_keys_with_values {
     return @hashes;
 }
 
-sub _extract_streaming_urls {
+sub _old_extract_streaming_urls {
     my ($self, $info, $videoID) = @_;
 
     my %stream_map = $self->parse_query_string($info->{url_encoded_fmt_stream_map}, multi => 1);
@@ -671,6 +671,47 @@ sub _extract_streaming_urls {
                 url  => $info->{hlsvp},
               };
         }
+    }
+
+    return @results;
+}
+
+sub _extract_streaming_urls {
+    my ($self, $info, $videoID) = @_;
+
+    if (exists $info->{url_encoded_fmt_stream_map}) {
+        return $self->_old_extract_streaming_urls($info, $videoID);
+    }
+
+    if ($self->get_debug) {
+        say STDERR ":: Using the newer format to extract the streaming URLs...";
+    }
+
+    my $json = $self->parse_json_string($info->{player_response});
+
+    if ($self->get_debug >= 2) {
+        require Data::Dump;
+        Data::Dump::pp($json);
+    }
+
+    my @results;
+    if (exists $json->{streamingData}) {
+        if (exists $json->{streamingData}{adaptiveFormats}) {
+            push @results, @{$json->{streamingData}{adaptiveFormats}};
+        }
+    }
+
+    foreach my $item (@results) {
+        if (exists $item->{cipher}) {    # this currently doesn't work
+            my (%data) = $self->parse_query_string($item->{cipher});
+            $item->{url} = $data{url} if defined($data{url});
+            $item->{url} .= "&sig=$data{s}" if defined($data{s});
+        }
+    }
+
+    if ($self->get_debug) {
+        my $count = scalar(@results);
+        say STDERR ":: Found $count streaming URLs...";
     }
 
     return @results;
