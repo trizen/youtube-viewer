@@ -72,7 +72,7 @@ my %valid_options = (
     subscriptions_order => {valid => [qw(alphabetical relevance unread)], default => undef},
 
     # Others
-    debug       => {valid => [0 .. 2],     default => 0},
+    debug       => {valid => [0 .. 3],     default => 0},
     lwp_timeout => {valid => [qr/^\d+\z/], default => 1},
     key         => {valid => [qr/^.{5}/],  default => undef},
     config_dir  => {valid => [qr/^./],     default => q{.}},
@@ -570,7 +570,8 @@ sub _fallback_extract_urls {
     }
 
     if ($self->get_debug) {
-        say STDERR ":: Found ", scalar(@formats), " streaming URLs.";
+        my $count = scalar(@formats);
+        say STDERR ":: Found $count streaming URLs...";
     }
 
     return @formats;
@@ -641,8 +642,18 @@ sub _group_keys_with_values {
 sub _old_extract_streaming_urls {
     my ($self, $info, $videoID) = @_;
 
+    if ($self->get_debug) {
+        say STDERR ":: Using `url_encoded_fmt_stream_map` to extract the streaming URLs...";
+    }
+
     my %stream_map = $self->parse_query_string($info->{url_encoded_fmt_stream_map}, multi => 1);
     my %adaptive_fmts = $self->parse_query_string($info->{adaptive_fmts}, multi => 1);
+
+    if ($self->get_debug >= 2) {
+        require Data::Dump;
+        Data::Dump::pp(\%stream_map);
+        Data::Dump::pp(\%adaptive_fmts);
+    }
 
     my @results;
 
@@ -651,6 +662,10 @@ sub _old_extract_streaming_urls {
 
     foreach my $video (@results) {
         if (exists $video->{s}) {    # has an encrypted signature :(
+
+            if ($self->get_debug) {
+                say STDERR ":: Detected an encrypted signature...";
+            }
 
             my @formats = $self->_fallback_extract_urls($videoID);
 
@@ -668,6 +683,11 @@ sub _old_extract_streaming_urls {
     }
 
     if ($info->{livestream} or $info->{live_playback}) {
+
+        if ($self->get_debug) {
+            say STDERR ":: Live stream detected...";
+        }
+
         if (my @formats = $self->_fallback_extract_urls($videoID)) {
             @results = @formats;
         }
@@ -681,6 +701,11 @@ sub _old_extract_streaming_urls {
         }
     }
 
+    if ($self->get_debug) {
+        my $count = scalar(@results);
+        say STDERR ":: Found $count streaming URLs...";
+    }
+
     return @results;
 }
 
@@ -692,7 +717,7 @@ sub _extract_streaming_urls {
     }
 
     if ($self->get_debug) {
-        say STDERR ":: Using the newer format to extract the streaming URLs...";
+        say STDERR ":: Using `player_response` to extract the streaming URLs...";
     }
 
     my $json = $self->parse_json_string($info->{player_response});
@@ -704,19 +729,23 @@ sub _extract_streaming_urls {
 
     my @results;
     if (exists $json->{streamingData}) {
-        if (exists $json->{streamingData}{adaptiveFormats}) {
-            push @results, @{$json->{streamingData}{adaptiveFormats}};
+
+        my $streamingData = $json->{streamingData};
+
+        if (exists $streamingData->{adaptiveFormats}) {
+            push @results, @{$streamingData->{adaptiveFormats}};
         }
 
-        if (exists $json->{streamingData}{formats}) {
-            push @results, @{$json->{streamingData}{formats}};
+        if (exists $streamingData->{formats}) {
+            push @results, @{$streamingData->{formats}};
         }
     }
 
     foreach my $item (@results) {
 
         if (exists $item->{cipher} and not exists $item->{url}) {
-            my (%data) = $self->parse_query_string($item->{cipher});
+
+            my %data = $self->parse_query_string($item->{cipher});
 
             $item->{url} = $data{url} if defined($data{url});
 
@@ -775,7 +804,7 @@ sub get_streaming_urls {
         }
     }
 
-    if ($self->get_debug == 3) {
+    if ($self->get_debug >= 3) {
         require Data::Dump;
         Data::Dump::pp(\%info);
         Data::Dump::pp(\@streaming_urls);
