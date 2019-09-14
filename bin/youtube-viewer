@@ -299,7 +299,6 @@ my %CONFIG = (
 
     # Others
     autoplay_mode        => 0,
-    random_autoplay      => 0,
     use_invidious_api    => 0,
     http_proxy           => undef,
     env_proxy            => 1,
@@ -3162,7 +3161,7 @@ sub autoplay {
         get_and_play_video_ids($video_id) || return;
         my $related = $yv_obj->related_to_videoID($video_id);
         (my @video_ids = grep { !$seen{$_}++ } map { $yv_utils->get_video_id($_) } @{$related->{results}{items}}) || return;
-        $video_id = $opt{random_autoplay} ? $video_ids[rand @video_ids] : $video_ids[0];
+        $video_id = $opt{shuffle} ? $video_ids[rand @video_ids] : $video_ids[0];
     }
 
     return 1;
