@@ -769,7 +769,7 @@ usage: $execname [options] ([url] | [keywords])
  * Behavior
    -A  --all!            : play the video results in order
    -B  --backwards!      : play the video results in reverse order
-   -s  --shuffle!        : shuffle the results of videos and playlists
+   -s  --shuffle!        : shuffle the results of videos
    -I  --interactive!    : interactive mode, prompting for user input
        --autoplay!       : autoplay mode, automatically playing related videos
        --std-input=s     : use this value as the first standard input
@@ -2615,11 +2615,6 @@ sub print_playlists {
     my $url       = $results->{url};
     my $info      = $results->{results} // {};
     my $playlists = $info->{items} // [];
-
-    if ($opt{shuffle}) {
-        require List::Util;
-        $playlists = [List::Util::shuffle(@{$playlists})];
-    }
 
     state $info_format = <<"FORMAT";
 
