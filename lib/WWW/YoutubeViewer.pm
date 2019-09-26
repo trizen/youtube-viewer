@@ -768,6 +768,25 @@ sub _extract_streaming_urls {
     # Keep only streams with contentLength > 0.
     @results = grep { exists($_->{contentLength}) and $_->{contentLength} > 0 } @results;
 
+    # Detect livestream
+    if (!@results and exists($json->{streamingData}) and exists($json->{streamingData}{hlsManifestUrl})) {
+
+        if ($self->get_debug) {
+            say STDERR ":: Live stream detected...";
+        }
+
+        @results = $self->_fallback_extract_urls($videoID);
+
+        if (!@results) {
+            push @results,
+              {
+                itag => 38,
+                type => "video/ts",
+                url  => $json->{streamingData}{hlsManifestUrl},
+              };
+        }
+    }
+
     if ($self->get_debug) {
         my $count = scalar(@results);
         say STDERR ":: Found $count streaming URLs...";
@@ -804,13 +823,6 @@ sub get_streaming_urls {
         }
     }
 
-    if ($self->get_debug >= 3) {
-        require Data::Dump;
-        Data::Dump::pp(\%info);
-        Data::Dump::pp(\@streaming_urls);
-        Data::Dump::pp(\@caption_urls);
-    }
-
     # Try again with youtube-dl
     if (!@streaming_urls or $info{status} =~ /fail|error/i) {
         @streaming_urls = $self->_fallback_extract_urls($videoID);
@@ -844,11 +856,17 @@ sub get_streaming_urls {
     if (!@streaming_urls) {
         push @streaming_urls,
           {
-            itag    => 22,
-            quality => "hd720",
-            type    => "video/mp4",
-            url     => "https://www.youtube.com/watch?v=$videoID",
+            itag => 38,
+            type => "video/mp4",
+            url  => "https://www.youtube.com/watch?v=$videoID",
           };
+    }
+
+    if ($self->get_debug >= 2) {
+        require Data::Dump;
+        Data::Dump::pp(\%info) if ($self->get_debug >= 3);
+        Data::Dump::pp(\@streaming_urls);
+        Data::Dump::pp(\@caption_urls);
     }
 
     return (\@streaming_urls, \@caption_urls, \%info);

@@ -2227,9 +2227,9 @@ sub get_code {
 
             my $type = $liststore->get($iter, 7);
 
-            $type eq 'playlist' ? list_playlist($code)
+            $type eq 'playlist'                                 ? list_playlist($code)
               : ($type eq 'channel' || $type eq 'subscription') ? uploads('channel', $code)
-              : $type eq 'next_page' && $code ne '' ? do {
+              : $type eq 'next_page' && $code ne ''             ? do {
 
                 my $next_page_token = $liststore->get($iter, 5);
                 my $results         = $yv_obj->next_page($code, $next_page_token);
@@ -2454,7 +2454,7 @@ sub set_thumbnail {
             my ($entry, $liststore, $iter) = @{$_[0]};
 
             my $thumb_url = $yv_utils->get_thumbnail_url($entry, $CONFIG{thumbnail_type});
-            my $pixbuf    = get_pixbuf_thumbnail($thumb_url, ($yv_utils->is_channel($entry) ? (160, 160) : ()));
+            my $pixbuf = get_pixbuf_thumbnail($thumb_url, ($yv_utils->is_channel($entry) ? (160, 160) : ()));
             $liststore->set_value($iter, 1, $pixbuf);
 
             return 0;

@@ -1876,7 +1876,7 @@ sub favorite_videos {
 sub select_and_save_to_playlist {
     return if not authenticated();
 
-    my $request    = $yv_obj->my_playlists() // last;
+    my $request = $yv_obj->my_playlists() // last;
     my $playlistID = print_playlists($request, return_playlist_id => 1);
 
     if (defined($playlistID)) {
@@ -2350,7 +2350,7 @@ sub print_channels {
         elsif ($opt{results_with_colors}) {
             print "\n" if $i == 0;
             printf("%s. %s (%s)\n",
-                   colored(sprintf('%2d', $i + 1), 'bold'),
+                   colored(sprintf('%2d', $i + 1),                    'bold'),
                    colored($yv_utils->get_title($channel),            'blue'),
                    colored($yv_utils->get_publication_date($channel), 'magenta'),
                   );
@@ -2643,7 +2643,7 @@ FORMAT
             print "\n" if $i == 0;
             printf(
                    "%s. %s (%s) %s\n",
-                   colored(sprintf('%2d', $i + 1), 'bold'),
+                   colored(sprintf('%2d', $i + 1),                     'bold'),
                    colored($yv_utils->get_title($playlist),            'blue'),
                    colored($yv_utils->get_publication_date($playlist), 'magenta'),
                    colored($yv_utils->get_channel_title($playlist),    'green'),
@@ -3199,7 +3199,7 @@ sub play_videos {
             and defined($streaming->{info}{status})
             and $streaming->{info}{status} =~ /(?:error|fail)/i) {
             warn colored("[!] Error on: ", 'bold red') . sprintf($CONFIG{youtube_video_url}, $video_id) . "\n";
-            warn colored("[*] Reason: ", 'bold red') . $streaming->{info}{reason} =~ tr/+/ /r . "\n\n";
+            warn colored("[*] Reason: ",   'bold red') . $streaming->{info}{reason} =~ tr/+/ /r . "\n\n";
         }
 
         # Dump metadata information
@@ -3435,7 +3435,7 @@ sub print_videos {
             push @formatted,
               sprintf(
                       "%s. %s (%s) %s\n",
-                      colored(sprintf('%2d', $i + 1), 'bold'),
+                      colored(sprintf('%2d', $i + 1),               'bold'),
                       colored($yv_utils->get_title($video),         'blue'),
                       colored($yv_utils->get_time($video),          'magenta'),
                       colored($yv_utils->get_channel_title($video), 'green'),
