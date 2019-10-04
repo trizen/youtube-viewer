@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 11 September 2019
+#  Latest edit on: 04 October 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -204,6 +204,7 @@ my $config_dir          = catdir($xdg_config_home, $execname);
 my $config_file         = catfile($config_dir, "$execname.conf");
 my $authentication_file = catfile($config_dir, 'reg.dat');
 my $history_file        = catfile($config_dir, 'history.txt');
+my $watched_file        = catfile($config_dir, 'watched.txt');
 
 if (not -d $config_dir) {
     require File::Path;
@@ -324,6 +325,9 @@ my %CONFIG = (
     keep_original_video  => 0,
     download_and_play    => 0,
     autohide_watched     => 0,
+    skip_watched         => 0,
+    remember_watched     => 0,
+    watched_file         => $watched_file,
     highlight_watched    => 1,
     highlight_color      => 'bold',
     remove_played_file   => 0,
@@ -578,6 +582,19 @@ if (not -d $CONFIG{cache_dir}) {
 
 @opt{keys %CONFIG} = values(%CONFIG);
 
+if ($opt{remember_watched}) {
+    if (-f $opt{watched_file}) {
+        if (open my $fh, '<', $opt{watched_file}) {
+            chomp(my @ids = <$fh>);
+            @watched_videos{@ids} = ();
+            close $fh;
+        }
+        else {
+            warn "[!] Can't open the watched file `$opt{watched_file}' for reading: $!";
+        }
+    }
+}
+
 if ($opt{history}) {
 
     # Create the history file.
@@ -777,6 +794,7 @@ usage: $execname [options] ([url] | [keywords])
        --min-seconds=i   : ignore videos shorter than i seconds
        --get-term-width! : allow $execname to read your terminal width
        --autohide!       : automatically hide watched videos
+       --skip-watched!   : don't play already watched videos
        --highlight!      : remember and highlight selected videos
        --confirm!        : show a confirmation message after each play
        --prefer-mp4!     : prefer videos in MP4 format, instead of WEBM
@@ -1501,6 +1519,7 @@ sub parse_arguments {
         'novideo|no-video|n!'                => \$opt{novideo},
         'autohide!'                          => \$opt{autohide_watched},
         'highlight!'                         => \$opt{highlight_watched},
+        'skip-watched!'                      => \$opt{skip_watched},
         'results=i'                          => \$opt{maxResults},
         'shuffle|s!'                         => \$opt{shuffle},
         'more|m!'                            => \$opt{more_results},
@@ -3098,6 +3117,19 @@ sub download_video {
     return 1;
 }
 
+sub save_watched_video {
+    my ($video_id) = @_;
+
+    if ($opt{remember_watched} and not exists($watched_videos{$video_id})) {
+        open my $fh, '>>', $opt{watched_file} or return;
+        say {$fh} $video_id;
+        close $fh;
+    }
+
+    $watched_videos{$video_id} = 1;
+    return 1;
+}
+
 sub get_player_command {
     my ($streaming, $video) = @_;
 
@@ -3175,10 +3207,14 @@ sub play_videos {
             next;
         }
 
-        # It may be downloaded, but that's OK...
-        if ($opt{highlight_watched}) {
-            $watched_videos{$video_id} = 1;
+        # Ignore already watched videos
+        if (exists($watched_videos{$video_id}) and $opt{skip_watched}) {
+            say "[*] Already watched video (ID: $video_id)... Skipping...";
+            next;
         }
+
+        # It may be downloaded, but that's OK...
+        save_watched_video($video_id);
 
         if (defined($opt{max_seconds}) and $opt{max_seconds} >= 0) {
             next if $yv_utils->get_duration($video) > $opt{max_seconds};
