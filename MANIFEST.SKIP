@@ -33,6 +33,9 @@
 \bBUILD.COM$
 \bbuild.com$
 
+# Other files
+.github/FUNDING.yml
+
 # Avoid temp and backup files.
 ~$
 \.old$
@@ -71,3 +74,4 @@
 
 # Avoid archives of this distribution
 \bWWW-YoutubeViewer-[\d\.\_]+
+WWW-YoutubeViewer-*
