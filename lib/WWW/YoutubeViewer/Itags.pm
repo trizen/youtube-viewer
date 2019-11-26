@@ -73,6 +73,7 @@ sub get_itags {
             [248,    # webm (v)
              137,    # mp4 (v)
             ],
+            301,     # mp4 (live) (v-a)
             96,      # ts (live) (v-a)
         ],
 
@@ -85,6 +86,7 @@ sub get_itags {
             [247,    # webm (v)
              136,    # mp4 (v)
             ],
+            300,     # mp4 (live) (v-a)
             120,     # flv (live) (v-a)
             95,      # ts (live) (v-a)
         ],
@@ -95,7 +97,7 @@ sub get_itags {
             [244,    # webm (v)
              135,    # mp4 (v)
             ],
-            94,      # ts (live) (v-a)
+            94,      # mp4 (live) (v-a)
         ],
 
         '360' => [
@@ -105,7 +107,7 @@ sub get_itags {
             [243,    # webm (v)
              134,    # mp4 (v)
             ],
-            93,      # ts (live) (v-a)
+            93,      # mp4 (live) (v-a)
         ],
 
         '240' => [
@@ -116,7 +118,7 @@ sub get_itags {
             [242,    # webm (v)
              133,    # mp4 (v)
             ],
-            92,      # ts (live) (v-a)
+            92,      # mp4 (live) (v-a)
             132,     # ts (live) (v-a)
         ],
 
@@ -125,6 +127,7 @@ sub get_itags {
             [278,    # webm (v)
              160,    # mp4 (v)
             ],
+            91,      # mp4 (live) (v-a)
             151,     # ts (live) (v-a)
         ],
 
