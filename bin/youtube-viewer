@@ -338,7 +338,7 @@ my %CONFIG = (
     convert_to           => undef,
 
     custom_layout        => 0,
-    custom_layout_format => [{width => 3,     text => "*NO*.", color => 'bold'},
+    custom_layout_format => [{width => 3,     text => "*NO*.",    color => 'bold',  align => 'right'},
                              {width => '60%', text => "*TITLE*"},
                              {width => '20%', text => "*AUTHOR*", color => 'green', align => 'right'},
                              {width => 8,     text => "*TIME*",   color => 'blue',  align => 'right'},
@@ -1502,8 +1502,7 @@ sub parse_arguments {
         'confirm!'              => \$opt{confirm},
         'prefer-mp4!'           => \$opt{prefer_mp4},
 
-        'custom-layout!'         => \$opt{custom_layout},
-        'custom-layout-format=s' => \$opt{custom_layout_format},
+        'custom-layout!' => \$opt{custom_layout},
 
         'merge-into-mkv|mkv-merge!'           => \$opt{merge_into_mkv},
         'merge-with-captions|merge-captions!' => \$opt{merge_with_captions},
@@ -2272,7 +2271,7 @@ sub valid_num {
     return $num =~ /^[0-9]{1,2}\z/ && $num != 0 && $num <= @{$array_ref};
 }
 
-sub adj_width {
+sub adjust_width {
     my ($str, $len, $prepend) = @_;
 
     $len > 0 or do {
@@ -2396,8 +2395,8 @@ sub print_channels {
                 my $title   = clear_title($yv_utils->get_title($channel));
 
                 printf "%s. %s %s [%*s]\n", colored(sprintf('%2d', $i + 1), 'bold'),
-                  adj_width($title, $title_length),
-                  adj_width($authors[$i], $author_width, 1),
+                  adjust_width($title, $title_length),
+                  adjust_width($authors[$i], $author_width, 1),
                   $dates_width, $dates[$i];
             }
             last;
@@ -2690,8 +2689,8 @@ FORMAT
                 my $title    = clear_title($yv_utils->get_title($playlist));
 
                 printf "%s. %s %s [%*s]\n", colored(sprintf('%2d', $i + 1), 'bold'),
-                  adj_width($title, $title_length),
-                  adj_width($authors[$i], $author_width, 1),
+                  adjust_width($title, $title_length),
+                  adjust_width($authors[$i], $author_width, 1),
                   $dates_width, $dates[$i];
             }
             last;
@@ -3442,7 +3441,7 @@ sub print_videos {
 
             my $entry = $opt{custom_layout_format};
 
-            if (ref($entry) eq '') {
+            if (ref($entry) eq '') {    # deprecated
                 $entry =~ s/\*NO\*/sprintf('%2d', $i+1)/ge;
                 $entry = $yv_utils->format_text(
                                                 info   => $video,
@@ -3453,18 +3452,21 @@ sub print_videos {
             }
 
             if (ref($entry) eq 'ARRAY') {
+
                 my @columns;
+
                 foreach my $slot (@$entry) {
 
                     my $text  = $slot->{text};
-                    my $width = $slot->{width};
+                    my $width = $slot->{width} // 10;
                     my $color = $slot->{color};
+                    my $align = $slot->{align} // 'left';
 
                     if ($width =~ /^(\d+)%\z/) {
                         $width = int(($term_width * $1) / 100);
                     }
 
-                    $text =~ s/\*NO\*/sprintf('%2d', $i+1)/ge;
+                    $text =~ s/\*NO\*/$i+1/ge;
 
                     $text = $yv_utils->format_text(
                                                    info   => $video,
@@ -3472,15 +3474,8 @@ sub print_videos {
                                                    escape => 0,
                                                   );
 
-                    if (exists $slot->{align}) {
-                        my $align = $slot->{align};
-
-                        if ($align eq 'right') {
-                            $text = sprintf("%*s", $width, $text);
-                        }
-                    }
-
-                    $text = adj_width($text, $width);
+                    $text = clear_title($text);
+                    $text = adjust_width($text, $width, ($align eq 'right'));
 
                     if (defined($color)) {
                         $text = colored($text, $color);
@@ -3491,7 +3486,6 @@ sub print_videos {
 
                 push @formatted, join(' ', @columns) . "\n";
             }
-
         }
         elsif ($opt{results_with_details}) {
             push @formatted,
@@ -3542,8 +3536,8 @@ sub print_videos {
                 push @formatted,
                   sprintf("%s. %s %s %*s\n",
                           colored(sprintf('%2d', $i + 1), 'bold'),
-                          adj_width($title, $title_length),
-                          adj_width($yv_utils->get_channel_title($video), $author_width, 1),
+                          adjust_width($title, $title_length),
+                          adjust_width($yv_utils->get_channel_title($video), $author_width, 1),
                           $time_width, $yv_utils->get_time($video));
             }
             last;
