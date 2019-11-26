@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 13 November 2019
+#  Latest edit on: 26 November 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -338,7 +338,11 @@ my %CONFIG = (
     convert_to           => undef,
 
     custom_layout        => 0,
-    custom_layout_format => '*NO*. *TITLE* (*AUTHOR*) (*RATING*) [*TIME*]\n',
+    custom_layout_format => [{width => 3,     text => "*NO*.", color => 'bold'},
+                             {width => '60%', text => "*TITLE*"},
+                             {width => '20%', text => "*AUTHOR*", color => 'green', align => 'right'},
+                             {width => 8,     text => "*TIME*",   color => 'blue',  align => 'right'},
+                            ],
 
     ffmpeg_cmd => 'ffmpeg',
     wget_cmd   => 'wget',
@@ -3437,15 +3441,57 @@ sub print_videos {
         if ($opt{custom_layout}) {
 
             my $entry = $opt{custom_layout_format};
-            $entry =~ s/\*NO\*/sprintf('%2d', $i+1)/ge;
 
-            $entry = $yv_utils->format_text(
-                                            info   => $video,
-                                            text   => $entry,
-                                            escape => 0,
-                                           );
+            if (ref($entry) eq '') {
+                $entry =~ s/\*NO\*/sprintf('%2d', $i+1)/ge;
+                $entry = $yv_utils->format_text(
+                                                info   => $video,
+                                                text   => $entry,
+                                                escape => 0,
+                                               );
+                push @formatted, $entry;
+            }
 
-            push @formatted, $entry;
+            if (ref($entry) eq 'ARRAY') {
+                my @columns;
+                foreach my $slot (@$entry) {
+
+                    my $text  = $slot->{text};
+                    my $width = $slot->{width};
+                    my $color = $slot->{color};
+
+                    if ($width =~ /^(\d+)%\z/) {
+                        $width = int(($term_width * $1) / 100);
+                    }
+
+                    $text =~ s/\*NO\*/sprintf('%2d', $i+1)/ge;
+
+                    $text = $yv_utils->format_text(
+                                                   info   => $video,
+                                                   text   => $text,
+                                                   escape => 0,
+                                                  );
+
+                    if (exists $slot->{align}) {
+                        my $align = $slot->{align};
+
+                        if ($align eq 'right') {
+                            $text = sprintf("%*s", $width, $text);
+                        }
+                    }
+
+                    $text = adj_width($text, $width);
+
+                    if (defined($color)) {
+                        $text = colored($text, $color);
+                    }
+
+                    push @columns, $text;
+                }
+
+                push @formatted, join(' ', @columns) . "\n";
+            }
+
         }
         elsif ($opt{results_with_details}) {
             push @formatted,

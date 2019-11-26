@@ -224,10 +224,15 @@ sub format_text {
         DESCRIPTION => sub { $self->get_description($info) },
 
         RATING => sub {
-            my $likes    = $self->get_likes($info);
-            my $dislikes = $self->get_dislikes($info);
+            my $likes    = $self->get_likes($info)    // 0;
+            my $dislikes = $self->get_dislikes($info) // 0;
 
-            sprintf('%.2f', $likes / ($likes + $dislikes) * 5);
+            my $rating = 0;
+            if ($likes + $dislikes > 0) {
+                $rating = $likes / ($likes + $dislikes) * 5;
+            }
+
+            sprintf('%.2f', $rating);
         },
 
         (
