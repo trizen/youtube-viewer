@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 26 November 2019
+#  Latest edit on: 27 November 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -1185,10 +1185,12 @@ sub apply_configuration {
         $opt{_colors} = $opt->{colors};
         if (delete $opt->{colors}) {
             require Term::ANSIColor;
+            no warnings 'redefine';
             *colored    = \&Term::ANSIColor::colored;
             *colorstrip = \&Term::ANSIColor::colorstrip;
         }
         else {
+            no warnings 'redefine';
             *colored    = sub { $_[0] };
             *colorstrip = sub { $_[0] };
         }
