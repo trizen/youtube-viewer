@@ -2976,16 +2976,20 @@ sub download_video {
                                                 fat32safe => $fat32safe,
                                                );
 
-    my $audio_filename;
     my $naked_filename = $video_filename =~ s/\.\w+\z//r;
 
     $naked_filename =~ s/:\h*/ - /g;    # replace colons (":") with dashes ("-")
 
-    my $mkv_filename = "$naked_filename.mkv";
-    my $srt_filename = "$naked_filename.srt";
+    my $mkv_filename   = "$naked_filename.mkv";
+    my $srt_filename   = "$naked_filename.srt";
+    my $audio_filename = "$naked_filename - audio";
 
     my $video_info = $streaming->{streaming};
     my $audio_info = $streaming->{streaming}{__AUDIO__};
+
+    if ($audio_info) {
+        $audio_filename .= "." . $yv_utils->extension($audio_info->{type});
+    }
 
     if (not -d $opt{downloads_dir}) {
         require File::Path;
@@ -3000,6 +3004,9 @@ sub download_video {
         warn colored("[!] Video will be downloaded into directory: $opt{downloads_dir}", 'bold red') . "\n";
     }
 
+    $mkv_filename   = catfile($opt{downloads_dir}, $mkv_filename);
+    $srt_filename   = catfile($opt{downloads_dir}, $srt_filename);
+    $audio_filename = catfile($opt{downloads_dir}, $audio_filename);
     $video_filename = catfile($opt{downloads_dir}, $video_filename);
 
     if ($opt{skip_if_exists} and -e $video_filename) {
@@ -3013,25 +3020,23 @@ sub download_video {
 
         # Disable `download in parallel` in combination with `download and play`
         if ($opt{download_in_parallel} and $opt{download_and_play}) {
-            warn colored("[!] Downloading in parallel is not supported with `--dl-play`...", 'bold red') . "\n";
+            warn colored("[!] Downloading in parallel is not supported with '--dl-play'", 'bold red') . "\n";
             $opt{download_in_parallel} = 0;
         }
 
         # Disable `download in parallel` in combination with `merge into mkv`
         if ($opt{download_in_parallel} and $opt{merge_into_mkv}) {
-            warn colored("[!] Downloading in parallel is not supported with `--mkv-merge`...", 'bold red') . "\n";
+            warn colored("[!] Downloading in parallel is not supported with '--mkv-merge'", 'bold red') . "\n";
             $opt{download_in_parallel} = 0;
         }
 
-#<<<
         $video_filename = download_from_url($video_info->{url}, $video_filename) // return;
-        $audio_filename = download_from_url($audio_info->{url}, $naked_filename . ' - audio.' . $yv_utils->extension($audio_info->{type})) if $audio_info;
-#>>>
+        $audio_filename = download_from_url($audio_info->{url}, $audio_filename) if $audio_info;
     }
 
     my @merge_files = ($video_filename);
 
-    if (defined($audio_filename)) {
+    if ($audio_info) {
         push @merge_files, $audio_filename;
     }
 
@@ -3114,7 +3119,7 @@ sub download_video {
         and -e $streaming->{srt_file}) {
 
         my $from = $streaming->{srt_file};
-        my $to   = catfile($opt{downloads_dir}, $srt_filename);
+        my $to   = $srt_filename;
 
         require File::Copy;
         File::Copy::cp($from, $to);
