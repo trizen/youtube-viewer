@@ -1504,7 +1504,8 @@ sub parse_arguments {
         'confirm!'              => \$opt{confirm},
         'prefer-mp4!'           => \$opt{prefer_mp4},
 
-        'custom-layout!' => \$opt{custom_layout},
+        'custom-layout!'         => \$opt{custom_layout},
+        'custom-layout-format=s' => \$opt{custom_layout_format},
 
         'merge-into-mkv|mkv-merge!'           => \$opt{merge_into_mkv},
         'merge-with-captions|merge-captions!' => \$opt{merge_with_captions},
@@ -3443,7 +3444,7 @@ sub print_videos {
 
             my $entry = $opt{custom_layout_format};
 
-            if (ref($entry) eq '') {    # deprecated
+            if (ref($entry) eq '') {
                 $entry =~ s/\*NO\*/sprintf('%2d', $i+1)/ge;
                 $entry = $yv_utils->format_text(
                                                 info   => $video,
