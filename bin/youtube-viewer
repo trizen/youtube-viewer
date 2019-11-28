@@ -3451,7 +3451,7 @@ sub print_videos {
                                                 text   => $entry,
                                                 escape => 0,
                                                );
-                push @formatted, $entry;
+                push @formatted, "$entry\n";
             }
 
             if (ref($entry) eq 'ARRAY') {
