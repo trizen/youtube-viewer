@@ -1808,8 +1808,8 @@ sub get_user_input {
 
     my ($args, $keywords) = parse_options($input);
 
-    if ($opt{history} and @{$keywords}) {
-        my $str = join(' ', grep { /\w/ and not /^[:;=]/ } @{$keywords});
+    if ($opt{history}) {
+        my $str = join(' ', grep { /\w/ } @{$args}, @{$keywords});
         if ($str ne '' and $str !~ /^[0-9]{1,2}\z/) {
             $term->append_history(1, $opt{history_file});
         }
