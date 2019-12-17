@@ -148,7 +148,7 @@ sub format_date {
     return $date;
 }
 
-=head2 date_to_time($date)
+=head2 date_to_age($date)
 
 Return the (approximated) age for a given date of the form "2010-05-04T00:25:55.000Z".
 
