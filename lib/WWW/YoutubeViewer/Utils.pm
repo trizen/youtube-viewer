@@ -148,6 +148,53 @@ sub format_date {
     return $date;
 }
 
+=head2 date_to_time($date)
+
+Return the (approximated) age for a given date of the form "2010-05-04T00:25:55.000Z".
+
+=cut
+
+sub date_to_age {
+    my ($self, $date) = @_;
+
+    $date =~ m{^
+        (?<year>\d{4})
+           -
+        (?<month>\d{2})
+           -
+        (?<day>\d{2})
+        [a-zA-Z]
+        (?<hour>\d{2})
+            :
+        (?<min>\d{2})
+            :
+        (?<sec>\d{2})
+    }x || return undef;
+
+    my ($sec, $min, $hour, $day, $month, $year) = gmtime(time);
+
+    $year  += 1900;
+    $month += 1;
+
+    if ($year == $+{year}) {
+        if ($month == $+{month}) {
+            if ($day == $+{day}) {
+                if ($hour == $+{hour}) {
+                    if ($min == $+{min}) {
+                        return join(' ', $sec - $+{sec}, 'seconds');
+                    }
+                    return join(' ', $min - $+{min}, 'minutes');
+                }
+                return join(' ', $hour - $+{hour}, 'hours');
+            }
+            return join(' ', $day - $+{day}, 'days');
+        }
+        return join(' ', $month - $+{month}, 'months');
+    }
+
+    return join(' ', $year - $+{year}, 'years');
+}
+
 =head2 has_entries($request)
 
 Returns true if a given request has entries.
@@ -221,6 +268,7 @@ sub format_text {
         FTITLE      => sub { $self->normalize_video_title($self->get_title($info), $fat32safe) },
         CAPTION     => sub { $self->get_caption($info) },
         PUBLISHED   => sub { $self->get_publication_date($info) },
+        AGE         => sub { $self->get_publication_age($info) },
         DESCRIPTION => sub { $self->get_description($info) },
 
         RATING => sub {
@@ -422,6 +470,18 @@ sub get_category_name {
 sub get_publication_date {
     my ($self, $info) = @_;
     $self->format_date($info->{snippet}{publishedAt});
+}
+
+sub get_publication_age {
+    my ($self, $info) = @_;
+
+    my $age = $self->date_to_age($info->{snippet}{publishedAt});
+
+    if ($age =~ /^1\s/) {    # singular mode
+        $age =~ s/s\z//;
+    }
+
+    return $age;
 }
 
 sub get_duration {

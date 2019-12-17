@@ -338,7 +338,7 @@ my %CONFIG = (
     convert_to           => undef,
 
     custom_layout        => 0,
-    custom_layout_format => [{width => 3,     text => "*NO*.",    color => 'bold',  align => 'right'},
+    custom_layout_format => [{width => 3, text => "*NO*.", color => 'bold', align => 'right'},
                              {width => '60%', text => "*TITLE*"},
                              {width => '20%', text => "*AUTHOR*", color => 'green', align => 'right'},
                              {width => 8,     text => "*TIME*",   color => 'blue',  align => 'right'},
@@ -1901,7 +1901,7 @@ sub favorite_videos {
 sub select_and_save_to_playlist {
     return if not authenticated();
 
-    my $request = $yv_obj->my_playlists() // last;
+    my $request    = $yv_obj->my_playlists() // last;
     my $playlistID = print_playlists($request, return_playlist_id => 1);
 
     if (defined($playlistID)) {
@@ -3132,6 +3132,7 @@ sub save_watched_video {
     my ($video_id) = @_;
 
     if ($opt{remember_watched} and not exists($watched_videos{$video_id})) {
+        $watched_videos{$video_id} = 1;
         open my $fh, '>>', $opt{watched_file} or return;
         say {$fh} $video_id;
         close $fh;

@@ -1327,8 +1327,8 @@ $accel->connect(ord('g'), ['control-mask'], ['visible'], \&show_user_favorited_v
 $accel->connect(ord('m'), ['control-mask'], ['visible'], \&show_videos_from_selected_author);
 $accel->connect(ord('k'), ['control-mask'], ['visible'], \&show_playlists_from_selected_author);
 $accel->connect(ord('w'), ['control-mask'], ['visible'], \&show_warnings_window);
-$accel->connect(0xffff,   ['lock-mask'],    ['visible'], \&delete_selected_row);
-$accel->connect(0xffc8,   ['lock-mask'],    ['visible'], \&maximize_unmaximize_mainw);
+$accel->connect(0xffff, ['lock-mask'], ['visible'], \&delete_selected_row);
+$accel->connect(0xffc8, ['lock-mask'], ['visible'], \&maximize_unmaximize_mainw);
 $mainw->add_accel_group($accel);
 
 # Support for navigating back and forth using the side buttons of the mouse
@@ -1357,7 +1357,7 @@ $accel->connect(0xff1b, ['lock-mask'], ['visible'], \&hide_feeds_window);
 $feeds_window->add_accel_group($accel);
 
 $accel = Gtk2::AccelGroup->new;
-$accel->connect(0xff1b,   ['lock-mask'],    ['visible'], \&hide_preferences_window);
+$accel->connect(0xff1b, ['lock-mask'], ['visible'], \&hide_preferences_window);
 $accel->connect(ord('s'), ['control-mask'], ['visible'], \&save_configuration);
 $prefernces_window->add_accel_group($accel);
 
@@ -1568,7 +1568,7 @@ sub save_configuration {
     my $hash_ref = eval $config;
 
     print STDERR $@ if $@;
-    die $@ if $@;
+    die $@          if $@;
 
     %CONFIG = (%CONFIG, %{$hash_ref});
     dump_configuration();
@@ -2454,7 +2454,7 @@ sub set_thumbnail {
             my ($entry, $liststore, $iter) = @{$_[0]};
 
             my $thumb_url = $yv_utils->get_thumbnail_url($entry, $CONFIG{thumbnail_type});
-            my $pixbuf = get_pixbuf_thumbnail($thumb_url, ($yv_utils->is_channel($entry) ? (160, 160) : ()));
+            my $pixbuf    = get_pixbuf_thumbnail($thumb_url, ($yv_utils->is_channel($entry) ? (160, 160) : ()));
             $liststore->set_value($iter, 1, $pixbuf);
 
             return 0;
