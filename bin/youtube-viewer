@@ -432,6 +432,7 @@ $action_options
 :c(omments)=i     : display video comments
 :r(elated)=i      : display related videos
 :a(uthor)=i       : display author's latest uploads
+:A(ctivity)=i     : display author's recent activity
 :p(laylists)=i    : display author's playlists
 :ps=i, :s2p=i,i   : save videos to a post-selected playlist
 :subscribe=i      : subscribe to author's channel
@@ -740,6 +741,7 @@ usage: $execname [options] ([url] | [keywords])
    -SV --subs-videos:s   : show the subscription videos (slow) *
        --subs-order=s    : change the subscription order
                            valid values: alphabetical, relevance, unread
+       --activities:s    : show activity events for a given channel
    -L  --likes           : show the videos that you liked on YouTube *
        --dislikes        : show the videos that you disliked on YouTube *
 
@@ -1345,6 +1347,15 @@ sub apply_configuration {
         print_videos($yv_obj->my_dislikes);
     }
 
+    if (defined $opt->{activities}) {
+        my $channel_id = delete $opt->{activities};
+        print_videos(
+                       $channel_id
+                     ? $yv_obj->activities($channel_id)
+                     : $yv_obj->my_activities
+                    );
+    }
+
     if (defined $opt->{user_favorited_videos}) {
         my $username = delete $opt->{user_favorited_videos};
 
@@ -1416,6 +1427,7 @@ sub parse_arguments {
         'favorites|fv|favorited-videos|F:s' => \$opt{favorites},
         'likes|L:s'                         => \$opt{likes},
         'dislikes'                          => \$opt{dislikes},
+        'activities|activity:s'             => \$opt{activities},
         'subscribe=s'                       => \$opt{subscribe_channel},
         'user-subscribe=s'                  => \$opt{subscribe_username},
         'cv|channel|channel-videos=s'       => \$opt{channel_id_videos},
@@ -3405,6 +3417,22 @@ sub print_videos {
     my $info   = $results->{results} // {};
     my $videos = $info->{items} // [];
 
+    foreach my $entry (@$videos) {
+        if ($yv_utils->is_activity($entry)) {
+            my $type = $entry->{snippet}{type};
+
+            if ($type eq 'upload') {
+                $entry->{kind} = 'youtube#video';
+                $entry->{id}   = $entry->{contentDetails}{upload}{videoId};
+            }
+
+            if ($type eq 'playlistItem') {
+                $entry->{kind} = 'youtube#video';
+                $entry->{id}   = $entry->{contentDetails}{playlistItem}{resourceId}{videoId};
+            }
+        }
+    }
+
 #<<<
     @$videos = grep {
             ref($_) eq 'HASH' && ref($_->{id}) eq 'HASH'
@@ -3422,7 +3450,8 @@ sub print_videos {
 
     if (@{$videos} and not $results->{has_extra_info}) {
 
-        my $content_details = $yv_obj->video_details(join(',', map { $yv_utils->get_video_id($_) } @{$videos}), VIDEO_PART);
+        my @video_ids       = grep { defined } map { $yv_utils->get_video_id($_) } @{$videos};
+        my $content_details = $yv_obj->video_details(join(',', @video_ids), VIDEO_PART);
         my $video_details   = $content_details->{results}{items};
 
         foreach my $i (0 .. $#{$videos}) {
@@ -3692,6 +3721,23 @@ sub print_videos {
                 }
                 else {
                     warn_no_thing_selected('video');
+                }
+            }
+            elsif ($opt =~ /^(?:A|[Aa]ctivity)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$videos}, $1)) {
+                    foreach my $id (@nums) {
+                        my $channel_id = $yv_utils->get_channel_id($videos->[$id]);
+                        my $request    = $yv_obj->activities($channel_id);
+                        if ($yv_utils->has_entries($request)) {
+                            __SUB__->($request);
+                        }
+                        else {
+                            warn_no_results('activity');
+                        }
+                    }
+                }
+                else {
+                    warn_no_thing_selected('activity');
                 }
             }
             elsif ($opt =~ /^(?:ps|s2p)${digit_or_equal_re}(.*)/) {

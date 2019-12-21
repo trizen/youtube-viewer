@@ -29,8 +29,8 @@
   </object>
   <object class="GtkEntryBuffer" id="entrybuffer1">
     <property name="text" translatable="yes">Search for YouTube videos...</property>
-    <signal name="deleted-text" handler="analyze_text" swapped="no"/>
     <signal name="inserted-text" handler="analyze_text" swapped="no"/>
+    <signal name="deleted-text" handler="analyze_text" swapped="no"/>
   </object>
   <object class="GtkImage" id="icon-next">
     <property name="visible">True</property>
@@ -125,6 +125,11 @@
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">dialog-password</property>
+  </object>
+  <object class="GtkImage" id="image7">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-refresh</property>
   </object>
   <object class="GtkImage" id="image76">
     <property name="visible">True</property>
@@ -501,8 +506,8 @@
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="button-press-event" handler="clear_text" swapped="no"/>
                         <signal name="activate" handler="search" swapped="no"/>
+                        <signal name="button-press-event" handler="clear_text" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -649,6 +654,22 @@
                                                   </packing>
                                                 </child>
                                                 <child>
+                                                  <object class="GtkButton" id="button11">
+                                                    <property name="label" translatable="yes">Activity</property>
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">True</property>
+                                                    <property name="receives_default">True</property>
+                                                    <property name="image">image7</property>
+                                                    <property name="image_position">top</property>
+                                                    <signal name="clicked" handler="activity_button" swapped="no"/>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="expand">False</property>
+                                                    <property name="fill">False</property>
+                                                    <property name="position">5</property>
+                                                  </packing>
+                                                </child>
+                                                <child>
                                                   <object class="GtkButton" id="button10">
                                                     <property name="label" translatable="yes">Playlists</property>
                                                     <property name="visible">True</property>
@@ -661,7 +682,7 @@
                                                   <packing>
                                                     <property name="expand">False</property>
                                                     <property name="fill">False</property>
-                                                    <property name="position">5</property>
+                                                    <property name="position">6</property>
                                                   </packing>
                                                 </child>
                                                 <child>
@@ -677,7 +698,7 @@
                                                   <packing>
                                                     <property name="expand">False</property>
                                                     <property name="fill">False</property>
-                                                    <property name="position">6</property>
+                                                    <property name="position">7</property>
                                                   </packing>
                                                 </child>
                                               </object>
@@ -1335,8 +1356,8 @@ Unless the author name is valid, this field is ignored.</property>
                                                             <property name="secondary_icon_activatable">False</property>
                                                             <property name="primary_icon_sensitive">True</property>
                                                             <property name="secondary_icon_sensitive">True</property>
-                                                            <signal name="button-press-event" handler="clear_text" swapped="no"/>
                                                             <signal name="activate" handler="search" swapped="no"/>
+                                                            <signal name="button-press-event" handler="clear_text" swapped="no"/>
                                                             </object>
                                                             </child>
                                                           </object>
@@ -1379,8 +1400,8 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                             <property name="secondary_icon_activatable">False</property>
                                                             <property name="primary_icon_sensitive">True</property>
                                                             <property name="secondary_icon_sensitive">True</property>
-                                                            <signal name="button-press-event" handler="clear_text" swapped="no"/>
                                                             <signal name="activate" handler="search" swapped="no"/>
+                                                            <signal name="button-press-event" handler="clear_text" swapped="no"/>
                                                             </object>
                                                             </child>
                                                           </object>
@@ -3309,8 +3330,8 @@ Full list of contributors: &lt;https://github.com/trizen/youtube-viewer/graphs/c
                     <property name="secondary_icon_activatable">False</property>
                     <property name="primary_icon_sensitive">True</property>
                     <property name="secondary_icon_sensitive">True</property>
-                    <signal name="button-press-event" handler="clear_text" swapped="no"/>
                     <signal name="activate" handler="save_channel" swapped="no"/>
+                    <signal name="button-press-event" handler="clear_text" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -3340,8 +3361,8 @@ Full list of contributors: &lt;https://github.com/trizen/youtube-viewer/graphs/c
                     <property name="secondary_icon_activatable">False</property>
                     <property name="primary_icon_sensitive">True</property>
                     <property name="secondary_icon_sensitive">True</property>
-                    <signal name="button-press-event" handler="clear_text" swapped="no"/>
                     <signal name="activate" handler="save_channel" swapped="no"/>
+                    <signal name="button-press-event" handler="clear_text" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>

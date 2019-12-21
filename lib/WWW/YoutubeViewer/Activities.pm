@@ -6,12 +6,13 @@ use warnings;
 
 =head1 NAME
 
-WWW::YoutubeViewer::Activities - ...
+WWW::YoutubeViewer::Activities - list of channel activity events that match the request criteria.
 
 =head1 SYNOPSIS
 
-    use WWW::YoutubeViewer::Activities;
-    my $obj = WWW::YoutubeViewer::Activities->new(%opts);
+    use WWW::YoutubeViewer;
+    my $obj = WWW::YoutubeViewer->new(%opts);
+    my $activities = $obj->activities($channel_id);
 
 =head1 SUBROUTINES/METHODS
 
@@ -19,18 +20,49 @@ WWW::YoutubeViewer::Activities - ...
 
 sub _make_activities_url {
     my ($self, %opts) = @_;
-    $self->_make_feed_url('activities', %opts,);
+    $self->_make_feed_url('activities', part => 'snippet,contentDetails', %opts);
 }
 
-=head2 activities_for_channel_id($channel_id)
+=head2 activities($channel_id)
 
 Get activities for channel ID.
 
 =cut
 
-sub activities_for_channel_id {
+sub activities {
     my ($self, $channel_id) = @_;
-    $self->_get_results($self->_make_feed_url(channelId => $channel_id));
+
+    if ($channel_id eq 'mine') {
+        return $self->my_activities;
+    }
+
+    if ($channel_id !~ /^UC/) {
+        $channel_id = $self->channel_id_from_username($channel_id);
+    }
+
+    $self->_get_results($self->_make_activities_url(channelId => $channel_id));
+}
+
+=head2 activities_from_username($username)
+
+Get activities for username.
+
+=cut
+
+sub activities_from_username {
+    my ($self, $username) = @_;
+    return $self->activities($username);
+}
+
+=head2 my_activities()
+
+Get authenticated user's activities.
+
+=cut
+
+sub my_activities {
+    my ($self) = @_;
+    $self->_get_results($self->_make_activities_url(mine => 'true'));
 }
 
 =head1 AUTHOR

@@ -39,7 +39,7 @@ sub get_playlist_id {
     my $res = $self->_get_results($url);
 
     ref($res->{results}{items}) eq 'ARRAY' || return;
-    @{$res->{results}{items}} || return;
+    @{$res->{results}{items}}              || return;
 
     return $res->{results}{items}[0]{contentDetails}{relatedPlaylists}{$playlist_name};
 }

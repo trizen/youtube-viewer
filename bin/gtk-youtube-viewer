@@ -1158,6 +1158,16 @@ sub menu_popup {
             $author->append($item);
         }
 
+        # Recent channel activity events
+        {
+            my $item = 'Gtk2::ImageMenuItem'->new("Activities");
+            $item->signal_connect(activate => sub { activities('channel', $channel_id) });
+            $item->set_property(tooltip_text => "Show recent channel activity events");
+            $item->set_image('Gtk2::Image'->new_from_icon_name("gtk-refresh", q{menu}));
+            $item->show;
+            $author->append($item);
+        }
+
         # Playlists created by this author
         {
             my $item = 'Gtk2::ImageMenuItem'->new("Playlists");
@@ -2046,9 +2056,15 @@ sub playlists_button {
     playlists($type, $username);
 }
 
+sub activity_button {
+    my $type     = $panel_account_type_combobox->get_active_text;
+    my $username = $panel_user_entry->get_text;
+    activities($type, $username);
+}
+
 {
     no strict 'refs';
-    foreach my $name (qw(favorites uploads likes dislikes playlists subscriptions)) {
+    foreach my $name (qw(favorites uploads likes dislikes playlists subscriptions activities)) {
         *{__PACKAGE__ . '::' . $name} = sub {
             my ($type, $channel) = @_;
 
@@ -2061,6 +2077,10 @@ sub playlists_button {
 
                 if ($name eq 'playlists') {
                     $method = 'my_playlists';
+                }
+
+                if ($name eq 'activities') {
+                    $method = 'my_activities';
                 }
             }
 
@@ -2344,6 +2364,28 @@ sub display_results {
     hide_feeds_window();
 
     if (not $from_history) {
+
+        foreach my $entry (@$items) {
+            if ($yv_utils->is_activity($entry)) {
+                my $type = $entry->{snippet}{type};
+
+                if ($type eq 'upload') {
+                    $entry->{kind} = 'youtube#video';
+                    $entry->{id}   = $entry->{contentDetails}{upload}{videoId};
+                }
+
+                if ($type eq 'playlistItem') {
+                    $entry->{kind} = 'youtube#video';
+                    $entry->{id}   = $entry->{contentDetails}{playlistItem}{resourceId}{videoId};
+                }
+
+                if ($type eq 'subscription') {
+                    $entry->{kind}               = 'youtube#channel';
+                    $entry->{snippet}{title}     = $entry->{snippet}{channelTitle};
+                    $entry->{snippet}{channelId} = $entry->{contentDetails}{subscription}{resourceId}{channelId};
+                }
+            }
+        }
 
         my @video_ids;
         my @playlist_ids;

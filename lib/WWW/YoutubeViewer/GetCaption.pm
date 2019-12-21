@@ -254,7 +254,7 @@ sub save_caption {
 
     # Get XML data, then transform it to SubRip data
     my $xml = $self->get_xml_data($info->{baseUrl} // return) // return;
-    my $srt = $self->xml2srt($xml) // return;
+    my $srt = $self->xml2srt($xml)                            // return;
 
     # Write the SubRib data to the $srt_file
     open(my $fh, '>:utf8', $srt_file) or return;

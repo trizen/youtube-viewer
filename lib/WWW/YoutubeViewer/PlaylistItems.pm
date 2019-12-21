@@ -100,6 +100,7 @@ Get favorited videos for a given username or from the current user.
 {
     no strict 'refs';
     foreach my $name (qw(favorites uploads likes)) {
+
         *{__PACKAGE__ . '::' . $name . '_from_username'} = sub {
             my ($self, $username) = @_;
             my $playlist_id = $self->get_playlist_id($name, $username ? (forUsername => $username) : (mine => 'true'))

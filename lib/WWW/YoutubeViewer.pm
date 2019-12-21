@@ -10,6 +10,7 @@ use parent qw(
   WWW::YoutubeViewer::Channels
   WWW::YoutubeViewer::Playlists
   WWW::YoutubeViewer::ParseJSON
+  WWW::YoutubeViewer::Activities
   WWW::YoutubeViewer::Subscriptions
   WWW::YoutubeViewer::PlaylistItems
   WWW::YoutubeViewer::CommentThreads
@@ -646,8 +647,8 @@ sub _old_extract_streaming_urls {
         say STDERR ":: Using `url_encoded_fmt_stream_map` to extract the streaming URLs...";
     }
 
-    my %stream_map = $self->parse_query_string($info->{url_encoded_fmt_stream_map}, multi => 1);
-    my %adaptive_fmts = $self->parse_query_string($info->{adaptive_fmts}, multi => 1);
+    my %stream_map    = $self->parse_query_string($info->{url_encoded_fmt_stream_map}, multi => 1);
+    my %adaptive_fmts = $self->parse_query_string($info->{adaptive_fmts},              multi => 1);
 
     if ($self->get_debug >= 2) {
         require Data::Dump;

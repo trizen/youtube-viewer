@@ -378,7 +378,18 @@ sub get_video_id {
     ref($info->{id}) eq 'HASH'                        ? $info->{id}{videoId}
       : exists($info->{snippet}{resourceId}{videoId}) ? $info->{snippet}{resourceId}{videoId}
       : exists($info->{contentDetails}{videoId})      ? $info->{contentDetails}{videoId}
-      :                                                 $info->{id};
+      : exists($info->{contentDetails}{playlistItem}{resourceId}{videoId})
+      ? $info->{contentDetails}{playlistItem}{resourceId}{videoId}
+      : exists($info->{contentDetails}{upload}{videoId}) ? $info->{contentDetails}{upload}{videoId}
+      : do {
+        my $id = $info->{id} // return undef;
+
+        if (length($id) != 11) {
+            return undef;
+        }
+
+        $id;
+      };
 }
 
 sub get_playlist_id {
@@ -536,10 +547,12 @@ sub get_comments {
 
 {
     no strict 'refs';
-    foreach my $pair ([playlist => {'youtube#playlist' => 1}],
+    foreach my $pair (
+                      [playlist     => {'youtube#playlist'     => 1}],
                       [channel      => {'youtube#channel'      => 1}],
                       [video        => {'youtube#video'        => 1, 'youtube#playlistItem' => 1}],
                       [subscription => {'youtube#subscription' => 1}],
+                      [activity     => {'youtube#activity'     => 1}],
       ) {
 
         *{__PACKAGE__ . '::' . 'is_' . $pair->[0]} = sub {

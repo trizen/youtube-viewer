@@ -73,8 +73,8 @@ For all functions, C<$channels->{results}{items}> contains:
                         },
       ) {
         *{__PACKAGE__ . '::' . $method->{name}} = sub {
-            my ($self, $id) = @_;
-            return $self->_get_results($self->_make_channels_url($method->{key} => $id));
+            my ($self, $channel_id) = @_;
+            return $self->_get_results($self->_make_channels_url($method->{key} => $channel_id));
         };
     }
 
