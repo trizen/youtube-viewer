@@ -86,6 +86,6 @@ my $builder = Module::Build->new(
     create_makefile_pl => 'traditional',
                                 );
 
-$builder->script_files(['bin/youtube-viewer', ($gtk_youtube_viewer ? 'bin/gtk-youtube-viewer' : ())]);
+$builder->script_files(['bin/youtube-viewer', ($gtk_youtube_viewer ? ('bin/gtk-youtube-viewer', 'bin/gtk3-youtube-viewer') : ())]);
 $builder->share_dir('share') if $gtk_youtube_viewer;
 $builder->create_build_script();
