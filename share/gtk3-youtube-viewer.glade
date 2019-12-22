@@ -126,6 +126,11 @@
     <property name="can_focus">False</property>
     <property name="icon_name">dialog-password</property>
   </object>
+  <object class="GtkImage" id="image7">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-refresh</property>
+  </object>
   <object class="GtkImage" id="image76">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -447,6 +452,7 @@
                       <object class="GtkTreeViewColumn" id="treeviewcolumn1">
                         <property name="resizable">True</property>
                         <property name="sizing">fixed</property>
+                        <property name="fixed_width">100</property>
                         <property name="title">Title</property>
                         <property name="expand">True</property>
                         <property name="clickable">True</property>
@@ -645,6 +651,22 @@
                                                   </packing>
                                                 </child>
                                                 <child>
+                                                  <object class="GtkButton" id="button11">
+                                                    <property name="label" translatable="yes">Activity</property>
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">True</property>
+                                                    <property name="receives_default">True</property>
+                                                    <property name="image">image7</property>
+                                                    <property name="image_position">top</property>
+                                                    <signal name="clicked" handler="activity_button" swapped="no"/>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="expand">False</property>
+                                                    <property name="fill">False</property>
+                                                    <property name="position">5</property>
+                                                  </packing>
+                                                </child>
+                                                <child>
                                                   <object class="GtkButton" id="button10">
                                                     <property name="label" translatable="yes">Playlists</property>
                                                     <property name="visible">True</property>
@@ -657,7 +679,7 @@
                                                   <packing>
                                                     <property name="expand">False</property>
                                                     <property name="fill">False</property>
-                                                    <property name="position">5</property>
+                                                    <property name="position">6</property>
                                                   </packing>
                                                 </child>
                                                 <child>
@@ -673,7 +695,7 @@
                                                   <packing>
                                                     <property name="expand">False</property>
                                                     <property name="fill">False</property>
-                                                    <property name="position">6</property>
+                                                    <property name="position">7</property>
                                                   </packing>
                                                 </child>
                                               </object>

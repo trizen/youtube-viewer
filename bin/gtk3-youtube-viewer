@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 17 December 2019
+#  Latest edit on: 22 December 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -284,6 +284,16 @@ my $icons_path = catdir($share_dir, 'icons');
 my $gui = 'Gtk3::Builder'->new;
 $gui->add_from_file($glade_file);
 $gui->connect_signals(undef);
+
+# GValue wrapper (unused for now)
+sub gval ($$) {
+    Glib::Object::Introspection::GValueWrapper->new('Glib::' . ucfirst($_[0]) => $_[1])
+}
+
+# Convert string into an array-ref of bytes
+sub gcarray ($) {
+    [map { ord } split(//, $_[0])]
+}
 
 # -------------  Get GUI objects ------------- #
 
@@ -1156,6 +1166,16 @@ sub menu_popup {
             $item->signal_connect(activate => sub { favorites('channel', $channel_id) });
             $item->set_property(tooltip_text => "Show favorite videos of this author");
             $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-favorite", q{menu}));
+            $item->show;
+            $author->append($item);
+        }
+
+        # Recent channel activity events
+        {
+            my $item = 'Gtk3::ImageMenuItem'->new("Activities");
+            $item->signal_connect(activate => sub { activities('channel', $channel_id) });
+            $item->set_property(tooltip_text => "Show recent channel activity events");
+            $item->set_image('Gtk3::Image'->new_from_icon_name("gtk-refresh", q{menu}));
             $item->show;
             $author->append($item);
         }
@@ -2048,9 +2068,15 @@ sub playlists_button {
     playlists($type, $username);
 }
 
+sub activity_button {
+    my $type     = $panel_account_type_combobox->get_active_text;
+    my $username = $panel_user_entry->get_text;
+    activities($type, $username);
+}
+
 {
     no strict 'refs';
-    foreach my $name (qw(favorites uploads likes dislikes playlists subscriptions)) {
+    foreach my $name (qw(favorites uploads likes dislikes playlists subscriptions activities)) {
         *{__PACKAGE__ . '::' . $name} = sub {
             my ($type, $channel) = @_;
 
@@ -2063,6 +2089,10 @@ sub playlists_button {
 
                 if ($name eq 'playlists') {
                     $method = 'my_playlists';
+                }
+
+                if ($name eq 'activities') {
+                    $method = 'my_activities';
                 }
             }
 
@@ -2319,7 +2349,8 @@ sub get_pixbuf_thumbnail {
 
         eval {
             $pixbufloader->set_size($xsize, $ysize);
-            $pixbufloader->write($thumbnail);
+            ## $pixbufloader->write($thumbnail);      # Gtk3 bug?
+            $pixbufloader->write(gcarray($thumbnail));
             $pixbuf = $pixbufloader->get_pixbuf;
             $pixbufloader->close;
         };
@@ -2346,6 +2377,28 @@ sub display_results {
     hide_feeds_window();
 
     if (not $from_history) {
+
+        foreach my $entry (@$items) {
+            if ($yv_utils->is_activity($entry)) {
+                my $type = $entry->{snippet}{type};
+
+                if ($type eq 'upload') {
+                    $entry->{kind} = 'youtube#video';
+                    $entry->{id}   = $entry->{contentDetails}{upload}{videoId};
+                }
+
+                if ($type eq 'playlistItem') {
+                    $entry->{kind} = 'youtube#video';
+                    $entry->{id}   = $entry->{contentDetails}{playlistItem}{resourceId}{videoId};
+                }
+
+                if ($type eq 'subscription') {
+                    $entry->{kind}               = 'youtube#channel';
+                    $entry->{snippet}{title}     = $entry->{snippet}{channelTitle};
+                    $entry->{snippet}{channelId} = $entry->{contentDetails}{subscription}{resourceId}{channelId};
+                }
+            }
+        }
 
         my @video_ids;
         my @playlist_ids;
@@ -2449,7 +2502,7 @@ sub set_entry_tooltip {
 sub set_thumbnail {
     my ($entry, $liststore, $iter) = @_;
 
-    $liststore->set_value($iter, 1, $default_thumb);
+    $liststore->set($iter, 1, $default_thumb);
 
     Glib::Idle->add(
         sub {
@@ -2457,8 +2510,7 @@ sub set_thumbnail {
 
             my $thumb_url = $yv_utils->get_thumbnail_url($entry, $CONFIG{thumbnail_type});
             my $pixbuf    = get_pixbuf_thumbnail($thumb_url, ($yv_utils->is_channel($entry) ? (160, 160) : ()));
-            $liststore->set_value($iter, 1, $pixbuf);
-
+            $liststore->set($iter, 1, $pixbuf);
             return 0;
         },
         [$entry, $liststore, $iter],
