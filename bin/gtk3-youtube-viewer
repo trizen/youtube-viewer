@@ -243,7 +243,7 @@ my %CONFIG = (
     youtube_viewer_args    => [],
     youtube_users_file     => $youtube_users_file,
     history                => 1,
-    history_limit          => 10_000,
+    history_limit          => 1_000_000,
     history_file           => $history_file,
     save_titles_to_history => 0,
     entry_completion_limit => 10,
@@ -287,7 +287,7 @@ $gui->connect_signals(undef);
 
 # GValue wrapper (unused for now)
 sub gval ($$) {
-    Glib::Object::Introspection::GValueWrapper->new('Glib::' . ucfirst($_[0]) => $_[1])
+    Glib::Object::Introspection::GValueWrapper->new('Glib::' . ucfirst($_[0]) => $_[1]);
 }
 
 # Convert string into an array-ref of bytes
@@ -654,8 +654,9 @@ if (not -d $CONFIG{cache_dir}) {
 
             # Now, try to rewrite the history file
             if (open(my $fh, '>:utf8', $CONFIG{history_file})) {
-                say {$fh}
-                  join("\n", @history[(@history - $CONFIG{history_limit}) + int(rand($CONFIG{history_limit})) .. $#history]);
+
+                # Keep only the most recent half part of the history file
+                say {$fh} join("\n", @history[($CONFIG{history_limit} >> 1) .. $#history]);
                 close $fh;
             }
         }

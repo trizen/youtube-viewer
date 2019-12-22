@@ -2169,7 +2169,7 @@ When the specified resolution is not found, the best available resolution is use
     <property name="transient_for">__MAIN__</property>
     <property name="program_name">GTK Youtube Viewer</property>
     <property name="copyright" translatable="yes">Copyright © 2010-2019 Trizen</property>
-    <property name="comments" translatable="yes">Written in Perl, Gtk2 and Glade.</property>
+    <property name="comments" translatable="yes">Written in Perl, Gtk3 and Glade.</property>
     <property name="website">https://github.com/trizen/youtube-viewer</property>
     <property name="website_label" translatable="yes">https://github.com/trizen/youtube-viewer</property>
     <property name="license" translatable="yes">

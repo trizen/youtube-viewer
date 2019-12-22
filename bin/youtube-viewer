@@ -332,7 +332,7 @@ my %CONFIG = (
     highlight_color      => 'bold',
     remove_played_file   => 0,
     history              => 0,
-    history_limit        => 10_000,
+    history_limit        => 1_000_000,
     history_file         => $history_file,
     convert_cmd          => 'ffmpeg -i *IN* *OUT*',
     convert_to           => undef,
@@ -612,17 +612,19 @@ if ($opt{history}) {
     $term->ReadHistory($opt{history_file});
 
     # All history entries
-    my @entries = $term->history_list;
+    my @history = $term->history_list;
 
     # Rewrite the history file, when the history_limit has been reached.
-    if ($opt{history_limit} > 0 and @entries > $opt{history_limit}) {
+    if ($opt{history_limit} > 0 and @history > $opt{history_limit}) {
 
         # Try to create a backup, first
         require File::Copy;
         File::Copy::cp($opt{history_file}, "$opt{history_file}.bak");
 
         if (open my $fh, '>', $opt{history_file}) {
-            say {$fh} join("\n", @entries[(@entries - $opt{history_limit} + rand($opt{history_limit} >> 1)) .. $#entries]);
+
+            # Keep only the most recent half part of the history file
+            say {$fh} join("\n", @history[($opt{history_limit} >> 1) .. $#history]);
             close $fh;
         }
     }
