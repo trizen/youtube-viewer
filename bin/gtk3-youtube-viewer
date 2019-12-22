@@ -29,7 +29,7 @@ use warnings;
 no warnings 'once';
 
 my $DEVEL;    # true in devel mode
-use if ($DEVEL = 1), lib => qw(../lib);    # devel only
+use if ($DEVEL = 0), lib => qw(../lib);    # devel only
 
 use WWW::YoutubeViewer v3.6.0;
 use WWW::YoutubeViewer::RegularExpressions;
