@@ -2509,8 +2509,9 @@ sub set_thumbnail {
         sub {
             my ($entry, $liststore, $iter) = @{$_[0]};
 
-            my $thumb_url = $yv_utils->get_thumbnail_url($entry, $CONFIG{thumbnail_type});
-            my $pixbuf    = get_pixbuf_thumbnail($thumb_url, ($yv_utils->is_channel($entry) ? (160, 160) : ()));
+            my $thumb_url     = $yv_utils->get_thumbnail_url($entry, $CONFIG{thumbnail_type});
+            my $square_format = $yv_utils->is_channel($entry) || $yv_utils->is_subscription($entry);
+            my $pixbuf        = get_pixbuf_thumbnail($thumb_url, ($square_format ? (160, 160) : ()));
             $liststore->set($iter, 1, $pixbuf);
             return 0;
         },
