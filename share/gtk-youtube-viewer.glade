@@ -2219,25 +2219,16 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See &lt;https://dev.perl.org/licenses/&gt; for more information.
 </property>
-    <property name="authors">[+] Developer/Maintainer:
- =&gt;  Trizen (echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d)
-    * Core
-    * GUI
+    <property name="authors"># Main developer #
+Trizen http://github.com/trizen
 
-[+] Contributors:
-  =&gt; Ovidiu D. Nițan (&lt;nitanovidiu@gmail.com&gt;)
-    * GUI fixes.
+# Contributors #
+Ovidiu D. Nițan &lt;nitanovidiu@gmail.com&gt;
+Jookia http://github.com/Jookia
+Andreas Hrubak http://github.com/bAndie91
 
-  =&gt; Jookia (&lt;https://github.com/Jookia&gt;)
-    * Proxy support.
-    * Internal improvements.
-
-  =&gt; Andreas Hrubak (&lt;https://github.com/bAndie91&gt;)
-    * Results tooltips.
-    * Back and forward navigation support.
-
-Full list of contributors: &lt;https://github.com/trizen/youtube-viewer/graphs/contributors&gt;</property>
-    <property name="artists">PosixRU (main icon: &lt;http://zenway.ru/page/gtk-youtube-viewer&gt;)</property>
+Full list of contributors: http://github.com/trizen/youtube-viewer/graphs/contributors</property>
+    <property name="artists">PosixRU (main logo) http://zenway.ru/page/gtk-youtube-viewer</property>
     <signal name="destroy" handler="hide_about_window" swapped="no"/>
     <signal name="delete-event" handler="hide_about_window" swapped="no"/>
     <signal name="response" handler="hide_about_window" swapped="no"/>

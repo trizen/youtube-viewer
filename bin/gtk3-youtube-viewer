@@ -15,12 +15,9 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 22 December 2019
+#  Latest edit on: 23 December 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
-
-# EXPERIMENTAL PORTING OF GTK-YOUTUBE-VIEWER TO GTK3. (does not work yet)
-# https://github.com/trizen/youtube-viewer/issues/284
 
 use utf8;
 use 5.014;
@@ -290,7 +287,7 @@ sub gval ($$) {
     Glib::Object::Introspection::GValueWrapper->new('Glib::' . ucfirst($_[0]) => $_[1]);
 }
 
-# Convert string into an array-ref of bytes
+# Convert a string into an array-ref of bytes
 sub gcarray ($) {
     [map { ord } split(//, $_[0])]
 }
