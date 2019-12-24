@@ -144,7 +144,7 @@
   <object class="GtkImage" id="image80">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="icon_name">mail-send</property>
+    <property name="icon_name">mail-reply-all</property>
   </object>
   <object class="GtkListStore" id="liststore1">
     <columns>
