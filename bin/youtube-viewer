@@ -1276,12 +1276,9 @@ sub apply_configuration {
         my $str = delete $opt->{user_videos};
 
         if (my $id = extract_channel_id($str)) {
-            if ($yv_utils->is_channelID($id)) {
-                print_videos($yv_obj->uploads($id));
-            }
-            else {
-                print_videos($yv_obj->uploads_from_username($id));
-            }
+            $yv_utils->is_channelID($id)
+              ? print_videos($yv_obj->uploads($id))
+              : print_videos($yv_obj->uploads_from_username($id));
         }
         else {
             warn_invalid("username or channel ID", $str);
@@ -1311,13 +1308,39 @@ sub apply_configuration {
     }
 
     if (defined $opt->{subscriptions}) {
-        my $username = delete $opt->{subscriptions};
-        print_channels($username ? $yv_obj->subscriptions_from_username($username) : $yv_obj->subscriptions);
+        my $str = delete $opt->{subscriptions};
+
+        if ($str) {
+            if (my $id = extract_channel_id($str)) {
+                $yv_utils->is_channelID($id)
+                  ? print_channels($yv_obj->subscriptions($id))
+                  : print_channels($yv_obj->subscriptions_from_username($id));
+            }
+            else {
+                warn_invalid("username or channel ID", $str);
+            }
+        }
+        else {
+            print_channels($yv_obj->subscriptions);
+        }
     }
 
     if (defined $opt->{subscription_videos}) {
-        my $username = delete $opt->{subscription_videos};
-        print_videos($username ? $yv_obj->subscription_videos_from_username($username) : $yv_obj->subscription_videos);
+        my $str = delete $opt->{subscription_videos};
+
+        if ($str) {
+            if (my $id = extract_channel_id($str)) {
+                $yv_utils->is_channelID($id)
+                  ? print_videos($yv_obj->subscription_videos($id))
+                  : print_videos($yv_obj->subscription_videos_from_username($id));
+            }
+            else {
+                warn_invalid("username or channel ID", $str);
+            }
+        }
+        else {
+            print_videos($yv_obj->subscription_videos);
+        }
     }
 
     if (defined $opt->{related_videos}) {
@@ -1328,12 +1351,9 @@ sub apply_configuration {
         my $str = delete $opt->{user_playlists};
 
         if (my $id = extract_channel_id($str)) {
-            if ($yv_utils->is_channelID($id)) {
-                print_playlists($yv_obj->playlists($id));
-            }
-            else {
-                print_playlists($yv_obj->playlists_from_username($id));
-            }
+            $yv_utils->is_channelID($id)
+              ? print_playlists($yv_obj->playlists($id))
+              : print_playlists($yv_obj->playlists_from_username($id));
         }
         else {
             warn_invalid("username or channel ID", $str);
@@ -1341,23 +1361,39 @@ sub apply_configuration {
     }
 
     if (defined $opt->{favorites}) {
-        my $channel_id = delete($opt->{favorites});
+        my $str = delete($opt->{favorites});
 
-        print_videos(
-                       $channel_id
-                     ? $yv_obj->favorites($channel_id)
-                     : $yv_obj->favorites
-                    );
+        if ($str) {
+            if (my $id = extract_channel_id($str)) {
+                $yv_utils->is_channelID($id)
+                  ? print_videos($yv_obj->favorites($id))
+                  : print_videos($yv_obj->favorites_from_username($id));
+            }
+            else {
+                warn_invalid("username or channel", $str);
+            }
+        }
+        else {
+            print_videos($yv_obj->favorites);
+        }
     }
 
     if (defined $opt->{likes}) {
-        my $channel_id = delete($opt->{likes});
+        my $str = delete($opt->{likes});
 
-        print_videos(
-                       $channel_id
-                     ? $yv_obj->likes($channel_id)
-                     : $yv_obj->my_likes
-                    );
+        if ($str) {
+            if (my $id = extract_channel_id($str)) {
+                $yv_utils->is_channelID($id)
+                  ? print_videos($yv_obj->likes($id))
+                  : print_videos($yv_obj->likes_from_username($id));
+            }
+            else {
+                warn_invalid("username or channel", $str);
+            }
+        }
+        else {
+            print_videos($yv_obj->my_likes);
+        }
     }
 
     if (defined $opt->{dislikes}) {
@@ -1366,24 +1402,30 @@ sub apply_configuration {
     }
 
     if (defined $opt->{activities}) {
-        my $channel_id = delete $opt->{activities};
-        print_videos(
-                       $channel_id
-                     ? $yv_obj->activities($channel_id)
-                     : $yv_obj->my_activities
-                    );
+        my $str = delete $opt->{activities};
+
+        if ($str) {
+            if (my $id = extract_channel_id($str)) {
+                $yv_utils->is_channelID($id)
+                  ? print_videos($yv_obj->activities($id))
+                  : print_videos($yv_obj->activities_from_username($id));
+            }
+            else {
+                warn_invalid("username or channel", $str);
+            }
+        }
+        else {
+            print_videos($yv_obj->my_likes);
+        }
     }
 
     if (defined $opt->{user_favorited_videos}) {
         my $str = delete $opt->{user_favorited_videos};
 
         if (my $id = extract_channel_id($str)) {
-            if ($yv_utils->is_channelID($id)) {
-                print_videos($yv_obj->favorites($id));
-            }
-            else {
-                print_videos($yv_obj->favorites_from_username($id));
-            }
+            $yv_utils->is_channelID($id)
+              ? print_videos($yv_obj->favorites($id))
+              : print_videos($yv_obj->favorites_from_username($id));
         }
         else {
             warn_invalid("username or channel ID", $str);
@@ -1394,12 +1436,9 @@ sub apply_configuration {
         my $str = delete $opt->{user_liked_videos};
 
         if (my $id = extract_channel_id($str)) {
-            if ($yv_utils->is_channelID($id)) {
-                print_videos($yv_obj->likes($id));
-            }
-            else {
-                print_videos($yv_obj->likes_from_username($id));
-            }
+            $yv_utils->is_channelID($id)
+              ? print_videos($yv_obj->likes($id))
+              : print_videos($yv_obj->likes_from_username($id));
         }
         else {
             warn_invalid("username or channel ID", $str);
@@ -2119,11 +2158,12 @@ sub subscribe {
             next;
         };
 
-        if (
-              $yv_utils->is_channelID($id)
-            ? $yv_obj->subscribe_channel($id)
-            : $yv_obj->subscribe_channel_from_username($id)
-          ) {
+        my $ok =
+            $yv_utils->is_channelID($id)
+          ? $yv_obj->subscribe_channel($id)
+          : $yv_obj->subscribe_channel_from_username($id);
+
+        if ($ok) {
             print ":: Successfully subscribed to channel: $id\n";
         }
         else {
