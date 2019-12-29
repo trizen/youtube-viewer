@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 25 December 2019
+#  Latest edit on: 29 December 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -686,8 +686,8 @@ usage: $execname [options] ([url] | [keywords])
    --region=s           : set the region code (default: US)
 
  * Videos
-   -uv --user-vid=s     : list videos uploaded by a specific user
-   -cv --channel-vid=s  : list videos uploaded to a specific channel
+   -uv --user-vid=s     : list videos uploaded by a specific channel or user
+   -pv --popular-vid=s  : list the most popular videos from a specific channel
    -uf --user-fav=s     : list the videos favorited by a specific user
    -id --videoids=s,s   : play YouTube videos by their IDs
    -rv --related=s      : show related videos for a video ID or URL
@@ -700,8 +700,7 @@ usage: $execname [options] ([url] | [keywords])
        --ps=s         : add videos by ID or URL to a post-selected playlist
                         or in a given playlistID specified with `--pid`
        --position=i   : the position in a playlist where to add a video
-   -up --user-pl=s    : list the playlists created by a specific user
-   -cp --channel-pl=s : list the playlists belonging to a specific channel ID
+   -up --user-pl=s    : list playlists created by a specific channel or user
 
  * Channels
    --channels         : search for Youtube channels
@@ -748,8 +747,7 @@ usage: $execname [options] ([url] | [keywords])
        --dislikes        : show the videos that you disliked on YouTube *
 
 * [POST] Personal
-   --subscribe=s        : subscribe to a channel *
-   --user-subscribe=s   : subscribe to a channel via username *
+   --subscribe=s        : subscribe to a given channel ID or username *
    --favorite=s         : favorite a video by URL or ID *
    --like=s             : send a 'like' rating to a video URL or ID *
    --dislike=s          : send a 'dislike' rating to a video URL or ID *
@@ -1151,8 +1149,18 @@ sub apply_configuration {
     }
 
     if (defined $opt->{author}) {
-        my $username = delete $opt->{author};
-        $yv_obj->set_channelId($yv_obj->channel_id_from_username($username) // $username);
+        my $name = delete $opt->{author};
+        if (my $id = extract_channel_id($name)) {
+
+            if (not $yv_utils->is_channelID($id)) {
+                $id = $yv_obj->channel_id_from_username($id) // $id;
+            }
+
+            $yv_obj->set_channelId($id);
+        }
+        else {
+            warn_invalid("username or channel ID", $name);
+        }
     }
 
     if (defined $opt->{within}) {
@@ -1201,12 +1209,8 @@ sub apply_configuration {
     }
 
     # ... SUBROUTINE CALLS ... #
-    if (defined $opt->{subscribe_channel}) {
-        subscribe_to_channels(split(/[,\s]+/, delete $opt->{subscribe_channel}));
-    }
-
-    if (defined $opt->{subscribe_username}) {
-        subscribe_to_usernames(split(/[,\s]+/, delete $opt->{subscribe_username}));
+    if (defined $opt->{subscribe}) {
+        subscribe(split(/[,\s]+/, delete $opt->{subscribe}));
     }
 
     if (defined $opt->{favorite_video}) {
@@ -1269,22 +1273,40 @@ sub apply_configuration {
     }
 
     if (defined $opt->{user_videos}) {
-        my $id = delete $opt->{user_videos};
-        if ($id =~ /$valid_channel_id_re/) {
-            print_videos($yv_obj->uploads_from_username($+{channel_id}));
+        my $str = delete $opt->{user_videos};
+
+        if (my $id = extract_channel_id($str)) {
+            if ($yv_utils->is_channelID($id)) {
+                print_videos($yv_obj->uploads($id));
+            }
+            else {
+                print_videos($yv_obj->uploads_from_username($id));
+            }
         }
         else {
-            warn_invalid("username", $id);
+            warn_invalid("username or channel ID", $str);
         }
     }
 
-    if (defined $opt->{channel_id_videos}) {
-        my $id = delete $opt->{channel_id_videos};
-        if ($id =~ /$valid_channel_id_re/) {
-            print_videos($yv_obj->uploads($+{channel_id}));
+    if (defined $opt->{popular_videos}) {
+        my $str = delete $opt->{popular_videos};
+
+        if (my $id = extract_channel_id($str)) {
+
+            if (not $yv_utils->is_channelID($id)) {
+                $id = $yv_obj->channel_id_from_username($id) // $id;
+            }
+
+            my $results = do {
+                local $yv_obj->{channelId} = $id;
+                local $yv_obj->{order}     = 'viewCount';
+                $yv_obj->search_videos("");
+            };
+
+            print_videos($results);
         }
         else {
-            warn_invalid("channelID", $id);
+            warn_invalid("username or channel ID", $str);
         }
     }
 
@@ -1303,24 +1325,18 @@ sub apply_configuration {
     }
 
     if (defined $opt->{user_playlists}) {
-        my $id = delete $opt->{user_playlists};
+        my $str = delete $opt->{user_playlists};
 
-        if ($id =~ /$valid_channel_id_re/) {
-            print_playlists($yv_obj->playlists_from_username($+{channel_id}));
+        if (my $id = extract_channel_id($str)) {
+            if ($yv_utils->is_channelID($id)) {
+                print_playlists($yv_obj->playlists($id));
+            }
+            else {
+                print_playlists($yv_obj->playlists_from_username($id));
+            }
         }
         else {
-            warn_invalid("username", $id);
-        }
-    }
-
-    if (defined $opt->{channel_playlists}) {
-        my $id = delete $opt->{channel_playlists};
-
-        if ($id =~ /$valid_channel_id_re/) {
-            print_playlists($yv_obj->playlists($+{channel_id}));
-        }
-        else {
-            warn_invalid("channelID", $id);
+            warn_invalid("username or channel ID", $str);
         }
     }
 
@@ -1359,24 +1375,34 @@ sub apply_configuration {
     }
 
     if (defined $opt->{user_favorited_videos}) {
-        my $username = delete $opt->{user_favorited_videos};
+        my $str = delete $opt->{user_favorited_videos};
 
-        if ($username =~ /$valid_channel_id_re/) {
-            print_videos($yv_obj->favorites_from_username($+{channel_id}));
+        if (my $id = extract_channel_id($str)) {
+            if ($yv_utils->is_channelID($id)) {
+                print_videos($yv_obj->favorites($id));
+            }
+            else {
+                print_videos($yv_obj->favorites_from_username($id));
+            }
         }
         else {
-            warn_invalid("username", $username);
+            warn_invalid("username or channel ID", $str);
         }
     }
 
     if (defined $opt->{user_liked_videos}) {
-        my $username = delete $opt->{user_liked_videos};
+        my $str = delete $opt->{user_liked_videos};
 
-        if ($username =~ /$valid_channel_id_re/) {
-            print_videos($yv_obj->likes_from_username($+{channel_id}));
+        if (my $id = extract_channel_id($str)) {
+            if ($yv_utils->is_channelID($id)) {
+                print_videos($yv_obj->likes($id));
+            }
+            else {
+                print_videos($yv_obj->likes_from_username($id));
+            }
         }
         else {
-            warn_invalid("username", $username);
+            warn_invalid("username or channel ID", $str);
         }
     }
 
@@ -1430,10 +1456,7 @@ sub parse_arguments {
         'likes|L:s'                         => \$opt{likes},
         'dislikes'                          => \$opt{dislikes},
         'activities|activity:s'             => \$opt{activities},
-        'subscribe=s'                       => \$opt{subscribe_channel},
-        'user-subscribe=s'                  => \$opt{subscribe_username},
-        'cv|channel|channel-videos=s'       => \$opt{channel_id_videos},
-        'cp|channel-playlists=s'            => \$opt{channel_playlists},
+        'subscribe=s'                       => \$opt{subscribe},
 
         # English-UK friendly
         'favorite|favourite|favorite-video|favourite-video|fav=s' => \$opt{favorite_video},
@@ -1441,6 +1464,7 @@ sub parse_arguments {
         'login|authenticate'      => \$opt{authenticate},
         'logout'                  => \$opt{logout},
         'user|user-videos|u|uv=s' => \$opt{user_videos},
+        'popular-videos|pv=s'     => \$opt{popular_videos},
         'user-playlists|up=s'     => \$opt{user_playlists},
         'user-favorites|uf=s'     => \$opt{user_favorited_videos},
         'user-likes|ul=s'         => \$opt{user_liked_videos},
@@ -1626,6 +1650,28 @@ sub get_valid_playlist_id {
     }
 
     return $id;
+}
+
+sub extract_channel_id {
+    my ($str) = @_;
+
+    if ($str =~ /$get_channel_videos_id_re/) {
+        return $+{channel_id};
+    }
+
+    if ($str =~ /$get_username_videos_re/) {
+        return $+{username};
+    }
+
+    if ($str =~ /$valid_channel_id_re/) {
+        return $+{channel_id};
+    }
+
+    if ($str =~ /^[-a-zA-Z0-9_]+\z/) {
+        return $str;
+    }
+
+    return undef;
 }
 
 sub apply_input_arguments {
@@ -2061,34 +2107,31 @@ sub get_and_print_videos_from_playlist {
     return 1;
 }
 
-sub subscribe_to {
-    my ($is_channel, @ids) = @_;
+sub subscribe {
+    my (@ids) = @_;
 
     return if not authenticated();
 
     foreach my $channel (@ids) {
-        if ($channel =~ /$valid_channel_id_re/) {
-            if (
-                  $is_channel
-                ? $yv_obj->subscribe_channel($+{channel_id})
-                : $yv_obj->subscribe_channel_from_username($+{channel_id})
-              ) {
-                print ":: Successfully subscribed to channel: $channel\n";
-            }
-            else {
-                warn colored("\n[!] Unable to subscribe to channel: $channel", 'bold red') . "\n";
-            }
+
+        my $id = extract_channel_id($channel) // do {
+            warn_invalid("channel ID or username", $channel);
+            next;
+        };
+
+        if (
+              $yv_utils->is_channelID($id)
+            ? $yv_obj->subscribe_channel($id)
+            : $yv_obj->subscribe_channel_from_username($id)
+          ) {
+            print ":: Successfully subscribed to channel: $id\n";
+        }
+        else {
+            warn colored("\n[!] Unable to subscribe to channel: $id", 'bold red') . "\n";
         }
     }
+
     return 1;
-}
-
-sub subscribe_to_channels {
-    subscribe_to(1, @_);
-}
-
-sub subscribe_to_usernames {
-    subscribe_to(0, @_);
 }
 
 sub _bold_color {
@@ -3799,7 +3842,7 @@ sub print_videos {
             }
             elsif ($opt =~ /^(?:subscribe|S)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
-                    subscribe_to_channels(map { $yv_utils->get_channel_id($videos->[$_]) } @nums);
+                    subscribe(map { $yv_utils->get_channel_id($videos->[$_]) } @nums);
                 }
                 else {
                     warn_no_thing_selected('video');

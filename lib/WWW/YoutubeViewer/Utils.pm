@@ -575,6 +575,18 @@ sub get_comments {
     }
 }
 
+sub is_channelID {
+    my ($self, $id) = @_;
+    $id || return;
+    $id =~ /^UC[-a-zA-Z0-9_]{22}\z/;
+}
+
+sub is_videoID {
+    my ($self, $id) = @_;
+    $id || return;
+    $id =~ /^[-a-zA-Z0-9_]{11}\z/;
+}
+
 sub period_to_date {
     my ($self, $amount, $period) = @_;
 
