@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 25 December 2019
+#  Latest edit on: 29 December 2019
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -1139,12 +1139,22 @@ sub menu_popup {
         $cat->set_image('Gtk2::Image'->new_from_pixbuf($user_icon_pixbuf));
         $cat->show;
 
-        # More videos from this author
+        # Recent uploads from this author
         {
             my $item = 'Gtk2::ImageMenuItem'->new("Uploads");
             $item->signal_connect(activate => sub { uploads('channel', $channel_id) });
-            $item->set_property(tooltip_text => "Show more videos from this author");
+            $item->set_property(tooltip_text => "Show the most recent videos from this author");
             $item->set_image('Gtk2::Image'->new_from_icon_name("emblem-shared", q{menu}));
+            $item->show;
+            $author->append($item);
+        }
+
+        # Most popular uploads from this author
+        {
+            my $item = 'Gtk2::ImageMenuItem'->new("Popular");
+            $item->signal_connect(activate => sub { popular_uploads('channel', $channel_id) });
+            $item->set_property(tooltip_text => "Show the most popular videos from this author");
+            $item->set_image('Gtk2::Image'->new_from_icon_name("emblem-videos", q{menu}));
             $item->show;
             $author->append($item);
         }
@@ -2063,6 +2073,28 @@ sub activity_button {
     activities($type, $username);
 }
 
+sub popular_uploads {
+    my ($type, $channel) = @_;
+
+    if ($type =~ /^user/) {
+        $channel = $yv_obj->channel_id_from_username($channel) // die "Invalid username <<$channel>>\n";
+    }
+
+    my $results = do {
+        local $yv_obj->{channelId} = $channel;
+        local $yv_obj->{order}     = 'viewCount';
+        $yv_obj->search_videos("");
+    };
+
+    if ($yv_utils->has_entries($results)) {
+        $liststore->clear if $CONFIG{clear_search_list};
+        display_results($results);
+    }
+    else {
+        die "No popular uploads for channel: <<$channel>>\n";
+    }
+}
+
 {
     no strict 'refs';
     foreach my $name (qw(favorites uploads likes dislikes playlists subscriptions activities)) {
@@ -2100,7 +2132,7 @@ sub activity_button {
                 display_results($request);
             }
             else {
-                die "No $name results" . ($channel ? " for channel: <$channel>\n" : "\n");
+                die "No $name results" . ($channel ? " for channel: <<$channel>>\n" : "\n");
             }
 
             return 1;
