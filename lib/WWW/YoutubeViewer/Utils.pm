@@ -192,6 +192,13 @@ sub date_to_age {
         return join(' ', $month - $+{month}, 'months');
     }
 
+    if ($year - $+{year} == 1) {
+        my $month_diff = $+{month} - $month;
+        if ($month_diff > 0) {
+            return join(' ', 12 - $month_diff, 'months');
+        }
+    }
+
     return join(' ', $year - $+{year}, 'years');
 }
 
@@ -623,7 +630,7 @@ You can find documentation for this module with the perldoc command.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012-2015 Trizen.
+Copyright 2012-2020 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
