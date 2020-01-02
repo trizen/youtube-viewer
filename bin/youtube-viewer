@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2010-2019 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
+# Copyright (C) 2010-2020 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of either: the GNU General Public License as published
@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 29 December 2019
+#  Latest edit on: 02 January 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -114,7 +114,7 @@ See: youtube-viewer --help
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2019 Trizen.
+Copyright 2010-2020 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
@@ -3336,9 +3336,6 @@ sub play_videos {
             next;
         }
 
-        # It may be downloaded, but that's OK...
-        save_watched_video($video_id);
-
         if (defined($opt{max_seconds}) and $opt{max_seconds} >= 0) {
             next if $yv_utils->get_duration($video) > $opt{max_seconds};
         }
@@ -3412,12 +3409,14 @@ sub play_videos {
             }
 
             $yv_obj->proxy_system($command);    # execute the video player
+
             if ($? and $? != 512) {
                 $opt{auto_next_page} = 0;
                 return;
             }
         }
 
+        save_watched_video($video_id);
         press_enter_to_continue() if $opt{confirm};
     }
 

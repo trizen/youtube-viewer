@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.22.1 
+<!-- Generated with glade 3.22.1
 
-Copyright (C) Copyright © 2010-2019 Trizen
+Copyright (C) Copyright © 2010-2020 Trizen
 
 This file is part of GTK YouTube Viewer.
 
@@ -26,7 +26,7 @@ Author: Trizen https://github.com/trizen
   <!-- interface-license-type gplv3 -->
   <!-- interface-name GTK YouTube Viewer -->
   <!-- interface-description Search and play YouTube videos. -->
-  <!-- interface-copyright Copyright \302\251 2010-2019 Trizen -->
+  <!-- interface-copyright Copyright \302\251 2010-2020 Trizen -->
   <!-- interface-authors Trizen https://github.com/trizen -->
   <object class="GtkAdjustment" id="adjustment1">
     <property name="lower">1</property>
@@ -2207,12 +2207,12 @@ When the specified resolution is not found, the best available resolution is use
     <property name="type_hint">normal</property>
     <property name="transient_for">__MAIN__</property>
     <property name="program_name">GTK Youtube Viewer</property>
-    <property name="copyright" translatable="yes">Copyright © 2010-2019 Trizen</property>
+    <property name="copyright" translatable="yes">Copyright © 2010-2020 Trizen</property>
     <property name="comments" translatable="yes">Written in Perl, Gtk3 and Glade.</property>
     <property name="website">https://github.com/trizen/youtube-viewer</property>
     <property name="website_label" translatable="yes">https://github.com/trizen/youtube-viewer</property>
     <property name="license" translatable="yes">
-Copyright (C) 2010-2019 Trizen &lt;echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d&gt;.
+Copyright (C) 2010-2020 Trizen &lt;echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d&gt;.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
