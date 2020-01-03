@@ -3158,8 +3158,21 @@ sub download_video {
     if ($opt{merge_into_mkv} and @merge_files > 1 and not -e $mkv_filename) {
 
         say ":: Merging into MKV...";
+
+        my $ffmpeg_cmd  = $opt{ffmpeg_cmd};
+        my $ffmpeg_args = $opt{merge_into_mkv_args};
+
+        if (my @srt_files = grep { /\.srt\z/ } @merge_files) {
+            my $srt_file = $srt_files[0];
+            require File::Basename;
+            if (File::Basename::basename($srt_file) =~ m{^.{11}_([a-z]{2,4})}i) {
+                my $lang_code = $1;
+                $ffmpeg_args .= " -metadata:s:s:0 language=$lang_code";
+            }
+        }
+
         my $merge_command =
-          join(' ', $opt{ffmpeg_cmd}, (map { "-i \Q$_\E" } @merge_files), $opt{merge_into_mkv_args}, "\Q$mkv_filename\E");
+          join(' ', $ffmpeg_cmd, (map { "-i \Q$_\E" } @merge_files), $ffmpeg_args, "\Q$mkv_filename\E");
 
         if ($yv_obj->get_debug) {
             say "-> Command: $merge_command";
