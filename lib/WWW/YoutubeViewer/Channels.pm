@@ -117,8 +117,16 @@ Return the channel ID for an username.
 
 sub channel_id_from_username {
     my ($self, $username) = @_;
+
+    state $username_lookup = {};
+
+    if (exists $username_lookup->{$username}) {
+        return $username_lookup->{$username};
+    }
+
+    $username_lookup->{$username} = undef;
     my $channel = $self->channels_from_username($username) // return;
-    $channel->{results}{items}[0]{id} // return;
+    $username_lookup->{$username} = $channel->{results}{items}[0]{id} // return;
 }
 
 =head2 channel_title_from_id($channel_id)

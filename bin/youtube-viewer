@@ -1153,10 +1153,13 @@ sub apply_configuration {
         if (my $id = extract_channel_id($name)) {
 
             if (not $yv_utils->is_channelID($id)) {
-                $id = $yv_obj->channel_id_from_username($id) // $id;
+                $id = $yv_obj->channel_id_from_username($id) // do {
+                    warn_invalid("username or channel ID", $id);
+                    undef;
+                };
             }
 
-            $yv_obj->set_channelId($id);
+            $yv_obj->set_channelId($id) if defined($id);
         }
         else {
             warn_invalid("username or channel ID", $name);
@@ -1291,7 +1294,10 @@ sub apply_configuration {
         if (my $id = extract_channel_id($str)) {
 
             if (not $yv_utils->is_channelID($id)) {
-                $id = $yv_obj->channel_id_from_username($id) // $id;
+                $id = $yv_obj->channel_id_from_username($id) // do {
+                    warn_invalid("username or channel ID", $id);
+                    undef;
+                };
             }
 
             my $results = do {

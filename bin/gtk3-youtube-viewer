@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 29 December 2019
+#  Latest edit on: 06 January 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -2220,7 +2220,13 @@ sub search {
     # Set the username
     my $username = $from_author_entry->get_text;
     if ($username =~ /^[\w\-]+\z/) {
-        $yv_obj->set_channelId($yv_obj->channel_id_from_username($username) // $username);
+        my $id = $username;
+
+        if (not $yv_utils->is_channelID($id)) {
+            $id = $yv_obj->channel_id_from_username($id) // undef;
+        }
+
+        $yv_obj->set_channelId($id);
     }
     else {
         $yv_obj->set_channelId();
