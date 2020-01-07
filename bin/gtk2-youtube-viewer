@@ -122,6 +122,7 @@ my %symbols = (
                down_arrow  => '↓',
                diamond     => '❖',
                face        => '☺',
+               black_face  => '☻',
                average     => 'x̄',
                ellipsis    => '…',
                play        => '▶',
@@ -658,7 +659,7 @@ if (not -d $CONFIG{cache_dir}) {
 }
 
 # Locate video player
-if (not defined $CONFIG{video_player_selected}) {
+if (not $CONFIG{video_player_selected}) {
 
     foreach my $key (sort keys %{$CONFIG{video_players}}) {
         if (defined(my $abs_player_path = which_command($CONFIG{video_players}{$key}{cmd}))) {
@@ -668,7 +669,7 @@ if (not defined $CONFIG{video_player_selected}) {
         }
     }
 
-    if (not defined($CONFIG{video_player_selected})) {
+    if (not $CONFIG{video_player_selected}) {
         warn "\n[!] Please install a supported video player! (e.g.: mpv)\n\n";
         $CONFIG{video_player_selected} = 'mpv';
     }
@@ -2098,7 +2099,17 @@ sub popular_uploads {
         *{__PACKAGE__ . '::' . $name} = sub {
             my ($type, $channel) = @_;
 
-            my $method = $type =~ /^user/i ? ($name . '_from_username') : $name;
+            my $method = $name;
+
+            if ($yv_utils->is_channelID($channel)) {
+                $method = $name;
+            }
+            elsif ($type =~ /^user/i and $channel ne 'mine' and $channel =~ /^\S+\z/) {
+                $method = $name . '_from_username';
+            }
+            elsif ($type =~ /^channel/i and $channel ne 'mine' and $channel =~ /^\S+\z/) {
+                $method = $name . '_from_username';
+            }
 
             if (not $type =~ /^(?:user|channel)/i) {
                 if ($name eq 'likes') {
@@ -2119,7 +2130,7 @@ sub popular_uploads {
             }
 
             my $request = $yv_obj->$method(
-                                             $type =~ /^(?:user|channel)/i && $channel =~ /^\S+\z/
+                                           ($type =~ /^(?:user|channel)/i and $channel =~ /^\S+\z/)
                                            ? $channel
                                            : ()
                                           );
@@ -3374,7 +3385,7 @@ sub set_entry_details {
     my $secondary_details = $liststore->get($iter, 2);
     $secondary_details =~ s{\h+}{ }g;
     $secondary_details =~ s{^.*?<b>.*?</b>\K\h*}{\t}gm;
-    $secondary_details .= "\n🖝\t$channel_id";
+    $secondary_details .= "\n$symbols{black_face}\t$channel_id";
 
     my $text_info = join("\n", grep { !/^&#\w+;$/ } split(/\R/, "$main_details$secondary_details"));
     $gui->get_object('video_details_label')->set_label($text_info);
