@@ -1184,7 +1184,7 @@ sub menu_popup {
             my $item = 'Gtk3::ImageMenuItem'->new("Activities");
             $item->signal_connect(activate => sub { activities('channel', $channel_id) });
             $item->set_property(tooltip_text => "Show recent channel activity events");
-            $item->set_image('Gtk3::Image'->new_from_icon_name("feed-refresh-symbolic", q{menu}));
+            $item->set_image('Gtk3::Image'->new_from_icon_name("view-refresh-symbolic", q{menu}));
             $item->show;
             $author->append($item);
         }
