@@ -46,8 +46,8 @@ use File::Spec::Functions qw(
 
 binmode(STDOUT, ':utf8');
 
-my $appname  = 'GTK YouTube Viewer';
-my $version  = $WWW::YoutubeViewer::VERSION;
+my $appname = 'GTK YouTube Viewer';
+my $version = $WWW::YoutubeViewer::VERSION;
 
 # Share directory
 my $share_dir = $DEVEL ? '../share' : dist_dir('WWW-YoutubeViewer');
