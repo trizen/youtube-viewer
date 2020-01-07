@@ -1,0 +1,26 @@
+#!/usr/bin/perl
+
+# Decide if Gtk3 is installed and start the corresponding version of GTK YouTube Viewer.
+
+use File::Basename qw(dirname);
+use File::Spec::Functions qw(catfile);
+
+sub is_gtk3_available {
+
+    if (-e "/usr/share/perl5/vendor_perl/Gtk3.pm") {
+        return 1;
+    }
+
+    if (-e "/usr/share/perl5/site_perl/Gtk3.pm") {
+        return 1;
+    }
+
+    eval { require Gtk3; 1 };
+}
+
+if (is_gtk3_available()) {
+    exec($^X, catfile(dirname(__FILE__), 'gtk3-youtube-viewer'));
+}
+else {
+    exec($^X, catfile(dirname(__FILE__), 'gtk2-youtube-viewer'));
+}

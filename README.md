@@ -8,11 +8,11 @@ A lightweight application for searching and streaming videos from YouTube.
 
 ![youtube-viewer](https://user-images.githubusercontent.com/614513/32416613-c3daa6a6-c254-11e7-9739-ed7bf93d188c.png)
 
-### gtk-youtube-viewer
+### gtk2-youtube-viewer
 
 * GTK2 interface to YouTube.
 
-![gtk-youtube-viewer](https://user-images.githubusercontent.com/614513/32453099-10d14b3e-c324-11e7-942b-13a38c424341.png)
+![gtk2-youtube-viewer](https://user-images.githubusercontent.com/614513/32453099-10d14b3e-c324-11e7-942b-13a38c424341.png)
 
 ### AVAILABILITY
 
@@ -45,6 +45,8 @@ To install `gtk-youtube-viewer` along with `youtube-viewer`, run:
     sudo ./Build install
 ```
 
+Replace `--gtk` with `--gtk2` or `--gtk3` to install only the Gtk2 or Gtk3 version.
+
 ### DEPENDENCIES
 
 #### For youtube-viewer:
@@ -55,7 +57,7 @@ To install `gtk-youtube-viewer` along with `youtube-viewer`, run:
 * [JSON](https://metacpan.org/release/JSON)
 
 
-#### For gtk-youtube-viewer:
+#### For gtk2-youtube-viewer:
 
 * [Gtk2](https://metacpan.org/release/Gtk2)
 * [File::ShareDir](https://metacpan.org/release/File-ShareDir)

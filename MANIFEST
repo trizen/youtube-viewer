@@ -1,4 +1,5 @@
 bin/gtk-youtube-viewer
+bin/gtk2-youtube-viewer
 bin/gtk3-youtube-viewer
 bin/youtube-viewer
 Build.PL
@@ -28,7 +29,7 @@ META.json
 META.yml
 README.md
 share/gtk-youtube-viewer.desktop
-share/gtk-youtube-viewer.glade
+share/gtk2-youtube-viewer.glade
 share/gtk3-youtube-viewer.glade
 share/icons/default_thumb.jpg
 share/icons/feed_icon.png
