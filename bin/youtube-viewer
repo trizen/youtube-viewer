@@ -1159,7 +1159,7 @@ sub apply_configuration {
                 };
             }
 
-            $yv_obj->set_channelId($id) if defined($id);
+            $yv_obj->set_channelId($id);
         }
         else {
             warn_invalid("username or channel ID", $name);
