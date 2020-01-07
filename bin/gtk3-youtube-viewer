@@ -432,15 +432,6 @@ if (ref $CONFIG ne 'HASH') {
     die "ERROR: Invalid configuration file!\n\t\$CONFIG is not an HASH ref!";
 }
 
-# Add audio support to players (backwards compatibility)
-while (my ($player, $data) = each %{$CONFIG->{video_players}}) {
-    if (    exists $CONFIG{video_players}{$player}
-        and not exists $data->{audio}
-        and exists $CONFIG{video_players}{$player}{audio}) {
-        $data->{audio} = $CONFIG{video_players}{$player}{audio};
-    }
-}
-
 # Get valid config keys
 my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
@@ -678,12 +669,18 @@ if (not -d $CONFIG{cache_dir}) {
 
 # Locate video player
 if (not defined $CONFIG{video_player_selected}) {
+
     foreach my $key (sort keys %{$CONFIG{video_players}}) {
         if (defined(my $abs_player_path = which_command($CONFIG{video_players}{$key}{cmd}))) {
             $CONFIG{video_players}{$key}{cmd} = $abs_player_path;
             $CONFIG{video_player_selected} = $key;
             last;
         }
+    }
+
+    if (not defined($CONFIG{video_player_selected})) {
+        warn "\n[!] Please install a supported video player! (e.g.: mpv)\n\n";
+        $CONFIG{video_player_selected} = 'mpv';
     }
 }
 
