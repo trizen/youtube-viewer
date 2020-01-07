@@ -32,7 +32,8 @@ share/gtk-youtube-viewer.desktop
 share/gtk2-youtube-viewer.glade
 share/gtk3-youtube-viewer.glade
 share/icons/default_thumb.jpg
-share/icons/feed_icon.png
+share/icons/feed.png
+share/icons/feed_gray.png
 share/icons/gtk-youtube-viewer.png
 share/icons/spinner.gif
 share/icons/user.png

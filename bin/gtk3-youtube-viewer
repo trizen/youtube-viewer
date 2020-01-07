@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 06 January 2020
+#  Latest edit on: 07 January 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -414,11 +414,12 @@ local $SIG{__DIE__} = sub {
 };
 
 #---------------------- LOAD IMAGES ----------------------#
-my $app_icon_pixbuf  = 'Gtk3::Gdk::Pixbuf'->new_from_file(catfile($icons_path, "gtk-youtube-viewer.png"));
-my $user_icon_pixbuf = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "user.png"), 16, 16);
-my $feed_icon_pixbuf = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "feed_icon.png"), 16, 16);
-my $default_thumb    = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "default_thumb.jpg"), 160, 90);
-my $animation        = 'Gtk3::Gdk::PixbufAnimation'->new_from_file(catfile($icons_path, "spinner.gif"));
+my $app_icon_pixbuf       = 'Gtk3::Gdk::Pixbuf'->new_from_file(catfile($icons_path, "gtk-youtube-viewer.png"));
+my $user_icon_pixbuf      = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "user.png"), 16, 16);
+my $feed_icon_pixbuf      = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "feed.png"), 16, 16);
+my $feed_icon_gray_pixbuf = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "feed_gray.png"), 16, 16);
+my $default_thumb         = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "default_thumb.jpg"), 160, 90);
+my $animation             = 'Gtk3::Gdk::PixbufAnimation'->new_from_file(catfile($icons_path, "spinner.gif"));
 
 # Setting application title and icon
 $mainw->set_title("$appname $version");
@@ -1009,7 +1010,7 @@ sub menu_popup {
                 my $item = 'Gtk3::ImageMenuItem'->new("Play");
                 $item->signal_connect(activate => \&get_code);
                 $item->set_property(tooltip_text => "Play the video");
-                $item->set_image('Gtk3::Image'->new_from_icon_name("media-playback-start", q{menu}));
+                $item->set_image('Gtk3::Image'->new_from_icon_name("media-playback-start-symbolic", q{menu}));
                 $item->show;
                 $video->append($item);
             }
@@ -1019,7 +1020,7 @@ sub menu_popup {
                 my $item = 'Gtk3::ImageMenuItem'->new("Enqueue");
                 $item->signal_connect(activate => sub { enqueue_video() });
                 $item->set_property(tooltip_text => "Enqueue video to play it later");
-                $item->set_image('Gtk3::Image'->new_from_icon_name("list-add", q{menu}));
+                $item->set_image('Gtk3::Image'->new_from_icon_name("list-add-symbolic", q{menu}));
                 $item->show;
                 $video->append($item);
             }
@@ -1034,7 +1035,7 @@ sub menu_popup {
                           or warn "Failed to favorite the video <$video_id>: $!";
                     }
                 );
-                $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-favorite", q{menu}));
+                $item->set_image('Gtk3::Image'->new_from_icon_name("starred-symbolic", q{menu}));
                 $item->show;
                 $video->append($item);
             }
@@ -1044,7 +1045,7 @@ sub menu_popup {
                 my $item = 'Gtk3::ImageMenuItem'->new("Download");
                 $item->set_property(tooltip_text => "Download the video");
                 $item->signal_connect(activate => \&download_video);
-                $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-downloads", q{menu}));
+                $item->set_image('Gtk3::Image'->new_from_icon_name("document-save-symbolic", q{menu}));
                 $item->show;
                 $video->append($item);
             }
@@ -1066,7 +1067,7 @@ sub menu_popup {
                           or warn "Failed to send a positive rating to <$video_id>: $!";
                     }
                 );
-                $item->set_image('Gtk3::Image'->new_from_icon_name("go-up", q{menu}));
+                $item->set_image('Gtk3::Image'->new_from_icon_name("go-up-symbolic", q{menu}));
                 $item->show;
                 $video->append($item);
             }
@@ -1081,7 +1082,7 @@ sub menu_popup {
                           or warn "Failed to send a negative rating to <$video_id>: $!";
                     }
                 );
-                $item->set_image('Gtk3::Image'->new_from_icon_name("go-down", q{menu}));
+                $item->set_image('Gtk3::Image'->new_from_icon_name("go-down-symbolic", q{menu}));
                 $item->show;
                 $video->append($item);
             }
@@ -1098,7 +1099,7 @@ sub menu_popup {
                 my $item = 'Gtk3::ImageMenuItem'->new("Related videos");
                 $item->set_property(tooltip_text => "Display videos that are related to this video");
                 $item->signal_connect(activate => \&show_related_videos);
-                $item->set_image('Gtk3::Image'->new_from_icon_name("video-x-generic", q{menu}));
+                $item->set_image('Gtk3::Image'->new_from_icon_name("video-x-generic-symbolic", q{menu}));
                 $item->show;
                 $video->append($item);
             }
@@ -1108,7 +1109,7 @@ sub menu_popup {
                 my $item = 'Gtk3::ImageMenuItem'->new("YouTube page");
                 $item->signal_connect(activate => sub { open_external_url(make_youtube_url('video', $video_id)) });
                 $item->set_property(tooltip_text => "Open the YouTube page of this video");
-                $item->set_image('Gtk3::Image'->new_from_icon_name("applications-internet", q{menu}));
+                $item->set_image('Gtk3::Image'->new_from_icon_name("applications-internet-symbolic", q{menu}));
                 $item->show;
                 $video->append($item);
             }
@@ -1153,7 +1154,7 @@ sub menu_popup {
             my $item = 'Gtk3::ImageMenuItem'->new("Uploads");
             $item->signal_connect(activate => sub { uploads('channel', $channel_id) });
             $item->set_property(tooltip_text => "Show the most recent videos from this author");
-            $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-shared", q{menu}));
+            $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-shared-symbolic", q{menu}));
             $item->show;
             $author->append($item);
         }
@@ -1163,7 +1164,7 @@ sub menu_popup {
             my $item = 'Gtk3::ImageMenuItem'->new("Popular");
             $item->signal_connect(activate => sub { popular_uploads('channel', $channel_id) });
             $item->set_property(tooltip_text => "Show the most popular videos from this author");
-            $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-videos", q{menu}));
+            $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-videos-symbolic", q{menu}));
             $item->show;
             $author->append($item);
         }
@@ -1173,7 +1174,7 @@ sub menu_popup {
             my $item = 'Gtk3::ImageMenuItem'->new("Favorites");
             $item->signal_connect(activate => sub { favorites('channel', $channel_id) });
             $item->set_property(tooltip_text => "Show favorite videos of this author");
-            $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-favorite", q{menu}));
+            $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-favorite-symbolic", q{menu}));
             $item->show;
             $author->append($item);
         }
@@ -1183,7 +1184,7 @@ sub menu_popup {
             my $item = 'Gtk3::ImageMenuItem'->new("Activities");
             $item->signal_connect(activate => sub { activities('channel', $channel_id) });
             $item->set_property(tooltip_text => "Show recent channel activity events");
-            $item->set_image('Gtk3::Image'->new_from_icon_name("gtk-refresh", q{menu}));
+            $item->set_image('Gtk3::Image'->new_from_icon_name("feed-refresh-symbolic", q{menu}));
             $item->show;
             $author->append($item);
         }
@@ -1193,7 +1194,7 @@ sub menu_popup {
             my $item = 'Gtk3::ImageMenuItem'->new("Playlists");
             $item->signal_connect(activate => \&show_playlists_from_selected_author);
             $item->set_property(tooltip_text => "Show playlists created by this author");
-            $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-documents", q{menu}));
+            $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-documents-symbolic", q{menu}));
             $item->show;
             $author->append($item);
         }
@@ -1203,7 +1204,7 @@ sub menu_popup {
             my $item = 'Gtk3::ImageMenuItem'->new("Likes");
             $item->signal_connect(activate => sub { likes('channel', $channel_id) });
             $item->set_property(tooltip_text => "Show liked videos by this author");
-            $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-default", q{menu}));
+            $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-default-symbolic", q{menu}));
             $item->show;
             $author->append($item);
         }
@@ -1225,7 +1226,7 @@ sub menu_popup {
                 }
             );
             $item->set_property(tooltip_text => "Subscribe to this channel");
-            $item->set_image('Gtk3::Image'->new_from_pixbuf($feed_icon_pixbuf));
+            $item->set_image('Gtk3::Image'->new_from_pixbuf($feed_icon_gray_pixbuf));
             $item->show;
             $author->append($item);
         }
@@ -1235,7 +1236,7 @@ sub menu_popup {
             my $item = 'Gtk3::ImageMenuItem'->new("YouTube page");
             $item->signal_connect(activate => sub { open_external_url(make_youtube_url('channel', $channel_id)) });
             $item->set_property(tooltip_text => "Open the YouTube page of this channel");
-            $item->set_image('Gtk3::Image'->new_from_icon_name("applications-internet", q{menu}));
+            $item->set_image('Gtk3::Image'->new_from_icon_name("applications-internet-symbolic", q{menu}));
             $item->show;
             $author->append($item);
         }

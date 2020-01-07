@@ -15,6 +15,10 @@ sub is_gtk3_available {
         return 1;
     }
 
+    if (-e "/usr/share/perl5/Gtk3.pm") {
+        return 1;
+    }
+
     eval { require Gtk3; 1 };
 }
 
