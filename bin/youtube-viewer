@@ -29,7 +29,6 @@
 # - Added the `--highlight` option to remember and highlight watched videos in a session.      - NEW (v3.2.2)
 # - Added the `--channel-videos=s` command-line option to display videos from a channel ID.    - NEW (v3.2.1)
 # - Added the `i..` range, which plays all the videos, starting with video `i`. (#114)         - NEW (v3.2.1)
-# - Added support for downloading multiple videos in parallel (--dl-parallel)                  - NEW (v3.1.4)
 # - Migration to APIv3; some features have been lost in the process, but nothing too critical. - NEW (v3.1.4)
 # - Added built-in support for [auto-generated] closed-captions (gcap is no longer required)   - NEW (v3.1.3)
 # - Added support for specifying the filename format when downloading videos (--filename=s)    - NEW (v3.1.3)
@@ -307,7 +306,6 @@ my %CONFIG = (
     debug                => 0,
     page                 => 1,
     colors               => $constant{win32} ^ 1,
-    clobber              => 0,
     skip_if_exists       => 1,
     prefer_mp4           => 0,
     fat32safe            => $constant{win32},
@@ -319,7 +317,6 @@ my %CONFIG = (
     interactive          => 1,
     get_term_width       => $constant{win32} ^ 1,
     download_with_wget   => undef,                    # auto-defined later
-    download_in_parallel => 0,
     thousand_separator   => q{,},
     downloads_dir        => curdir(),
     keep_original_video  => 0,
@@ -770,8 +767,6 @@ usage: $execname [options] ([url] | [keywords])
    -dp --dl-play!        : play the video after download (with -d)
    -rp --rem-played!     : delete a local video after played (with -dp)
        --wget-dl!        : download videos with wget (recommended)
-       --dl-parallel     : download multiple videos at once
-       --clobber!        : overwrite an existent video (with -d)
        --skip-if-exists! : don't download videos which already exist (with -d)
        --copy-caption!   : copy and rename the caption for downloaded videos
        --downloads-dir=s : downloads directory (set: '$opt{downloads_dir}')
@@ -1598,10 +1593,8 @@ sub parse_arguments {
         'dash-m4a|dash-mp4-audio|dash-mp4a!' => \$opt{dash_mp4_audio},
         'dash-segmented!'                    => \$opt{dash_segmented},
         'wget-dl|wget-download!'             => \$opt{download_with_wget},
-        'dl-parallel|download-in-parallel!'  => \$opt{download_in_parallel},
         'filename|filename-format=s'         => \$opt{video_filename_format},
         'rp|rem-played|remove-played-file!'  => \$opt{remove_played_file},
-        'clobber!'                           => \$opt{clobber},
         'info|i|video-info=s'                => \$opt{print_video_info},
         'get-term-width!'                    => \$opt{get_term_width},
         'page=i'                             => \$opt{page},
@@ -3007,71 +3000,58 @@ sub get_streaming_url {
 sub download_from_url {
     my ($url, $output_filename) = @_;
 
-    my $i = 0;
-    while (-e $output_filename and not $opt{clobber} and ++$i) {
-        my $last_i = $i > 1 ? $i - 1 : q{/};
-        $output_filename =~ s{(?:_$last_i)?(\.\w{3,4})$}{_$i$1};
-    }
-
-    # Download video with wget
+    # Download with wget
     if ($opt{download_with_wget}) {
-        my @cmd = ($opt{wget_cmd}, ($opt{clobber} ? () : q{-nc}), $url, q{-O}, $output_filename);
-
-        if ($opt{download_in_parallel}) {
-            my $pid = fork() // warn "[ERROR] Can't fork: $!";
-            if ($pid == 0) {
-                $yv_obj->proxy_exec(@cmd, '--quiet');
-            }
-        }
-        else {
-            $yv_obj->proxy_system(@cmd);
-            return if $?;
-        }
+        my @cmd = ($opt{wget_cmd}, '-c', '-t', '10', '--waitretry=3', $url, '-O', "$output_filename.part");
+        $yv_obj->proxy_system(@cmd);
+        return if $?;
+        rename("$output_filename.part", $output_filename) or return undef;
+        return $output_filename;
     }
 
-    # Download video with LWP::UserAgent
-    else {
+    my ($lwp_dl) = grep { -x $_ } qw(
+      /usr/bin/vendor_perl/lwp-download
+      /usr/bin/site_perl/lwp-download
+      );
 
-        require LWP::UserAgent;
-
-        my $lwp = LWP::UserAgent->new(
-                 show_progress => 1,
-                 agent =>
-                   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
-        );
-
-        $lwp->proxy(['http', 'https'], $yv_obj->get_http_proxy)
-          if defined($yv_obj->get_http_proxy);
-
-        if ($opt{download_in_parallel}) {
-            my $pid = fork() // warn "[ERROR] Can't fork: $!";
-            if ($pid == 0) {
-                $lwp->show_progress(0);
-                $lwp->mirror($url, $output_filename);
-                exit;
-            }
-        }
-        else {
-            my $resp = eval { $lwp->mirror($url, $output_filename) };
-
-            if ($@ =~ /\bread timeout\b/i or not defined($resp) or not $resp->is_success) {
-                warn colored("\n[!] Encountered an error while downloading... Trying again...", 'bold red') . "\n\n";
-
-                if (-x '/usr/bin/wget') {
-                    $CONFIG{download_with_wget} = 1;
-                    dump_configuration();
-                }
-                else {
-                    warn colored("[!] Please install `wget` and try again...", 'bold red') . "\n\n";
-                }
-
-                unlink($output_filename);
-                $opt{download_with_wget} = 1;
-                return download_from_url($url, $output_filename);
-            }
-        }
+    # Download with lwp-download
+    if (defined($lwp_dl)) {
+        my @cmd = ($lwp_dl, $url, "$output_filename.part");
+        $yv_obj->proxy_system(@cmd);
+        return if $?;
+        rename("$output_filename.part", $output_filename) or return undef;
+        return $output_filename;
     }
 
+    # Download with LWP::UserAgent
+    require LWP::UserAgent;
+
+    my $lwp = LWP::UserAgent->new(
+          show_progress => 1,
+          agent => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
+    );
+
+    $lwp->proxy(['http', 'https'], $yv_obj->get_http_proxy)
+      if defined($yv_obj->get_http_proxy);
+
+    my $resp = eval { $lwp->mirror($url, "$output_filename.part") };
+
+    if ($@ =~ /\bread timeout\b/i or not defined($resp) or not $resp->is_success) {
+        warn colored("\n[!] Encountered an error while downloading... Trying again...", 'bold red') . "\n\n";
+
+        if (-x '/usr/bin/wget') {
+            $CONFIG{download_with_wget} = 1;
+            dump_configuration();
+        }
+        else {
+            warn colored("[!] Please install `wget` and try again...", 'bold red') . "\n\n";
+        }
+
+        unlink("$output_filename.part");
+        return download_from_url($url, $output_filename);
+    }
+
+    rename("$output_filename.part", $output_filename) or return undef;
     return $output_filename;
 }
 
@@ -3126,29 +3106,24 @@ sub download_video {
     $audio_filename = catfile($opt{downloads_dir}, $audio_filename);
     $video_filename = catfile($opt{downloads_dir}, $video_filename);
 
-    if ($opt{skip_if_exists} and -e $video_filename) {
-        say ":: File `$video_filename` already exists. Skipping...";
-    }
-    elsif ($opt{skip_if_exists} and -e $mkv_filename) {
+    if ($opt{skip_if_exists} and -e $mkv_filename) {
         $video_filename = $mkv_filename;
         say ":: File `$mkv_filename` already exists. Skipping...";
     }
     else {
-
-        # Disable `download in parallel` in combination with `download and play`
-        if ($opt{download_in_parallel} and $opt{download_and_play}) {
-            warn colored("[!] Downloading in parallel is not supported with '--dl-play'", 'bold red') . "\n";
-            $opt{download_in_parallel} = 0;
+        if ($opt{skip_if_exists} and -e $video_filename) {
+            say ":: File `$video_filename` already exists. Skipping...";
+        }
+        else {
+            $video_filename = download_from_url($video_info->{url}, $video_filename) // return;
         }
 
-        # Disable `download in parallel` in combination with `merge into mkv`
-        if ($opt{download_in_parallel} and $opt{merge_into_mkv}) {
-            warn colored("[!] Downloading in parallel is not supported with '--mkv-merge'", 'bold red') . "\n";
-            $opt{download_in_parallel} = 0;
+        if ($opt{skip_if_exists} and -e $audio_filename) {
+            say ":: File `$audio_filename` already exists. Skipping...";
         }
-
-        $video_filename = download_from_url($video_info->{url}, $video_filename) // return;
-        $audio_filename = download_from_url($audio_info->{url}, $audio_filename) if $audio_info;
+        elsif ($audio_info) {
+            $audio_filename = download_from_url($audio_info->{url}, $audio_filename) // return;
+        }
     }
 
     my @merge_files = ($video_filename);
@@ -3157,11 +3132,16 @@ sub download_video {
         push @merge_files, $audio_filename;
     }
 
-    if (defined($streaming->{srt_file}) and $opt{merge_with_captions}) {
+    if (    $opt{merge_with_captions}
+        and defined($streaming->{srt_file})
+        and -f $streaming->{srt_file}) {
         push @merge_files, $streaming->{srt_file};
     }
 
-    if ($opt{merge_into_mkv} and @merge_files > 1 and not -e $mkv_filename) {
+    if (    $opt{merge_into_mkv}
+        and scalar(@merge_files) > 1
+        and scalar(grep { -f $_ } @merge_files) == scalar(@merge_files)
+        and not -e $mkv_filename) {
 
         say ":: Merging into MKV...";
 
