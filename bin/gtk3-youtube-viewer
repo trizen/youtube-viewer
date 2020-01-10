@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 07 January 2020
+#  Latest edit on: 10 January 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -147,17 +147,17 @@ my %CONFIG = (
     video_players => {
                       vlc => {
                               cmd   => q{vlc},
-                              srt   => q{--sub-file *SUB*},
-                              audio => q{--input-slave *AUDIO*},
+                              srt   => q{--sub-file=*SUB*},
+                              audio => q{--input-slave=*AUDIO*},
                               fs    => q{--fullscreen},
-                              arg   => q{--quiet --play-and-exit --no-video-title-show --input-title-format *TITLE*},
+                              arg   => q{--quiet --play-and-exit --no-video-title-show --input-title-format=*TITLE*},
                              },
                       mpv => {
                               cmd   => q{mpv},
-                              srt   => q{--sub-file *SUB*},
-                              audio => q{--audio-file *AUDIO*},
+                              srt   => q{--sub-file=*SUB*},
+                              audio => q{--audio-file=*AUDIO*},
                               fs    => q{--fullscreen},
-                              arg   => q{--really-quiet --title *TITLE* --no-ytdl},
+                              arg   => q{--really-quiet --title=*TITLE* --no-ytdl},
                              },
                       mplayer => {
                                   cmd   => q{mplayer},
@@ -683,6 +683,14 @@ if (not $CONFIG{video_player_selected}) {
         warn "\n[!] Please install a supported video player! (e.g.: mpv)\n\n";
         $CONFIG{video_player_selected} = 'mpv';
     }
+}
+elsif ($CONFIG{video_player_selected} =~ /mpv/i) {    # update for mpv 0.31.1 (#290)
+#<<<
+    my $mpv = $CONFIG{video_players}{$CONFIG{video_player_selected}};
+    $mpv->{arg}   =~ s/(--title)\s+(\*TITLE\*)/$1=$2/g;
+    $mpv->{audio} =~ s/(--audio-file)\s+(\*AUDIO\*)/$1=$2/g;
+    $mpv->{srt}   =~ s/(--sub-file)\s+(\*SUB\*)/$1=$2/g;
+#>>>
 }
 
 {

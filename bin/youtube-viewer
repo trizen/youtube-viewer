@@ -529,7 +529,7 @@ my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
             $CONFIG{video_player_selected} = 'mpv';
         }
     }
-    elsif ($CONFIG{video_player_selected} =~ /mpv/) {    # update for mpv 0.31.1 (#290)
+    elsif ($CONFIG{video_player_selected} =~ /mpv/i) {    # update for mpv 0.31.1 (#290)
 #<<<
         my $mpv = $CONFIG{video_players}{$CONFIG{video_player_selected}};
         if (
