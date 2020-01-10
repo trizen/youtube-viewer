@@ -2450,6 +2450,11 @@ sub display_results {
                     $entry->{snippet}{title}     = $entry->{snippet}{channelTitle};
                     $entry->{snippet}{channelId} = $entry->{contentDetails}{subscription}{resourceId}{channelId};
                 }
+
+                if ($type eq 'bulletin' and $entry->{contentDetails}{bulletin}{resourceId}{kind} eq 'youtube#video') {
+                    $entry->{kind} = 'youtube#video';
+                    $entry->{id}   = $entry->{contentDetails}{bulletin}{resourceId}{videoId};
+                }
             }
         }
 
