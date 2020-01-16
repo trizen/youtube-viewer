@@ -524,6 +524,35 @@ sub _extract_from_invidious {
     return @formats;
 }
 
+sub _extract_from_ytdl {
+    my ($self, $videoID) = @_;
+
+    ((state $x = system('youtube-dl', '--version')) == 0) || return;
+
+    my $json = $self->proxy_stdout('youtube-dl', '--all-formats', '--dump-single-json',
+                                   quotemeta("https://www.youtube.com/watch?v=" . $videoID));
+
+    my $ref = $self->parse_json_string($json);
+
+    my @formats;
+    if (ref($ref) eq 'HASH' and exists($ref->{formats}) and ref($ref->{formats}) eq 'ARRAY') {
+        foreach my $format (@{$ref->{formats}}) {
+            if (exists($format->{format_id}) and exists($format->{url})) {
+
+                my $entry = {
+                             itag => $format->{format_id},
+                             url  => $format->{url},
+                             type => ((($format->{format_note} // '') eq 'DASH audio') ? 'audio/' : 'video/') . $format->{ext},
+                            };
+
+                push @formats, $entry;
+            }
+        }
+    }
+
+    return @formats;
+}
+
 sub _fallback_extract_urls {
     my ($self, $videoID) = @_;
 
@@ -544,31 +573,11 @@ sub _fallback_extract_urls {
         @formats && return @formats;
     }
 
-    ((state $x = system('youtube-dl', '--version')) == 0) || return;
-
     if ($self->get_debug) {
         say STDERR ":: Using youtube-dl to extract the streaming URLs...";
     }
 
-    my $json = $self->proxy_stdout('youtube-dl', '--all-formats', '--dump-single-json',
-                                   quotemeta("https://www.youtube.com/watch?v=" . $videoID));
-
-    my $ref = $self->parse_json_string($json) // return;
-
-    if (ref($ref) eq 'HASH' and exists($ref->{formats}) and ref($ref->{formats}) eq 'ARRAY') {
-        foreach my $format (@{$ref->{formats}}) {
-            if (exists($format->{format_id}) and exists($format->{url})) {
-
-                my $entry = {
-                             itag => $format->{format_id},
-                             url  => $format->{url},
-                             type => ((($format->{format_note} // '') eq 'DASH audio') ? 'audio/' : 'video/') . $format->{ext},
-                            };
-
-                push @formats, $entry;
-            }
-        }
-    }
+    push @formats, $self->_extract_from_ytdl($videoID);
 
     if ($self->get_debug) {
         my $count = scalar(@formats);
