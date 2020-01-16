@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 10 January 2020
+#  Latest edit on: 16 January 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 #
@@ -220,10 +220,12 @@ sub which_command {
 
     state $paths = [path()];
     foreach my $path (@{$paths}) {
-        if (-e (my $cmd_path = catfile($path, $cmd))) {
+        my $cmd_path = catfile($path, $cmd);
+        if (-f -x $cmd_path) {
             return $cmd_path;
         }
     }
+
     return;
 }
 
@@ -545,33 +547,33 @@ my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
 
     # Download with wget if it is installed
     if (not defined $CONFIG{download_with_wget}) {
-        if (-x '/usr/bin/wget') {
-            $CONFIG{wget_cmd}           = '/usr/bin/wget';
-            $CONFIG{download_with_wget} = 1;
-        }
-        elsif (-x '/usr/local/bin/wget') {
-            $CONFIG{wget_cmd}           = '/usr/local/bin/wget';
+
+        my $wget_path = which_command('wget');
+
+        if (defined($wget_path)) {
+            $CONFIG{wget_cmd}           = $wget_path;
             $CONFIG{download_with_wget} = 1;
         }
         else {
             $CONFIG{download_with_wget} = 0;
         }
+
         $update_config = 1;
     }
 
     # Merge into MKV if ffmpeg is installed
     if (not defined $CONFIG{merge_into_mkv}) {
-        if (-x '/usr/bin/ffmpeg') {
-            $CONFIG{ffmpeg_cmd}     = '/usr/bin/ffmpeg';
-            $CONFIG{merge_into_mkv} = 1;
-        }
-        elsif (-x '/usr/local/bin/ffmpeg') {
-            $CONFIG{ffmpeg_cmd}     = '/usr/local/bin/ffmpeg';
+
+        my $ffmpeg_path = which_command('ffmpeg');
+
+        if (defined($ffmpeg_path)) {
+            $CONFIG{ffmpeg_cmd}     = $ffmpeg_path;
             $CONFIG{merge_into_mkv} = 1;
         }
         else {
             $CONFIG{merge_into_mkv} = 0;
         }
+
         $update_config = 1;
     }
 
@@ -2063,9 +2065,10 @@ sub rate_videos {
             printf("\n:: Video %s has been successfully %sd.\n", sprintf($CONFIG{youtube_video_url}, $videoID), $rating);
         }
         else {
-            warn colored("\n[!] VideoID '$videoID' has not been ${rating}d", 'bold red') . "\n";
+            warn_cant_do($rating, $videoID);
         }
     }
+
     return 1;
 }
 
@@ -2085,7 +2088,7 @@ sub get_and_play_video_ids {
         }
     }
     else {
-        warn_cant_do('get info about', "@ids");
+        warn_cant_do('get info for', @ids);
     }
 
     return 1;
@@ -2111,7 +2114,7 @@ sub get_and_print_video_info {
             print_video_info($info->{results}{items}[0]);
         }
         else {
-            warn_cant_get('information', $videoID);
+            warn_cant_do('get info for', $videoID);
         }
     }
     return 1;
@@ -2304,13 +2307,20 @@ sub warn_invalid {
 }
 
 sub warn_cant_do {
-    my ($action, $videoID) = @_;
-    warn colored("\n[!] Can't $action video: " . sprintf($CONFIG{youtube_video_url}, $videoID), 'bold red') . "\n";
-}
+    my ($action, @ids) = @_;
 
-sub warn_cant_get {
-    my ($name, $videoID) = @_;
-    warn colored("\n[!] Can't get $name for video: " . sprintf($CONFIG{youtube_video_url}, $videoID), 'bold red') . "\n";
+    foreach my $videoID (@ids) {
+        warn colored("\n[!] Can't $action video: " . sprintf($CONFIG{youtube_video_url}, $videoID), 'bold red') . "\n";
+
+        my %info = $yv_obj->_get_video_info($videoID);
+
+        if (exists $info{player_response}) {
+            my $resp = $yv_obj->parse_json_string($info{player_response}) // next;
+            if (exists($resp->{playabilityStatus}) and $resp->{playabilityStatus}{status} =~ /error/i) {
+                warn colored("[!] Reason: $resp->{playabilityStatus}{reason}.", 'bold yellow') . "\n";
+            }
+        }
+    }
 }
 
 sub warn_last_page {
@@ -3019,10 +3029,7 @@ sub download_from_url {
         return $output_filename;
     }
 
-    my ($lwp_dl) = grep { -x $_ } qw(
-      /usr/bin/vendor_perl/lwp-download
-      /usr/bin/site_perl/lwp-download
-      );
+    state $lwp_dl = which_command('lwp-download');
 
     # Download with lwp-download
     if (defined($lwp_dl)) {
@@ -3049,7 +3056,8 @@ sub download_from_url {
     if ($@ =~ /\bread timeout\b/i or not defined($resp) or not $resp->is_success) {
         warn colored("\n[!] Encountered an error while downloading... Trying again...", 'bold red') . "\n\n";
 
-        if (-x '/usr/bin/wget') {
+        if (defined(my $wget_path = which_command('wget'))) {
+            $CONFIG{wget_cmd}           = $wget_path;
             $CONFIG{download_with_wget} = 1;
             dump_configuration();
         }

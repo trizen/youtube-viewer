@@ -796,6 +796,16 @@ sub _extract_streaming_urls {
     return @results;
 }
 
+sub _get_video_info {
+    my ($self, $videoID) = @_;
+
+    my $url     = $self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID);
+    my $content = $self->lwp_get($url, simple => 1) // return;
+    my %info    = $self->parse_query_string($content);
+
+    return %info;
+}
+
 =head2 get_streaming_urls($videoID)
 
 Returns a list of streaming URLs for a videoID.
@@ -806,10 +816,7 @@ Returns a list of streaming URLs for a videoID.
 sub get_streaming_urls {
     my ($self, $videoID) = @_;
 
-    my $url     = ($self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID));
-    my $content = $self->lwp_get($url, simple => 1) // return;
-    my %info    = $self->parse_query_string($content);
-
+    my %info           = $self->_get_video_info($videoID);
     my @streaming_urls = $self->_extract_streaming_urls(\%info, $videoID);
 
     my @caption_urls;
