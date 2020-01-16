@@ -2313,12 +2313,10 @@ sub warn_cant_do {
         warn colored("\n[!] Can't $action video: " . sprintf($CONFIG{youtube_video_url}, $videoID), 'bold red') . "\n";
 
         my %info = $yv_obj->_get_video_info($videoID);
+        my $resp = $yv_obj->parse_json_string($info{player_response} // next);
 
-        if (exists $info{player_response}) {
-            my $resp = $yv_obj->parse_json_string($info{player_response}) // next;
-            if (exists($resp->{playabilityStatus}) and $resp->{playabilityStatus}{status} =~ /error/i) {
-                warn colored("[!] Reason: $resp->{playabilityStatus}{reason}.", 'bold yellow') . "\n";
-            }
+        if (eval { exists($resp->{playabilityStatus}) and $resp->{playabilityStatus}{status} =~ /error/i }) {
+            warn colored("[!] Reason: $resp->{playabilityStatus}{reason}.", 'bold yellow') . "\n";
         }
     }
 }

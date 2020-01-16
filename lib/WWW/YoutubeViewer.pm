@@ -721,12 +721,14 @@ sub _extract_streaming_urls {
         say STDERR ":: Using `player_response` to extract the streaming URLs...";
     }
 
-    my $json = $self->parse_json_string($info->{player_response});
+    my $json = $self->parse_json_string($info->{player_response} // return);
 
     if ($self->get_debug >= 2) {
         require Data::Dump;
         Data::Dump::pp($json);
     }
+
+    ref($json) eq 'HASH' or return;
 
     my @results;
     if (exists $json->{streamingData}) {
