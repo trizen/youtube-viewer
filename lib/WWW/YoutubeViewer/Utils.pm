@@ -585,7 +585,7 @@ sub get_comments {
 sub is_channelID {
     my ($self, $id) = @_;
     $id || return;
-    $id =~ /^UC[-a-zA-Z0-9_]{22}\z/;
+    $id eq 'mine' or $id =~ /^UC[-a-zA-Z0-9_]{22}\z/;
 }
 
 sub is_videoID {

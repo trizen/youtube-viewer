@@ -97,6 +97,26 @@ sub my_channel {
     return $self->_get_results($self->_make_channels_url(part => 'snippet', mine => 'true'));
 }
 
+=head2 my_channel_id()
+
+Returns the channel ID of the current authenticated user.
+
+=cut
+
+sub my_channel_id {
+    my ($self) = @_;
+
+    state $cache = {};
+
+    if (exists $cache->{id}) {
+        return $cache->{id};
+    }
+
+    $cache->{id} = undef;
+    my $channel = $self->my_channel() // return;
+    $cache->{id} = $channel->{results}{items}[0]{id} // return;
+}
+
 =head2 channels_my_subscribers()
 
 Retrieve a list of channels that subscribed to the authenticated user's channel.

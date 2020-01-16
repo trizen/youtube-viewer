@@ -27,7 +27,6 @@
 # - Added the `--prefer-mp4` option to prefer videos in MP4 format, instead of WEBM.           - NEW (v3.4.0)
 # - Added the `--fat32safe` option to make filenames FAT32-safe, by replacing bad characters.  - NEW (v3.2.5)
 # - Added the `--highlight` option to remember and highlight watched videos in a session.      - NEW (v3.2.2)
-# - Added the `--channel-videos=s` command-line option to display videos from a channel ID.    - NEW (v3.2.1)
 # - Added the `i..` range, which plays all the videos, starting with video `i`. (#114)         - NEW (v3.2.1)
 # - Migration to APIv3; some features have been lost in the process, but nothing too critical. - NEW (v3.1.4)
 # - Added built-in support for [auto-generated] closed-captions (gcap is no longer required)   - NEW (v3.1.3)
@@ -695,9 +694,9 @@ usage: $execname [options] ([url] | [keywords])
    --region=s           : set the region code (default: US)
 
  * Videos
-   -uv --user-vid=s     : list videos uploaded by a specific channel or user
-   -pv --popular-vid=s  : list the most popular videos from a specific channel
-   -uf --user-fav=s     : list the videos favorited by a specific user
+   -uv --uploads=s      : list videos uploaded by a specific channel or user
+   -pv --popular=s      : list the most popular videos from a specific channel
+   -uf --favorites=s    : list the videos favorited by a specific user
    -id --videoids=s,s   : play YouTube videos by their IDs
    -rv --related=s      : show related videos for a video ID or URL
        --search=s       : search for YouTube videos (default mode)
@@ -894,15 +893,14 @@ sub tricks {
    separated by whitespace (quoted), or separated by commas.
 
 -> My channel
- > Starting with version 3.2.1, it's possible to use the string "mine"
-   in place where a channel ID is required. Doing this, "mine" will be
-   replaced with your channel ID. (requires authentication)
+ > By using the string "mine" where a channel ID is required, "mine" will be
+   automatically replaced with your channel ID. (requires authentication)
 
    Examples:
-        $execname --channel-playlists=mine
-        $execname --channel-videos=mine
+        $execname --uploads=mine
         $execname --likes=mine
         $execname --favorites=mine
+        $execname --user-playlists=mine
 
 -> More STDIN help:
  > ":r", ":return" will return to the previous section.
@@ -1166,6 +1164,13 @@ sub apply_configuration {
                 };
             }
 
+            if ($id eq 'mine') {
+                $id = $yv_obj->my_channel_id() // do {
+                    warn_invalid("username or channel ID", $id);
+                    undef;
+                };
+            }
+
             $yv_obj->set_channelId($id);
         }
         else {
@@ -1302,6 +1307,13 @@ sub apply_configuration {
 
             if (not $yv_utils->is_channelID($id)) {
                 $id = $yv_obj->channel_id_from_username($id) // do {
+                    warn_invalid("username or channel ID", $id);
+                    undef;
+                };
+            }
+
+            if ($id eq 'mine') {
+                $id = $yv_obj->my_channel_id() // do {
                     warn_invalid("username or channel ID", $id);
                     undef;
                 };
@@ -1513,14 +1525,15 @@ sub parse_arguments {
         # English-UK friendly
         'favorite|favourite|favorite-video|favourite-video|fav=s' => \$opt{favorite_video},
 
-        'login|authenticate'      => \$opt{authenticate},
-        'logout'                  => \$opt{logout},
-        'user|user-videos|u|uv=s' => \$opt{user_videos},
-        'popular-videos|pv=s'     => \$opt{popular_videos},
-        'user-playlists|up=s'     => \$opt{user_playlists},
-        'user-favorites|uf=s'     => \$opt{user_favorited_videos},
-        'user-likes|ul=s'         => \$opt{user_liked_videos},
-        'related-videos|rl|rv=s'  => \$opt{related_videos},
+        'login|authenticate'     => \$opt{authenticate},
+        'logout'                 => \$opt{logout},
+        'user-playlists|up=s'    => \$opt{user_playlists},
+        'user-favorites|uf=s'    => \$opt{user_favorited_videos},
+        'user-likes|ul=s'        => \$opt{user_liked_videos},
+        'related-videos|rl|rv=s' => \$opt{related_videos},
+
+        'user|user-videos|user-uploads|uploads|u|uv=s' => \$opt{user_videos},
+        'popular-videos|popular|pv=s'                  => \$opt{popular_videos},
 
         'http_proxy|http-proxy|proxy=s' => \$opt{http_proxy},
 
