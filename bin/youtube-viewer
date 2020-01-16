@@ -1691,7 +1691,7 @@ sub get_valid_video_id {
       : $value =~ /$valid_video_id_re/ ? $value
       :                                  undef;
 
-    unless (defined $id) {
+    if (not defined $id) {
         warn_invalid('videoID', $value);
         return;
     }
@@ -1707,7 +1707,7 @@ sub get_valid_playlist_id {
       : $value =~ /$valid_playlist_id_re/ ? $value
       :                                     undef;
 
-    unless (defined $id) {
+    if (not defined $id) {
         warn_invalid('playlistID', $value);
         return;
     }
@@ -2086,13 +2086,7 @@ sub rate_videos {
 }
 
 sub get_and_play_video_ids {
-    my @ids = grep { get_valid_video_id($_) } @_;
-
-    if (not @ids) {
-        warn_invalid('video IDs', "@_");
-        return;
-    }
-
+    (my @ids = grep { get_valid_video_id($_) } @_) || return;
     my $info = $yv_obj->video_details(join(',', @ids), VIDEO_PART);
 
     if ($yv_utils->has_entries($info)) {
@@ -3119,7 +3113,7 @@ sub download_video {
 
     if (not -d $opt{downloads_dir}) {
         require File::Path;
-        unless (File::Path::make_path($opt{downloads_dir})) {
+        if (not File::Path::make_path($opt{downloads_dir})) {
             warn colored("\n[!] Can't create directory '$opt{downloads_dir}': $1", 'bold red') . "\n";
         }
     }
