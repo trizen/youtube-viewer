@@ -202,15 +202,15 @@ sub date_to_age {
     return join(' ', $year - $+{year}, 'years');
 }
 
-=head2 has_entries($request)
+=head2 has_entries($result)
 
-Returns true if a given request has entries.
+Returns true if a given result has entries.
 
 =cut
 
 sub has_entries {
-    my ($self, $req) = @_;
-    !!$req->{results}{pageInfo}{totalResults};
+    my ($self, $result) = @_;
+    ref($result) eq 'HASH' and ($result->{results}{pageInfo}{totalResults} > 0);
 }
 
 =head2 normalize_video_title($title, $fat32safe)

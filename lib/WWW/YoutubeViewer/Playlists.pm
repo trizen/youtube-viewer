@@ -63,8 +63,14 @@ Get and return playlists from a channel ID.
 =cut
 
 sub playlists {
-    my ($self, $id) = @_;
-    $self->_get_results($self->_make_playlists_url(($id and $id ne 'mine') ? (channelId => $id) : (mine => 'true')));
+    my ($self, $channel_id) = @_;
+    $self->_get_results(
+        $self->_make_playlists_url(
+              ($channel_id and $channel_id ne 'mine')
+            ? (channelId => $channel_id)
+            : do { $self->get_access_token() // return; (mine => 'true') }
+        )
+    );
 }
 
 =head2 playlists_from_username($username)
@@ -87,6 +93,7 @@ Get and return your playlists.
 
 sub my_playlists {
     my ($self) = @_;
+    $self->get_access_token() // return;
     $self->_get_results($self->_make_playlists_url(mine => 'true'));
 }
 

@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 10 January 2020
+#  Latest edit on: 20 January 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -1646,7 +1646,7 @@ sub combobox_subscriptions_order_changed {
 sub combobox_panel_account_changed {
     my $text = $panel_account_type_combobox->get_active_text;
     $CONFIG{active_panel_account_combobox} = $panel_account_type_combobox->get_active;
-    if (not $text =~ /^(?:user|channel)/i) {
+    if ($text =~ /^(mine|myself)/i) {
         $panel_user_entry->hide;
     }
     else {
@@ -2119,7 +2119,7 @@ sub popular_uploads {
                 $method = $name . '_from_username';
             }
 
-            if (not $type =~ /^(?:user|channel)/i) {
+            if ($type =~ /^(mine|myself)/i) {
                 if ($name eq 'likes') {
                     $method = 'my_likes';
                 }
@@ -2138,7 +2138,7 @@ sub popular_uploads {
             }
 
             my $request = $yv_obj->$method(
-                                           ($type =~ /^(?:user|channel)/i and $channel =~ /^\S+\z/)
+                                           ($type =~ /^(user|channel)/i and $channel =~ /^\S+\z/)
                                            ? $channel
                                            : ()
                                           );

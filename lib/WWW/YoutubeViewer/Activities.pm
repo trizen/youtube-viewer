@@ -37,7 +37,7 @@ sub activities {
     }
 
     if ($channel_id !~ /^UC/) {
-        $channel_id = $self->channel_id_from_username($channel_id);
+        $channel_id = $self->channel_id_from_username($channel_id) // $channel_id;
     }
 
     $self->_get_results($self->_make_activities_url(channelId => $channel_id));
@@ -62,6 +62,7 @@ Get authenticated user's activities.
 
 sub my_activities {
     my ($self) = @_;
+    $self->get_access_token() // return;
     $self->_get_results($self->_make_activities_url(mine => 'true'));
 }
 

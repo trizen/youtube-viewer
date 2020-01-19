@@ -64,17 +64,17 @@ Retrieve the subscriptions for a channel ID or for the authenticated user.
 
 sub subscriptions {
     my ($self, $channel_id) = @_;
-    $self->get_access_token() // return;
-    return
-      $self->_get_results(
-                          $self->_make_subscriptions_url(
-                                                         order => $self->get_subscriptions_order,
-                                                         defined($channel_id)
-                                                         ? (channelId => $channel_id)
-                                                         : (mine => 'true'),
-                                                         , part => 'snippet'
-                                                        )
-                         );
+    $self->_get_results(
+        $self->_make_subscriptions_url(
+            order => $self->get_subscriptions_order,
+            part  => 'snippet',
+            (
+               ($channel_id and $channel_id ne 'mine')
+             ? (channelId => $channel_id)
+             : do { $self->get_access_token() // return; (mine => 'true') }
+            ),
+        )
+    );
 }
 
 =head2 subscriptions_from_username($username)
@@ -101,15 +101,16 @@ sub subscription_videos {
 
     my @subscription_items;
     my $next_page_token;
+
     while (1) {
 
         my $url = $self->_make_subscriptions_url(
                                                  order      => $self->get_subscriptions_order,
                                                  maxResults => 50,
                                                  part       => 'snippet,contentDetails',
-                                                 defined($channel_id)
+                                                 ($channel_id and $channel_id ne 'mine')
                                                  ? (channelId => $channel_id)
-                                                 : (mine => 'true'),
+                                                 : do { $self->get_access_token() // return; (mine => 'true') },
                                                  defined($next_page_token) ? (pageToken => $next_page_token) : (),
                                                 );
 
@@ -143,7 +144,7 @@ sub subscription_videos {
         my $uploads = $self->uploads($channel->{snippet}{resourceId}{channelId});
 
         (ref($uploads) eq 'HASH' and ref($uploads->{results}) eq 'HASH' and ref($uploads->{results}{items}) eq 'ARRAY')
-          || return {};
+          || return;
 
         my $items = $uploads->{results}{items};
 

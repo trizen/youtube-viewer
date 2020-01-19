@@ -94,6 +94,7 @@ Returns info about the channel of the current authenticated user.
 
 sub my_channel {
     my ($self) = @_;
+    $self->get_access_token() // return;
     return $self->_get_results($self->_make_channels_url(part => 'snippet', mine => 'true'));
 }
 
@@ -157,6 +158,11 @@ Return the channel title for a given channel ID.
 
 sub channel_title_from_id {
     my ($self, $channel_id) = @_;
+
+    if ($channel_id eq 'mine') {
+        $channel_id = $self->my_channel_id();
+    }
+
     my $info = $self->channels_info($channel_id // return) // return;
 
     (    ref($info) eq 'HASH'

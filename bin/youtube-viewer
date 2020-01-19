@@ -1440,7 +1440,7 @@ sub apply_configuration {
             }
         }
         else {
-            print_videos($yv_obj->my_likes);
+            print_videos($yv_obj->my_activities);
         }
     }
 
@@ -2024,7 +2024,7 @@ sub favorite_videos {
 sub select_and_save_to_playlist {
     return if not authenticated();
 
-    my $request    = $yv_obj->my_playlists() // last;
+    my $request    = $yv_obj->my_playlists() // return;
     my $playlistID = print_playlists($request, return_playlist_id => 1);
 
     if (defined($playlistID)) {
@@ -2705,8 +2705,9 @@ sub print_comments {
 sub print_categories {
     my ($results) = @_;
 
+    return if ref($results) ne 'HASH';
     my $categories = $results->{items};
-    return if ref $categories ne 'ARRAY';
+    return if ref($categories) ne 'ARRAY';
 
     my $i = 0;
     print "\n" if @{$categories};

@@ -37,6 +37,8 @@ Add a video to given playlist ID, at position 1 (by default)
 sub add_video_to_playlist {
     my ($self, $playlist_id, $video_id, $position) = @_;
 
+    $self->get_access_token() // return;
+
     $playlist_id // return;
     $video_id    // return;
     $position //= 0;
@@ -65,6 +67,7 @@ Favorite a video. Returns true on success.
 sub favorite_video {
     my ($self, $video_id) = @_;
     $video_id // return;
+    $self->get_access_token() // return;
     my $playlist_id = $self->get_playlist_id('favorites', mine => 'true') // return;
     $self->add_video_to_playlist($playlist_id, $video_id);
 }
@@ -103,19 +106,21 @@ Get favorited videos for a given username or from the current user.
 
         *{__PACKAGE__ . '::' . $name . '_from_username'} = sub {
             my ($self, $username) = @_;
-            my $playlist_id = $self->get_playlist_id($name, $username ? (forUsername => $username) : (mine => 'true'))
-              // return;
+            my $playlist_id = $self->get_playlist_id(
+                $name, $username
+                ? (forUsername => $username)
+                : do { $self->get_access_token() // return; (mine => 'true') }
+            ) // return;
             $self->videos_from_playlist_id($playlist_id);
         };
 
         *{__PACKAGE__ . '::' . $name} = sub {
             my ($self, $channel_id) = @_;
-            my $playlist_id =
-              $self->get_playlist_id(
-                                     $name, ($channel_id and $channel_id ne 'mine')
-                                     ? (id => $channel_id)
-                                     : (mine => 'true')
-                                    ) // return;
+            my $playlist_id = $self->get_playlist_id(
+                $name, ($channel_id and $channel_id ne 'mine')
+                ? (id => $channel_id)
+                : do { $self->get_access_token() // return; (mine => 'true') }
+            ) // return;
             $self->videos_from_playlist_id($playlist_id);
         };
     }
