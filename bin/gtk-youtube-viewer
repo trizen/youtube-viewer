@@ -22,9 +22,14 @@ sub is_gtk3_available {
     eval { require Gtk3; 1 };
 }
 
-if (is_gtk3_available()) {
-    exec($^X, catfile(dirname(__FILE__), 'gtk3-youtube-viewer'), @ARGV);
+my $path = dirname(__FILE__);
+
+my $gtk3_yv = catfile($path, 'gtk3-youtube-viewer');
+my $gtk2_yv = catfile($path, 'gtk2-youtube-viewer');
+
+if (-f $gtk3_yv and is_gtk3_available()) {
+    exec($^X, $gtk3_yv, @ARGV);
 }
 else {
-    exec($^X, catfile(dirname(__FILE__), 'gtk2-youtube-viewer'), @ARGV);
+    exec($^X, $gtk2_yv, @ARGV);
 }
