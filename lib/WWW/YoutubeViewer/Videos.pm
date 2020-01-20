@@ -72,6 +72,7 @@ Get the videos liked by the authenticated user.
 
 sub my_likes {
     my ($self) = @_;
+    $self->get_access_token() // return;
     $self->_get_results($self->_make_videos_url(myRating => 'like', pageToken => $self->page_token));
 }
 
@@ -83,6 +84,7 @@ Get the videos disliked by the authenticated user.
 
 sub my_dislikes {
     my ($self) = @_;
+    $self->get_access_token() // return;
     $self->_get_results($self->_make_videos_url(myRating => 'dislike', pageToken => $self->page_token));
 }
 

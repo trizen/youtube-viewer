@@ -402,9 +402,10 @@ $control_options
 $other_options
 $notes_options
 Examples:
-     3                 : select the 3rd result
-    -V funny cats      : search for videos
-    -p classical music : search for playlists of videos
+     3                  : select the 3rd result
+    -sv funny cats      : search for videos
+    -sc mathematics     : search for channels
+    -sp classical music : search for playlists
 HELP
 
 my $playlists_help = <<"PL_HELP" . $general_help;
@@ -699,19 +700,26 @@ usage: $execname [options] ([url] | [keywords])
    -uf --favorites=s    : list the videos favorited by a specific user
    -id --videoids=s,s   : play YouTube videos by their IDs
    -rv --related=s      : show related videos for a video ID or URL
-       --search=s       : search for YouTube videos (default mode)
+   -sv --search-videos  : search for YouTube videos (default mode)
 
  * Playlists
-   -p  --playlists    : search for playlists of videos
-       --pid=s        : list a playlist of videos by playlistID
+   -up --playlists=s  : list playlists created by a specific channel or user
+   -sp --search-pl    : search for playlists of videos
+       --pid=s        : list a playlist of videos by playlist ID
        --pp=s,s       : play the videos from the given playlist IDs
-       --ps=s         : add videos by ID or URL to a post-selected playlist
-                        or in a given playlistID specified with `--pid`
-       --position=i   : the position in a playlist where to add a video
-   -up --user-pl=s    : list playlists created by a specific channel or user
+       --ps=s         : add video by ID or URL to a post-selected playlist
+                        or in a given playlist ID specified with `--pid`
+       --position=i   : position in the playlist where to add the video
+
+* Activities
+   -ua --activities:s : show activity events for a given channel
+
+* Trending
+   --trending:s       : show trending videos in a given category ID or name
+                        use the `--within=s` option to restrict the results
 
  * Channels
-   --channels         : search for Youtube channels
+   -sc --channels     : search for Youtube channels
 
 * Comments
    --comments=s         : display comments for a video by ID or URL
@@ -734,7 +742,7 @@ usage: $execname [options] ([url] | [keywords])
                           valid values are: Nd, Nw, Nm, Ny, where N is a number
    --hd!                : search only for videos available in at least 720p
    --vd=s               : set the video definition (any, high or standard)
-   --page=i             : get results starting with a specific page
+   --page=i             : get results starting with a specific page number
    --results=i          : how many results to display per page (max: 50)
    -2  -3  -4  -7  -1   : resolutions: 240p, 360p, 480p, 720p and 1080p
    --resolution=s       : supported resolutions: best, 2160p, 1440p,
@@ -745,12 +753,13 @@ usage: $execname [options] ([url] | [keywords])
    --logout             : will delete the authentication key
 
  * [GET] Personal
+   -U  --uploads:s       : show the uploads from your channel *
+   -P  --playlists:s     : show the playlists from your channel *
    -F  --favorites:s     : show the latest favorited videos *
    -S  --subscriptions:s : show the subscribed channels *
    -SV --subs-videos:s   : show the subscription videos (slow) *
        --subs-order=s    : change the subscription order
                            valid values: alphabetical, relevance, unread
-       --activities:s    : show activity events for a given channel
    -L  --likes           : show the videos that you liked on YouTube *
        --dislikes        : show the videos that you disliked on YouTube *
 
@@ -765,7 +774,7 @@ usage: $execname [options] ([url] | [keywords])
 
  * Arguments
    -f  --fullscreen!  : play videos in fullscreen mode
-   -n  --novideo!     : play audio only, without displaying video
+   -n  --audio!       : play audio only, without displaying video
    --append-arg=s     : append some command-line parameters to the media player
    --player=s         : select a player to stream videos
                         available players: @{[keys %{$CONFIG->{video_players}}]}
@@ -817,7 +826,7 @@ usage: $execname [options] ([url] | [keywords])
    --captions-dir=s     : directory where to save the .srt files
 
  * Config
-   -U  --update-config! : update the configuration file before exit
+   --update-config!     : update the configuration file
 
  * Output
    -C  --colorful!      : use colors to delimit the video results
@@ -855,7 +864,7 @@ Help options:
 
 NOTES:
     *    -> requires authentication
-    !    -> the argument can be negated with '--no'
+    !    -> the argument can be negated with '--no-'
     =i   -> requires an integer argument
     =s   -> requires an argument
     :s   -> can take an optional argument
@@ -900,7 +909,7 @@ sub tricks {
         $execname --uploads=mine
         $execname --likes=mine
         $execname --favorites=mine
-        $execname --user-playlists=mine
+        $execname --playlists=mine
 
 -> More STDIN help:
  > ":r", ":return" will return to the previous section.
@@ -1263,45 +1272,47 @@ sub apply_configuration {
         get_and_print_videos_from_playlist($playlistID);
     }
 
-    if (defined $opt->{search_playlists}) {
-        my $value = delete($opt->{search_playlists});
-        if ($value =~ /$valid_playlist_id_re/ and not @{$keywords}) {
-            get_and_print_videos_from_playlist($value);
-        }
-        else {
-            print_playlists($yv_obj->search_playlists([$value, @{$keywords}]));
-        }
+    if (delete $opt->{search_videos}) {
+        print_videos($yv_obj->search_videos([@{$keywords}]));
     }
 
-    if (defined $opt->{search_videos}) {
-        my $value = delete $opt->{search_videos};
-        print_videos($yv_obj->search_videos([$value, @{$keywords}]));
+    if (delete $opt->{search_channels}) {
+        print_channels($yv_obj->search_channels([@{$keywords}]));
     }
 
-    if (defined $opt->{search_channels}) {
-        my $value = delete $opt->{search_channels};
-        print_channels($yv_obj->search_channels([$value, @{$keywords}]));
+    if (delete $opt->{search_playlists}) {
+        print_playlists($yv_obj->search_playlists([@{$keywords}]));
     }
 
     if (delete $opt->{categories}) {
         print_categories($yv_obj->video_categories);
     }
 
-    if (defined $opt->{user_videos}) {
-        my $str = delete $opt->{user_videos};
+    if (defined $opt->{uploads}) {
+        my $str = delete $opt->{uploads};
 
-        if (my $id = extract_channel_id($str)) {
-            $yv_utils->is_channelID($id)
-              ? print_videos($yv_obj->uploads($id))
-              : print_videos($yv_obj->uploads_from_username($id));
+        if ($str) {
+            if (my $id = extract_channel_id($str)) {
+                $yv_utils->is_channelID($id)
+                  ? print_videos($yv_obj->uploads($id))
+                  : print_videos($yv_obj->uploads_from_username($id));
+            }
+            else {
+                warn_invalid("username or channel ID", $str);
+            }
         }
         else {
-            warn_invalid("username or channel ID", $str);
+            print_videos($yv_obj->uploads);
         }
     }
 
     if (defined $opt->{popular_videos}) {
         my $str = delete $opt->{popular_videos};
+
+        # TODO: add the stdin ':pv=i' option, which will display
+        #       popular videos from the author of the selected video.
+
+        # Move this code inside a separate function.
 
         if (my $id = extract_channel_id($str)) {
 
@@ -1330,6 +1341,26 @@ sub apply_configuration {
         else {
             warn_invalid("username or channel ID", $str);
         }
+    }
+
+    if (defined $opt->{trending}) {
+
+        # TODO: implement supports for trending, by searching for an empty string
+        #       in a specific category (name or ID, if given),
+        #       videos published within several (2 or 3) days (maybe add config-option for this?).
+        #       Also support the `--within=s` option.
+
+        # Implementation idea:
+        #   Create a function to select a category by category name.
+        #   Use this function also for the `--category=s` option.
+        #   Support category IDs as well.
+
+        my $str = delete $opt->{trending};
+        state $categories = $yv_obj->video_categories;
+
+        #use Data::Dump qw(pp);
+        #pp $categories;
+        #exit;
     }
 
     if (defined $opt->{subscriptions}) {
@@ -1372,16 +1403,22 @@ sub apply_configuration {
         get_and_print_related_videos(split(/[,\s]+/, delete($opt->{related_videos})));
     }
 
-    if (defined $opt->{user_playlists}) {
-        my $str = delete $opt->{user_playlists};
+    if (defined $opt->{playlists}) {
+        my $str = delete($opt->{playlists});
 
-        if (my $id = extract_channel_id($str)) {
-            $yv_utils->is_channelID($id)
-              ? print_playlists($yv_obj->playlists($id))
-              : print_playlists($yv_obj->playlists_from_username($id));
+        if ($str) {
+            if (my $id = extract_channel_id($str)) {
+                $yv_utils->is_channelID($id)
+                  ? print_playlists($yv_obj->playlists($id))
+                  : print_playlists($yv_obj->playlists_from_username($id));
+            }
+            else {
+                warn_invalid("username or channel ID", $str);
+                warn colored("[+] To search for playlists, try: $0 -sp $str", 'bold yellow') . "\n";
+            }
         }
         else {
-            warn_invalid("username or channel ID", $str);
+            print_playlists($yv_obj->my_playlists);
         }
     }
 
@@ -1395,7 +1432,7 @@ sub apply_configuration {
                   : print_videos($yv_obj->favorites_from_username($id));
             }
             else {
-                warn_invalid("username or channel", $str);
+                warn_invalid("username or channel ID", $str);
             }
         }
         else {
@@ -1413,7 +1450,7 @@ sub apply_configuration {
                   : print_videos($yv_obj->likes_from_username($id));
             }
             else {
-                warn_invalid("username or channel", $str);
+                warn_invalid("username or channel ID", $str);
             }
         }
         else {
@@ -1436,37 +1473,11 @@ sub apply_configuration {
                   : print_videos($yv_obj->activities_from_username($id));
             }
             else {
-                warn_invalid("username or channel", $str);
+                warn_invalid("username or channel ID", $str);
             }
         }
         else {
             print_videos($yv_obj->my_activities);
-        }
-    }
-
-    if (defined $opt->{user_favorited_videos}) {
-        my $str = delete $opt->{user_favorited_videos};
-
-        if (my $id = extract_channel_id($str)) {
-            $yv_utils->is_channelID($id)
-              ? print_videos($yv_obj->favorites($id))
-              : print_videos($yv_obj->favorites_from_username($id));
-        }
-        else {
-            warn_invalid("username or channel ID", $str);
-        }
-    }
-
-    if (defined $opt->{user_liked_videos}) {
-        my $str = delete $opt->{user_liked_videos};
-
-        if (my $id = extract_channel_id($str)) {
-            $yv_utils->is_channelID($id)
-              ? print_videos($yv_obj->likes($id))
-              : print_videos($yv_obj->likes_from_username($id));
-        }
-        else {
-            warn_invalid("username or channel ID", $str);
         }
     }
 
@@ -1495,7 +1506,7 @@ sub parse_arguments {
         'stdin-help|shelp|sh|H' => \&stdin_help,
         'tricks|tips|T'         => \&tricks,
         'version|v'             => \&version,
-        'update-config|U!'      => \&dump_configuration,
+        'update-config!'        => \&dump_configuration,
 
         # Resolutions
         '240p|2'  => sub { $opt{resolution} = 240 },
@@ -1505,35 +1516,38 @@ sub parse_arguments {
         '1080p|1' => sub { $opt{resolution} = 1080 },
         'res|resolution=s' => \$opt{resolution},
 
-        'comments=s'                  => \$opt{get_comments},
-        'comments-order=s'            => \$opt{comments_order},
-        'search|videos|V:s'           => \$opt{search_videos},
+        'comments=s'       => \$opt{get_comments},
+        'comments-order=s' => \$opt{comments_order},
+
+        'c|categories'                => \$opt{categories},
         'video-ids|videoids|id|ids=s' => \$opt{play_video_ids},
 
-        'c|categories'               => \$opt{categories},
-        'channels|search-channels:s' => \$opt{search_channels},
+        'search-videos|search|sv!'     => \$opt{search_videos},
+        'search-channels|channels|sc!' => \$opt{search_channels},
+        'search-playlists|sp|p!'       => \$opt{search_playlists},
 
         'subscriptions|S:s'                 => \$opt{subscriptions},
         'subs-videos|SV:s'                  => \$opt{subscription_videos},
         'subs-order=s'                      => \$opt{subscriptions_order},
-        'favorites|fv|favorited-videos|F:s' => \$opt{favorites},
-        'likes|L:s'                         => \$opt{likes},
+        'uploads|U|user|user-videos|uv|u:s' => \$opt{uploads},
+        'favorites|F|user-favorites|uf:s'   => \$opt{favorites},
+        'playlists|P|user-playlists|up:s'   => \$opt{playlists},
+        'activities|activity|ua:s'          => \$opt{activities},
+        'likes|L|user-likes|ul:s'           => \$opt{likes},
         'dislikes'                          => \$opt{dislikes},
-        'activities|activity:s'             => \$opt{activities},
         'subscribe=s'                       => \$opt{subscribe},
+
+        'trending|trends:s' => \$opt{trending},
+        'playlist-id|pid=s' => \$opt{playlist_id},
 
         # English-UK friendly
         'favorite|favourite|favorite-video|favourite-video|fav=s' => \$opt{favorite_video},
 
-        'login|authenticate'     => \$opt{authenticate},
-        'logout'                 => \$opt{logout},
-        'user-playlists|up=s'    => \$opt{user_playlists},
-        'user-favorites|uf=s'    => \$opt{user_favorited_videos},
-        'user-likes|ul=s'        => \$opt{user_liked_videos},
-        'related-videos|rl|rv=s' => \$opt{related_videos},
+        'login|authenticate' => \$opt{authenticate},
+        'logout'             => \$opt{logout},
 
-        'user|user-videos|user-uploads|uploads|u|uv=s' => \$opt{user_videos},
-        'popular-videos|popular|pv=s'                  => \$opt{popular_videos},
+        'related-videos|rv=s'         => \$opt{related_videos},
+        'popular-videos|popular|pv=s' => \$opt{popular_videos},
 
         'http_proxy|http-proxy|proxy=s' => \$opt{http_proxy},
 
@@ -1556,9 +1570,6 @@ sub parse_arguments {
         'backwards|B!'               => \$opt{play_backwards},
         'input|std-input=s'          => \$opt{std_input},
         'use-colors|colors|colored!' => \$opt{colors},
-
-        'playlists|p|pl|playlist:s' => \$opt{search_playlists},
-        'pid|playlist-id=s'         => \$opt{playlist_id},
 
         'autoplay!' => \$opt{autoplay_mode},
 
@@ -1623,7 +1634,7 @@ sub parse_arguments {
         'info|i|video-info=s'                => \$opt{print_video_info},
         'get-term-width!'                    => \$opt{get_term_width},
         'page=i'                             => \$opt{page},
-        'novideo|no-video|n!'                => \$opt{novideo},
+        'novideo|no-video|n|audio!'          => \$opt{novideo},
         'autohide!'                          => \$opt{autohide_watched},
         'highlight!'                         => \$opt{highlight_watched},
         'skip-watched!'                      => \$opt{skip_watched},
@@ -2323,7 +2334,7 @@ sub warn_cant_do {
         my $resp = $yv_obj->parse_json_string($info{player_response} // next);
 
         if (eval { exists($resp->{playabilityStatus}) and $resp->{playabilityStatus}{status} =~ /error/i }) {
-            warn colored("[!] Reason: $resp->{playabilityStatus}{reason}.", 'bold yellow') . "\n";
+            warn colored("[+] Reason: $resp->{playabilityStatus}{reason}.", 'bold yellow') . "\n";
         }
     }
 }

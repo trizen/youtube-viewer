@@ -81,7 +81,7 @@ Get and return the playlists created for a given username.
 
 sub playlists_from_username {
     my ($self, $username) = @_;
-    my $channel_id = $self->channel_id_from_username($username);
+    my $channel_id = $self->channel_id_from_username($username) // $username;
     $self->playlists($channel_id);
 }
 

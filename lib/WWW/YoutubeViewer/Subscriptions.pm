@@ -53,7 +53,7 @@ Subscribe to an YouTube channel via username.
 
 sub subscribe_channel_from_username {
     my ($self, $username) = @_;
-    $self->subscribe_channel($self->channel_id_from_username($username));
+    $self->subscribe_channel($self->channel_id_from_username($username) // $username);
 }
 
 =head2 subscriptions(;$channel_id)
