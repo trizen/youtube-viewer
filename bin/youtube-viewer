@@ -947,12 +947,14 @@ sub tricks {
   *CHANNELID*   : the channel ID of the video
   *RESOLUTION*  : the resolution of the video
   *VIEWS*       : the number of views
+  *VIEWS_SHORT* : the number of views in abbreviated notation
   *LIKES*       : the number of likes
   *DISLIKES*    : the number of dislikes
   *RATING*      : the rating of the video from 0 to 5
   *COMMENTS*    : the number of comments
   *DURATION*    : the duration of the video in seconds
   *PUBLISHED*   : the publication date as "DD MMM YYYY"
+  *AGE*         : the relative age of a video (Nd, Nw, Nm, Ny)
   *DIMENSION*   : the dimension of the video (2D or 3D)
   *DEFINITION*  : the definition of the video (HD or SD)
   *TIME*        : the duration of the video as "HH::MM::SS"
@@ -964,7 +966,7 @@ sub tricks {
   *ITAG*     : the itag value of the video
   *FORMAT*   : the extension of the video (without the dot)
 
-  *CAPTION*  : true if the video has caption.
+  *CAPTION*  : true if the video has captions
   *SUB*      : the local subtitle file (if any)
   *AUDIO*    : the audio URL of the video (only in DASH mode)
   *VIDEO*    : the video URL of the video (it might not contain audio)

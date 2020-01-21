@@ -266,6 +266,7 @@ sub format_text {
         DEFINITION  => sub { $self->get_definition($info) },
         DIMENSION   => sub { $self->get_dimension($info) },
         VIEWS       => sub { $self->get_views($info) },
+        VIEWS_SHORT => sub { $self->get_views_approx($info) },
         LIKES       => sub { $self->get_likes($info) },
         DISLIKES    => sub { $self->get_dislikes($info) },
         COMMENTS    => sub { $self->get_comments($info) },
@@ -534,7 +535,38 @@ sub get_caption {
 
 sub get_views {
     my ($self, $info) = @_;
-    $info->{statistics}{viewCount};
+    $info->{statistics}{viewCount} // 0;
+}
+
+sub get_views_approx {
+    my ($self, $info) = @_;
+    my $views = $info->{statistics}{viewCount} // 0;
+
+    if ($views < 1000) {
+        return $views;
+    }
+
+    if ($views > 1e9) {    # billions
+        return sprintf("%.2gB", $views / 1e9);
+    }
+
+    if ($views > 100 * 1e6) {    # hundred millions
+        return sprintf("%.3gM", $views / 1e6);
+    }
+
+    if ($views > 1e6) {          # millions
+        return sprintf("%.2gM", $views / 1e6);
+    }
+
+    if ($views > 100 * 1e3) {    # hundred thousands
+        return sprintf("%.3gK", $views / 1e3);
+    }
+
+    if ($views > 1e3) {          # thousands
+        return sprintf("%.2gK", $views / 1e3);
+    }
+
+    return $views;
 }
 
 sub get_likes {
