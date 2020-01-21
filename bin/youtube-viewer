@@ -336,10 +336,12 @@ my %CONFIG = (
     convert_to           => undef,
 
     custom_layout        => 0,
-    custom_layout_format => [{width => 3, text => "*NO*.", color => 'bold', align => 'right'},
-                             {width => '60%', text => "*TITLE*"},
-                             {width => '20%', text => "*AUTHOR*", color => 'green', align => 'right'},
-                             {width => 8,     text => "*TIME*",   color => 'blue',  align => 'right'},
+    custom_layout_format => [{width => 3,     align => "right", color => "bold",      text => "*NO*.",},
+                             {width => "55%", align => "left",  color => "bold cyan", text => "*TITLE*",},
+                             {width => "15%", align => "left",  color => "yellow",    text => "*AUTHOR*",},
+                             {width => 3,     align => "right", color => "green",     text => "*AGE_SHORT*",},
+                             {width => 5,     align => "right", color => "green",     text => "*VIEWS_SHORT*",},
+                             {width => 8,     align => "right", color => "red",       text => "*TIME*",},
                             ],
 
     ffmpeg_cmd => 'ffmpeg',
