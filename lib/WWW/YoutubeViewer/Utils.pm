@@ -546,23 +546,27 @@ sub get_views_approx {
         return $views;
     }
 
-    if ($views > 1e9) {    # billions
+    if ($views >= 10 * 1e9) {    # ten billions
+        return sprintf("%dB", int($views / 1e9));
+    }
+
+    if ($views >= 1e9) {         # billions
         return sprintf("%.2gB", $views / 1e9);
     }
 
-    if ($views > 100 * 1e6) {    # hundred millions
-        return sprintf("%.3gM", $views / 1e6);
+    if ($views >= 10 * 1e6) {    # ten millions
+        return sprintf("%dM", int($views / 1e6));
     }
 
-    if ($views > 1e6) {          # millions
+    if ($views >= 1e6) {         # millions
         return sprintf("%.2gM", $views / 1e6);
     }
 
-    if ($views > 100 * 1e3) {    # hundred thousands
-        return sprintf("%.3gK", $views / 1e3);
+    if ($views >= 10 * 1e3) {    # ten thousands
+        return sprintf("%dK", int($views / 1e3));
     }
 
-    if ($views > 1e3) {          # thousands
+    if ($views >= 1e3) {         # thousands
         return sprintf("%.2gK", $views / 1e3);
     }
 
