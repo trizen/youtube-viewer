@@ -954,7 +954,8 @@ sub tricks {
   *COMMENTS*    : the number of comments
   *DURATION*    : the duration of the video in seconds
   *PUBLISHED*   : the publication date as "DD MMM YYYY"
-  *AGE*         : the relative age of a video (Nd, Nw, Nm, Ny)
+  *AGE*         : the age of a video (N days, N months, N years)
+  *AGE_SHORT*   : the abbreviated age of a video (Nd, Nm, Ny)
   *DIMENSION*   : the dimension of the video (2D or 3D)
   *DEFINITION*  : the definition of the video (HD or SD)
   *TIME*        : the duration of the video as "HH::MM::SS"

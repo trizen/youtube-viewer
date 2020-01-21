@@ -277,6 +277,7 @@ sub format_text {
         CAPTION     => sub { $self->get_caption($info) },
         PUBLISHED   => sub { $self->get_publication_date($info) },
         AGE         => sub { $self->get_publication_age($info) },
+        AGE_SHORT   => sub { $self->get_publication_age_approx($info) },
         DESCRIPTION => sub { $self->get_description($info) },
 
         RATING => sub {
@@ -498,6 +499,30 @@ sub get_publication_age {
 
     if ($age =~ /^1\s/) {    # singular mode
         $age =~ s/s\z//;
+    }
+
+    return $age;
+}
+
+sub get_publication_age_approx {
+    my ($self, $info) = @_;
+
+    my $age = $self->date_to_age($info->{snippet}{publishedAt});
+
+    if ($age =~ /hour|minute|second/) {
+        return "0d";
+    }
+
+    if ($age =~ /^(\d+) day/) {
+        return "$1d";
+    }
+
+    if ($age =~ /^(\d+) month/) {
+        return "$1m";
+    }
+
+    if ($age =~ /^(\d+) year/) {
+        return "$1y";
     }
 
     return $age;
