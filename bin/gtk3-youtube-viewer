@@ -2096,11 +2096,7 @@ sub popular_uploads {
         $channel = $yv_obj->channel_id_from_username($channel) // die "Invalid username <<$channel>>\n";
     }
 
-    my $results = do {
-        local $yv_obj->{channelId} = $channel;
-        local $yv_obj->{order}     = 'viewCount';
-        $yv_obj->search_videos("");
-    };
+    my $results = $yv_obj->popular_videos($channel);
 
     if ($yv_utils->has_entries($results)) {
         $liststore->clear if $CONFIG{clear_search_list};
