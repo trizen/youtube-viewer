@@ -94,9 +94,41 @@ sub playlists_from_id {
     return $self->_get_results($self->_make_playlistItems_url(id => $id));
 }
 
-=head2 favorited_videos(;$username)
+=head2 popular_videos($channel_id)
 
-Get favorited videos for a given username or from the current user.
+Get the most popular videos for a given channel ID.
+
+=cut
+
+sub popular_videos {
+    my ($self, $id) = @_;
+
+    my $results = do {
+        local $self->{channelId} = $id;
+        local $self->{order}     = 'viewCount';
+        $self->search_videos("");
+    };
+
+    return $results;
+}
+
+=head2 favorites($channel_id)
+
+=head2 uploads($channel_id)
+
+=head2 likes($channel_id)
+
+Get the favorites, uploads and likes for a given channel ID.
+
+=cut
+
+=head2 favorites_from_username($username)
+
+=head2 uploads_from_username($username)
+
+=head2 likes_from_username($username)
+
+Get the favorites, uploads and likes for a given YouTube username.
 
 =cut
 

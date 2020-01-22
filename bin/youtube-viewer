@@ -18,71 +18,10 @@
 #  Latest edit on: 16 January 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
-#
-# youtube-viewer is a command line utility for streaming YouTube videos in mpv/vlc/mplayer.
-#
-# [CHANGELOG]
-# - Added the `--autoplay` option to automatically play related videos of related videos.      - NEW (v3.5.7)
-# - Added support for downloading videos at 1080p (and other resolutions) with MKV merging.    - NEW (v3.4.0)
-# - Added the `--prefer-mp4` option to prefer videos in MP4 format, instead of WEBM.           - NEW (v3.4.0)
-# - Added the `--fat32safe` option to make filenames FAT32-safe, by replacing bad characters.  - NEW (v3.2.5)
-# - Added the `--highlight` option to remember and highlight watched videos in a session.      - NEW (v3.2.2)
-# - Added the `i..` range, which plays all the videos, starting with video `i`. (#114)         - NEW (v3.2.1)
-# - Migration to APIv3; some features have been lost in the process, but nothing too critical. - NEW (v3.1.4)
-# - Added built-in support for [auto-generated] closed-captions (gcap is no longer required)   - NEW (v3.1.3)
-# - Added support for specifying the filename format when downloading videos (--filename=s)    - NEW (v3.1.3)
-# - Added support for special tokens and for extracting information about videos (--extract=s) - NEW (v3.1.3)
-# - Added support for playing DASH videos and the `--no-dash` option to deactivate it at will  - NEW (v3.1.2)
-# - Added the options `--ps` and `--pid` to add videos by URL or ID to a given playlistID      - NEW (v3.1.2)
-# - Added the stdin commands ":ps" and ":s2p" to add one or more videos to a selected playlist - NEW (v3.1.2)
-# - Added the `--std-input=s` option which can be used to specify the first standard input     - NEW (v3.1.1)
-# - Added input history support across sessions, with the 'history' config-key                 - NEW (v3.1.1)
-# - Added support for more video players (--player=s) // Added support for shows (--us=author) - NEW (v3.1.0)
-# - Added support to --copy-caption for downloaded videos // Added fixed-width for playlists   - NEW (v3.1.0)
-# - Added the ':play' stdin option // Added the support for 'watch_later' videos (-L)          - NEW (v3.1.0)
-# - New authentication support (OAuth 2.0) // Added support for download & play (-dp)          - (v3.0.7)
-# - Added support for YouTube EDU categories (-edu) // Options: :dv, :lec, :courses, :course   - (v3.0.4)
-# - Some minor bug-fixes // New options has been added: --pp, :pp, :anp, :kregex               - (v3.0.3)
-# - Added support for more resolutions, UTF-8 support, --convert-to=FMT and many bug-fixes     - (v3.0.1)
-# - YouTube Viewer 3.0 has been released! New options, better functionality and new bugs :)    - (v3.0.0)
-# - Added support for detailed results (usage: -D or --details) // Support for comments        - (v2.5.8)
-# - Switched to Term::ReadLine for a better STDIN support // Better colors // Info support     - (v2.5.7)
-# - Added support for: -duration, -caption=s, -safe-search=s, -hd // Improved code quality     - (v2.5.6)
-# - Added support for configuration file, improved stability, improved debug mode              - (v2.5.5)
-# - Switched to XML::Fast for parsing gdata XML, in consequence, youtube-viewer is faster!     - (v2.5.5)
-# - Switched to Getopt::Long, added SIGINT handler and a better way to execute mplayer         - (v2.5.5)
-# - Added support to list playlists created by a specific user (usage: -up <USERNAME>)         - (v2.5.4)
-# - Improved parsing support for arguments, including arguments specified via STDIN.           - (v2.5.4)
-# - Added support to search for videos uploaded by a particular YouTube user (-author=USER)    - (v2.5.4)
-# - Added support to get video results starting with a predefined page (e.g.: -page=4)         - (v2.5.4)
-# - Added support for previous page and support to list youtube usernames from a file          - (v2.5.2)
-# - Added colors for text (--use_colors), 360p support (-3), playlist support                  - (v2.5.0)
-# - Added support for today and all time YouTube tops (usage: -t, --tops, -a, --all-time)      - (v2.4.*)
-# - Re-added the support for the next page / Added support for download (-d, --download)       - (v2.4.*)
-# - Added support for YouTube CCaptions. (Depends on: 'gcap' - http://gcap.googlecode.com)     - (v2.4.*)
-# - First version with Windows support. Require SMPlayer to play videos. See MPlayer Line      - (v2.4.*)
-# - Code has been changed in a proportion of ~60% and optimized for speed // --480 became -4   - (v2.4.*)
-# - Added mega-powers of omnibox to the STDIN :)                                               - (v2.3.*)
-# - Re-added the option to list and play youtube videos from a user profile. Usage: -u [user]  - (v2.3.*)
-# - Added a new option to play only the audio track of a videoclip. Usage: [words] -n          - (v2.3.*)
-# - Added option for fullscreen (-f, --fullscreen). Usage: youtube-viewer [words] -f           - (v2.3.*)
-# - Added one new option '-c'. It shows available categories and will let you to choose one.   - (v2.3.*)
-# - Added one new option '-m'. It shows 3 pages of youtube video results. Usage: [words] -m    - (v2.3.*)
-# - For "-A" option has been added 3 pages of youtube video results (50 clips)                 - (v2.3.*)
-# - Added "-prefer-ipv4" to the mplayer line (videoclips starts in no time now).               - (v2.3.*)
-# - Search and play videos at 480p, 720p. Ex: [words] --480, [words] -A --480                  - (v2.3.*)
-# - Added support to play a video at 480p even if its resolution is higher. Ex: [url] --480    - (v2.2.*)
-# - Added a nice feature which prints some information about the current playing video         - (v2.2.*)
-# - Added support to play videos by your order. Example: after search results, insert: 3 5 2 1 - (v2.1.*)
-# - Added support for next pages of video results (press <ENTER> after search results)         - (v2.1.*)
-# - Added support to continue playing searched videos, usage: "youtube-viewer [words] -A"      - (v2.1.*)
-# - Added support to print counted videos and support to insert a number instead of video code - (v2.1.*)
-# - Added support to search YouTube Videos in script (e.g.: youtube-viewer avatar trailer)     - (v2.0.*)
-# - Added support to choose the quality only between 720p and 1080p (if it is available)       - (v2.0.*)
-# - Added support for YouTube video codes (e.g.: youtube-viewer WVTWCPoUt8w)                   - (v1.0.*)
-# - Added support for 720p and 1080p YouTube Videos...                                         - (v1.0.*)
 
-# Many thanks to everyone who contributed in making this application.
+# youtube-viewer is a command line utility for streaming YouTube videos in mpv/vlc/mplayer.
+
+# Many thanks to everyone who contributed in making this application:
 #   https://github.com/trizen/youtube-viewer/graphs/contributors
 
 # Special thanks to:
@@ -337,11 +276,11 @@ my %CONFIG = (
 
     custom_layout        => 0,
     custom_layout_format => [{width => 3,     align => "right", color => "bold",      text => "*NO*.",},
-                             {width => "55%", align => "left",  color => "bold cyan", text => "*TITLE*",},
+                             {width => "55%", align => "left",  color => "bold blue", text => "*TITLE*",},
                              {width => "15%", align => "left",  color => "yellow",    text => "*AUTHOR*",},
                              {width => 3,     align => "right", color => "green",     text => "*AGE_SHORT*",},
                              {width => 5,     align => "right", color => "green",     text => "*VIEWS_SHORT*",},
-                             {width => 8,     align => "right", color => "red",       text => "*TIME*",},
+                             {width => 8,     align => "right", color => "blue",      text => "*TIME*",},
                             ],
 
     ffmpeg_cmd => 'ffmpeg',
@@ -432,10 +371,11 @@ $action_options
 :d(ownload)=i,i   : download the selected videos
 :c(omments)=i     : display video comments
 :r(elated)=i      : display related videos
-:a(uthor)=i       : display author's latest uploads
+:u(ploads)=i      : display author's latest uploads
+:pv=i :popular=i  : display author's popular uploads
 :A(ctivity)=i     : display author's recent activity
 :p(laylists)=i    : display author's playlists
-:ps=i, :s2p=i,i   : save videos to a post-selected playlist
+:ps=i :s2p=i,i    : save videos to a post-selected playlist
 :subscribe=i      : subscribe to author's channel
 :(dis)like=i      : like or dislike a video
 :fav(orite)=i     : favorite a video
@@ -1314,11 +1254,6 @@ sub apply_configuration {
     if (defined $opt->{popular_videos}) {
         my $str = delete $opt->{popular_videos};
 
-        # TODO: add the stdin ':pv=i' option, which will display
-        #       popular videos from the author of the selected video.
-
-        # Move this code inside a separate function.
-
         if (my $id = extract_channel_id($str)) {
 
             if (not $yv_utils->is_channelID($id)) {
@@ -1335,13 +1270,7 @@ sub apply_configuration {
                 };
             }
 
-            my $results = do {
-                local $yv_obj->{channelId} = $id;
-                local $yv_obj->{order}     = 'viewCount';
-                $yv_obj->search_videos("");
-            };
-
-            print_videos($results);
+            print_videos($yv_obj->popular_videos($id));
         }
         else {
             warn_invalid("username or channel ID", $str);
@@ -3848,7 +3777,7 @@ sub print_videos {
             elsif ($opt =~ /^(?:r|return)\z/) {
                 return;
             }
-            elsif ($opt =~ /^(?:a(?:uthor)?|u)${digit_or_equal_re}(.*)/) {
+            elsif ($opt =~ /^(?:a|author|u|uploads)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     foreach my $id (@nums) {
                         my $channel_id = $yv_utils->get_channel_id($videos->[$id]);
@@ -3858,6 +3787,23 @@ sub print_videos {
                         }
                         else {
                             warn_no_results('video');
+                        }
+                    }
+                }
+                else {
+                    warn_no_thing_selected('video');
+                }
+            }
+            elsif ($opt =~ /^(?:pv|popular)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$videos}, $1)) {
+                    foreach my $id (@nums) {
+                        my $channel_id = $yv_utils->get_channel_id($videos->[$id]);
+                        my $request    = $yv_obj->popular_videos($channel_id);
+                        if ($yv_utils->has_entries($request)) {
+                            __SUB__->($request);
+                        }
+                        else {
+                            warn_no_results('popular video');
                         }
                     }
                 }
@@ -3890,7 +3836,7 @@ sub print_videos {
                     warn_no_thing_selected('video');
                 }
             }
-            elsif ($opt =~ /^(?:p(?:laylists?)?|up)${digit_or_equal_re}(.*)/) {
+            elsif ($opt =~ /^(?:p|playlists?|up)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     foreach my $id (@nums) {
                         my $request = $yv_obj->playlists($yv_utils->get_channel_id($videos->[$id]));
@@ -3915,7 +3861,7 @@ sub print_videos {
                     warn_no_thing_selected('video');
                 }
             }
-            elsif ($opt =~ /^(?:fav(?:orite)?|F)${digit_or_equal_re}(.*)/) {
+            elsif ($opt =~ /^(?:fav|favorite|F)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     favorite_videos(map { $yv_utils->get_video_id($videos->[$_]) } @nums);
                 }
@@ -3931,7 +3877,7 @@ sub print_videos {
                     warn_no_thing_selected('video');
                 }
             }
-            elsif ($opt =~ /^(?:en)?q(?:ueue)?+${digit_or_equal_re}(.*)/) {
+            elsif ($opt =~ /^(?:q|queue|enqueue)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     push @{$opt{_queue_play}}, map { $yv_utils->get_video_id($videos->[$_]) } @nums;
                 }
