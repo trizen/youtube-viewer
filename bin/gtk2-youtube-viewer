@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 20 January 2020
+#  Latest edit on: 24 January 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -1746,7 +1746,7 @@ sub append_categories {
     foreach my $category (@{$categories->{items}}) {
 
         # Ignore nonassignable categories
-        $category->{snippet}{assignable} || next;
+        #$category->{snippet}{assignable} || next;
 
         my $label = $yv_utils->get_title($category);
         my $id    = $category->{id};
@@ -2992,6 +2992,10 @@ sub list_category {
         $type eq 'edu-cat'
       ? $yv_obj->get_video_lectures_from_category($cat_id)
       : $yv_obj->videos_from_category($cat_id);
+
+    if (not $yv_utils->has_entries($videos)) {
+        $videos = $yv_obj->trending_videos_from_category($cat_id);
+    }
 
     if ($yv_utils->has_entries($videos)) {
         $liststore->clear if $CONFIG{clear_search_list};

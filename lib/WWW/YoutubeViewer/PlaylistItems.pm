@@ -94,24 +94,6 @@ sub playlists_from_id {
     return $self->_get_results($self->_make_playlistItems_url(id => $id));
 }
 
-=head2 popular_videos($channel_id)
-
-Get the most popular videos for a given channel ID.
-
-=cut
-
-sub popular_videos {
-    my ($self, $id) = @_;
-
-    my $results = do {
-        local $self->{channelId} = $id;
-        local $self->{order}     = 'viewCount';
-        $self->search_videos("");
-    };
-
-    return $results;
-}
-
 =head2 favorites($channel_id)
 
 =head2 uploads($channel_id)

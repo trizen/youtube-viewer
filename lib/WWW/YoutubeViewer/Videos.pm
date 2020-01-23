@@ -48,7 +48,7 @@ sub _make_videos_url {
     }
 }
 
-=head2 videos_from_category($catID)
+=head2 videos_from_category($category_id)
 
 Get videos from a category ID.
 
@@ -62,6 +62,46 @@ sub videos_from_category {
                                                 videoCategoryId => $cat_id,
                                                )
                        );
+}
+
+=head2 trending_videos_from_category($category_id)
+
+Get popular videos from a category ID.
+
+=cut
+
+sub trending_videos_from_category {
+    my ($self, $cat_id) = @_;
+
+    my $results = do {
+        local $self->{publishedAfter} = do {
+            state $yv_utils = WWW::YoutubeViewer::Utils->new;
+            $yv_utils->period_to_date(1, 'w');
+        } if !defined($self->get_publishedAfter);
+        local $self->{videoCategoryId} = $cat_id;
+        local $self->{regionCode}      = "US" if !defined($self->get_regionCode);
+        $self->search_videos("");
+    };
+
+    return $results;
+}
+
+=head2 popular_videos($channel_id)
+
+Get the most popular videos for a given channel ID.
+
+=cut
+
+sub popular_videos {
+    my ($self, $id) = @_;
+
+    my $results = do {
+        local $self->{channelId} = $id;
+        local $self->{order}     = 'viewCount';
+        $self->search_videos("");
+    };
+
+    return $results;
 }
 
 =head2 my_likes()

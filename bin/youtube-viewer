@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 16 January 2020
+#  Latest edit on: 24 January 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -2657,11 +2657,10 @@ sub print_categories {
     my $i = 0;
     print "\n" if @{$categories};
 
+    # Filter out nonassignable categories
+    @$categories = grep { $_->{snippet}{assignable} } @$categories;
+
     foreach my $category (@{$categories}) {
-
-        # Ignore nonassignable categories
-        $category->{snippet}{assignable} || next;
-
         printf "%s. %-40s (id: %s)\n", colored(sprintf('%2d', ++$i), 'bold'), $yv_utils->get_title($category), $category->{id};
     }
 
@@ -2696,8 +2695,15 @@ sub print_categories {
             ## ok
         }
         elsif (valid_num($key, $categories)) {
-            my $cat_id = $categories->[$key - 1]{id};
-            print_videos($yv_obj->videos_from_category($cat_id));
+            my $category = $categories->[$key - 1];
+            my $cat_id   = $category->{id};
+            my $videos   = $yv_obj->videos_from_category($cat_id);
+
+            if (not $yv_utils->has_entries($videos)) {
+                $videos = $yv_obj->trending_videos_from_category($cat_id);
+            }
+
+            print_videos($videos);
         }
         else {
             warn_invalid('keyword', $key);
