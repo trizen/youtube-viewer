@@ -1674,14 +1674,28 @@ sub combobox_definition_changed {
 }
 
 sub combobox_published_within_changed {
-    my $text = $published_within_combobox->get_active_text;
+    my $period = $published_within_combobox->get_active_text;
 
-    if ($text =~ /^any/) {
+    if ($period =~ /^any/) {
         $spin_published_within->hide;
-        $yv_obj->set_publishedAfter(undef);
     }
     else {
         $spin_published_within->show;
+    }
+
+    spin_published_within_changed();
+}
+
+sub spin_published_within_changed {
+    my $period = $published_within_combobox->get_active_text;
+
+    if ($period =~ /^any/) {
+        $yv_obj->set_publishedAfter(undef);
+    }
+    else {
+        my $amount = $spin_published_within->get_value;
+        my $date   = $yv_utils->period_to_date($amount, $period);
+        $yv_obj->set_publishedAfter($date);
     }
 }
 
@@ -2224,14 +2238,11 @@ sub search {
         append_to_history($keywords);
     }
 
-    if ((my $period = $published_within_combobox->get_active_text) !~ /^any/i) {
-        my $amount = $spin_published_within->get_value;
-        my $date   = $yv_utils->period_to_date($amount, $period);
-        $yv_obj->set_publishedAfter($date);
-    }
+    spin_published_within_changed();
 
     # Set the username
     my $username = $from_author_entry->get_text;
+
     if ($username =~ /^[\w\-]+\z/) {
         my $id = $username;
 

@@ -1304,6 +1304,7 @@ Recommended: 10</property>
                                                             <property name="numeric">True</property>
                                                             <property name="update_policy">if-valid</property>
                                                             <signal name="activate" handler="search" swapped="no"/>
+                                                            <signal name="value-changed" handler="spin_published_within_changed" swapped="no"/>
                                                             </object>
                                                             <packing>
                                                             <property name="expand">True</property>

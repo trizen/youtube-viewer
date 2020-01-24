@@ -1677,16 +1677,17 @@ sub extract_category {
 
     state $results = $yv_obj->video_categories;
     return if ref($results) ne 'HASH';
+
     my $categories = $results->{items};
     return if ref($categories) ne 'ARRAY';
 
-    my $str_re = qr/\Q$str\E/i;
-
     foreach my $category (@$categories) {
-        if ($str eq $category->{id}) {
+        if ($category->{id} eq $str) {
             return $category;
         }
     }
+
+    my $str_re = qr/\Q$str\E/i;
 
     foreach my $category (@$categories) {
         if ($yv_utils->get_title($category) =~ /$str_re/) {
