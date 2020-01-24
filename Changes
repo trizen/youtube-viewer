@@ -5,6 +5,7 @@
 #   https://github.com/trizen/youtube-viewer/releases
 
 [CHANGELOG]
+- Added the `--trending:s` option, which displays popular videos from a given category.      - NEW (v3.7.1)
 - Added support for showing the most popular videos from a given channel.                    - NEW (v3.7.0)
 - Added support for resuming an interrupted download.                                        - NEW (v3.7.0)
 - Extended `custom_layout_format` to support fixed width, colors and alignment.              - NEW (v3.6.0)
