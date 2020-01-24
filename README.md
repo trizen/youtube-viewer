@@ -8,9 +8,9 @@ A lightweight application for searching and streaming videos from YouTube.
 
 ![youtube-viewer](https://user-images.githubusercontent.com/614513/73046877-5cae1200-3e7c-11ea-8ab3-f8c444f88b30.png)
 
-### gtk2-youtube-viewer
+### gtk-youtube-viewer
 
-* GTK2 interface to YouTube.
+* GTK+ interface to YouTube.
 
 ![gtk-youtube-viewer](https://user-images.githubusercontent.com/614513/73087694-93ffdb80-3edb-11ea-8fea-05901d72f68d.png)
 
