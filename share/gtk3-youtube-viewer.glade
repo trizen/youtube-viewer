@@ -2211,19 +2211,6 @@ When the specified resolution is not found, the best available resolution is use
     <property name="comments" translatable="yes">Written in Perl, Gtk3 and Glade.</property>
     <property name="website">https://github.com/trizen/youtube-viewer</property>
     <property name="website_label" translatable="yes">https://github.com/trizen/youtube-viewer</property>
-    <property name="license" translatable="yes">
-Copyright (C) 2010-2020 Trizen &lt;echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d&gt;.
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-See &lt;https://dev.perl.org/licenses/&gt; for more information.
-</property>
     <property name="authors">Trizen https://github.com/trizen
 Ovidiu D. Nițan &lt;nitanovidiu@gmail.com&gt;
 Jookia https://github.com/Jookia
@@ -2231,6 +2218,7 @@ Andreas Hrubak https://github.com/bAndie91
 and others... https://github.com/trizen/youtube-viewer/graphs/contributors</property>
     <property name="artists">PosixRU (main logo) http://zenway.ru/page/gtk-youtube-viewer</property>
     <property name="logo_icon_name">image-missing</property>
+    <property name="license_type">artistic</property>
     <signal name="delete-event" handler="hide_about_window" swapped="no"/>
     <signal name="destroy" handler="hide_about_window" swapped="no"/>
     <signal name="response" handler="hide_about_window" swapped="no"/>
