@@ -675,7 +675,7 @@ usage: $execname [options] ([url] | [keywords])
                           valid values are: short, medium, long
    --caption=s          : only videos with/without closed captions
                           valid values are: any, closedCaption, none
-   --category=i         : search only for videos in a specific category ID
+   --category=s         : search only for videos in a specific category name/ID
    --safe-search=s      : YouTube will skip restricted videos for your location
                           valid values are: none, moderate, strict
    --order=s            : order the results using a specific sorting method
@@ -945,12 +945,11 @@ sub examples {
     print <<"EXAMPLES";
 ==== COMMAND LINE EXAMPLES ====
 
-Command: $execname -A -n -4 russian music -category=10
+Command: $execname -A -n russian music -category=10
 Results: play all the video results (-A)
          only audio, no video (-n)
-         quality 480p (-4)
          search for "russian music"
-         in the "10" category, which is the Music category.
+         in category "10", which is the Music category.
          -A will include the videos from the next pages as well.
 
 Command: $execname --comments 'https://www.youtube.com/watch?v=U6_8oIPFREY'
@@ -1029,10 +1028,10 @@ Results: play the videos enqueued by the :queue option.
 
 Command: :re="^Linux"
 Results: play videos matched by a regex.
-Example: valid title: "Linux video"
+Example: matches title: "Linux video"
 
 Command: :regex="linux.*part \\d+/\\d+"
-Example: valid title: "Introduction to Linux (part 1/4)"
+Example: matches title: "Introduction to Linux (part 1/4)"
 
 Command: :anp 1 2 3
 Results: play the first three videos from every page.
@@ -1096,6 +1095,20 @@ sub apply_configuration {
             if (not defined($set_value) or $set_value ne $value) {
                 warn "\n[!] Invalid value <$value> for option <$option_name>\n";
             }
+        }
+    }
+
+    if (defined $opt->{category_id}) {
+
+        my $str      = delete $opt->{category_id};
+        my $category = extract_category($str);
+
+        if (ref($category) eq 'HASH') {
+            say ":: Category selected: $category->{snippet}{title}" if $yv_obj->get_debug;
+            $yv_obj->set_videoCategoryId($category->{id});
+        }
+        else {
+            warn_invalid('category', $str);
         }
     }
 
@@ -1279,22 +1292,19 @@ sub apply_configuration {
 
     if (defined $opt->{trending}) {
 
-        # TODO: implement supports for trending, by searching for an empty string
-        #       in a specific category (name or ID, if given),
-        #       videos published within several (2 or 3) days (maybe add config-option for this?).
-        #       Also support the `--within=s` option.
+        my $str      = delete $opt->{trending};
+        my $category = extract_category($str);
+        my $cat_id   = undef;
 
-        # Implementation idea:
-        #   Create a function to select a category by category name.
-        #   Use this function also for the `--category=s` option.
-        #   Support category IDs as well.
+        if (ref($category) eq 'HASH') {
+            say ":: Category selected: $category->{snippet}{title}" if $yv_obj->get_debug;
+            $cat_id = $category->{id};
+        }
+        elsif ($str) {
+            warn_invalid('category', $str);
+        }
 
-        my $str = delete $opt->{trending};
-        state $categories = $yv_obj->video_categories;
-
-        #use Data::Dump qw(pp);
-        #pp $categories;
-        #exit;
+        print_videos($yv_obj->trending_videos_from_category($cat_id));
     }
 
     if (defined $opt->{subscriptions}) {
@@ -1486,7 +1496,7 @@ sub parse_arguments {
         'http_proxy|http-proxy|proxy=s' => \$opt{http_proxy},
 
         'catlang|cl|hl=s'        => \$opt{hl},
-        'category|cat-id|cat=i'  => \$opt{videoCategoryId},
+        'category|cat-id|cat=s'  => \$opt{category_id},
         'r|region|region-code=s' => \$opt{regionCode},
 
         'orderby|order|order-by=s' => \$opt{order},
@@ -1658,6 +1668,33 @@ sub get_valid_playlist_id {
     }
 
     return $id;
+}
+
+sub extract_category {
+    my ($str) = @_;
+
+    $str || return;
+
+    state $results = $yv_obj->video_categories;
+    return if ref($results) ne 'HASH';
+    my $categories = $results->{items};
+    return if ref($categories) ne 'ARRAY';
+
+    my $str_re = qr/\Q$str\E/i;
+
+    foreach my $category (@$categories) {
+        if ($str eq $category->{id}) {
+            return $category;
+        }
+    }
+
+    foreach my $category (@$categories) {
+        if ($yv_utils->get_title($category) =~ /$str_re/) {
+            return $category;
+        }
+    }
+
+    return;
 }
 
 sub extract_channel_id {

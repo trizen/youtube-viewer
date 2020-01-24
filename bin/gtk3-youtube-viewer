@@ -1756,7 +1756,7 @@ sub append_categories {
     foreach my $category (@{$categories->{items}}) {
 
         # Ignore nonassignable categories
-        #$category->{snippet}{assignable} || next;
+        $category->{snippet}{assignable} || next;
 
         my $label = $yv_utils->get_title($category);
         my $id    = $category->{id};
