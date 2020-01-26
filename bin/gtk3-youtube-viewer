@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 24 January 2020
+#  Latest edit on: 26 January 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -243,6 +243,7 @@ my %CONFIG = (
     history                => 1,
     history_limit          => 1_000_000,
     history_file           => $history_file,
+    recent_history         => 10,
     save_titles_to_history => 0,
     entry_completion_limit => 10,
 );
@@ -357,6 +358,7 @@ my %objects = (
     'feeds_title'            => \my $feeds_title,
     'channel_name_save'      => \my $save_channel_name_entry,
     'channel_id_save'        => \my $save_channel_id_entry,
+    'main-menu-history-menu' => \my $history_menu,
 );
 
 while (my ($key, $value) = each %objects) {
@@ -614,17 +616,27 @@ if (not -d $CONFIG{cache_dir}) {
 
         # Slurp the history file into memory
         my @history;
+        my @search_history;
+
         if (open(my $fh, '<:utf8', $CONFIG{history_file})) {
-            while (defined(my $line = <$fh>)) {
-
-                chomp $line;
-
-                if (not exists $history{lc($line)}) {
-                    undef $history{lc($line)};
-                    push @history, $line;
-                }
-            }
+            chomp(@history = <$fh>);
         }
+
+        foreach my $line (@history) {
+            if (substr($line, 0, 1) eq '~') {
+                $line = substr($line, 1);
+            }
+            else {
+                unshift @search_history, $line;
+            }
+            undef $history{lc($line)};
+        }
+
+        require List::Util;
+
+        # Keep only the most recent non-duplicated entries
+        @history        = reverse(List::Util::uniq(reverse(@history)));
+        @search_history = List::Util::uniq(@search_history);
 
         # Set entry completion
         $completion = Gtk3::EntryCompletion->new;
@@ -635,7 +647,40 @@ if (not -d $CONFIG{cache_dir}) {
         # Create the completion dictionary
         update_history_dict(@history);
 
-        # Trim the history file to a random number of entries when the limit has been reached
+        my $recent_top = $CONFIG{recent_history};
+
+        if ($recent_top > scalar(@search_history)) {
+            $recent_top = scalar(@search_history);
+        }
+
+        my @recent_history = grep { defined($_) } @search_history[0 .. $recent_top - 1];
+
+        if (not @recent_history or $recent_top <= 0) {
+            $gui->get_object('main-menu-history')->set_visible(0);
+        }
+
+        foreach my $text (@recent_history) {
+
+            my $label = $text;
+            if (length($label) > 30) {
+                $label = substr($label, 0, 30) . '...';
+            }
+
+            my $item = 'Gtk3::ImageMenuItem'->new($label);
+            $item->signal_connect(
+                activate => sub {
+                    $search_entry->set_text($text);
+                    $search_entry->set_position(length($text));
+                    search();
+                }
+            );
+            $item->set_property(tooltip_text => $text);
+            $item->set_image('Gtk3::Image'->new_from_icon_name("history-view", q{menu}));
+            $item->show;
+            $history_menu->append($item);
+        }
+
+        # Keep only the most recent half of the history file when the limit has been reached
         if ($CONFIG{history_limit} > 0 and $#history >= $CONFIG{history_limit}) {
 
             # Try to create a backup, first
@@ -655,12 +700,19 @@ if (not -d $CONFIG{cache_dir}) {
     }
 
     sub append_to_history {
-        my ($text) = @_;
+        my ($text, $is_search_keyword) = @_;
 
         my $str = join(' ', split(' ', $text));
-        if (not exists $history{lc($str)}) {
+
+        if ($is_search_keyword or not exists $history{lc($str)}) {
             if (set_history()) {
-                say {$history_fh} $str;
+
+                if ($is_search_keyword) {
+                    say {$history_fh} $str;
+                }
+                else {
+                    say {$history_fh} "~" . $str;
+                }
             }
             undef $history{$str};
             update_history_dict($str);
@@ -2235,7 +2287,7 @@ sub search {
 
     # Remember the input text when "history" is enabled
     if ($CONFIG{history}) {
-        append_to_history($keywords);
+        append_to_history($keywords, 1);
     }
 
     spin_published_within_changed();
@@ -2542,7 +2594,7 @@ sub display_results {
 
             # Store the video title to history (when `save_titles_to_history` is true)
             if ($CONFIG{save_titles_to_history}) {
-                append_to_history($yv_utils->get_title($item));
+                append_to_history($yv_utils->get_title($item), 0);
             }
 
             add_video_entry($item);

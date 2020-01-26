@@ -388,6 +388,19 @@ Author: Trizen https://github.com/trizen
               </object>
             </child>
             <child>
+              <object class="GtkMenuItem" id="main-menu-history">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">History</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="main-menu-history-menu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
               <object class="GtkMenuItem" id="menuitem4">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
