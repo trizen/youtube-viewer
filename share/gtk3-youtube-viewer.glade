@@ -2287,11 +2287,12 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
               <object class="GtkLabel" id="video_title_label">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Details window label</property>
                 <property name="use_markup">True</property>
-                <property name="use_underline">True</property>
                 <property name="justify">fill</property>
                 <property name="selectable">True</property>
                 <property name="ellipsize">end</property>
+                <property name="track_visited_links">False</property>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -2705,9 +2706,11 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
           <object class="GtkLabel" id="feeds_title">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="label" translatable="yes">Comments window</property>
+            <property name="label" translatable="yes">Comments window label</property>
             <property name="use_markup">True</property>
+            <property name="justify">fill</property>
             <property name="selectable">True</property>
+            <property name="ellipsize">end</property>
             <property name="track_visited_links">False</property>
           </object>
           <packing>
