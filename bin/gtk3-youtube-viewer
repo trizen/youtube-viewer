@@ -28,7 +28,7 @@ no warnings 'once';
 my $DEVEL;    # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel only
 
-use WWW::YoutubeViewer v3.7.1;
+use WWW::YoutubeViewer v3.7.2;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use Gtk3 qw(-init);

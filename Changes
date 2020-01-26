@@ -5,6 +5,8 @@
 #   https://github.com/trizen/youtube-viewer/releases
 
 [CHANGELOG]
+- Added support for restoring the previous session. (Gtk3)                                   - NEW (v3.7.2)
+- Added the "History" menu to list the previous 10 searches. (Gtk3)                          - NEW (v3.7.2)
 - Added the `--trending:s` option, which displays popular videos from a given category.      - NEW (v3.7.1)
 - Added support for showing the most popular videos from a given channel.                    - NEW (v3.7.0)
 - Added support for resuming an interrupted download.                                        - NEW (v3.7.0)
