@@ -3413,9 +3413,11 @@ sub save_session {
 
     my @results = @{$ResultsHistory{results}};
 
+    require List::Util;
+
     my $max   = $CONFIG{remember_session_max};
-    my @left  = ($curr >= $max) ? @results[$curr - $max .. $curr - 1] : @results[0 .. $curr - 1];
-    my @right = ($curr + $max <= $#results) ? @results[$curr + 1 .. $curr + $max] : @results[$curr + 1 .. $#results];
+    my @left  = @results[List::Util::max(0, $curr - $max) .. $curr - 1];
+    my @right = @results[$curr + 1 .. List::Util::min($#results, $curr + $max)];
 
     if ($yv_obj->get_debug) {
         say "Session total: ", scalar(@results);
