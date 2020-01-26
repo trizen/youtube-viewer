@@ -3588,7 +3588,17 @@ if ($CONFIG{remember_session} and -f $session_file) {
         %ResultsHistory = %{$session->{history}};
         $search_entry->set_text($session->{keyword});
         $search_entry->set_position(length($session->{keyword}));
-        display_relative_results($ResultsHistory{current}) if !@ARGV;
+
+        if (not @ARGV) {
+            Glib::Idle->add(
+                sub {
+                    display_relative_results($ResultsHistory{current});
+                    return 0;
+                },
+                [],
+                Glib::G_PRIORITY_DEFAULT_IDLE
+                           );
+        }
     }
     else {
         warn "[!] Failed to load previous session...\n";
