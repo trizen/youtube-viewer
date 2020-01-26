@@ -243,6 +243,9 @@ my %CONFIG = (
     history                => 1,
     history_limit          => 1_000_000,
     history_file           => $history_file,
+    recent_history         => 10,
+    remember_session       => 1,
+    remember_session_max   => 10,
     save_titles_to_history => 0,
     entry_completion_limit => 10,
 );
