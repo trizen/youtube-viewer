@@ -87,6 +87,7 @@ my $config_dir          = catdir($xdg_config_home, 'youtube-viewer');
 my $config_file         = catfile($config_dir, "gtk-youtube-viewer.conf");
 my $youtube_users_file  = catfile($config_dir, 'youtube_users.txt');
 my $history_file        = catfile($config_dir, 'history.txt');
+my $session_file        = catfile($config_dir, 'session.dat');
 my $authentication_file = catfile($config_dir, 'reg.dat');
 
 # Create the configuration directory
@@ -244,6 +245,8 @@ my %CONFIG = (
     history_limit          => 1_000_000,
     history_file           => $history_file,
     recent_history         => 10,
+    remember_session       => 1,
+    remember_session_max   => 10,
     save_titles_to_history => 0,
     entry_completion_limit => 10,
 );
@@ -3402,6 +3405,37 @@ sub display_comments {
     return 1;
 }
 
+sub save_session {
+    $CONFIG{remember_session} || return;
+
+    my $curr        = $ResultsHistory{current};
+    my $curr_result = $ResultsHistory{results}[$curr] // return;
+
+    my @results = @{$ResultsHistory{results}};
+
+    my $max   = $CONFIG{remember_session_max};
+    my @left  = ($curr >= $max) ? @results[$curr - $max .. $curr - 1] : @results[0 .. $curr - 1];
+    my @right = ($curr + $max <= $#results) ? @results[$curr + 1 .. $curr + $max] : @results[$curr + 1 .. $#results];
+
+    if ($yv_obj->get_debug) {
+        say "Session total: ", scalar(@results);
+        say "Session left : ", scalar(@left);
+        say "Session right: ", scalar(@right);
+    }
+
+    $ResultsHistory{current} = $#left + 1;
+    $ResultsHistory{results} = [@left, $curr_result, @right];
+
+    require Storable;
+    Storable::store(
+                    {
+                     keyword => $search_entry->get_text,
+                     history => \%ResultsHistory,
+                    },
+                    $session_file
+                   );
+}
+
 sub add_results_to_history {
     my ($results) = @_;
     my $results_copy = $results;
@@ -3536,11 +3570,29 @@ sub on_mainw_destroy {
     get_main_window_size();
     dump_configuration();
     save_usernames_to_file();
+    save_session();
 
     'Gtk3'->main_quit;
 }
 
 $notebook->set_current_page($CONFIG{default_notebook_page});
+
+if ($CONFIG{remember_session} and -f $session_file) {
+
+    require Storable;
+    my $session = eval { Storable::retrieve($session_file) };
+
+    if (ref($session) eq 'HASH') {
+        %ResultsHistory = %{$session->{history}};
+        $search_entry->set_text($session->{keyword});
+        $search_entry->set_position(length($session->{keyword}));
+        display_relative_results($ResultsHistory{current}) if !@ARGV;
+    }
+    else {
+        warn "[!] Failed to load previous session...\n";
+        warn "[!] Reason: $@\n" if $@;
+    }
+}
 
 if (@ARGV) {
     my $text = join(' ', @ARGV);
