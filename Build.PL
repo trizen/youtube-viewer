@@ -74,8 +74,8 @@ my $builder = Module::Build->new(
         ? (
            'Gtk3'           => 0,
            'File::ShareDir' => 0,
-           'Memoize'        => 0,
            'Storable'       => 0,
+           'Digest::MD5'    => 0,
            'List::Util'     => 1.43,
           )
         : (),
