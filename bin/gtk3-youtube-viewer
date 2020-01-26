@@ -2442,13 +2442,20 @@ sub determine_image_format {
     return undef;
 }
 
-sub get_pixbuf_thumbnail {
-    my ($url, $xsize, $ysize) = @_;
+require Memoize;
+Memoize::memoize('lwp_get');
+Memoize::memoize('get_pixbuf_thumbnail_from_content');
+
+sub lwp_get {
+    my ($url) = @_;
+    $yv_obj->lwp_get($url, simple => 1);
+}
+
+sub get_pixbuf_thumbnail_from_content {
+    my ($thumbnail, $xsize, $ysize) = @_;
 
     $xsize //= 160;
     $ysize //= 90;
-
-    my $thumbnail = $yv_obj->lwp_get($url, simple => 1);
 
     my $pixbuf;
     if (defined $thumbnail) {
@@ -2472,6 +2479,24 @@ sub get_pixbuf_thumbnail {
     }
 
     $pixbuf //= $default_thumb;
+
+    return $pixbuf;
+}
+
+sub get_pixbuf_thumbnail_from_url {
+    my ($url, $xsize, $ysize) = @_;
+    my $thumbnail = lwp_get($url);
+    return get_pixbuf_thumbnail_from_content($thumbnail, $xsize, $ysize);
+}
+
+sub get_pixbuf_thumbnail_from_entry {
+    my ($entry) = @_;
+
+    my $thumbnail_url  = $yv_utils->get_thumbnail_url($entry, $CONFIG{thumbnail_type});
+    my $thumbnail_data = ($entry->{_thumbnail_data} ||= lwp_get($thumbnail_url));
+
+    my $square_format = $yv_utils->is_channel($entry) || $yv_utils->is_subscription($entry);
+    my $pixbuf        = get_pixbuf_thumbnail_from_content($thumbnail_data, ($square_format ? (160, 160) : ()));
 
     return $pixbuf;
 }
@@ -2627,10 +2652,7 @@ sub set_thumbnail {
     Glib::Idle->add(
         sub {
             my ($entry, $liststore, $iter) = @{$_[0]};
-
-            my $thumb_url     = $yv_utils->get_thumbnail_url($entry, $CONFIG{thumbnail_type});
-            my $square_format = $yv_utils->is_channel($entry) || $yv_utils->is_subscription($entry);
-            my $pixbuf        = get_pixbuf_thumbnail($thumb_url, ($square_format ? (160, 160) : ()));
+            my $pixbuf = get_pixbuf_thumbnail_from_entry($entry);
             $liststore->set($iter, 1, $pixbuf);
             return 0;
         },
@@ -3545,7 +3567,7 @@ sub set_entry_details {
                         $url =~ s{/\w+\.(\w+)\z}{/mq$nr.$1};
                     }
 
-                    my $pixbuf = get_pixbuf_thumbnail($url, 160, 90);
+                    my $pixbuf = get_pixbuf_thumbnail_from_url($url, 160, 90);
                     $gui->get_object("image$nr")->set_from_pixbuf($pixbuf);
                 }
                 else {
