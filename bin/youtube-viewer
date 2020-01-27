@@ -3472,9 +3472,8 @@ sub print_video_info {
     my $hr = '-' x ($opt{get_term_width} ? get_term_width() : $term_width);
 
     printf(
-           "\n%s %s\n%s\n%s\n%s\n%s",
-           _bold_color('=>>'),
-           'Description',
+           "\n%s\n%s\n%s\n%s\n%s",
+           _bold_color('=> Description'),
            $hr,
            wrap_text(
                      i_tab => q{},
@@ -3482,7 +3481,7 @@ sub print_video_info {
                      text  => [$yv_utils->get_description($video) || 'No description available...']
                     ),
            $hr,
-           _bold_color('* URL: ')
+           _bold_color('=> URL: ')
           );
 
     print STDOUT sprintf($CONFIG{youtube_video_url}, $yv_utils->get_video_id($video));
@@ -3498,6 +3497,7 @@ sub print_video_info {
           (
            ['Channel'    => $yv_utils->get_channel_title($video)],
            ['ChannelID'  => $yv_utils->get_channel_id($video)],
+           ['VideoID'    => $yv_utils->get_video_id($video)],
            ['Category'   => $yv_utils->get_category_name($video)],
            ['Definition' => $yv_utils->get_definition($video)],
            ['Duration'   => $yv_utils->get_time($video)],
