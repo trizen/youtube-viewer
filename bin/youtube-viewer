@@ -859,11 +859,12 @@ sub tricks {
    of videos, inserting ":r" will return back to the playlist results.
    Also, for the previous page, you can insert ':b', but ':r' is faster!
 
- > "6" (quoted) or -V=6 will search for videos with the keyword '6'.
+ > "6" (quoted) will search for videos with the keyword '6'.
 
  > If a stdin option is followed by one or more digits, the equal sign,
    which separates the option from value, can be omitted.
-   For example:
+
+   Example:
         :i2,4  is equivalent with :i=2,4
         :d1-5  is equivalent with :d=1,2,3,4,5
         :c10   is equivalent with :c=10
@@ -873,13 +874,14 @@ sub tricks {
 
  > Space inside the values of STDIN options, can be either quoted
    or backslashed.
-   For example:
+
+   Example:
         :re=video\\ title     ==     :re="video title"
 
- > ":anp" stands for the "Auto Next Page". How do we use it?
-   Well, let's search for some videos. Now, if we'd want to play
+ > ":anp" stands for "Auto Next Page". How do we use it?
+   Well, let's search for some videos. Now, if we want to play
    only the videos matched by a regex, we'd say :re="REGEX".
-   But, what if we'd want to play the videos from the next pages too?
+   But, what if we want to play the videos from the next pages too?
    In this case, ":anp" is your friend. Use it wisely!
 
 -> Special tokens:
@@ -953,28 +955,31 @@ Results: play all the video results (-A)
          -A will include the videos from the next pages as well.
 
 Command: $execname --comments 'https://www.youtube.com/watch?v=U6_8oIPFREY'
-Results: show video comments for a specific video URL or videoID
+Results: show video comments for a specific video URL or videoID.
 
 Command: $execname --results=5 -up=khanacademy -D
-Results: set 5 results,
-         get playlists created by a specific user
-         and print them with details (-D)
+Results: the most recent 5 videos by a specific author (-up), printed with extra details (-D).
 
-Command: $execname --author=UCBerkeley atom
-Results: search only in videos uploaded by a specific author
+Command: $execname --author=MIT atom
+Results: search only in videos by a specific author.
+
+Command: $execname --author=MIT atom --within=2y
+Results: search only in videos by a specific author, published in the last 2 years.
+
+Command: $execname --popular=MIT --within=6m
+Results: show the most popular videos by a specific user, published in the last 6 months.
 
 Command: $execname -S=vsauce
-Results: get the subscriptions for a username
+Results: get the subscriptions for a username.
 
 Command: $execname --page=2 -u=Google
-Results: show latest videos uploaded by Google,
-         starting with the page number 2.
+Results: show latest videos uploaded by Google, starting with the page number 2.
 
 Command: $execname cats --order=viewCount --duration=short
 Results: search for 'cats' videos, ordered by ViewCount and short duration.
 
-Command: $execname --channels russian music
-Results: search for channels.
+Command: $execname --channels math lessons
+Results: search for YouTube channels.
 
 Command: $execname -uf=Google
 Results: show latest videos favorited by a user.
