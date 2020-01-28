@@ -739,7 +739,7 @@ if (not $CONFIG{video_player_selected}) {
         $CONFIG{video_player_selected} = 'mpv';
     }
 }
-elsif ($CONFIG{video_player_selected} =~ /mpv/i) {    # update for mpv 0.31.1 (#290)
+elsif ($CONFIG{video_player_selected} =~ /mpv/i) {    # update for mpv 0.32 (#290)
 #<<<
     my $mpv = $CONFIG{video_players}{$CONFIG{video_player_selected}};
     $mpv->{arg}   =~ s/(--title)\s+(\*TITLE\*)/$1=$2/g;
