@@ -2595,12 +2595,13 @@ sub print_comments {
 
     my $i = 0;
     foreach my $comment (@{$comments}) {
-        my $snippet = (($comment->{snippet} // next)->{topLevelComment} // next)->{snippet};
+        my $snippet     = (($comment->{snippet} // next)->{topLevelComment} // next)->{snippet};
+        my $comment_age = $yv_utils->date_to_age($snippet->{publishedAt});
 
         printf(
-               "\n%s on %s commented:\n%s\n",
+               "\n%s (%s) commented:\n%s\n",
                colored($snippet->{authorDisplayName}, 'bold'),
-               $yv_utils->format_date($snippet->{publishedAt}),
+               ($comment_age =~ /sec|min|hour|day/ ? "$comment_age ago" : $yv_utils->format_date($snippet->{publishedAt})),
                wrap_text(
                          i_tab => q{ } x 3,
                          s_tab => q{ } x 3,
@@ -2610,10 +2611,15 @@ sub print_comments {
 
         if (exists $comment->{replies}) {
             foreach my $reply (reverse @{$comment->{replies}{comments}}) {
+                my $reply_age = $yv_utils->date_to_age($reply->{snippet}{publishedAt});
                 printf(
-                       "\n   %s on %s replied:\n%s\n",
+                       "\n   %s (%s) replied:\n%s\n",
                        colored($reply->{snippet}{authorDisplayName}, 'bold'),
-                       $yv_utils->format_date($reply->{snippet}{publishedAt}),
+                       (
+                        $reply_age =~ /sec|min|hour|day/
+                        ? "$reply_age ago"
+                        : $yv_utils->format_date($reply->{snippet}{publishedAt})
+                       ),
                        wrap_text(
                                  i_tab => q{ } x 6,
                                  s_tab => q{ } x 6,

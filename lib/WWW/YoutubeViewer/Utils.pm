@@ -176,30 +176,41 @@ sub date_to_age {
     $year  += 1900;
     $month += 1;
 
-    if ($year == $+{year}) {
-        if ($month == $+{month}) {
-            if ($day == $+{day}) {
-                if ($hour == $+{hour}) {
-                    if ($min == $+{min}) {
-                        return join(' ', $sec - $+{sec}, 'seconds');
+    my $lambda = sub {
+
+        if ($year == $+{year}) {
+            if ($month == $+{month}) {
+                if ($day == $+{day}) {
+                    if ($hour == $+{hour}) {
+                        if ($min == $+{min}) {
+                            return join(' ', $sec - $+{sec}, 'seconds');
+                        }
+                        return join(' ', $min - $+{min}, 'minutes');
                     }
-                    return join(' ', $min - $+{min}, 'minutes');
+                    return join(' ', $hour - $+{hour}, 'hours');
                 }
-                return join(' ', $hour - $+{hour}, 'hours');
+                return join(' ', $day - $+{day}, 'days');
             }
-            return join(' ', $day - $+{day}, 'days');
+            return join(' ', $month - $+{month}, 'months');
         }
-        return join(' ', $month - $+{month}, 'months');
+
+        if ($year - $+{year} == 1) {
+            my $month_diff = $+{month} - $month;
+            if ($month_diff > 0) {
+                return join(' ', 12 - $month_diff, 'months');
+            }
+        }
+
+        return join(' ', $year - $+{year}, 'years');
+    };
+
+    my $age = $lambda->();
+
+    if ($age =~ /^1\s/) {    # singular mode
+        $age =~ s/s\z//;
     }
 
-    if ($year - $+{year} == 1) {
-        my $month_diff = $+{month} - $month;
-        if ($month_diff > 0) {
-            return join(' ', 12 - $month_diff, 'months');
-        }
-    }
-
-    return join(' ', $year - $+{year}, 'years');
+    return $age;
 }
 
 =head2 has_entries($result)
@@ -494,14 +505,7 @@ sub get_publication_date {
 
 sub get_publication_age {
     my ($self, $info) = @_;
-
-    my $age = $self->date_to_age($info->{snippet}{publishedAt});
-
-    if ($age =~ /^1\s/) {    # singular mode
-        $age =~ s/s\z//;
-    }
-
-    return $age;
+    $self->date_to_age($info->{snippet}{publishedAt});
 }
 
 sub get_publication_age_approx {
@@ -509,7 +513,7 @@ sub get_publication_age_approx {
 
     my $age = $self->date_to_age($info->{snippet}{publishedAt});
 
-    if ($age =~ /hour|minute|second/) {
+    if ($age =~ /hour|min|sec/) {
         return "0d";
     }
 

@@ -3384,9 +3384,9 @@ sub display_comments {
     my $comments = $res->{items} // [];
 
     foreach my $comment (@{$comments}) {
-        my $snippet = (($comment->{snippet} // next)->{topLevelComment} // next)->{snippet};
-
-        my $iter = $feeds_liststore->append;
+        my $snippet     = (($comment->{snippet} // next)->{topLevelComment} // next)->{snippet};
+        my $iter        = $feeds_liststore->append;
+        my $comment_age = $yv_utils->date_to_age($snippet->{publishedAt});
 
         $feeds_liststore->set(
                               $iter, 0,
@@ -3394,8 +3394,12 @@ sub display_comments {
                                               "<big><b>"
                                             . encode_entities($snippet->{authorDisplayName})
                                             . "</b> ("
-                                            . $yv_utils->format_date($snippet->{publishedAt})
-                                            . ") said:</big>\n"
+                                            . (
+                                               $comment_age =~ /sec|min|hour|day/
+                                               ? "$comment_age ago"
+                                               : $yv_utils->format_date($snippet->{publishedAt})
+                                              )
+                                            . ") commented:</big>\n"
                                             . encode_entities(
                                                               wrap_text(
                                                                        i_tab => "\t",
@@ -3412,7 +3416,8 @@ sub display_comments {
         if (exists $comment->{replies}) {
             foreach my $reply (reverse @{$comment->{replies}{comments}}) {
 
-                my $iter = $feeds_liststore->append;
+                my $iter      = $feeds_liststore->append;
+                my $reply_age = $yv_utils->date_to_age($reply->{snippet}{publishedAt});
 
                 $feeds_liststore->set(
                                       $iter, 0,
@@ -3420,7 +3425,11 @@ sub display_comments {
                                                       "\t<big><b>"
                                                     . encode_entities($reply->{snippet}{authorDisplayName})
                                                     . "</b> ("
-                                                    . $yv_utils->format_date($reply->{snippet}{publishedAt})
+                                                    . (
+                                                       $reply_age =~ /sec|min|hour|day/
+                                                       ? "$reply_age ago"
+                                                       : $yv_utils->format_date($reply->{snippet}{publishedAt})
+                                                      )
                                                     . ") replied:</big>\n"
                                                     . encode_entities(
                                                              wrap_text(
