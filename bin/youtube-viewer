@@ -2601,7 +2601,11 @@ sub print_comments {
         printf(
                "\n%s (%s) commented:\n%s\n",
                colored($snippet->{authorDisplayName}, 'bold'),
-               ($comment_age =~ /sec|min|hour|day/ ? "$comment_age ago" : $yv_utils->format_date($snippet->{publishedAt})),
+               (
+                $comment_age =~ /sec|min|hour|day/
+                ? "$comment_age ago"
+                : $yv_utils->format_date($snippet->{publishedAt})
+               ),
                wrap_text(
                          i_tab => q{ } x 3,
                          s_tab => q{ } x 3,

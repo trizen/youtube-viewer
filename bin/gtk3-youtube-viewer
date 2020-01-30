@@ -3385,8 +3385,9 @@ sub display_comments {
 
     foreach my $comment (@{$comments}) {
         my $snippet     = (($comment->{snippet} // next)->{topLevelComment} // next)->{snippet};
-        my $iter        = $feeds_liststore->append;
         my $comment_age = $yv_utils->date_to_age($snippet->{publishedAt});
+
+        my $iter = $feeds_liststore->append;
 
         $feeds_liststore->set(
                               $iter, 0,
