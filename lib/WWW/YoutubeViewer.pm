@@ -542,7 +542,7 @@ sub _extract_from_ytdl {
                 my $entry = {
                              itag => $format->{format_id},
                              url  => $format->{url},
-                             type => ((($format->{format_note} // '') eq 'DASH audio') ? 'audio/' : 'video/') . $format->{ext},
+                             type => ((($format->{format} // '') =~ /audio only/i) ? 'audio/' : 'video/') . $format->{ext},
                             };
 
                 push @formats, $entry;
