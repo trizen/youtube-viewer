@@ -3674,6 +3674,7 @@ if ($CONFIG{remember_session} and -f $session_file) {
         %ResultsHistory = %{$session->{history}};
         $search_entry->set_text($session->{keyword});
         $search_entry->set_position(length($session->{keyword}));
+        $search_entry->select_region(0, -1);
 
         if (not @ARGV) {
             Glib::Idle->add(
