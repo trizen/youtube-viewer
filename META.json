@@ -4,7 +4,7 @@
       "Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4229",
+   "generated_by" : "Module::Build version 0.4231",
    "license" : [
       "perl_5"
    ],

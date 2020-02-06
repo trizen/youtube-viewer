@@ -2835,8 +2835,8 @@ sub add_channel_entry {
                     2 => $type_label,
                     3 => $channel_id,
                     4 => encode_entities($description),
-                    7 => 'channel',
                     6 => $channel_id,
+                    7 => 'channel',
                    );
 
     if ($CONFIG{show_thumbs}) {

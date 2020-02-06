@@ -413,6 +413,7 @@ STDIN_HELP
 EOD
 
     sub dump_configuration {
+        my ($config_file) = @_;
         require Data::Dump;
         open my $config_fh, '>', $config_file
           or do { warn "[!] Can't open '${config_file}' for write: $!"; return };
@@ -422,22 +423,25 @@ EOD
     }
 }
 
-if (not -e $config_file or -z _ or $opt{reconfigure}) {
-    dump_configuration();
-}
-
 our $CONFIG;
-require $config_file;    # Load the configuration file
 
-if (ref $CONFIG ne 'HASH') {
-    die "[ERROR] Invalid configuration file!\n\t\$CONFIG is not an HASH ref!";
-}
+sub load_config {
+    my ($config_file) = @_;
 
-# Get valid config keys
-my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
-@CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
+    if (not -e $config_file or -z _ or $opt{reconfigure}) {
+        dump_configuration($config_file);
+    }
 
-{
+    require $config_file;    # Load the configuration file
+
+    if (ref $CONFIG ne 'HASH') {
+        die "[ERROR] Invalid configuration file!\n\t\$CONFIG is not an HASH ref!";
+    }
+
+    # Get valid config keys
+    my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
+    @CONFIG{@valid_keys} = @{$CONFIG}{@valid_keys};
+
     my $update_config = 0;
 
     # Define the cache directory
@@ -526,17 +530,19 @@ my @valid_keys = grep { exists $CONFIG{$_} } keys %{$CONFIG};
         }
     }
 
-    dump_configuration() if $update_config;
+    dump_configuration($config_file) if $update_config;
+
+    # Create the cache directory (if needed)
+    if (not -d $CONFIG{cache_dir}) {
+        require File::Path;
+        File::Path::make_path($CONFIG{cache_dir})
+          or warn "[!] Can't create dir `$CONFIG{cache_dir}': $!";
+    }
+
+    @opt{keys %CONFIG} = values(%CONFIG);
 }
 
-# Create the cache directory (if needed)
-if (not -d $CONFIG{cache_dir}) {
-    require File::Path;
-    File::Path::make_path($CONFIG{cache_dir})
-      or warn "[!] Can't create dir `$CONFIG{cache_dir}': $!";
-}
-
-@opt{keys %CONFIG} = values(%CONFIG);
+load_config($config_file);
 
 if ($opt{remember_watched}) {
     if (-f $opt{watched_file}) {
@@ -768,6 +774,7 @@ usage: $execname [options] ([url] | [keywords])
    --captions-dir=s     : directory where to save the .srt files
 
  * Config
+   --config=s           : configuration file
    --update-config!     : update the configuration file
 
  * Output
@@ -1447,6 +1454,8 @@ sub parse_arguments {
         Getopt::Long::Configure('no_ignore_case');
     };
 
+    my $orig_config_file = "$config_file";
+
     Getopt::Long::GetOptions(
 
         # Main options
@@ -1455,7 +1464,9 @@ sub parse_arguments {
         'stdin-help|shelp|sh|H' => \&stdin_help,
         'tricks|tips|T'         => \&tricks,
         'version|v'             => \&version,
-        'update-config!'        => \&dump_configuration,
+
+        'config=s'       => \$config_file,
+        'update-config!' => sub { dump_configuration($config_file) },
 
         # Resolutions
         '240p|2'  => sub { $opt{resolution} = 240 },
@@ -1609,6 +1620,11 @@ sub parse_arguments {
         'fat32safe!'                     => \$opt{fat32safe},
       )
       or warn "[!] Error in command-line arguments!\n";
+
+    if ($config_file ne $orig_config_file) {    # load the config file specified with `--config=s`
+        ##say ":: Loading config: $config_file";
+        load_config($config_file);
+    }
 
     apply_configuration(\%opt, $keywords);
 }
@@ -3069,7 +3085,7 @@ sub download_from_url {
         if (defined(my $wget_path = which_command('wget'))) {
             $CONFIG{wget_cmd}           = $wget_path;
             $CONFIG{download_with_wget} = 1;
-            dump_configuration();
+            dump_configuration($config_file);
         }
         else {
             warn colored("[!] Please install `wget` and try again...", 'bold red') . "\n\n";
