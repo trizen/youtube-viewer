@@ -53,6 +53,7 @@ sub get_itags {
              315,    # webm HFR (v)
              272,    # webm (v)
              313,    # webm (v)
+             401,    # av1 (v)
             ],
         ],
 
@@ -61,6 +62,7 @@ sub get_itags {
              308,    # webm HFR (v)
              271,    # webm (v)
              264,    # mp4 (v)
+             400,    # av1 (v)
             ],
         ],
 
@@ -72,6 +74,7 @@ sub get_itags {
             37,      # mp4 (v-a)
             [248,    # webm (v)
              137,    # mp4 (v)
+             399,    # av1 (v)
             ],
             301,     # mp4 (live) (v-a)
             96,      # ts (live) (v-a)
@@ -85,6 +88,7 @@ sub get_itags {
             22,      # mp4 (v-a)
             [247,    # webm (v)
              136,    # mp4 (v)
+             398,    # av1 (v)
             ],
             300,     # mp4 (live) (v-a)
             120,     # flv (live) (v-a)
@@ -96,6 +100,7 @@ sub get_itags {
             35,      # flv (v-a)
             [244,    # webm (v)
              135,    # mp4 (v)
+             397,    # av1 (v)
             ],
             94,      # mp4 (live) (v-a)
         ],
@@ -103,11 +108,12 @@ sub get_itags {
         '360' => [
             43,      # webm (v-a)
             34,      # flv (v-a)
-            18,      # mp4 (v-a)
             [243,    # webm (v)
              134,    # mp4 (v)
+             396,    # av1 (v)
             ],
             93,      # mp4 (live) (v-a)
+            18,      # mp4 (v-a)
         ],
 
         '240' => [
@@ -117,6 +123,7 @@ sub get_itags {
             13,      # 3gp (v-a)
             [242,    # webm (v)
              133,    # mp4 (v)
+             395,    # av1 (v)
             ],
             92,      # mp4 (live) (v-a)
             132,     # ts (live) (v-a)
@@ -126,6 +133,7 @@ sub get_itags {
             17,      # 3gp (v-a)
             [278,    # webm (v)
              160,    # mp4 (v)
+             394,    # av1 (v)
             ],
             91,      # mp4 (live) (v-a)
             151,     # ts (live) (v-a)
