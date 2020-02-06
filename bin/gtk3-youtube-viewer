@@ -2685,6 +2685,8 @@ sub set_entry_tooltip {
         $description = substr($description, 0, $CONFIG{tooltip_max_len}) . '...';
     }
 
+    $description =~ s/(?:\R\s*\R)+/\n\n/g;    # replace 2+ consecutive newlines with "\n\n"
+
     $liststore->set($iter, [9], ["<b>" . encode_entities($title) . "</b>" . "\n\n" . encode_entities($description)]);
 }
 
