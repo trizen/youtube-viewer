@@ -852,7 +852,18 @@ sub get_streaming_urls {
         my @mp4_urls;
         my @audio_urls;
 
+        require WWW::YoutubeViewer::Itags;
+
+        my %audio_itags;
+        @audio_itags{@{WWW::YoutubeViewer::Itags->get_itags->{audio}}} = ();
+
         foreach my $url (@streaming_urls) {
+
+            if (exists($audio_itags{$url->{itag}})) {
+                push @audio_urls, $url;
+                next;
+            }
+
             if ($url->{type} =~ /\bvideo\b/) {
                 if ($url->{type} =~ /\bmp4\b/) {
                     push @mp4_urls, $url;
