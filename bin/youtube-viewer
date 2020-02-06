@@ -1454,6 +1454,7 @@ sub parse_arguments {
         Getopt::Long::Configure('no_ignore_case');
     };
 
+    my %orig_opt         = %opt;
     my $orig_config_file = "$config_file";
 
     Getopt::Long::GetOptions(
@@ -1623,7 +1624,17 @@ sub parse_arguments {
 
     if ($config_file ne $orig_config_file) {    # load the config file specified with `--config=s`
         ##say ":: Loading config: $config_file";
+
+        my %new_opt = %opt;
         load_config($config_file);
+
+        foreach my $key (keys %new_opt) {
+            if (    defined($new_opt{$key})
+                and defined($orig_opt{$key})
+                and $new_opt{$key} ne $orig_opt{$key}) {
+                $opt{$key} = $new_opt{$key};
+            }
+        }
     }
 
     apply_configuration(\%opt, $keywords);
