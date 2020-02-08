@@ -192,6 +192,7 @@ my %CONFIG = (
     dash_mp4_audio  => 1,
     dash_segmented  => 1,         # may load slow
     prefer_mp4      => 0,
+    prefer_av1      => 0,
     maxResults      => 10,
     resolution      => 'best',
     videoDimension  => undef,
@@ -827,6 +828,9 @@ sub apply_configuration {
 
     # Prefer MP4 over WEBM
     $yv_obj->set_prefer_mp4($CONFIG{prefer_mp4} ? 1 : 0);
+
+    # Prefer AV1 over WEBM
+    $yv_obj->set_prefer_av1($CONFIG{prefer_av1} ? 1 : 0);
 
     # Set the "More options" expander
     $more_options_expander->set_expanded($CONFIG{active_more_options_expander});

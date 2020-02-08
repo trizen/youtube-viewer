@@ -248,6 +248,7 @@ my %CONFIG = (
     colors               => $constant{win32} ^ 1,
     skip_if_exists       => 1,
     prefer_mp4           => 0,
+    prefer_av1           => 0,
     fat32safe            => $constant{win32},
     fullscreen           => 0,
     results_with_details => 0,
@@ -767,6 +768,7 @@ usage: $execname [options] ([url] | [keywords])
        --highlight!      : remember and highlight selected videos
        --confirm!        : show a confirmation message after each play
        --prefer-mp4!     : prefer videos in MP4 format, instead of WEBM
+       --prefer-av1!     : prefer videos in AV1 format, instead of WEBM
 
  * Closed-captions
    --get-captions!      : download closed-captions for videos
@@ -1126,6 +1128,10 @@ sub apply_configuration {
 
     if (defined $opt->{prefer_mp4}) {
         $yv_obj->set_prefer_mp4(delete($opt->{prefer_mp4}) ? 1 : 0);
+    }
+
+    if (defined $opt->{prefer_av1}) {
+        $yv_obj->set_prefer_av1(delete($opt->{prefer_av1}) ? 1 : 0);
     }
 
     if (defined $opt->{hd}) {
@@ -1577,7 +1583,9 @@ sub parse_arguments {
         'fullscreen|fs|f!'      => \$opt{fullscreen},
         'dash!'                 => \$opt{dash_support},
         'confirm!'              => \$opt{confirm},
-        'prefer-mp4!'           => \$opt{prefer_mp4},
+
+        'prefer-mp4!' => \$opt{prefer_mp4},
+        'prefer-av1!' => \$opt{prefer_av1},
 
         'custom-layout!'         => \$opt{custom_layout},
         'custom-layout-format=s' => \$opt{custom_layout_format},

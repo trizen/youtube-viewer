@@ -83,6 +83,7 @@ my %valid_options = (
     lwp_env_proxy => {valid => [1, 0], default => 1},
     escape_utf8   => {valid => [1, 0], default => 0},
     prefer_mp4    => {valid => [1, 0], default => 0},
+    prefer_av1    => {valid => [1, 0], default => 0},
 
     use_invidious_api => {valid => [1, 0], default => 0},
 
@@ -847,9 +848,9 @@ sub get_streaming_urls {
         @streaming_urls = $self->_fallback_extract_urls($videoID);
     }
 
-    if ($self->get_prefer_mp4) {
+    if ($self->get_prefer_mp4 or $self->get_prefer_av1) {
 
-        my @mp4_urls;
+        my @video_urls;
         my @audio_urls;
 
         require WWW::YoutubeViewer::Itags;
@@ -864,9 +865,12 @@ sub get_streaming_urls {
                 next;
             }
 
-            if ($url->{type} =~ /\bvideo\b/) {
-                if ($url->{type} =~ /\bmp4\b/) {
-                    push @mp4_urls, $url;
+            if ($url->{type} =~ /\bvideo\b/i) {
+                if ($self->get_prefer_mp4 and $url->{type} =~ /\bmp4\b/i) {
+                    push @video_urls, $url;
+                }
+                elsif ($self->get_prefer_av1 and $url->{type} =~ /\bav[0-9]+\b/i) {
+                    push @video_urls, $url;
                 }
             }
             else {
@@ -874,8 +878,8 @@ sub get_streaming_urls {
             }
         }
 
-        if (@mp4_urls) {
-            @streaming_urls = (@mp4_urls, @audio_urls);
+        if (@video_urls) {
+            @streaming_urls = (@video_urls, @audio_urls);
         }
     }
 
