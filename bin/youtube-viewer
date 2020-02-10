@@ -668,7 +668,7 @@ usage: $execname [options] ([url] | [keywords])
                         use the `--within=s` option to restrict the results
 
  * Channels
-   -sc --channels     : search for Youtube channels
+   -sc --channels     : search for YouTube channels
 
 * Comments
    --comments=s         : display comments for a video by ID or URL
@@ -677,14 +677,13 @@ usage: $execname [options] ([url] | [keywords])
 
  * Filtering
    --author=s           : search in videos uploaded by a specific user
-   --channel-id=s       : search in videos belonging to a specific channel ID
    --duration=s         : filter search results based on video length
-                          valid values are: short, medium, long
+                          valid values are: short medium long
    --caption=s          : only videos with/without closed captions
-                          valid values are: any, closedCaption, none
+                          valid values are: any closedCaption none
    --category=s         : search only for videos in a specific category name/ID
    --safe-search=s      : YouTube will skip restricted videos for your location
-                          valid values are: none, moderate, strict
+                          valid values are: none moderate strict
    --order=s            : order the results using a specific sorting method
                           valid values: date rating viewCount title videoCount
    --within=s           : show only videos uploaded within the specified time
@@ -1532,7 +1531,6 @@ sub parse_arguments {
         'like=s'                     => \$opt{like_video},
         'dislike=s'                  => \$opt{dislike_video},
         'author=s'                   => \$opt{author},
-        'channel-id=s'               => \$opt{channelId},
         'all|A|play-all!'            => \$opt{play_all},
         'backwards|B!'               => \$opt{play_backwards},
         'input|std-input=s'          => \$opt{std_input},
