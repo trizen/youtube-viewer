@@ -74,7 +74,7 @@ no warnings 'once';
 my $DEVEL;    # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
-use WWW::YoutubeViewer v3.7.3;
+use WWW::YoutubeViewer v3.7.4;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
@@ -612,7 +612,7 @@ my $yv_obj = WWW::YoutubeViewer->new(
 
 if (-f $api_file) {
 
-    open(my $fh, '<', $api_file) or die "Can't open file <<$api_file>> for reading: $!\n";
+    open(my $fh, '<', $api_file) or die "[!] Can't open file <<$api_file>> for reading: $!\n";
     my $content = do { local $/; <$fh> };
     my $api     = $yv_obj->parse_json_string($content);
 
