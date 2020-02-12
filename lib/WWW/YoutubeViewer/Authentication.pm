@@ -106,25 +106,25 @@ sub load_authentication_tokens {
         return 1;
     }
 
-    if (defined(my $file = $self->get_authentication_file) and defined(my $key = $self->get_key)) {
-        if (-f $file) {
-            local $/ = __AUTH_EOL__;
-            open my $fh, '<:raw', $file or return;
+    my $file = $self->get_authentication_file() // return;
+    my $key  = $self->get_key()                 // return;
 
-            my @tokens;
-            foreach my $i (0 .. 1) {
-                chomp(my $token = <$fh>);
-                $token =~ /\S/ || last;
-                push @tokens, $self->decode_token($token);
-            }
+    if (-f $file) {
+        local $/ = __AUTH_EOL__;
+        open my $fh, '<:raw', $file or return;
 
-            $self->set_access_token($tokens[0])  // return;
-            $self->set_refresh_token($tokens[1]) // return;
-
-            close $fh;
-            return 1;
+        my @tokens;
+        foreach my $i (0 .. 1) {
+            chomp(my $token = <$fh>);
+            $token =~ /\S/ || last;
+            push @tokens, $self->decode_token($token);
         }
 
+        $self->set_access_token($tokens[0])  // return;
+        $self->set_refresh_token($tokens[1]) // return;
+
+        close $fh;
+        return 1;
     }
 
     return;

@@ -72,10 +72,9 @@ my %valid_options = (
     comments_order      => {valid => [qw(time relevance)],                default => 'time'},
     subscriptions_order => {valid => [qw(alphabetical relevance unread)], default => undef},
 
-    # Others
+    # Misc
     debug       => {valid => [0 .. 3],     default => 0},
     lwp_timeout => {valid => [qr/^\d+\z/], default => 1},
-    key         => {valid => [qr/^.{5}/],  default => undef},
     config_dir  => {valid => [qr/^./],     default => q{.}},
     cache_dir   => {valid => [qr/^./],     default => q{.}},
 
@@ -87,12 +86,13 @@ my %valid_options = (
 
     use_invidious_api => {valid => [1, 0], default => 0},
 
-    # OAuth stuff
-    client_id     => {valid => [qr/^.{5}/], default => undef},
-    client_secret => {valid => [qr/^.{5}/], default => undef},
-    redirect_uri  => {valid => [qr/^.{5}/], default => undef},
-    access_token  => {valid => [qr/^.{5}/], default => undef},
-    refresh_token => {valid => [qr/^.{5}/], default => undef},
+    # API/OAuth
+    key           => {valid => [qr/^.{15}/], default => undef},
+    client_id     => {valid => [qr/^.{15}/], default => undef},
+    client_secret => {valid => [qr/^.{15}/], default => undef},
+    redirect_uri  => {valid => [qr/^.{15}/], default => undef},
+    access_token  => {valid => [qr/^.{15}/], default => undef},
+    refresh_token => {valid => [qr/^.{15}/], default => undef},
 
     authentication_file => {valid => [qr/^./], default => undef},
 
@@ -176,8 +176,6 @@ sub new {
             $self->$method(delete $opts{$key});
         }
     }
-
-    $self->load_authentication_tokens();
 
     foreach my $invalid_key (keys %opts) {
         warn "Invalid key: '${invalid_key}'";

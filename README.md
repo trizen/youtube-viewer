@@ -87,6 +87,23 @@ To package this application, run the following commands:
     ./Build install --install_path script=/usr/bin
 ```
 
+### LOGGING IN
+
+Starting with version 3.7.4, youtube-viewer provides the `~/.config/youtube-viewer/api.json` file, which allows changing the default API key and the client ID/SECRET values:
+
+```json
+{
+    "key":           "API_KEY",
+    "client_id":     "CLIENT_ID",
+    "client_secret": "CLIENT_SECRET"
+}
+```
+
+* Replace `API_KEY` with your YouTube API key. Create a new key [here](https://console.developers.google.com/apis/dashboard).
+* Replace `CLIENT_ID` and `CLIENT_SECRET` with your native client ID and client secret values, by creating a new OAuth 2.0 Client ID [here](https://console.developers.google.com/apis/api/youtube.googleapis.com/credentials).
+
+See also: https://github.com/trizen/youtube-viewer/issues/285
+
 ### REVIEWS
 
 * [EN] YOUTUBE VIEWER: A COMPLETE YOUTUBE CLIENT FOR LINUX [UBUNTU PPA]

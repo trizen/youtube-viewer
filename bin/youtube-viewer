@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 10 February 2020
+#  Latest edit on: 12 February 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -142,6 +142,7 @@ my $config_file         = catfile($config_dir, "$execname.conf");
 my $authentication_file = catfile($config_dir, 'reg.dat');
 my $history_file        = catfile($config_dir, 'history.txt');
 my $watched_file        = catfile($config_dir, 'watched.txt');
+my $api_file            = catfile($config_dir, 'api.json');
 
 if (not -d $config_dir) {
     require File::Path;
@@ -608,6 +609,57 @@ my $yv_obj = WWW::YoutubeViewer->new(
     $yv_obj->set_client_secret("\26/Ae]3\b\6\x186a:*#0\32\t\f\n\27\17GC`" ^ substr($key, -24));
     $yv_obj->set_redirect_uri('urn:ietf:wg:oauth:2.0:oob');
 }
+
+if (-f $api_file) {
+
+    open(my $fh, '<', $api_file) or die "Can't open file <<$api_file>> for reading: $!\n";
+    my $content = do { local $/; <$fh> };
+    my $api     = $yv_obj->parse_json_string($content);
+
+    if (ref($api) ne 'HASH') {
+        die "[!] Invalid format inside file 'api.json'.\n";
+    }
+
+    my $orig_key           = $yv_obj->get_key;
+    my $orig_client_id     = $yv_obj->get_client_id;
+    my $orig_client_secret = $yv_obj->get_client_secret;
+
+    my $key           = $api->{key};
+    my $client_id     = $api->{client_id};
+    my $client_secret = $api->{client_secret};
+
+    if (defined($key)) {
+        $yv_obj->set_key($key) // do {
+            warn "[!] Invalid key: $key\n" if $key ne 'API_KEY';
+            $yv_obj->set_key($orig_key);
+        };
+    }
+    if (defined($client_id)) {
+        $yv_obj->set_client_id($client_id) // do {
+            warn "[!] Invalid client_id: $client_id\n" if $client_id ne 'CLIENT_ID';
+            $yv_obj->set_client_id($orig_client_id);
+        };
+    }
+    if (defined($client_secret)) {
+        $yv_obj->set_client_secret($client_secret) // do {
+            warn "[!] Invalid client_secret: $client_secret\n" if $client_secret ne 'CLIENT_SECRET';
+            $yv_obj->set_client_secret($orig_client_secret);
+        };
+    }
+}
+else {
+    open(my $fh, '>', $api_file) or warn "[!] Can't create file <<$api_file>>: $!\n";
+    print $fh <<"EOT";
+{
+    "key":           "API_KEY",
+    "client_id":     "CLIENT_ID",
+    "client_secret": "CLIENT_SECRET"
+}
+EOT
+    close $fh;
+}
+
+$yv_obj->load_authentication_tokens();
 
 require WWW::YoutubeViewer::Utils;
 my $yv_utils = WWW::YoutubeViewer::Utils->new(youtube_url_format => $opt{youtube_video_url},
