@@ -201,7 +201,7 @@ my %CONFIG = (
     video_player_selected => (
         $constant{win32}
         ? 'mplayer'
-        : undef            # auto-defined later
+        : undef            # auto-defined
     ),
 
     # YouTube options
@@ -236,7 +236,7 @@ my %CONFIG = (
     get_captions  => 1,
     auto_captions => 0,
     copy_caption  => 0,
-    cache_dir     => undef,          # will be defined later
+    cache_dir     => undef,          # auto-defined
 
     # Others
     autoplay_mode        => 0,
@@ -254,11 +254,11 @@ my %CONFIG = (
     fullscreen           => 0,
     results_with_details => 0,
     results_with_colors  => 0,
-    results_fixed_width  => 0,
+    results_fixed_width  => undef,                    # auto-defined
     show_video_info      => 1,
     interactive          => 1,
     get_term_width       => $constant{win32} ^ 1,
-    download_with_wget   => undef,                    # auto-defined later
+    download_with_wget   => undef,                    # auto-defined
     thousand_separator   => q{,},
     downloads_dir        => curdir(),
     keep_original_video  => 0,
@@ -276,7 +276,7 @@ my %CONFIG = (
     convert_cmd          => 'ffmpeg -i *IN* *OUT*',
     convert_to           => undef,
 
-    custom_layout        => 0,
+    custom_layout => undef,    # auto-defined
     custom_layout_format => [{width => 3,     align => "right", color => "bold",      text => "*NO*.",},
                              {width => "55%", align => "left",  color => "bold blue", text => "*TITLE*",},
                              {width => "15%", align => "left",  color => "yellow",    text => "*AUTHOR*",},
@@ -520,6 +520,23 @@ sub load_config {
         }
         else {
             $CONFIG{merge_into_mkv} = 0;
+        }
+
+        $update_config = 1;
+    }
+
+    # Fixed-width format and custom layout
+    if (   not defined($CONFIG{results_fixed_width})
+        or not defined($CONFIG{custom_layout})) {
+
+        if (   eval { require Unicode::GCString; 1 }
+            or eval { require Text::CharWidth; 1 }) {
+            $CONFIG{custom_layout}       //= 1;
+            $CONFIG{results_fixed_width} //= 1;
+        }
+        else {
+            $CONFIG{custom_layout}       = 0;
+            $CONFIG{results_fixed_width} = 0;
         }
 
         $update_config = 1;
@@ -1682,6 +1699,9 @@ sub parse_arguments {
 
     if ($config_file ne $orig_config_file) {    # load the config file specified with `--config=s`
         ##say ":: Loading config: $config_file";
+
+        require File::Spec;
+        $config_file = File::Spec->rel2abs($config_file);
 
         my %new_opt = %opt;
         load_config($config_file);
