@@ -66,7 +66,7 @@ if ($xdg_config_home and -d -w $xdg_config_home) {
     $home_dir = File::Basename::dirname($xdg_config_home);
 
     if (not -d -w $home_dir) {
-        $home_dir = curdir();
+        $home_dir = $ENV{HOME} || curdir();
     }
 }
 else {
@@ -266,7 +266,13 @@ EOD
         require Data::Dump;
         open my $config_fh, '>', $config_file
           or do { warn "[!] Can't open '${config_file}' for write: $!"; return };
+
         my $dumped_config = q{our $CONFIG = } . Data::Dump::pp(\%CONFIG) . "\n";
+
+        if ($home_dir eq $ENV{HOME}) {
+            $dumped_config =~ s/\Q$home_dir\E/\$ENV{HOME}/g;
+        }
+
         print $config_fh $config_documentation, $dumped_config;
         close $config_fh;
     }

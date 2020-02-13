@@ -89,7 +89,7 @@ use File::Spec::Functions qw(
 
 binmode(STDOUT, ':utf8');
 
-my $appname  = 'Youtube Viewer';
+my $appname  = 'YouTube Viewer';
 my $version  = $WWW::YoutubeViewer::VERSION;
 my $execname = 'youtube-viewer';
 
@@ -120,7 +120,7 @@ if ($xdg_config_home and -d -w $xdg_config_home) {
     $home_dir = File::Basename::dirname($xdg_config_home);
 
     if (not -d -w $home_dir) {
-        $home_dir = curdir();
+        $home_dir = $ENV{HOME} || curdir();
     }
 }
 else {
@@ -322,7 +322,7 @@ CONTROL
 
 my $other_options = <<'OTHER';
 # Others
-:r(eturn)         : return to previous section
+:r(eturn)         : return to previous page of results
 :refresh          : refresh the current list of results
 :dv=i             : display the data structure of result i
 -argv -argv2=v    : apply some arguments (e.g.: -u=google)
@@ -416,10 +416,17 @@ EOD
 
     sub dump_configuration {
         my ($config_file) = @_;
+
         require Data::Dump;
         open my $config_fh, '>', $config_file
           or do { warn "[!] Can't open '${config_file}' for write: $!"; return };
+
         my $dumped_config = q{our $CONFIG = } . Data::Dump::pp(\%CONFIG) . "\n";
+
+        if ($home_dir eq $ENV{HOME}) {
+            $dumped_config =~ s/\Q$home_dir\E/\$ENV{HOME}/g;
+        }
+
         print $config_fh $config_documentation, $dumped_config;
         close $config_fh;
     }
@@ -931,7 +938,7 @@ sub tricks {
         $execname --playlists=mine
 
 -> More STDIN help:
- > ":r", ":return" will return to the previous section.
+ > ":r", ":return" will return to the previous page of results.
    For example, if you search for playlists, then select a playlist
    of videos, inserting ":r" will return back to the playlist results.
    Also, for the previous page, you can insert ':b', but ':r' is faster!
@@ -1131,7 +1138,7 @@ sub stdin_help {
 
 # Print version
 sub version {
-    print "YouTube Viewer $version\n";
+    print "$appname $version\n";
     main_quit(0);
 }
 
@@ -1699,9 +1706,7 @@ sub parse_arguments {
 
     if ($config_file ne $orig_config_file) {    # load the config file specified with `--config=s`
         ##say ":: Loading config: $config_file";
-
-        require File::Spec;
-        $config_file = File::Spec->rel2abs($config_file);
+        $config_file = rel2abs($config_file);
 
         my %new_opt = %opt;
         load_config($config_file);
