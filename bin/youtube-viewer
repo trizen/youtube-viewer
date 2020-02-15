@@ -270,13 +270,13 @@ my %CONFIG = (
     highlight_watched    => 1,
     highlight_color      => 'bold',
     remove_played_file   => 0,
-    history              => 0,
+    history              => undef,                    # auto-defined
     history_limit        => 100_000,
     history_file         => $history_file,
     convert_cmd          => 'ffmpeg -i *IN* *OUT*',
     convert_to           => undef,
 
-    custom_layout => undef,    # auto-defined
+    custom_layout => undef,                           # auto-defined
     custom_layout_format => [{width => 3,     align => "right", color => "bold",      text => "*NO*.",},
                              {width => "55%", align => "left",  color => "bold blue", text => "*TITLE*",},
                              {width => "15%", align => "left",  color => "yellow",    text => "*AUTHOR*",},
@@ -544,6 +544,19 @@ sub load_config {
         else {
             $CONFIG{custom_layout}       = 0;
             $CONFIG{results_fixed_width} = 0;
+        }
+
+        $update_config = 1;
+    }
+
+    # Enable history if Term::ReadLine::Gnu::XS is installed
+    if (not defined $CONFIG{history}) {
+
+        if ($term->can('ReadHistory')) {
+            $CONFIG{history} = 1;
+        }
+        else {
+            $CONFIG{history} = 0;
         }
 
         $update_config = 1;
