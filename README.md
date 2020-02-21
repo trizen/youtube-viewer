@@ -18,7 +18,7 @@ A lightweight application for searching and streaming videos from YouTube.
 
 * Arch Linux (community): https://www.archlinux.org/packages/community/any/youtube-viewer/
 * Arch Linux (AUR): https://aur.archlinux.org/packages/gtk-youtube-viewer-git/
-* Fedora: https://build.opensuse.org/package/show/home:zhonghuaren/youtube-viewer
+* Fedora: https://copr.fedorainfracloud.org/coprs/itsuki/Youtube-viewer/
 * FreeBSD: http://www.freshports.org/multimedia/gtk-youtube-viewer
 * Frugalware: http://frugalware.org/packages/203103
 * Gentoo: https://packages.gentoo.org/package/net-misc/youtube-viewer
