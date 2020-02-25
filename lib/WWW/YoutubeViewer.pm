@@ -90,7 +90,7 @@ my %valid_options = (
     key           => {valid => [qr/^.{15}/], default => undef},
     client_id     => {valid => [qr/^.{15}/], default => undef},
     client_secret => {valid => [qr/^.{15}/], default => undef},
-    redirect_uri  => {valid => [qr/^.{15}/], default => undef},
+    redirect_uri  => {valid => [qr/^.{15}/], default => 'urn:ietf:wg:oauth:2.0:oob'},
     access_token  => {valid => [qr/^.{15}/], default => undef},
     refresh_token => {valid => [qr/^.{15}/], default => undef},
 

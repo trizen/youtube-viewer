@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 15 February 2020
+#  Latest edit on: 25 February 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -53,9 +53,6 @@ my $version = $WWW::YoutubeViewer::VERSION;
 my $share_dir = $DEVEL ? '../share' : dist_dir('WWW-YoutubeViewer');
 
 sub VIDEO_PART () { 'contentDetails,statistics,snippet' }
-
-# Developer key
-my $key = 'aXalQYmzI8gPkMSLyMhpApfMAiU2b23Qz2nE3mq';
 
 # Configuration dir/file
 my $home_dir;
@@ -797,11 +794,6 @@ if (not defined $CONFIG{terminal}) {
     $CONFIG{terminal} //= $ENV{TERM} || 'xterm';
 }
 
-{
-    my $i = length $key;
-    $key =~ s/(.{$i})(.)/$2$1/g while --$i;
-}
-
 my %ResultsHistory = (
                       current => -1,
                       results => [],
@@ -812,7 +804,6 @@ $CONFIG{youtube_viewer} //= which_command('youtube-viewer') // 'youtube-viewer';
 
 my $yv_obj = WWW::YoutubeViewer->new(
                                      escape_utf8         => 1,
-                                     key                 => $key,
                                      config_dir          => $config_dir,
                                      hl                  => $CONFIG{hl},
                                      lwp_env_proxy       => $CONFIG{env_proxy},
@@ -820,12 +811,6 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      use_invidious_api   => $CONFIG{use_invidious_api},
                                      authentication_file => $authentication_file,
                                     );
-
-{
-    $yv_obj->set_client_id("x{IVfHx\0heYZI,)\22+\x1D2\\\6\n\35\25\31?(\32\23\t#L\b\x141\@Q]<" ^ $key);
-    $yv_obj->set_client_secret("\26/Ae]3\b\6\x186a:*#0\32\t\f\n\27\17GC`" ^ substr($key, -24));
-    $yv_obj->set_redirect_uri('urn:ietf:wg:oauth:2.0:oob');
-}
 
 if (-f $api_file) {
 
