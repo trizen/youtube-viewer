@@ -140,6 +140,7 @@ my $authentication_file = catfile($config_dir, 'reg.dat');
 my $history_file        = catfile($config_dir, 'history.txt');
 my $watched_file        = catfile($config_dir, 'watched.txt');
 my $api_file            = catfile($config_dir, 'api.json');
+my $default_api_file    = '/etc/youtube-viewer/api.json';
 
 if (not -d $config_dir) {
     require File::Path;
@@ -632,42 +633,12 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      authentication_file => $authentication_file,
                                     );
 
+if (-f $default_api_file) {
+    $yv_obj->load_credentials($default_api_file);
+}
+
 if (-f $api_file) {
-
-    open(my $fh, '<', $api_file) or die "[!] Can't open file <<$api_file>> for reading: $!\n";
-    my $content = do { local $/; <$fh> };
-    my $api     = $yv_obj->parse_json_string($content);
-
-    if (ref($api) ne 'HASH') {
-        die "[!] Invalid format inside file 'api.json'.\n";
-    }
-
-    my $orig_key           = $yv_obj->get_key;
-    my $orig_client_id     = $yv_obj->get_client_id;
-    my $orig_client_secret = $yv_obj->get_client_secret;
-
-    my $key           = $api->{key};
-    my $client_id     = $api->{client_id};
-    my $client_secret = $api->{client_secret};
-
-    if (defined($key)) {
-        $yv_obj->set_key($key) // do {
-            warn "[!] Invalid key: $key\n" if $key ne 'API_KEY';
-            $yv_obj->set_key($orig_key);
-        };
-    }
-    if (defined($client_id)) {
-        $yv_obj->set_client_id($client_id) // do {
-            warn "[!] Invalid client_id: $client_id\n" if $client_id ne 'CLIENT_ID';
-            $yv_obj->set_client_id($orig_client_id);
-        };
-    }
-    if (defined($client_secret)) {
-        $yv_obj->set_client_secret($client_secret) // do {
-            warn "[!] Invalid client_secret: $client_secret\n" if $client_secret ne 'CLIENT_SECRET';
-            $yv_obj->set_client_secret($orig_client_secret);
-        };
-    }
+    $yv_obj->load_credentials($api_file);
 }
 else {
     open(my $fh, '>', $api_file) or warn "[!] Can't create file <<$api_file>>: $!\n";

@@ -189,6 +189,66 @@ sub save_authentication_tokens {
     return;
 }
 
+=head2 load_credentials($file)
+
+Load the API key and the client ID/SECRET values from a given JSON file having the following format:
+
+    {
+        "key":           "API_KEY",
+        "client_id":     "CLIENT_ID",
+        "client_secret": "CLIENT_SECRET"
+    }
+
+Returns true on success and false otherwise.
+
+=cut
+
+sub load_credentials {
+    my ($self, $api_file) = @_;
+
+    open(my $fh, '<', $api_file) or do {
+        warn "[!] Can't open file <<$api_file>> for reading: $!\n";
+        return;
+    };
+
+    my $content = do { local $/; <$fh> };
+    my $api     = $self->parse_json_string($content);
+
+    if (ref($api) ne 'HASH') {
+        warn "[!] Invalid format inside file: $api_file\n";
+        return;
+    }
+
+    my $orig_key           = $self->get_key;
+    my $orig_client_id     = $self->get_client_id;
+    my $orig_client_secret = $self->get_client_secret;
+
+    my $key           = $api->{key};
+    my $client_id     = $api->{client_id};
+    my $client_secret = $api->{client_secret};
+
+    if (defined($key)) {
+        $self->set_key($key) // do {
+            warn "[!] Invalid key: $key\n" if $key ne 'API_KEY';
+            $self->set_key($orig_key);
+        };
+    }
+    if (defined($client_id)) {
+        $self->set_client_id($client_id) // do {
+            warn "[!] Invalid client_id: $client_id\n" if $client_id ne 'CLIENT_ID';
+            $self->set_client_id($orig_client_id);
+        };
+    }
+    if (defined($client_secret)) {
+        $self->set_client_secret($client_secret) // do {
+            warn "[!] Invalid client_secret: $client_secret\n" if $client_secret ne 'CLIENT_SECRET';
+            $self->set_client_secret($orig_client_secret);
+        };
+    }
+
+    return 1;
+}
+
 =head1 AUTHOR
 
 Trizen, C<< <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d> >>
