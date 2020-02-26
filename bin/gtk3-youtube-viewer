@@ -32,7 +32,6 @@ use WWW::YoutubeViewer v3.7.4;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use Gtk3 qw(-init);
-use File::ShareDir qw(dist_dir);
 use File::Spec::Functions qw(
   rel2abs
   catdir
@@ -50,7 +49,10 @@ my $appname = 'GTK YouTube Viewer';
 my $version = $WWW::YoutubeViewer::VERSION;
 
 # Share directory
-my $share_dir = $DEVEL ? '../share' : dist_dir('WWW-YoutubeViewer');
+my $share_dir =
+  ($DEVEL and -d '../share')
+  ? '../share'
+  : do { require File::ShareDir; File::ShareDir::dist_dir('WWW-YoutubeViewer') };
 
 sub VIDEO_PART () { 'contentDetails,statistics,snippet' }
 
