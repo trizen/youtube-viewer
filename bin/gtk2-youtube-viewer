@@ -85,7 +85,7 @@ else {
 my $config_dir          = catdir($xdg_config_home, 'youtube-viewer');
 my $config_file         = catfile($config_dir, "gtk-youtube-viewer.conf");
 my $youtube_users_file  = catfile($config_dir, 'youtube_users.txt');
-my $history_file        = catfile($config_dir, 'history.txt');
+my $history_file        = catfile($config_dir, 'gtk-history.txt');
 my $authentication_file = catfile($config_dir, 'reg.dat');
 my $api_file            = catfile($config_dir, 'api.json');
 my $default_api_file    = '/etc/youtube-viewer/api.json';

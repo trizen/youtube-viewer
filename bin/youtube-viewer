@@ -137,7 +137,7 @@ else {
 my $config_dir          = catdir($xdg_config_home, $execname);
 my $config_file         = catfile($config_dir, "$execname.conf");
 my $authentication_file = catfile($config_dir, 'reg.dat');
-my $history_file        = catfile($config_dir, 'history.txt');
+my $history_file        = catfile($config_dir, 'cli-history.txt');
 my $watched_file        = catfile($config_dir, 'watched.txt');
 my $api_file            = catfile($config_dir, 'api.json');
 my $default_api_file    = '/etc/youtube-viewer/api.json';
