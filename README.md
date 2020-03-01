@@ -104,7 +104,11 @@ Starting with version 3.7.4, youtube-viewer provides the `~/.config/youtube-view
 * Replace `API_KEY` with your YouTube API key. Create a new key [here](https://console.developers.google.com/apis/credentials) by clicking on "Create Credentials" > "API Key".
 * Replace `CLIENT_ID` and `CLIENT_SECRET` with your native client ID and client secret values, by creating a new OAuth 2.0 Client ID [here](https://console.developers.google.com/apis/api/youtube.googleapis.com/credentials): click "Create Credentials" > "OAuth client ID", then select "Other".
 
-See also: https://github.com/trizen/youtube-viewer/issues/285
+See also: [#285](https://github.com/trizen/youtube-viewer/issues/285), [#308](https://github.com/trizen/youtube-viewer/issues/308).
+
+### STRAW-VIEWER
+
+[straw-viewer](https://github.com/trizen/straw-viewer) is a fork of `youtube-viewer`, which uses the [API](https://github.com/omarroth/invidious/wiki/API) of [invidio.us](https://invidio.us/), and thus it does not require an YouTube API key.
 
 ### REVIEWS
 
