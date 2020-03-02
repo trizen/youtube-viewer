@@ -646,6 +646,14 @@ if (not -d $CONFIG{cache_dir}) {
 
         require List::Util;
 
+        # Workaround for List::Util < 1.45
+        if (!defined(&List::Util::uniq)) {
+            *List::Util::uniq = sub {
+                my %seen;
+                grep { !$seen{$_}++ } @_;
+            };
+        }
+
         # Keep only the most recent non-duplicated entries
         @history        = reverse(List::Util::uniq(reverse(@history)));
         @search_history = List::Util::uniq(@search_history);
