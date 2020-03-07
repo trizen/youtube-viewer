@@ -19,7 +19,7 @@
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
-# youtube-viewer is a command line utility for streaming YouTube videos in mpv/vlc/mplayer.
+# youtube-viewer is a command line utility for streaming YouTube videos in mpv/vlc.
 
 # Many thanks to everyone who contributed in making this application:
 #   https://github.com/trizen/youtube-viewer/graphs/contributors
@@ -186,19 +186,11 @@ my %CONFIG = (
                               arg     => q{--really-quiet --title=*TITLE* --no-ytdl},
                               novideo => q{--no-video},
                              },
-                      mplayer => {
-                                  cmd     => q{mplayer},
-                                  srt     => q{-sub *SUB*},
-                                  audio   => q{-audiofile *AUDIO*},
-                                  fs      => q{-fs},
-                                  arg     => q{-prefer-ipv4 -really-quiet -title *TITLE*},
-                                  novideo => q{-novideo},
-                                 },
                      },
 
     video_player_selected => (
         $constant{win32}
-        ? 'mplayer'
+        ? 'vlc'
         : undef            # auto-defined
     ),
 
@@ -1815,21 +1807,6 @@ sub apply_input_arguments {
     return 1;
 }
 
-# Get mplayer
-sub get_mplayer {
-    if ($constant{win32}) {
-        my $smplayer = catfile($ENV{ProgramFiles}, qw(SMPlayer mplayer mplayer.exe));
-
-        if (not -e $smplayer) {
-            warn "\n\n!!! Please install SMPlayer in order to stream YouTube videos.\n\n";
-        }
-
-        return $smplayer;    # Windows MPlayer
-    }
-
-    return 'mplayer';        # *NIX MPlayer
-}
-
 # Get term width
 sub get_term_width {
     return $term_width if $constant{win32};
@@ -3364,7 +3341,7 @@ sub get_player_command {
 
     $MPLAYER{fullscreen} = $opt{fullscreen} ? $opt{video_players}{$opt{video_player_selected}}{fs}      // '' : q{};
     $MPLAYER{novideo}    = $opt{novideo}    ? $opt{video_players}{$opt{video_player_selected}}{novideo} // '' : q{};
-    $MPLAYER{mplayer_arguments} = $opt{video_players}{$opt{video_player_selected}}{arg} // q{};
+    $MPLAYER{arguments} = $opt{video_players}{$opt{video_player_selected}}{arg} // q{};
 
     my $cmd = join(
         q{ },

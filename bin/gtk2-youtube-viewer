@@ -160,13 +160,6 @@ my %CONFIG = (
                               fs    => q{--fullscreen},
                               arg   => q{--really-quiet --title=*TITLE* --no-ytdl},
                              },
-                      mplayer => {
-                                  cmd   => q{mplayer},
-                                  srt   => q{-sub *SUB*},
-                                  audio => q{-audiofile *AUDIO*},
-                                  fs    => q{-fs},
-                                  arg   => q{-prefer-ipv4 -really-quiet -title *TITLE*},
-                                 },
                       smplayer => {
                                    cmd => q{smplayer},
                                    srt => q{-sub *SUB*},
@@ -2931,8 +2924,8 @@ sub get_player_command {
     my ($streaming, $video) = @_;
 
     my %MPLAYER;
-    $MPLAYER{fullscreen}        = $CONFIG{fullscreen} ? $CONFIG{video_players}{$CONFIG{video_player_selected}}{fs} : q{};
-    $MPLAYER{mplayer_arguments} = $CONFIG{video_players}{$CONFIG{video_player_selected}}{arg} // q{};
+    $MPLAYER{fullscreen} = $CONFIG{fullscreen} ? $CONFIG{video_players}{$CONFIG{video_player_selected}}{fs} : q{};
+    $MPLAYER{arguments}  = $CONFIG{video_players}{$CONFIG{video_player_selected}}{arg} // q{};
 
     my $cmd = join(
         q{ },
