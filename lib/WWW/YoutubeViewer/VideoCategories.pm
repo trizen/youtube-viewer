@@ -48,6 +48,11 @@ Return video categories for a specific region ID.
 sub video_categories {
     my ($self) = @_;
 
+    if (not defined $self->get_key) {
+        warn "[!] No API key has been set...\n";
+        return {};
+    }
+
     require File::Spec;
 
     my $region = $self->get_regionCode() // 'US';
