@@ -221,7 +221,7 @@ Returns true if a given result has entries.
 
 sub has_entries {
     my ($self, $result) = @_;
-    ref($result) eq 'HASH' and ($result->{results}{pageInfo}{totalResults} > 0);
+    ref($result) eq 'HASH' and (($result->{results}{pageInfo}{totalResults} // 0) > 0);
 }
 
 =head2 normalize_video_title($title, $fat32safe)

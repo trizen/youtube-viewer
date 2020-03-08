@@ -1421,10 +1421,12 @@ sub show_user_panel {
 }
 
 {
-    my $get_code_url = $yv_obj->get_accounts_oauth_url();
+    my $oauth_url = $yv_obj->get_accounts_oauth_url();
 
-    # Setting the URL to get the authentication key
-    $gui->get_object('get_auth_link_button')->set_uri($get_code_url);
+    # Setting the OAuth 2.0 URL to get the authentication code
+    if (defined($oauth_url)) {
+        $gui->get_object('get_auth_link_button')->set_uri($oauth_url);
+    }
 
     sub authenticate {
         my $code = $gui->get_object('auth_token_entry')->get_text;
