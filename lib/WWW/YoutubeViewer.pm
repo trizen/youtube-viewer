@@ -777,7 +777,7 @@ sub _extract_streaming_urls {
     @results = grep { not exists $_->{cipher} } @results;
 
     # Keep only streams with contentLength > 0.
-    @results = grep { exists($_->{contentLength}) and $_->{contentLength} > 0 } @results;
+    @results = grep { $_->{itag} == 22 or (exists($_->{contentLength}) and $_->{contentLength} > 0) } @results;
 
     # Detect livestream
     if (!@results and exists($json->{streamingData}) and exists($json->{streamingData}{hlsManifestUrl})) {
