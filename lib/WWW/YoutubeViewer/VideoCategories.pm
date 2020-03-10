@@ -60,7 +60,7 @@ sub video_categories {
     my $file   = File::Spec->catfile($self->get_config_dir, "categories-$region-" . $self->get_hl() . ".json");
 
     my $json;
-    if (open(my $fh, '<:utf8', $file)) {
+    if (-f $file and not -z _ and open(my $fh, '<:utf8', $file)) {
         local $/;
         $json = <$fh>;
         close $fh;
