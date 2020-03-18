@@ -41,6 +41,7 @@ Reference: http://en.wikipedia.org/wiki/YouTube#Quality_and_formats
 sub get_itags {
 #<<<
     scalar {
+
         'best' => [
             38,      # mp4 (3072p) (v-a)
             [138,    # mp4 (2160p-4320p) (v)
@@ -70,12 +71,12 @@ sub get_itags {
             [303,    # webm HFR (v)
              299,    # mp4 HFR (v)
             ],
-            46,      # webm (v-a)
-            37,      # mp4 (v-a)
             [248,    # webm (v)
              137,    # mp4 (v)
              399,    # av1 (v)
             ],
+            46,      # webm (v-a)
+            37,      # mp4 (v-a)
             301,     # mp4 (live) (v-a)
             96,      # ts (live) (v-a)
         ],
@@ -84,57 +85,57 @@ sub get_itags {
             [302,    # webm HFR (v)
              298,    # mp4 HFR (v)
             ],
-            45,      # webm (v-a)
-            22,      # mp4 (v-a)
             [247,    # webm (v)
              136,    # mp4 (v)
              398,    # av1 (v)
             ],
+            45,      # webm (v-a)
+            22,      # mp4 (v-a)
             300,     # mp4 (live) (v-a)
             120,     # flv (live) (v-a)
             95,      # ts (live) (v-a)
         ],
 
         '480' => [
-            44,      # webm (v-a)
-            35,      # flv (v-a)
             [244,    # webm (v)
              135,    # mp4 (v)
              397,    # av1 (v)
             ],
+            44,      # webm (v-a)
+            35,      # flv (v-a)
             94,      # mp4 (live) (v-a)
         ],
 
         '360' => [
-            43,      # webm (v-a)
-            34,      # flv (v-a)
             [243,    # webm (v)
              134,    # mp4 (v)
              396,    # av1 (v)
             ],
+            43,      # webm (v-a)
+            34,      # flv (v-a)
             93,      # mp4 (live) (v-a)
             18,      # mp4 (v-a)
         ],
 
         '240' => [
-            6,       # flv (270p) (v-a)
-            5,       # flv (v-a)
-            36,      # 3gp (v-a)
-            13,      # 3gp (v-a)
             [242,    # webm (v)
              133,    # mp4 (v)
              395,    # av1 (v)
             ],
+            6,       # flv (270p) (v-a)
+            5,       # flv (v-a)
+            36,      # 3gp (v-a)
+            13,      # 3gp (v-a)
             92,      # mp4 (live) (v-a)
             132,     # ts (live) (v-a)
         ],
 
         '144' => [
-            17,      # 3gp (v-a)
             [278,    # webm (v)
              160,    # mp4 (v)
              394,    # av1 (v)
             ],
+            17,      # 3gp (v-a)
             91,      # mp4 (live) (v-a)
             151,     # ts (live) (v-a)
         ],
