@@ -22,6 +22,7 @@ A lightweight application for searching and streaming videos from YouTube.
 * FreeBSD: http://www.freshports.org/multimedia/gtk-youtube-viewer
 * Frugalware: http://frugalware.org/packages/203103
 * Gentoo: https://packages.gentoo.org/package/net-misc/youtube-viewer
+* OSX: `brew install thekevjames/youtube-viewer/youtube-viewer`
 * Puppy Linux: http://www.murga-linux.com/puppy/viewtopic.php?t=76835
 * Slackware: http://slackbuilds.org/repository/14.2/multimedia/youtube-viewer/
 * Solus: `sudo eopkg it youtube-viewer`
