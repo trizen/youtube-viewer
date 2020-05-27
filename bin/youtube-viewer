@@ -1873,7 +1873,7 @@ sub get_quotewords {
 sub clear_title {
     my ($title) = @_;
 
-    $title ||= "";
+    $title //= "";
     $title =~ s/[^\w\s[:punct:]]//g;
     $title = join(' ', split(' ', $title));
 
