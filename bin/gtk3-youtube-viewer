@@ -226,8 +226,6 @@ my %CONFIG = (
     tooltips        => 1,
     tooltip_max_len => 512,          # max length of description in tooltips
 
-    use_invidious_api => 0,
-
     thousand_separator     => q{,},
     downloads_dir          => curdir(),
     web_browser            => undef,                 # defaults to $ENV{WEBBROWSER} or xdg-open
@@ -812,7 +810,6 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      hl                  => $CONFIG{hl},
                                      lwp_env_proxy       => $CONFIG{env_proxy},
                                      cache_dir           => $CONFIG{cache_dir},
-                                     use_invidious_api   => $CONFIG{use_invidious_api},
                                      authentication_file => $authentication_file,
                                     );
 
@@ -885,7 +882,7 @@ sub apply_configuration {
                              videoEmbeddable videoLicense
                              publishedAfter publishedBefore
                              regionCode videoCategoryId
-                             debug http_proxy use_invidious_api
+                             debug http_proxy
                              )
       ) {
 

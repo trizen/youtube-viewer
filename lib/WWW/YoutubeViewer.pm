@@ -84,8 +84,6 @@ my %valid_options = (
     prefer_mp4    => {valid => [1, 0], default => 0},
     prefer_av1    => {valid => [1, 0], default => 0},
 
-    use_invidious_api => {valid => [1, 0], default => 0},
-
     # API/OAuth
     key           => {valid => [qr/^.{15}/], default => undef},
     client_id     => {valid => [qr/^.{15}/], default => undef},
@@ -248,8 +246,7 @@ sub set_lwp_useragent {
                my ($response) = @_;
                my $code = $response->code;
 
-               $code >= 500                                # do not cache any bad response
-                 or $code == 401                           # don't cache an unauthorized response
+               $code >= 300                                # do not cache any bad response
                  or $response->request->method ne 'GET'    # cache only GET requests
 
                  # don't cache if "cache-control" specifies "max-age=0" or "no-store"
@@ -523,10 +520,14 @@ sub _extract_from_invidious {
     return @formats;
 }
 
+sub _ytdl_is_available {
+    (state $x = system('youtube-dl', '--version')) == 0;
+}
+
 sub _extract_from_ytdl {
     my ($self, $videoID) = @_;
 
-    ((state $x = system('youtube-dl', '--version')) == 0) || return;
+    $self->_ytdl_is_available() || return;
 
     my $json = $self->proxy_stdout('youtube-dl', '--all-formats', '--dump-single-json',
                                    quotemeta("https://www.youtube.com/watch?v=" . $videoID));
@@ -557,30 +558,33 @@ sub _fallback_extract_urls {
 
     my @formats;
 
-    if ($self->get_use_invidious_api) {    # use the API of invidio.us
+    # Use youtube-dl
+    if ($self->_ytdl_is_available) {
 
         if ($self->get_debug) {
-            say STDERR ":: Using invidio.us to extract the streaming URLs...";
+            say STDERR ":: Using youtube-dl to extract the streaming URLs...";
         }
 
-        push @formats, $self->_extract_from_invidious($videoID);
+        push @formats, $self->_extract_from_ytdl($videoID);
 
         if ($self->get_debug) {
-            say STDERR ":: invidio.us: found ", scalar(@formats), " streaming URLs.";
+            my $count = scalar(@formats);
+            say STDERR ":: youtube-dl: found $count streaming URLs...";
         }
 
         @formats && return @formats;
     }
 
+    # Use the API of invidio.us
     if ($self->get_debug) {
-        say STDERR ":: Using youtube-dl to extract the streaming URLs...";
+        say STDERR ":: Using invidio.us to extract the streaming URLs...";
     }
 
-    push @formats, $self->_extract_from_ytdl($videoID);
+    push @formats, $self->_extract_from_invidious($videoID);
 
     if ($self->get_debug) {
         my $count = scalar(@formats);
-        say STDERR ":: youtube-dl: found $count streaming URLs...";
+        say STDERR ":: invidious: found $count streaming URLs...";
     }
 
     return @formats;

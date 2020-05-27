@@ -230,7 +230,6 @@ my %CONFIG = (
 
     # Others
     autoplay_mode        => 0,
-    use_invidious_api    => 0,
     http_proxy           => undef,
     env_proxy            => 1,
     confirm              => 0,
@@ -621,7 +620,6 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      config_dir          => $config_dir,
                                      cache_dir           => $opt{cache_dir},
                                      lwp_env_proxy       => $opt{env_proxy},
-                                     use_invidious_api   => $opt{use_invidious_api},
                                      authentication_file => $authentication_file,
                                     );
 
@@ -832,7 +830,6 @@ usage: $execname [options] ([url] | [keywords])
        --use-colors!    : enable or disable the ANSI colors for text
 
  * Other
-   --invidious!         : use the API of invidio.us to get the streaming URLs
    --proxy=s            : set HTTP(S)/SOCKS proxy: 'proto://domain.tld:port/'
                           If authentication required,
                           use 'proto://user:pass\@domain.tld:port/'
@@ -1133,7 +1130,7 @@ sub apply_configuration {
                              publishedAfter publishedBefore
                              safeSearch regionCode debug hl
                              http_proxy page comments_order
-                             subscriptions_order use_invidious_api
+                             subscriptions_order
                              )
       ) {
 
@@ -1628,7 +1625,6 @@ sub parse_arguments {
         'merge-into-mkv|mkv-merge!'           => \$opt{merge_into_mkv},
         'merge-with-captions|merge-captions!' => \$opt{merge_with_captions},
 
-        'invidious!'                         => \$opt{use_invidious_api},
         'convert-command|convert-cmd=s'      => \$opt{convert_cmd},
         'dash-m4a|dash-mp4-audio|dash-mp4a!' => \$opt{dash_mp4_audio},
         'dash-segmented!'                    => \$opt{dash_segmented},
