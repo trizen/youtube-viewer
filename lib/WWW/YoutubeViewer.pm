@@ -566,7 +566,7 @@ sub _fallback_extract_urls {
         push @formats, $self->_extract_from_invidious($videoID);
 
         if ($self->get_debug) {
-            say STDERR ":: Found ", scalar(@formats), " streaming URLs.";
+            say STDERR ":: invidio.us: found ", scalar(@formats), " streaming URLs.";
         }
 
         @formats && return @formats;
@@ -580,7 +580,7 @@ sub _fallback_extract_urls {
 
     if ($self->get_debug) {
         my $count = scalar(@formats);
-        say STDERR ":: Found $count streaming URLs...";
+        say STDERR ":: youtube-dl: found $count streaming URLs...";
     }
 
     return @formats;
@@ -648,6 +648,43 @@ sub _group_keys_with_values {
     return @hashes;
 }
 
+sub _check_streaming_urls {
+    my ($self, $videoID, $results) = @_;
+
+    foreach my $video (@$results) {
+
+        if (   exists $video->{s}
+            or exists $video->{signatureCipher}
+            or exists $video->{cipher}) {    # has an encrypted signature :(
+
+            if ($self->get_debug) {
+                say STDERR ":: Detected an encrypted signature...";
+            }
+
+            my @formats = $self->_fallback_extract_urls($videoID);
+
+            foreach my $format (@formats) {
+                foreach my $ref (@$results) {
+                    if (defined($ref->{itag}) and ($ref->{itag} eq $format->{itag})) {
+                        $ref->{url} = $format->{url};
+                        last;
+                    }
+                }
+            }
+
+            last;
+        }
+    }
+
+    foreach my $video (@$results) {
+        if (exists $video->{mimeType}) {
+            $video->{type} = $video->{mimeType};
+        }
+    }
+
+    return 1;
+}
+
 sub _old_extract_streaming_urls {
     my ($self, $info, $videoID) = @_;
 
@@ -669,27 +706,7 @@ sub _old_extract_streaming_urls {
     push @results, $self->_group_keys_with_values(%stream_map);
     push @results, $self->_group_keys_with_values(%adaptive_fmts);
 
-    foreach my $video (@results) {
-        if (exists $video->{s}) {    # has an encrypted signature :(
-
-            if ($self->get_debug) {
-                say STDERR ":: Detected an encrypted signature...";
-            }
-
-            my @formats = $self->_fallback_extract_urls($videoID);
-
-            foreach my $format (@formats) {
-                foreach my $ref (@results) {
-                    if (defined($ref->{itag}) and ($ref->{itag} eq $format->{itag})) {
-                        $ref->{url} = $format->{url};
-                        last;
-                    }
-                }
-            }
-
-            last;
-        }
-    }
+    $self->_check_streaming_urls($videoID, \@results);
 
     if ($info->{livestream} or $info->{live_playback}) {
 
@@ -708,11 +725,6 @@ sub _old_extract_streaming_urls {
                 url  => $info->{hlsvp},
               };
         }
-    }
-
-    if ($self->get_debug) {
-        my $count = scalar(@results);
-        say STDERR ":: Found $count streaming URLs...";
     }
 
     return @results;
@@ -752,29 +764,7 @@ sub _extract_streaming_urls {
         }
     }
 
-    foreach my $item (@results) {
-
-        if (exists $item->{cipher} and not exists $item->{url}) {
-
-            my %data = $self->parse_query_string($item->{cipher});
-
-            $item->{url} = $data{url} if defined($data{url});
-
-            if (defined($data{s})) {    # unclear how this can be decrypted...
-                require URI::Escape;
-                my $sig = $data{s};
-                $sig = URI::Escape::uri_escape($sig);
-                $item->{url} .= "&sig=$sig";
-            }
-        }
-
-        if (exists $item->{mimeType}) {
-            $item->{type} = $item->{mimeType};
-        }
-    }
-
-    # Cipher streaming URLs are currently unsupported, so let's filter them out.
-    @results = grep { not exists $_->{cipher} } @results;
+    $self->_check_streaming_urls($videoID, \@results);
 
     # Keep only streams with contentLength > 0.
     @results = grep { $_->{itag} == 22 or (exists($_->{contentLength}) and $_->{contentLength} > 0) } @results;
@@ -796,11 +786,6 @@ sub _extract_streaming_urls {
                 url  => $json->{streamingData}{hlsManifestUrl},
               };
         }
-    }
-
-    if ($self->get_debug) {
-        my $count = scalar(@results);
-        say STDERR ":: Found $count streaming URLs...";
     }
 
     return @results;

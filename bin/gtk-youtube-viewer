@@ -3,7 +3,7 @@
 # Detect if Gtk3 is installed and start the corresponding version of GTK YouTube Viewer.
 
 use File::Basename qw(dirname);
-use File::Spec::Functions qw(catfile);
+use File::Spec;
 
 sub is_gtk3_available {
 
@@ -24,8 +24,8 @@ sub is_gtk3_available {
 
 my $path = dirname(__FILE__);
 
-my $gtk3_yv = catfile($path, 'gtk3-youtube-viewer');
-my $gtk2_yv = catfile($path, 'gtk2-youtube-viewer');
+my $gtk3_yv = File::Spec->catfile($path, 'gtk3-youtube-viewer');
+my $gtk2_yv = File::Spec->catfile($path, 'gtk2-youtube-viewer');
 
 if (-f $gtk3_yv and is_gtk3_available()) {
     exec($^X, $gtk3_yv, @ARGV);
