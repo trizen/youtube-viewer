@@ -3498,4 +3498,16 @@ if (@ARGV) {
                    );
 }
 
+if (not defined $yv_obj->get_key) {
+    Glib::Idle->add(
+        sub {
+            die
+"\nError: no API key has been set!\n\nFor creating a new YouTube API key, please see:\nhttps://github.com/trizen/youtube-viewer#logging-in\n\n";
+            return 0;
+        },
+        [],
+        Glib::G_PRIORITY_DEFAULT_IDLE
+                   );
+}
+
 'Gtk2'->main;
