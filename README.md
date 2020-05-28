@@ -90,7 +90,7 @@ To package this application, run the following commands:
 
 ### LOGGING IN
 
-Starting with version 3.7.4, youtube-viewer provides the `~/.config/youtube-viewer/api.json` file, which allows changing the default API key and the client ID/SECRET values:
+Starting with version 3.7.4, youtube-viewer provides the `~/.config/youtube-viewer/api.json` file, which allows setting an YouTube API key and the client ID/SECRET values:
 
 ```json
 {
@@ -103,7 +103,7 @@ Starting with version 3.7.4, youtube-viewer provides the `~/.config/youtube-view
 * Prerequisite: you must create a Google Platform project. Following the below steps should prompt you to create one if you do not already have one.
 * Enable the YouTube Data v3 API on your project: [navigate here](https://console.developers.google.com/apis/library/youtube.googleapis.com) and click "Enable" (if you see a blue "Manage" button, its already enabled).
 * Replace `API_KEY` with your YouTube API key. Create a new key [here](https://console.developers.google.com/apis/credentials) by clicking on "Create Credentials" > "API Key".
-* Replace `CLIENT_ID` and `CLIENT_SECRET` with your native client ID and client secret values, by creating a new OAuth 2.0 Client ID [here](https://console.developers.google.com/apis/api/youtube.googleapis.com/credentials): click "Create Credentials" > "OAuth client ID", then select "Other".
+* Optionally, in order to log in, replace `CLIENT_ID` and `CLIENT_SECRET` with your native client ID and client secret values, by creating a new OAuth 2.0 Client ID [here](https://console.developers.google.com/apis/api/youtube.googleapis.com/credentials): click "Create Credentials" > "OAuth client ID", then select "Other".
 
 See also: [#285](https://github.com/trizen/youtube-viewer/issues/285), [#308](https://github.com/trizen/youtube-viewer/issues/308).
 
