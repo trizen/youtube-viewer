@@ -251,7 +251,6 @@ my %CONFIG = (
     downloads_dir        => curdir(),
     keep_original_video  => 0,
     download_and_play    => 0,
-    autohide_watched     => 0,
     skip_watched         => 0,
     remember_watched     => 0,
     watched_file         => $watched_file,
@@ -802,7 +801,6 @@ usage: $execname [options] ([url] | [keywords])
        --max-seconds=i   : ignore videos longer than i seconds
        --min-seconds=i   : ignore videos shorter than i seconds
        --get-term-width! : allow $execname to read your terminal width
-       --autohide!       : automatically hide watched videos
        --skip-watched!   : don't play already watched videos
        --highlight!      : remember and highlight selected videos
        --confirm!        : show a confirmation message after each play
@@ -1640,7 +1638,6 @@ sub parse_arguments {
         'get-term-width!'                    => \$opt{get_term_width},
         'page=i'                             => \$opt{page},
         'novideo|no-video|n|audio!'          => \$opt{novideo},
-        'autohide!'                          => \$opt{autohide_watched},
         'highlight!'                         => \$opt{highlight_watched},
         'skip-watched!'                      => \$opt{skip_watched},
         'results=i'                          => \$opt{maxResults},
@@ -4126,10 +4123,6 @@ sub print_videos {
 
             if (@for_play and not play_videos([@{$videos}[@for_play]])) {
                 __SUB__->($results);
-            }
-
-            if ($opt{autohide_watched}) {
-                splice(@{$videos}, $key, 1) for @for_play;
             }
         }
         else {
