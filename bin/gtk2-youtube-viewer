@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 25 February 2020
+#  Latest edit on: 29 May 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -28,7 +28,7 @@ no warnings 'once';
 my $DEVEL;    # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel only
 
-use WWW::YoutubeViewer v3.7.5;
+use WWW::YoutubeViewer v3.7.6;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use Gtk2 qw(-init);
@@ -39,7 +39,6 @@ use File::Spec::Functions qw(
   curdir
   updir
   path
-  tmpdir
   file_name_is_absolute
   );
 
@@ -209,7 +208,6 @@ my %CONFIG = (
 
     # Subtitle options
     srt_languages => ['en', 'es'],
-    captions_dir  => tmpdir(),
     get_captions  => 1,
     auto_captions => 0,
     cache_dir     => undef,          # will be defined later
@@ -445,10 +443,11 @@ if (not defined $CONFIG{cache_dir}) {
 }
 
 # Create the cache directory (if needed)
-if (not -d $CONFIG{cache_dir}) {
+foreach my $path ($CONFIG{cache_dir}) {
+    next if -d $path;
     require File::Path;
-    File::Path::make_path($CONFIG{cache_dir})
-      or warn "[!] Can't create dir `$CONFIG{cache_dir}': $!";
+    File::Path::make_path($path)
+      or warn "[!] Can't create path <<$path>>: $!";
 }
 
 {
@@ -2886,7 +2885,7 @@ sub get_streaming_url {
         require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
                                                          auto_captions => $CONFIG{auto_captions},
-                                                         captions_dir  => $CONFIG{captions_dir},
+                                                         captions_dir  => $CONFIG{cache_dir},
                                                          captions      => $captions,
                                                          languages     => $CONFIG{srt_languages},
                                                         );

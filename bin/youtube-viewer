@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 25 February 2020
+#  Latest edit on: 29 May 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -74,7 +74,7 @@ no warnings 'once';
 my $DEVEL;    # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
-use WWW::YoutubeViewer v3.7.5;
+use WWW::YoutubeViewer v3.7.6;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
@@ -222,7 +222,6 @@ my %CONFIG = (
 
     # Subtitle options
     srt_languages => ['en', 'es'],
-    captions_dir  => tmpdir(),
     get_captions  => 1,
     auto_captions => 0,
     copy_caption  => 0,
@@ -561,10 +560,11 @@ sub load_config {
     dump_configuration($config_file) if $update_config;
 
     # Create the cache directory (if needed)
-    if (not -d $CONFIG{cache_dir}) {
+    foreach my $path ($CONFIG{cache_dir}) {
+        next if -d $path;
         require File::Path;
-        File::Path::make_path($CONFIG{cache_dir})
-          or warn "[!] Can't create dir `$CONFIG{cache_dir}': $!";
+        File::Path::make_path($path)
+          or warn "[!] Can't create path <<$path>>: $!";
     }
 
     @opt{keys %CONFIG} = values(%CONFIG);
@@ -1659,7 +1659,6 @@ sub parse_arguments {
         'get-captions|get_captions!'     => \$opt{get_captions},
         'auto-captions|auto_captions!'   => \$opt{auto_captions},
         'copy-caption|copy_caption!'     => \$opt{copy_caption},
-        'captions-dir|captions_dir=s'    => \$opt{captions_dir},
         'skip-if-exists|skip_if_exists!' => \$opt{skip_if_exists},
         'downloads-dir|download-dir=s'   => \$opt{downloads_dir},
         'fat32safe!'                     => \$opt{fat32safe},
@@ -3051,7 +3050,7 @@ sub get_streaming_url {
         require WWW::YoutubeViewer::GetCaption;
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
                                                          auto_captions => $opt{auto_captions},
-                                                         captions_dir  => $opt{captions_dir},
+                                                         captions_dir  => $opt{cache_dir},
                                                          captions      => $captions,
                                                          languages     => $CONFIG{srt_languages},
                                                         );
