@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.22.1 
+<!-- Generated with glade 3.36.0 
 
 Copyright (C) Copyright © 2010-2020 Trizen
 
@@ -22,7 +22,7 @@ Author: Trizen https://github.com/trizen
 
 -->
 <interface>
-  <requires lib="gtk+" version="3.20"/>
+  <requires lib="gtk+" version="3.0"/>
   <!-- interface-license-type gplv3 -->
   <!-- interface-name GTK YouTube Viewer -->
   <!-- interface-description Search and play YouTube videos. -->
@@ -256,9 +256,6 @@ Author: Trizen https://github.com/trizen
     <property name="can_focus">False</property>
     <signal name="delete-event" handler="on_mainw_destroy" swapped="no"/>
     <signal name="window-state-event" handler="main_window_state_events" swapped="no"/>
-    <child>
-      <placeholder/>
-    </child>
     <child>
       <object class="GtkBox" id="vbox1">
         <property name="visible">True</property>
@@ -2212,6 +2209,9 @@ When the specified resolution is not found, the best available resolution is use
         </child>
       </object>
     </child>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
   </object>
   <object class="GtkAboutDialog" id="aboutdialog1">
     <property name="can_focus">False</property>
@@ -2235,9 +2235,6 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
     <signal name="delete-event" handler="hide_about_window" swapped="no"/>
     <signal name="destroy" handler="hide_about_window" swapped="no"/>
     <signal name="response" handler="hide_about_window" swapped="no"/>
-    <child>
-      <placeholder/>
-    </child>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox3">
         <property name="can_focus">False</property>
@@ -2258,6 +2255,9 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
         </child>
       </object>
     </child>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
   </object>
   <object class="GtkWindow" id="details_window">
     <property name="can_focus">False</property>
@@ -2270,9 +2270,6 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
     <property name="transient_for">__MAIN__</property>
     <signal name="delete-event" handler="hide_details_window" swapped="no"/>
     <signal name="destroy" handler="hide_details_window" swapped="no"/>
-    <child>
-      <placeholder/>
-    </child>
     <child>
       <object class="GtkBox" id="vbox4">
         <property name="visible">True</property>
@@ -2567,6 +2564,9 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
         </child>
       </object>
     </child>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
   </object>
   <object class="GtkDialog" id="errors_window">
     <property name="can_focus">False</property>
@@ -2582,9 +2582,6 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
     <signal name="delete-event" handler="hide_errors_window" swapped="no"/>
     <signal name="destroy" handler="hide_errors_window" swapped="no"/>
     <signal name="response" handler="hide_errors_window" swapped="no"/>
-    <child>
-      <placeholder/>
-    </child>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox2">
         <property name="visible">True</property>
@@ -2682,6 +2679,9 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
     <action-widgets>
       <action-widget response="0">button3</action-widget>
     </action-widgets>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
   </object>
   <object class="GtkWindow" id="feeds_window">
     <property name="can_focus">False</property>
@@ -2694,9 +2694,6 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
     <property name="transient_for">__MAIN__</property>
     <signal name="delete-event" handler="hide_feeds_window" swapped="no"/>
     <signal name="destroy" handler="hide_feeds_window" swapped="no"/>
-    <child>
-      <placeholder/>
-    </child>
     <child>
       <object class="GtkBox">
         <property name="visible">True</property>
@@ -2878,8 +2875,6 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
             <property name="can_focus">False</property>
             <property name="margin_left">10</property>
             <property name="margin_right">10</property>
-            <property name="margin_start">10</property>
-            <property name="margin_end">10</property>
             <property name="margin_top">6</property>
             <property name="margin_bottom">6</property>
             <property name="orientation">vertical</property>
@@ -2893,6 +2888,9 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
         </child>
       </object>
     </child>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
   </object>
   <object class="GtkWindow" id="help_window">
     <property name="can_focus">False</property>
@@ -2903,9 +2901,6 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
     <property name="transient_for">__MAIN__</property>
     <signal name="delete-event" handler="hide_help_window" swapped="no"/>
     <signal name="destroy" handler="hide_help_window" swapped="no"/>
-    <child>
-      <placeholder/>
-    </child>
     <child>
       <object class="GtkBox" id="vbox251">
         <property name="visible">True</property>
@@ -2978,6 +2973,9 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
         </child>
       </object>
     </child>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
   </object>
   <object class="GtkDialog" id="login_to_youtube">
     <property name="can_focus">False</property>
@@ -2989,9 +2987,6 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
     <signal name="delete-event" handler="hide_login_to_youtube_window" swapped="no"/>
     <signal name="destroy" handler="hide_login_to_youtube_window" swapped="no"/>
     <signal name="response" handler="hide_login_to_youtube_window" swapped="no"/>
-    <child>
-      <placeholder/>
-    </child>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox4">
         <property name="visible">True</property>
@@ -3171,6 +3166,9 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
       <action-widget response="0">button5</action-widget>
       <action-widget response="0">button4</action-widget>
     </action-widgets>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
   </object>
   <object class="GtkWindow" id="prefernces_window">
     <property name="can_focus">False</property>
@@ -3181,9 +3179,6 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
     <property name="transient_for">__MAIN__</property>
     <signal name="delete-event" handler="hide_preferences_window" swapped="no"/>
     <signal name="destroy" handler="hide_preferences_window" swapped="no"/>
-    <child>
-      <placeholder/>
-    </child>
     <child>
       <object class="GtkBox" id="vbox6">
         <property name="visible">True</property>
@@ -3257,6 +3252,9 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
         </child>
       </object>
     </child>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
   </object>
   <object class="GtkWindow" id="users_list_window">
     <property name="can_focus">False</property>
@@ -3267,9 +3265,6 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
     <property name="transient_for">__MAIN__</property>
     <signal name="delete-event" handler="hide_users_list_window" swapped="no"/>
     <signal name="destroy" handler="hide_users_list_window" swapped="no"/>
-    <child>
-      <placeholder/>
-    </child>
     <child>
       <object class="GtkBox" id="vbox21">
         <property name="visible">True</property>
@@ -3492,6 +3487,9 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
         </child>
       </object>
     </child>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
   </object>
   <object class="GtkDialog" id="warnings_window">
     <property name="can_focus">False</property>
@@ -3502,9 +3500,6 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
     <property name="type_hint">dialog</property>
     <signal name="delete-event" handler="hide_warnings_window" swapped="no"/>
     <signal name="destroy" handler="hide_warnings_window" swapped="no"/>
-    <child>
-      <placeholder/>
-    </child>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox5">
         <property name="visible">True</property>
@@ -3602,5 +3597,8 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
     <action-widgets>
       <action-widget response="0">button26</action-widget>
     </action-widgets>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
   </object>
 </interface>
