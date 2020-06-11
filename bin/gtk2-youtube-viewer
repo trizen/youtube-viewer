@@ -20,7 +20,7 @@
 #-------------------------------------------------------
 
 use utf8;
-use 5.014;
+use 5.016;
 
 use warnings;
 no warnings 'once';
@@ -452,7 +452,7 @@ foreach my $path ($CONFIG{cache_dir}) {
 
 {
     my $split_string = sub {
-        grep { $_ ne '' } split(/\W+/, lc($_[0]));
+        grep { $_ ne '' } split(/\W+/, CORE::fc($_[0]));
     };
 
     my %history_dict;
@@ -513,7 +513,7 @@ foreach my $path ($CONFIG{cache_dir}) {
         }
 
         foreach my $token (@tokens) {
-            @matches = grep { index(lc($_), $token) != -1 } @matches;
+            @matches = grep { index(CORE::fc($_), $token) != -1 } @matches;
         }
 
         my $store = Gtk2::ListStore->new('Glib::String');
@@ -610,8 +610,8 @@ foreach my $path ($CONFIG{cache_dir}) {
 
                 chomp $line;
 
-                if (not exists $history{lc($line)}) {
-                    undef $history{lc($line)};
+                if (not exists $history{CORE::fc($line)}) {
+                    undef $history{CORE::fc($line)};
                     push @history, $line;
                 }
             }
@@ -649,11 +649,11 @@ foreach my $path ($CONFIG{cache_dir}) {
         my ($text) = @_;
 
         my $str = join(' ', split(' ', $text));
-        if (not exists $history{lc($str)}) {
+        if (not exists $history{CORE::fc($str)}) {
             if (set_history()) {
                 say {$history_fh} $str;
             }
-            undef $history{$str};
+            undef $history{CORE::fc($str)};
             update_history_dict($str);
         }
     }

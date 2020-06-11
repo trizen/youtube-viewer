@@ -1,6 +1,6 @@
 ## youtube-viewer
 
-A lightweight application for searching and streaming videos from YouTube.
+A lightweight application for searching and playing videos from YouTube.
 
 ### youtube-viewer
 

@@ -83,7 +83,6 @@ use File::Spec::Functions qw(
   curdir
   path
   rel2abs
-  tmpdir
   file_name_is_absolute
   );
 
@@ -797,7 +796,6 @@ usage: $execname [options] ([url] | [keywords])
  * Closed-captions
    --get-captions!      : download closed-captions for videos
    --auto-captions!     : include or exclude auto-generated captions
-   --captions-dir=s     : directory where to save the .srt files
 
  * Config
    --config=s           : configuration file
@@ -3295,7 +3293,7 @@ sub download_video {
         }
     }
 
-    # Copy the .srt file from captions-dir to downloads-dir
+    # Copy the .srt file to downloads-dir
     if (    $opt{copy_caption}
         and -e $video_filename
         and defined($streaming->{srt_file})
