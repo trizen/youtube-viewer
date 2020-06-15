@@ -1956,10 +1956,18 @@ sub get_user_input {
     }
 
     my $input = unpack(
-                       'A*', defined($opt{std_input})
-                       ? delete($opt{std_input})
-                       : ($term->readline($text) // return ':return')
-                      ) =~ s/^\s+//r;
+        'A*',
+        defined($opt{std_input})
+        ? delete($opt{std_input})
+        : (
+           do {
+               my @lines = split(/\R/, $text);
+               say for @lines[0 .. $#lines - 1];
+               $term->readline($lines[-1]);
+             }
+             // return ':return'
+          )
+    ) =~ s/^\s+//r;
 
     return q{:next} if $input eq q{};    # <ENTER> for the next page
 
@@ -4169,7 +4177,8 @@ sub print_videos {
 }
 
 sub press_enter_to_continue {
-    scalar $term->readline(colored("\n=>> Press ENTER to continue...", 'bold'));
+    say '';
+    scalar $term->readline(colored("=>> Press ENTER to continue...", 'bold'));
 }
 
 sub main_quit {
