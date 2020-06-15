@@ -492,12 +492,21 @@ sub _make_feed_url {
 sub _extract_from_invidious {
     my ($self, $videoID) = @_;
 
-    my $url = sprintf("https://invidio.us/api/v1/videos/%s?fields=formatStreams,adaptiveFormats", $videoID);
+    my @instances = qw(
+      invidio.us
+      invidious.snopyta.org
+      invidious.13ad.de
+      );
 
-    my $tries = 3;
+    my $instance   = shift(@instances);
+    my $url_format = "https://%s/api/v1/videos/%s?fields=formatStreams,adaptiveFormats";
+    my $url        = sprintf($url_format, $instance, $videoID);
+
+    my $tries = 2 * scalar(@instances);
     my $resp  = $self->{lwp}->get($url);
 
     while (not $resp->is_success() and $resp->status_line() =~ /read timeout/i and --$tries >= 0) {
+        $url  = sprintf($url_format, shift(@instances), $videoID) if (@instances and ($tries % 2 == 0));
         $resp = $self->{lwp}->get($url);
     }
 
