@@ -363,11 +363,13 @@ while (my ($key, $value) = each %objects) {
 local $SIG{__WARN__} = sub {
     my $warning = strip_spaces(join('', @_));
 
+    say STDERR $warning;
+
     return if $warning =~ / at \(eval /;
     return if $warning =~ /\bunhandled exception in callback:/;
+    return if $warning =~ /, or \} expected while parsing object\/hash/;
 
     $warning = "[" . localtime(time) . "]: " . $warning . "\n";
-    print STDERR $warning;
 
     set_text($warnings_textview, $warning, append => 1);
 };

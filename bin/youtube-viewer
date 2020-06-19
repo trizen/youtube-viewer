@@ -409,7 +409,7 @@ EOD
 
         my $dumped_config = q{our $CONFIG = } . Data::Dump::pp(\%CONFIG) . "\n";
 
-        if ($home_dir eq $ENV{HOME}) {
+        if (defined($ENV{HOME}) and $home_dir eq $ENV{HOME}) {
             $dumped_config =~ s/\Q$home_dir\E/\$ENV{HOME}/g;
         }
 
