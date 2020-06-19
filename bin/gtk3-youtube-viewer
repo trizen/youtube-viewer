@@ -388,16 +388,17 @@ local $SIG{__WARN__} = sub {
 
 # __DIE__ handle
 local $SIG{__DIE__} = sub {
-    my $error  = join('', @_);
     my $caller = [caller]->[0];
+    my $error  = strip_spaces(join('', @_));
 
-    # Ignore eval() errors
+    say STDERR $error;
+
+    # Ignore harmless errors
     return if $error =~ / at \(eval /;
+    return if $error =~ /, or \} expected while parsing object\/hash/;
 
-    # Just print the third-party errors,
-    # without displaying them to the user.
+    # Ignore third-party errors
     if (not $caller =~ /^(?:main\z|WWW::YoutubeViewer\b)/) {
-        print STDERR "@_\n";
         return;
     }
 
@@ -413,6 +414,7 @@ local $SIG{__DIE__} = sub {
           }
           . "\n=>> Previous warnings:\n" . get_text($warnings_textview)
     );
+
     warn $error;
     $errors_window->show;
     return 1;
