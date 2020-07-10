@@ -54,12 +54,12 @@ Replace `--gtk` with `--gtk2` or `--gtk3` to install only the Gtk2 or Gtk3 versi
 For trying the latest commit of `youtube-viewer`, without installing it, execute the following commands:
 
 ```console
-cd /tmp
-wget https://github.com/trizen/youtube-viewer/archive/master.zip -O youtube-viewer-master.zip
-unzip -n youtube-viewer-master.zip
-cd youtube-viewer-master/bin
-perl -pi -ne 's{DEVEL = 0}{DEVEL = 1}' {gtk2-,gtk3-,}youtube-viewer
-./youtube-viewer
+    cd /tmp
+    wget https://github.com/trizen/youtube-viewer/archive/master.zip -O youtube-viewer-master.zip
+    unzip -n youtube-viewer-master.zip
+    cd youtube-viewer-master/bin
+    perl -pi -ne 's{DEVEL = 0}{DEVEL = 1}' {gtk2-,gtk3-,}youtube-viewer
+    ./youtube-viewer
 ```
 
 
