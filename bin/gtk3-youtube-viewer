@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 29 May 2020
+#  Latest edit on: 11 July 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -188,6 +188,7 @@ my %CONFIG = (
     prefer_mp4      => 0,
     prefer_av1      => 0,
     maxResults      => 10,
+    hfr             => 1,
     resolution      => 'best',
     videoDimension  => undef,
     videoEmbeddable => undef,
@@ -3049,6 +3050,7 @@ sub get_streaming_url {
     my ($streaming, $resolution) =
       $yv_itags->find_streaming_url(
                                     urls           => $urls,
+                                    hfr            => $CONFIG{hfr},
                                     resolution     => $CONFIG{resolution},
                                     dash           => $CONFIG{dash_support},
                                     dash_mp4_audio => $CONFIG{dash_mp4_audio},

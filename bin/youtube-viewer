@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 29 May 2020
+#  Latest edit on: 11 July 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -198,6 +198,7 @@ my %CONFIG = (
     dash_mp4_audio  => 1,
     dash_segmented  => 1,        # may load slow
     maxResults      => 20,
+    hfr             => 1,
     resolution      => 'best',
     videoDefinition => undef,
     videoDimension  => undef,
@@ -727,6 +728,7 @@ usage: $execname [options] ([url] | [keywords])
    --vd=s               : set the video definition (any, high or standard)
    --page=i             : get results starting with a specific page number
    --results=i          : how many results to display per page (max: 50)
+   --hfr!               : prefer high frame rate (HFR) videos
    -2  -3  -4  -7  -1   : resolutions: 240p, 360p, 480p, 720p and 1080p
    --resolution=s       : supported resolutions: best, 2160p, 1440p,
                           1080p, 720p, 480p, 360p, 240p, 144p, audio.
@@ -1512,6 +1514,8 @@ sub parse_arguments {
         '480p|4'  => sub { $opt{resolution} = 480 },
         '720p|7'  => sub { $opt{resolution} = 720 },
         '1080p|1' => sub { $opt{resolution} = 1080 },
+
+        'hfr!'             => \$opt{hfr},
         'res|resolution=s' => \$opt{resolution},
 
         'comments=s'       => \$opt{get_comments},
@@ -3075,6 +3079,7 @@ sub get_streaming_url {
       $yv_itags->find_streaming_url(
                                     urls           => $urls,
                                     resolution     => ($opt{novideo} ? 'audio' : $opt{resolution}),
+                                    hfr            => $opt{hfr},
                                     dash           => $dash,
                                     dash_mp4_audio => ($opt{novideo} ? 1 : $opt{dash_mp4_audio}),
                                     dash_segmented => ($opt{download_video} ? 0 : $opt{dash_segmented}),
@@ -3776,7 +3781,7 @@ sub print_videos {
               sprintf(
                       "%s. %s (by %s) [%s]\n",
                       colored(sprintf('%2d', $i + 1), 'bold'), $yv_utils->get_title($video),
-                      $yv_utils->get_channel_title($video), $yv_utils->get_time($video),
+                      $yv_utils->get_channel_title($video),    $yv_utils->get_time($video),
                      );
         }
     }
