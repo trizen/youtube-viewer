@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 11 July 2020
+#  Latest edit on: 15 July 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -74,7 +74,7 @@ no warnings 'once';
 my $DEVEL;    # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
-use WWW::YoutubeViewer v3.7.6;
+use WWW::YoutubeViewer v3.7.7;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
@@ -3170,7 +3170,7 @@ sub download_video {
 
     my $naked_filename = $video_filename =~ s/\.\w+\z//r;
 
-    $naked_filename =~ s/:\h*/ - /g;    # replace colons (":") with dashes ("-")
+    $naked_filename =~ s/\h*:+\h*/ - /g;    # replace colons (":") with dashes ("-")
 
     my $mkv_filename   = "$naked_filename.mkv";
     my $srt_filename   = "$naked_filename.srt";

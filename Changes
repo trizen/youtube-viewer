@@ -5,6 +5,7 @@
 #   https://github.com/trizen/youtube-viewer/releases
 
 [CHANGELOG]
+- Added the `--hfr!` option for prefering/ignoring High Frame Rate (HFR) videos.             - NEW (v3.7.7)
 - Added support for changing the API key and client ID/secret value in 'api.json' file.      - NEW (v3.7.4)
 - Added support for AV1 encoded videos (with `prefer_av1` config-key).                       - NEW (v3.7.3)
 - Added support for restoring the previous session. (Gtk3)                                   - NEW (v3.7.2)
