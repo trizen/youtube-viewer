@@ -401,7 +401,7 @@ local $SIG{__DIE__} = sub {
                 "\nThe module $module is required!\n\nTo install it, just type in terminal:\n\tsudo cpan $module\n";
             }
           }
-          . "\n=>> Previous warnings:\n" . get_text($warnings_textview)
+          . "\n\n=>> Previous warnings:\n" . get_text($warnings_textview)
     );
 
     warn $error;
@@ -3498,8 +3498,9 @@ if (@ARGV) {
 if (not defined $yv_obj->get_key) {
     Glib::Idle->add(
         sub {
-            die
-"\nError: no API key has been set!\n\nFor creating a new YouTube API key, please see:\nhttps://github.com/trizen/youtube-viewer#logging-in\n\n";
+            die join("\n",
+                     "\nError: no API key has been set!\n\nFor creating a new YouTube API key, please see:",
+                     "https://github.com/trizen/youtube-viewer#logging-in\n\n");
             return 0;
         },
         [],

@@ -116,7 +116,7 @@ Starting with version 3.7.4, youtube-viewer provides the `~/.config/youtube-view
 ```
 
 * Prerequisite: you must create a Google Platform project. Following the below steps should prompt you to create one if you do not already have one.
-* Enable the YouTube Data v3 API on your project: [navigate here](https://console.developers.google.com/apis/library/youtube.googleapis.com) and click "Enable" (if you see a blue "Manage" button, its already enabled).
+* Enable the YouTube Data v3 API on your project: [navigate here](https://console.developers.google.com/apis/library/youtube.googleapis.com) and click "Enable" (if you see a blue "Manage" button, it's already enabled).
 * Replace `API_KEY` with your YouTube API key. Create a new key [here](https://console.developers.google.com/apis/credentials) by clicking on "Create Credentials" > "API Key".
 * Optionally, in order to log in, replace `CLIENT_ID` and `CLIENT_SECRET` with your native client ID and client secret values, by creating a new OAuth 2.0 Client ID [here](https://console.developers.google.com/apis/api/youtube.googleapis.com/credentials): click "Create Credentials" > "OAuth client ID", then select "Other".
 
