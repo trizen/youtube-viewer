@@ -38,7 +38,7 @@ our $get_username_playlists_re = qr{$get_username_videos_re/playlists};
 # Video ID
 my $video_id_re = qr/[0-9A-Za-z_\-]{11}/;
 our $valid_video_id_re = qr{^$video_id_re\z};
-our $get_video_id_re   = qr{(?:%3F|\b)(?>v|embed|youtu[.]be)(?>[=/]|%3D)(?<video_id>$video_id_re)};
+our $get_video_id_re   = qr{(?:%3F|\b)(?>v|embed|youtu(?:\\)?[.]be)(?>(?:\\)?[=/]|%3D)(?<video_id>$video_id_re)};
 
 # Playlist ID
 our $valid_playlist_id_re = qr{^$generic_name_re\z};

@@ -2136,7 +2136,7 @@ sub rate_videos {
 }
 
 sub get_and_play_video_ids {
-    (my @ids = grep { get_valid_video_id($_) } @_) || return;
+    (my @ids = grep { defined($_) } map { get_valid_video_id($_) } @_) || return;
     my $info = $yv_obj->video_details(join(',', @ids), VIDEO_PART);
 
     if ($yv_utils->has_entries($info)) {
