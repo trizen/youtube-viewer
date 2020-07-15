@@ -639,8 +639,9 @@ EOT
 }
 
 if (not defined $yv_obj->get_key) {
-    die
-"\nError: no API key has been set!\n\nFor creating a new YouTube API key, please see:\nhttps://github.com/trizen/youtube-viewer#logging-in\n\n";
+    die join("\n",
+             "\nError: no API key has been set!\n\nFor creating a new YouTube API key, please see:",
+             "https://github.com/trizen/youtube-viewer#logging-in\n\n");
 }
 
 $yv_obj->load_authentication_tokens();
