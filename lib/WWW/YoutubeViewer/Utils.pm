@@ -80,10 +80,11 @@ From a string like 'video/webm;+codecs="vp9"', it returns 'webm'.
 sub extension {
     my ($self, $type) = @_;
         $type =~ /\bflv\b/i      ? q{flv}
-      : $type =~ /\bwebm\b/i     ? q{webm}
+      : $type =~ /\bopus\b/i     ? q{opus}
       : $type =~ /\b3gpp?\b/i    ? q{3gp}
       : $type =~ m{^video/(\w+)} ? $1
       : $type =~ m{^audio/(\w+)} ? $1
+      : $type =~ /\bwebm\b/i     ? q{webm}
       :                            q{mp4};
 }
 
