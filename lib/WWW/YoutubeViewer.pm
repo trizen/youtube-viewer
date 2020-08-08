@@ -863,10 +863,12 @@ sub get_streaming_urls {
             }
 
             if ($url->{type} =~ /\bvideo\b/i) {
-                if ($self->get_prefer_mp4 and $url->{type} =~ /\bmp4\b/i) {
-                    push @video_urls, $url;
+                if ($url->{type} =~ /\bav[0-9]+\b/i) {  # AV1
+                    if ($self->get_prefer_av1) {
+                        push @video_urls, $url;
+                    }
                 }
-                elsif ($self->get_prefer_av1 and $url->{type} =~ /\bav[0-9]+\b/i) {
+                elsif ($self->get_prefer_mp4 and $url->{type} =~ /\bmp4\b/i) {
                     push @video_urls, $url;
                 }
             }
