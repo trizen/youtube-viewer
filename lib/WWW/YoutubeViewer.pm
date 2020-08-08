@@ -493,9 +493,9 @@ sub _extract_from_invidious {
     my ($self, $videoID) = @_;
 
     my @instances = qw(
-      invidio.us
       invidious.snopyta.org
       invidious.13ad.de
+      watch.nettohikari.com
       );
 
     my $tries      = 2 * scalar(@instances);
