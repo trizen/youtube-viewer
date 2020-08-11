@@ -2414,7 +2414,7 @@ sub get_code {
               : $type eq 'next_page' && $code ne ''             ? do {
 
                 my $next_page_token = $liststore->get($iter, 5);
-                my $results         = $yv_obj->next_page($code, $next_page_token);
+                my $results         = $yv_obj->from_page_token($code, $next_page_token);
 
                 if ($yv_utils->has_entries($results)) {
                     my $label = '<big><b>' . ('=' x 20) . '</b></big>';
@@ -3356,7 +3356,7 @@ sub comments_row_activated {
 
         my $token = $feeds_liststore->get($iter, 2);
         $feeds_liststore->remove($iter);
-        my $results = $yv_obj->next_page($url, $token);
+        my $results = $yv_obj->from_page_token($url, $token);
 
         if ($yv_utils->has_entries($results)) {
             display_comments($results);

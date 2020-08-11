@@ -369,6 +369,8 @@ $action_options
 :(dis)like=i      : like or dislike a video
 :fav(orite)=i     : favorite a video
 :autoplay=i       : autoplay mode, starting from video i
+:page=i           : jump to page i of results
+:beg :end         : jump to first or last page of results
 
 # Playing
 <number>          : play the corresponding video
@@ -2292,9 +2294,16 @@ sub general_options {
     if ($option =~ /^(?:q|quit|exit)\z/) {
         main_quit(0);
     }
+    elsif ($option =~ /^(page=(\S+)\z|(last|end|beg|first))/ and defined $url) {
+        my $page_number = parse_page_number($+, $info);
+        say "\n:: Jumping to page $page_number" if ($page_number > 1);
+        my $page_token = $yv_obj->page_token($page_number);
+        my $request    = $yv_obj->from_page_token($url, $page_token);
+        $callback->($request);
+    }
     elsif ($option =~ /^(?:n|next)\z/ and defined $url) {
         if (defined $info->{nextPageToken}) {
-            my $request = $yv_obj->next_page($url, $info->{nextPageToken});
+            my $request = $yv_obj->from_page_token($url, $info->{nextPageToken});
             $callback->($request);
         }
         else {
@@ -2306,7 +2315,7 @@ sub general_options {
     }
     elsif ($option =~ /^(?:b|back|p|prev|previous)\z/ and defined $url) {
         if (defined $info->{prevPageToken}) {
-            my $request = $yv_obj->previous_page($url, $info->{prevPageToken});
+            my $request = $yv_obj->from_page_token($url, $info->{prevPageToken});
             $callback->($request);
         }
         else {
@@ -3014,6 +3023,37 @@ sub compile_regex {
     }
 
     return $re;
+}
+
+sub parse_page_number {
+    my ($page_number, $info) = @_;
+
+    $page_number // return 1;
+
+    if ($page_number =~ /^[0-9]+\z/) {
+        ## ok
+    }
+    elsif ($page_number =~ /last|end/) {
+
+        if (ref($info->{pageInfo}) eq 'HASH') {
+            my $total    = $info->{pageInfo}{totalResults};
+            my $per_page = $info->{pageInfo}{resultsPerPage};
+
+            # In search results, restrict total to 500. Otherwise, it fails.
+            if ($total >= 1000000) {
+                $total = 500;
+            }
+
+            $page_number = int($total / $per_page);
+            $page_number += 1 if ($total % $per_page != 0);
+            $page_number = 1 if ($page_number <= 0);
+        }
+    }
+    elsif ($page_number =~ /first|beg/) {
+        $page_number = 1;
+    }
+
+    return $page_number;
 }
 
 sub get_range_numbers {
@@ -3811,7 +3851,7 @@ sub print_videos {
               ) {
                 if ($opt{play_backwards}) {
                     if (defined $info->{prevPageToken}) {
-                        __SUB__->($yv_obj->previous_page($url, $info->{prevPageToken}), auto => 1);
+                        __SUB__->($yv_obj->from_page_token($url, $info->{prevPageToken}), auto => 1);
                     }
                     else {
                         $opt{play_backwards} = 0;
@@ -3821,7 +3861,7 @@ sub print_videos {
                 }
                 else {
                     if (defined $info->{nextPageToken}) {
-                        __SUB__->($yv_obj->next_page($url, $info->{nextPageToken}), auto => 1);
+                        __SUB__->($yv_obj->from_page_token($url, $info->{nextPageToken}), auto => 1);
                     }
                     else {
                         $opt{play_all} = 0;
@@ -3874,9 +3914,16 @@ sub print_videos {
                 print $complete_help;
                 press_enter_to_continue();
             }
+            elsif ($opt =~ /^(page=(\S+)\z|(last|end|beg|first))/) {
+                my $page_number = parse_page_number($+, $info);
+                say "\n:: Jumping to page $page_number" if ($page_number > 1);
+                my $page_token = $yv_obj->page_token($page_number);
+                my $request    = $yv_obj->from_page_token($url, $page_token);
+                __SUB__->($request, @keywords ? (auto => 1) : ());
+            }
             elsif ($opt =~ /^(?:n|next)\z/) {
                 if (defined $info->{nextPageToken}) {
-                    my $request = $yv_obj->next_page($url, $info->{nextPageToken});
+                    my $request = $yv_obj->from_page_token($url, $info->{nextPageToken});
                     __SUB__->($request, @keywords ? (auto => 1) : ());
                 }
                 else {
@@ -3890,7 +3937,7 @@ sub print_videos {
             }
             elsif ($opt =~ /^(?:b|back|p|prev|previous)\z/) {
                 if (defined $info->{prevPageToken}) {
-                    __SUB__->($yv_obj->previous_page($url, $info->{prevPageToken}), @keywords ? (auto => 1) : ());
+                    __SUB__->($yv_obj->from_page_token($url, $info->{prevPageToken}), @keywords ? (auto => 1) : ());
                 }
                 else {
                     warn_first_page();

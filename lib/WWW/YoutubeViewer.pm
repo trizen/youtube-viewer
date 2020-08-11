@@ -183,9 +183,9 @@ sub new {
 }
 
 sub page_token {
-    my ($self) = @_;
+    my ($self, $number) = @_;
 
-    my $page = $self->get_page;
+    my $page = $number // $self->get_page;
 
     # Don't generate the token for the first page
     return undef if $page == 1;
@@ -863,7 +863,7 @@ sub get_streaming_urls {
             }
 
             if ($url->{type} =~ /\bvideo\b/i) {
-                if ($url->{type} =~ /\bav[0-9]+\b/i) {  # AV1
+                if ($url->{type} =~ /\bav[0-9]+\b/i) {    # AV1
                     if ($self->get_prefer_av1) {
                         push @video_urls, $url;
                     }
@@ -952,26 +952,27 @@ sub post_as_json {
     $self->_save('POST', $url, $json_str);
 }
 
+sub from_page_token {
+    my ($self, $url, $token) = @_;
+
+    my $pt_url = (
+                  defined($token)
+                  ? (
+                     ($url =~ s/[?&]pageToken=\K[^&]+/$token/)
+                     ? $url
+                     : $self->_append_url_args($url, pageToken => $token)
+                    )
+                  : ($url =~ s/[?&]pageToken=[^&]+//r)
+                 );
+
+    my $res = $self->_get_results($pt_url);
+    $res->{url} = $pt_url;
+    return $res;
+}
+
 # SUBROUTINE FACTORY
 {
     no strict 'refs';
-
-    # Create {next,previous}_page subroutines
-    foreach my $name ('next_page', 'previous_page') {
-        *{__PACKAGE__ . '::' . $name} = sub {
-            my ($self, $url, $token) = @_;
-
-            my $pt_url = (
-                            $url =~ s/[?&]pageToken=\K[^&]+/$token/
-                          ? $url
-                          : $self->_append_url_args($url, pageToken => $token)
-                         );
-
-            my $res = $self->_get_results($pt_url);
-            $res->{url} = $pt_url;
-            return $res;
-        };
-    }
 
     # Create proxy_{exec,system} subroutines
     foreach my $name ('exec', 'system', 'stdout') {
