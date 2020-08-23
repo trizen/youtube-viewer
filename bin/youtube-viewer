@@ -1562,7 +1562,7 @@ sub parse_arguments {
 
         'orderby|order|order-by=s' => \$opt{order},
         'duration=s'               => \$opt{videoDuration},
-        'within=s'                 => \$opt{within},
+        'within|since=s'           => \$opt{within},
 
         'max-seconds|max_seconds=i' => \$opt{max_seconds},
         'min-seconds|min_seconds=i' => \$opt{min_seconds},
