@@ -30,6 +30,10 @@ sub parse_json_string {
         return {};
     }
 
+    # Remove non-sense from JSON data.
+    # $json =~ s/endscreen_ad_tracking_data=\{.*?\}//;
+    # $json =~ s/\s*,\s*"botguardData":(\{(?>[^{}\\]+|\\[{}]?|(?1))*\})//;
+
     require JSON;
     my $hash = eval { JSON::decode_json($json) };
     return $@ ? do { warn "[JSON]: $@\n"; {} } : $hash;

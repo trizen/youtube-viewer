@@ -830,8 +830,7 @@ sub get_streaming_urls {
     my @caption_urls;
     if (exists $info{player_response}) {
 
-        require URI::Escape;
-        my $captions_json = URI::Escape::uri_unescape($info{player_response});
+        my $captions_json = $info{player_response};                     # don't run uri_unescape() on this
         my $caption_data  = $self->parse_json_string($captions_json);
 
         if (eval { ref($caption_data->{captions}{playerCaptionsTracklistRenderer}{captionTracks}) eq 'ARRAY' }) {
