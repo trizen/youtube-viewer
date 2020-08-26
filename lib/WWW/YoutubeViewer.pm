@@ -239,6 +239,8 @@ sub set_lwp_useragent {
         show_progress => $self->get_debug,
         agent         => $self->get_lwp_agent,
 
+        ssl_opts => {verify_hostname => 1},
+
         $lwp eq 'LWP::UserAgent::Cached'
         ? (
            cache_dir  => $self->get_cache_dir,
