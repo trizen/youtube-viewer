@@ -840,6 +840,11 @@ sub get_streaming_urls {
         }
     }
 
+    if ($self->get_debug) {
+        my $count = scalar(@streaming_urls);
+        say STDERR ":: Found $count streaming URLs...";
+    }
+
     # Try again with youtube-dl
     if (!@streaming_urls or $info{status} =~ /fail|error/i) {
         @streaming_urls = $self->_fallback_extract_urls($videoID);
