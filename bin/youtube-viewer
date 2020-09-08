@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 24 August 2020
+#  Latest edit on: 08 September 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -71,7 +71,7 @@ use 5.016;
 use warnings;
 no warnings 'once';
 
-my $DEVEL;    # true in devel mode
+my $DEVEL;                                 # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
 
 use WWW::YoutubeViewer v3.7.8;
@@ -190,7 +190,7 @@ my %CONFIG = (
     video_player_selected => (
         $constant{win32}
         ? 'vlc'
-        : undef            # auto-defined
+        : undef    # auto-defined
     ),
 
     # YouTube options
@@ -230,6 +230,9 @@ my %CONFIG = (
     # Others
     autoplay_mode        => 0,
     http_proxy           => undef,
+    cookie_file          => undef,
+    user_agent           => undef,
+    timeout              => undef,
     env_proxy            => 1,
     confirm              => 0,
     debug                => 0,
@@ -618,6 +621,10 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      config_dir          => $config_dir,
                                      cache_dir           => $opt{cache_dir},
                                      lwp_env_proxy       => $opt{env_proxy},
+                                     cookie_file         => $opt{cookie_file},
+                                     http_proxy          => $opt{http_proxy},
+                                     user_agent          => $opt{user_agent},
+                                     timeout             => $opt{timeout},
                                      authentication_file => $authentication_file,
                                     );
 
@@ -833,6 +840,8 @@ usage: $execname [options] ([url] | [keywords])
        --use-colors!    : enable or disable the ANSI colors for text
 
  * Other
+   --cookies=s          : file to read cookies from and dump cookie
+   --user-agent=s       : specify a custom user agent
    --proxy=s            : set HTTP(S)/SOCKS proxy: 'proto://domain.tld:port/'
                           If authentication required,
                           use 'proto://user:pass\@domain.tld:port/'
@@ -1133,7 +1142,8 @@ sub apply_configuration {
                              publishedAfter publishedBefore
                              safeSearch regionCode debug hl
                              http_proxy page comments_order
-                             subscriptions_order
+                             subscriptions_order user_agent
+                             cookie_file timeout
                              )
       ) {
 
@@ -1554,6 +1564,8 @@ sub parse_arguments {
         'related-videos|rv=s'         => \$opt{related_videos},
         'popular-videos|popular|pv=s' => \$opt{popular_videos},
 
+        'cookie-file|cookies=s'         => \$opt{cookie_file},
+        'user-agent|agent=s'            => \$opt{user_agent},
         'http_proxy|http-proxy|proxy=s' => \$opt{http_proxy},
 
         'catlang|cl|hl=s'        => \$opt{hl},
@@ -2548,7 +2560,7 @@ sub print_channels {
 
     my $url      = $results->{url};
     my $info     = $results->{results} // {};
-    my $channels = $info->{items} // [];
+    my $channels = $info->{items}      // [];
 
     foreach my $i (0 .. $#{$channels}) {
         my $channel = $channels->[$i];
@@ -2662,7 +2674,7 @@ sub print_comments {
 
     my $url      = $results->{url};
     my $info     = $results->{results} // {};
-    my $comments = $info->{items} // [];
+    my $comments = $info->{items}      // [];
 
     my $i = 0;
     foreach my $comment (@{$comments}) {
@@ -2850,7 +2862,7 @@ sub print_playlists {
 
     my $url       = $results->{url};
     my $info      = $results->{results} // {};
-    my $playlists = $info->{items} // [];
+    my $playlists = $info->{items}      // [];
 
     state $info_format = <<"FORMAT";
 
@@ -3046,7 +3058,7 @@ sub parse_page_number {
 
             $page_number = int($total / $per_page);
             $page_number += 1 if ($total % $per_page != 0);
-            $page_number = 1 if ($page_number <= 0);
+            $page_number = 1  if ($page_number <= 0);
         }
     }
     elsif ($page_number =~ /first|beg/) {
@@ -3122,7 +3134,7 @@ sub get_streaming_url {
                                     resolution     => ($opt{novideo} ? 'audio' : $opt{resolution}),
                                     hfr            => $opt{hfr},
                                     dash           => $dash,
-                                    dash_mp4_audio => ($opt{novideo} ? 1 : $opt{dash_mp4_audio}),
+                                    dash_mp4_audio => ($opt{novideo}        ? 1 : $opt{dash_mp4_audio}),
                                     dash_segmented => ($opt{download_video} ? 0 : $opt{dash_segmented}),
                                    );
 
@@ -3392,7 +3404,7 @@ sub get_player_command {
 
     $MPLAYER{fullscreen} = $opt{fullscreen} ? $opt{video_players}{$opt{video_player_selected}}{fs}      // '' : q{};
     $MPLAYER{novideo}    = $opt{novideo}    ? $opt{video_players}{$opt{video_player_selected}}{novideo} // '' : q{};
-    $MPLAYER{arguments} = $opt{video_players}{$opt{video_player_selected}}{arg} // q{};
+    $MPLAYER{arguments}  = $opt{video_players}{$opt{video_player_selected}}{arg} // q{};
 
     my $cmd = join(
         q{ },
@@ -3647,7 +3659,7 @@ sub print_videos {
 
     my $url    = $results->{url};
     my $info   = $results->{results} // {};
-    my $videos = $info->{items} // [];
+    my $videos = $info->{items}      // [];
 
     foreach my $entry (@$videos) {
         if ($yv_utils->is_activity($entry)) {

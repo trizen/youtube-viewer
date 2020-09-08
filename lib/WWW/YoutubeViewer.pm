@@ -41,21 +41,21 @@ my %valid_options = (
 
     # Main options
     v               => {valid => q[],                                                    default => 3},
-    page            => {valid => [qr/^(?!0+\z)\d+\z/],                                   default => 1},
-    http_proxy      => {valid => [qr{.}],                                                default => undef},
-    hl              => {valid => [qr/^\w+(?:[\-_]\w+)?\z/],                              default => undef},
+    page            => {valid => qr/^(?!0+\z)\d+\z/,                                     default => 1},
+    http_proxy      => {valid => qr/./,                                                  default => undef},
+    hl              => {valid => qr/^\w+(?:[\-_]\w+)?\z/,                                default => undef},
     maxResults      => {valid => [1 .. 50],                                              default => 10},
-    topicId         => {valid => [qr/^./],                                               default => undef},
+    topicId         => {valid => qr/./,                                                  default => undef},
     order           => {valid => [qw(relevance date rating viewCount title videoCount)], default => undef},
-    publishedAfter  => {valid => [qr/^\d+/],                                             default => undef},
-    publishedBefore => {valid => [qr/^\d+/],                                             default => undef},
-    channelId       => {valid => [qr/^[-\w]{2,}\z/],                                     default => undef},
+    publishedAfter  => {valid => qr/^\d+/,                                               default => undef},
+    publishedBefore => {valid => qr/^\d+/,                                               default => undef},
+    channelId       => {valid => qr/^[-\w]{2,}\z/,                                       default => undef},
     channelType     => {valid => [qw(any show)],                                         default => undef},
 
     # Video only options
     videoCaption    => {valid => [qw(any closedCaption none)],     default => undef},
     videoDefinition => {valid => [qw(any high standard)],          default => undef},
-    videoCategoryId => {valid => [qr/^\d+\z/],                     default => undef},
+    videoCategoryId => {valid => qr/^\d+\z/,                       default => undef},
     videoDimension  => {valid => [qw(any 2d 3d)],                  default => undef},
     videoDuration   => {valid => [qw(any short medium long)],      default => undef},
     videoEmbeddable => {valid => [qw(any true)],                   default => undef},
@@ -64,8 +64,8 @@ my %valid_options = (
     eventType       => {valid => [qw(completed live upcoming)],    default => undef},
     chart           => {valid => [qw(mostPopular)],                default => 'mostPopular'},
 
-    regionCode        => {valid => [qr/^[A-Z]{2}\z/i],         default => undef},
-    relevanceLanguage => {valid => [qr/^[a-z](?:\-\w+)?\z/i],  default => undef},
+    regionCode        => {valid => qr/^[A-Z]{2}\z/i,           default => undef},
+    relevanceLanguage => {valid => qr/^[a-z](?:\-\w+)?\z/i,    default => undef},
     safeSearch        => {valid => [qw(none moderate strict)], default => undef},
     videoType         => {valid => [qw(any episode movie)],    default => undef},
 
@@ -73,10 +73,11 @@ my %valid_options = (
     subscriptions_order => {valid => [qw(alphabetical relevance unread)], default => undef},
 
     # Misc
-    debug       => {valid => [0 .. 3],     default => 0},
-    lwp_timeout => {valid => [qr/^\d+\z/], default => 1},
-    config_dir  => {valid => [qr/^./],     default => q{.}},
-    cache_dir   => {valid => [qr/^./],     default => q{.}},
+    debug       => {valid => [0 .. 3],   default => 0},
+    timeout     => {valid => qr/^\d+\z/, default => 10},
+    config_dir  => {valid => qr/^./,     default => q{.}},
+    cache_dir   => {valid => qr/^./,     default => q{.}},
+    cookie_file => {valid => qr/^./,     default => undef},
 
     # Booleans
     lwp_env_proxy => {valid => [1, 0], default => 1},
@@ -85,14 +86,14 @@ my %valid_options = (
     prefer_av1    => {valid => [1, 0], default => 0},
 
     # API/OAuth
-    key           => {valid => [qr/^.{15}/], default => undef},
-    client_id     => {valid => [qr/^.{15}/], default => undef},
-    client_secret => {valid => [qr/^.{15}/], default => undef},
-    redirect_uri  => {valid => [qr/^.{15}/], default => 'urn:ietf:wg:oauth:2.0:oob'},
-    access_token  => {valid => [qr/^.{15}/], default => undef},
-    refresh_token => {valid => [qr/^.{15}/], default => undef},
+    key           => {valid => qr/^.{15}/, default => undef},
+    client_id     => {valid => qr/^.{15}/, default => undef},
+    client_secret => {valid => qr/^.{15}/, default => undef},
+    redirect_uri  => {valid => qr/^.{15}/, default => 'urn:ietf:wg:oauth:2.0:oob'},
+    access_token  => {valid => qr/^.{15}/, default => undef},
+    refresh_token => {valid => qr/^.{15}/, default => undef},
 
-    authentication_file => {valid => [qr/^./], default => undef},
+    authentication_file => {valid => qr/^./, default => undef},
 
     # No input value allowed
     feeds_url        => {valid => q[], default => 'https://www.googleapis.com/youtube/v3/'},
@@ -103,7 +104,7 @@ my %valid_options = (
 
 #<<<
     # LWP user agent
-    lwp_agent => {valid => [qr/^.{5}/], default => 'Mozilla/5.0 (Windows NT 10.0; Win64; gzip; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.0.0 Safari/537.36'},
+    user_agent => {valid => qr/^.{5}/, default => 'Mozilla/5.0 (Windows NT 10.0; Win64; gzip; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.0.0 Safari/537.36'},
 #>>>
 );
 
@@ -112,7 +113,7 @@ sub _our_smartmatch {
 
     $value // return 0;
 
-    if (ref($arg) eq '') {
+    if (not ref($arg)) {
         return ($value eq $arg);
     }
 
@@ -134,7 +135,7 @@ sub _our_smartmatch {
 
     foreach my $key (keys %valid_options) {
 
-        if (ref $valid_options{$key}{valid} eq 'ARRAY') {
+        if (ref($valid_options{$key}{valid})) {
 
             # Create the 'set_*' subroutines
             *{__PACKAGE__ . '::set_' . $key} = sub {
@@ -237,10 +238,10 @@ sub set_lwp_useragent {
 
     $self->{lwp} = $lwp->new(
 
-        cookie_jar    => {},                       # temporary cookies
-        timeout       => $self->get_lwp_timeout,
+        cookie_jar    => {},                      # temporary cookies
+        timeout       => $self->get_timeout,
         show_progress => $self->get_debug,
-        agent         => $self->get_lwp_agent,
+        agent         => $self->get_user_agent,
 
         ssl_opts => {verify_hostname => 1},
 
@@ -286,6 +287,47 @@ sub set_lwp_useragent {
     $agent->default_header('Accept-Encoding' => $accepted_encodings);
     $agent->conn_cache($cache);
     $agent->proxy(['http', 'https'], $self->get_http_proxy) if defined($self->get_http_proxy);
+
+    my $cookie_file = $self->get_cookie_file;
+
+    if (defined($cookie_file) and -f $cookie_file) {
+
+        if ($self->get_debug) {
+            say STDERR ":: Using cookies from: $cookie_file";
+        }
+
+#<<<
+        ## LWP Cookies
+        #~ require HTTP::Cookies;
+
+        #~ my $cookies = HTTP::Cookies->new(
+           #~ file => $cookie_file,
+           #~ autosave => 1,
+        #~ );
+#>>>
+
+        ## Netscape HTTP Cookies
+
+        # Chrome extension:
+        #   https://chrome.google.com/webstore/detail/cookiestxt/njabckikapfpffapmjgojcnbfjonfjfg
+
+        # Firefox extension:
+        #   https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/
+
+        # See also:
+        #   https://github.com/ytdl-org/youtube-dl#how-do-i-pass-cookies-to-youtube-dl
+
+        require HTTP::Cookies::Netscape;
+
+        my $cookies = HTTP::Cookies::Netscape->new(
+                                                   hide_cookie2 => 1,
+                                                   autosave     => 1,
+                                                   file         => $cookie_file,
+                                                  );
+
+        $cookies->load;
+        $agent->cookie_jar($cookies);
+    }
 
     #my $http_proxy = $agent->proxy('http');
     #if (defined($http_proxy)) {
@@ -505,7 +547,7 @@ sub get_invidious_instances {
 
         require LWP::UserAgent;
 
-        my $lwp = LWP::UserAgent->new(timeout => 10);
+        my $lwp = LWP::UserAgent->new(timeout => $self->get_timeout);
         $lwp->show_progress(1) if $self->get_debug;
         my $resp = $lwp->get("https://instances.invidio.us/instances.json");
 
@@ -620,8 +662,15 @@ sub _extract_from_ytdl {
 
     $self->_ytdl_is_available() || return;
 
-    my $json = $self->proxy_stdout('youtube-dl', '--all-formats', '--dump-single-json',
-                                   quotemeta("https://www.youtube.com/watch?v=" . $videoID));
+    my @ytdl_cmd = ('youtube-dl', '--all-formats', '--dump-single-json');
+
+    my $cookie_file = $self->get_cookie_file;
+
+    if (defined($cookie_file) and -f $cookie_file) {
+        push @ytdl_cmd, '--cookies', $cookie_file;
+    }
+
+    my $json = $self->proxy_stdout(@ytdl_cmd, quotemeta("https://www.youtube.com/watch?v=" . $videoID));
 
     my $ref = $self->parse_json_string($json);
 

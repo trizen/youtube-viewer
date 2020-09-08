@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 24 August 2020
+#  Latest edit on: 08 September 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -25,7 +25,7 @@ use 5.016;
 use warnings;
 no warnings 'once';
 
-my $DEVEL;    # true in devel mode
+my $DEVEL;                                 # true in devel mode
 use if ($DEVEL = 0), lib => qw(../lib);    # devel only
 
 use WWW::YoutubeViewer v3.7.8;
@@ -216,13 +216,16 @@ my %CONFIG = (
     # Others
     env_proxy   => 1,
     http_proxy  => undef,
+    timeout     => undef,
+    user_agent  => undef,
+    cookie_file => undef,
     prefer_fork => (($^O eq 'linux') ? 0 : 1),
     debug       => 0,
     fullscreen  => 0,
     audio_only  => 0,
 
     tooltips        => 1,
-    tooltip_max_len => 512,          # max length of description in tooltips
+    tooltip_max_len => 512,    # max length of description in tooltips
 
     thousand_separator     => q{,},
     downloads_dir          => curdir(),
@@ -735,6 +738,9 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      hl                  => $CONFIG{hl},
                                      lwp_env_proxy       => $CONFIG{env_proxy},
                                      cache_dir           => $CONFIG{cache_dir},
+                                     cookie_file         => $CONFIG{cookie_file},
+                                     user_agent          => $CONFIG{user_agent},
+                                     timeout             => $CONFIG{timeout},
                                      authentication_file => $authentication_file,
                                     );
 
@@ -807,7 +813,8 @@ sub apply_configuration {
                              videoEmbeddable videoLicense
                              publishedAfter publishedBefore
                              regionCode videoCategoryId
-                             debug http_proxy
+                             debug http_proxy user_agent
+                             timeout cookie_file
                              )
       ) {
 
@@ -1363,8 +1370,8 @@ $accel->connect(ord('g'), ['control-mask'], ['visible'], \&show_user_favorited_v
 $accel->connect(ord('m'), ['control-mask'], ['visible'], \&show_videos_from_selected_author);
 $accel->connect(ord('k'), ['control-mask'], ['visible'], \&show_playlists_from_selected_author);
 $accel->connect(ord('w'), ['control-mask'], ['visible'], \&show_warnings_window);
-$accel->connect(0xffff, ['lock-mask'], ['visible'], \&delete_selected_row);
-$accel->connect(0xffc8, ['lock-mask'], ['visible'], \&maximize_unmaximize_mainw);
+$accel->connect(0xffff,   ['lock-mask'],    ['visible'], \&delete_selected_row);
+$accel->connect(0xffc8,   ['lock-mask'],    ['visible'], \&maximize_unmaximize_mainw);
 $mainw->add_accel_group($accel);
 
 # Support for navigating back and forth using the side buttons of the mouse
@@ -1393,7 +1400,7 @@ $accel->connect(0xff1b, ['lock-mask'], ['visible'], \&hide_feeds_window);
 $feeds_window->add_accel_group($accel);
 
 $accel = Gtk2::AccelGroup->new;
-$accel->connect(0xff1b, ['lock-mask'], ['visible'], \&hide_preferences_window);
+$accel->connect(0xff1b,   ['lock-mask'],    ['visible'], \&hide_preferences_window);
 $accel->connect(ord('s'), ['control-mask'], ['visible'], \&save_configuration);
 $prefernces_window->add_accel_group($accel);
 
@@ -1974,8 +1981,8 @@ sub set_youtube_tops {
     }
 
     sub remove_selected_user {
-        my $selection = $users_treeview->get_selection // return;
-        my $iter      = $selection->get_selected       // return;
+        my $selection  = $users_treeview->get_selection // return;
+        my $iter       = $selection->get_selected       // return;
         my $channel_id = $users_liststore->get($iter, 0);
         delete $channels{$channel_id};
         $users_liststore->remove($iter);
@@ -2421,7 +2428,7 @@ sub display_results {
 
     my $url   = $results->{url};
     my $info  = $results->{results} // {};
-    my $items = $info->{items} // [];
+    my $items = $info->{items}      // [];
 
     hide_feeds_window();
 
@@ -3067,10 +3074,10 @@ sub get_options_as_arguments {
                    'no-interactive'   => q{},
                    'resolution'       => $CONFIG{resolution},
                    'download-dir'     => quotemeta(rel2abs($CONFIG{downloads_dir})),
-                   'fullscreen'       => $CONFIG{fullscreen} ? q{} : undef,
+                   'fullscreen'       => $CONFIG{fullscreen}   ? q{}   : undef,
                    'no-dash'          => $CONFIG{dash_support} ? undef : q{},
-                   'no-video'         => $CONFIG{audio_only} ? q{} : undef,
-                   'resolution=audio' => $CONFIG{audio_only} ? q{} : undef,
+                   'no-video'         => $CONFIG{audio_only}   ? q{}   : undef,
+                   'resolution=audio' => $CONFIG{audio_only}   ? q{}   : undef,
                   );
 
     while (my ($argv, $value) = each %options) {
@@ -3273,7 +3280,7 @@ sub display_comments {
 
     my $url      = $results->{url};
     my $res      = $results->{results} // {};
-    my $comments = $res->{items} // [];
+    my $comments = $res->{items}       // [];
 
     foreach my $comment (@{$comments}) {
         my $snippet = (($comment->{snippet} // next)->{topLevelComment} // next)->{snippet};
