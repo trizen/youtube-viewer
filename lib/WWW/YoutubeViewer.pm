@@ -101,8 +101,10 @@ my %valid_options = (
     video_info_args  => {valid => q[], default => '?video_id=%s&el=detailpage&ps=default&eurl=&gl=US&hl=en'},
     www_content_type => {valid => q[], default => 'application/x-www-form-urlencoded'},
 
+#<<<
     # LWP user agent
-    lwp_agent => {valid => [qr/^.{5}/], default => 'Mozilla/5.0 (X11; U; Linux i686; gzip; en-US) Chrome/10.0.648.45'},
+    lwp_agent => {valid => [qr/^.{5}/], default => 'Mozilla/5.0 (Windows NT 10.0; Win64; gzip; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.0.0 Safari/537.36'},
+#>>>
 );
 
 sub _our_smartmatch {
@@ -235,6 +237,7 @@ sub set_lwp_useragent {
 
     $self->{lwp} = $lwp->new(
 
+        cookie_jar    => {},                       # temporary cookies
         timeout       => $self->get_lwp_timeout,
         show_progress => $self->get_debug,
         agent         => $self->get_lwp_agent,
@@ -491,14 +494,88 @@ sub _make_feed_url {
     $self->get_feeds_url() . $path . '?' . $self->default_arguments(%args);
 }
 
+sub get_invidious_instances {
+    my ($self) = @_;
+
+    require File::Spec;
+    my $instances_file = File::Spec->catfile($self->get_config_dir, 'instances.json');
+
+    # Get the "instances.json" file when the local copy is too old or non-existent
+    if ((not -e $instances_file) or (-M _) > 1 / 24) {
+
+        require LWP::UserAgent;
+
+        my $lwp = LWP::UserAgent->new(timeout => 10);
+        $lwp->show_progress(1) if $self->get_debug;
+        my $resp = $lwp->get("https://instances.invidio.us/instances.json");
+
+        $resp->is_success() or return;
+
+        my $json = $resp->decoded_content() || return;
+        open(my $fh, '>', $instances_file) or return;
+        print $fh $json;
+        close $fh;
+    }
+
+    open(my $fh, '<', $instances_file) or return;
+
+    my $json_string = do {
+        local $/;
+        <$fh>;
+    };
+
+    $self->parse_json_string($json_string);
+}
+
+sub select_good_invidious_instances {
+    my ($self) = @_;
+
+    state $instances = $self->get_invidious_instances;
+
+    ref($instances) eq 'ARRAY' or return;
+
+    my %ignored = (
+                   'yewtu.be'                 => 1,
+                   'invidious.xyz'            => 1,
+                   'vid.mint.lgbt'            => 1,
+                   'invidious.ggc-project.de' => 1,
+                   'invidious.snopyta.org'    => 1,    # too popular == too slow
+                  );
+
+    my @candidates =
+      grep { not $ignored{$_->[0]} }
+      grep { ref($_->[1]{monitor}) eq 'HASH' ? ($_->[1]{monitor}{statusClass} eq 'success') : 1 }
+      grep { lc($_->[1]{type} // '') eq 'https' } @$instances;
+
+    if ($self->get_debug) {
+        print STDERR ":: Found ", scalar(@candidates), " invidious instances.\n";
+    }
+
+    return @candidates;
+}
+
 sub _extract_from_invidious {
     my ($self, $videoID) = @_;
 
-    my @instances = qw(
-      invidious.snopyta.org
-      invidious.13ad.de
-      invidious.tube
-      );
+    my @instances = $self->select_good_invidious_instances();
+
+    if (@instances) {
+        require List::Util;
+        @instances = List::Util::shuffle(map { $_->[0] } @instances);
+    }
+    else {
+        @instances = qw(
+          invidious.13ad.de
+          invidious.fdn.fr
+          invidious.tube
+          invidious.snopyta.org
+          );
+    }
+
+    if ($self->get_debug) {
+        local $" = ', ';
+        print STDERR ":: Invidious instances: @instances\n";
+    }
 
     my $tries      = 2 * scalar(@instances);
     my $instance   = shift(@instances);
@@ -507,7 +584,7 @@ sub _extract_from_invidious {
 
     my $resp = $self->{lwp}->get($url);
 
-    while (not $resp->is_success() and $resp->status_line() =~ /read timeout/i and --$tries >= 0) {
+    while (not $resp->is_success() and --$tries >= 0) {
         $url  = sprintf($url_format, shift(@instances), $videoID) if (@instances and ($tries % 2 == 0));
         $resp = $self->{lwp}->get($url);
     }
