@@ -65,7 +65,7 @@ my %valid_options = (
     chart           => {valid => [qw(mostPopular)],                default => 'mostPopular'},
 
     regionCode        => {valid => qr/^[A-Z]{2}\z/i,           default => undef},
-    relevanceLanguage => {valid => qr/^[a-z](?:\-\w+)?\z/i,    default => undef},
+    relevanceLanguage => {valid => qr/^[a-z]+(?:\-\w+)?\z/i,   default => undef},
     safeSearch        => {valid => [qw(none moderate strict)], default => undef},
     videoType         => {valid => [qw(any episode movie)],    default => undef},
 
@@ -80,10 +80,10 @@ my %valid_options = (
     cookie_file => {valid => qr/^./,     default => undef},
 
     # Booleans
-    lwp_env_proxy => {valid => [1, 0], default => 1},
-    escape_utf8   => {valid => [1, 0], default => 0},
-    prefer_mp4    => {valid => [1, 0], default => 0},
-    prefer_av1    => {valid => [1, 0], default => 0},
+    env_proxy   => {valid => [1, 0], default => 1},
+    escape_utf8 => {valid => [1, 0], default => 0},
+    prefer_mp4  => {valid => [1, 0], default => 0},
+    prefer_av1  => {valid => [1, 0], default => 0},
 
     # API/OAuth
     key           => {valid => qr/^.{15}/, default => undef},
@@ -270,7 +270,7 @@ sub set_lwp_useragent {
           )
         : (),
 
-        env_proxy => (defined($self->get_http_proxy) ? 0 : $self->get_lwp_env_proxy),
+        env_proxy => (defined($self->get_http_proxy) ? 0 : $self->get_env_proxy),
     );
 
     require LWP::ConnCache;
@@ -283,7 +283,7 @@ sub set_lwp_useragent {
     };
 
     my $agent = $self->{lwp};
-    $agent->ssl_opts(Timeout => 30);
+    $agent->ssl_opts(Timeout => $self->get_timeout);
     $agent->default_header('Accept-Encoding' => $accepted_encodings);
     $agent->conn_cache($cache);
     $agent->proxy(['http', 'https'], $self->get_http_proxy) if defined($self->get_http_proxy);
@@ -295,16 +295,6 @@ sub set_lwp_useragent {
         if ($self->get_debug) {
             say STDERR ":: Using cookies from: $cookie_file";
         }
-
-#<<<
-        ## LWP Cookies
-        #~ require HTTP::Cookies;
-
-        #~ my $cookies = HTTP::Cookies->new(
-           #~ file => $cookie_file,
-           #~ autosave => 1,
-        #~ );
-#>>>
 
         ## Netscape HTTP Cookies
 
@@ -328,12 +318,6 @@ sub set_lwp_useragent {
         $cookies->load;
         $agent->cookie_jar($cookies);
     }
-
-    #my $http_proxy = $agent->proxy('http');
-    #if (defined($http_proxy)) {
-    #    $agent->proxy('https', $http_proxy) if (!defined($agent->proxy('https')));
-    #    $agent->timeout(30);
-    #}
 
     push @{$self->{lwp}->requests_redirectable}, 'POST';
     return $self->{lwp};

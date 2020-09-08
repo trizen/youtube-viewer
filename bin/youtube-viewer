@@ -620,7 +620,7 @@ my $yv_obj = WWW::YoutubeViewer->new(
                                      escape_utf8         => 1,
                                      config_dir          => $config_dir,
                                      cache_dir           => $opt{cache_dir},
-                                     lwp_env_proxy       => $opt{env_proxy},
+                                     env_proxy           => $opt{env_proxy},
                                      cookie_file         => $opt{cookie_file},
                                      http_proxy          => $opt{http_proxy},
                                      user_agent          => $opt{user_agent},
@@ -1564,9 +1564,9 @@ sub parse_arguments {
         'related-videos|rv=s'         => \$opt{related_videos},
         'popular-videos|popular|pv=s' => \$opt{popular_videos},
 
-        'cookie-file|cookies=s'         => \$opt{cookie_file},
-        'user-agent|agent=s'            => \$opt{user_agent},
-        'http_proxy|http-proxy|proxy=s' => \$opt{http_proxy},
+        'cookie-file|cookies=s'          => \$opt{cookie_file},
+        'user-agent|agent=s'             => \$opt{user_agent},
+        'http-proxy|https-proxy|proxy=s' => \$opt{http_proxy},
 
         'catlang|cl|hl=s'        => \$opt{hl},
         'category|cat-id|cat=s'  => \$opt{category_id},
