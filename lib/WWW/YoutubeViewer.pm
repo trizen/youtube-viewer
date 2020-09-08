@@ -564,18 +564,19 @@ sub _extract_from_invidious {
     if (@instances) {
         require List::Util;
         @instances = List::Util::shuffle(map { $_->[0] } @instances);
+        push @instances, 'invidious.13ad.de';
     }
     else {
         @instances = qw(
           invidious.13ad.de
           invidious.fdn.fr
+          invidious.site
           invidious.tube
           invidious.snopyta.org
           );
     }
 
     if ($self->get_debug) {
-        local $" = ', ';
         print STDERR ":: Invidious instances: @instances\n";
     }
 
