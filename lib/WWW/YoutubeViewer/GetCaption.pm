@@ -13,8 +13,7 @@ WWW::YoutubeViewer::GetCaption - Save the YouTube closed captions as .srt files 
     use WWW::YoutubeViewer::GetCaption;
 
     my $yv_cap = WWW::YoutubeViewer::GetCaption->new(%opts);
-
-    print $yv_cap->get_caption($videoID);
+    my $file = $yv_cap->save_caption($videoID);
 
 =head1 SUBROUTINES/METHODS
 
@@ -56,15 +55,22 @@ sub new {
     my ($class, %opts) = @_;
 
     my $self = bless {}, $class;
+
     $self->{captions_dir}  = undef;
     $self->{captions}      = [];
     $self->{auto_captions} = 0;
     $self->{languages}     = [qw(en es)];
+    $self->{yv_obj}        = undef;
 
     foreach my $key (keys %{$self}) {
         $self->{$key} = delete $opts{$key}
           if exists $opts{$key};
     }
+
+    $self->{yv_obj} //= do {
+        require WWW::YoutubeViewer;
+        WWW::YoutubeViewer->new(cache_dir => $self->{captions_dir},);
+    };
 
     foreach my $invalid_key (keys %opts) {
         warn "Invalid key: '${invalid_key}'";
@@ -196,41 +202,7 @@ Get the XML content for a given caption data.
 
 sub get_xml_data {
     my ($self, $url) = @_;
-
-    state $lwp = do {
-
-        require LWP::UserAgent;
-
-        my $agent = LWP::UserAgent->new(
-                 timeout   => 30,
-                 env_proxy => 1,
-                 agent =>
-                   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36',
-        );
-
-        require LWP::ConnCache;
-        state $cache = LWP::ConnCache->new;
-        $cache->total_capacity(undef);    # no limit
-
-        state $accepted_encodings = do {
-            require HTTP::Message;
-            HTTP::Message::decodable();
-        };
-
-        $agent->ssl_opts(Timeout => 30);
-        $agent->default_header('Accept-Encoding' => $accepted_encodings);
-        $agent->conn_cache($cache);
-
-        $agent;
-    };
-
-    my $req = $lwp->get($url);
-
-    if ($req->is_success) {
-        return $req->decoded_content;
-    }
-
-    return;
+    $self->{yv_obj}->lwp_get($url, simple => 1);
 }
 
 =head2 save_caption($video_ID)

@@ -3110,6 +3110,7 @@ sub get_streaming_url {
                                                          captions_dir  => $opt{cache_dir},
                                                          captions      => $captions,
                                                          languages     => $CONFIG{srt_languages},
+                                                         yv_obj        => $yv_obj,
                                                         );
         $srt_file = $yv_cap->save_caption($video_id);
     }
