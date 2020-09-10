@@ -3322,7 +3322,7 @@ sub download_video {
 
     # Convert the downloaded video
     if (defined $opt{convert_to}) {
-        my $convert_filename = "$naked_filename.$opt{convert_to}";
+        my $convert_filename = catfile($opt{downloads_dir}, "$naked_filename.$opt{convert_to}");
         my $convert_cmd      = $opt{convert_cmd};
 
         my %table = (
