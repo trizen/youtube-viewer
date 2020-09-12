@@ -2390,6 +2390,14 @@ sub get_pixbuf_thumbnail {
     $xsize //= 160;
     $ysize //= 90;
 
+    state %cache;
+
+    my $key = "$url $xsize $ysize";
+
+    if (exists $cache{$key}) {
+        return $cache{$key};
+    }
+
     my $thumbnail = $yv_obj->lwp_get($url, simple => 1);
 
     my $pixbuf;
@@ -2410,6 +2418,10 @@ sub get_pixbuf_thumbnail {
             $pixbuf = $pixbufloader->get_pixbuf;
             $pixbufloader->close;
         };
+    }
+
+    if (defined($pixbuf)) {
+        $cache{$key} = $pixbuf;
     }
 
     $pixbuf //= $default_thumb;
