@@ -56,12 +56,21 @@ Get videos from a category ID.
 
 sub videos_from_category {
     my ($self, $cat_id) = @_;
-    $self->_get_results(
-                        $self->_make_videos_url(
-                                                chart           => $self->get_chart,
-                                                videoCategoryId => $cat_id,
-                                               )
-                       );
+
+    my $videos = $self->_get_results(
+                                     $self->_make_videos_url(
+                                                             chart           => 'mostPopular',
+                                                             videoCategoryId => $cat_id,
+                                                            )
+                                    );
+
+    state $yv_utils = WWW::YoutubeViewer::Utils->new;
+
+    if (not $yv_utils->has_entries($videos)) {
+        $videos = $self->trending_videos_from_category($cat_id);
+    }
+
+    return $videos;
 }
 
 =head2 trending_videos_from_category($category_id)
@@ -80,7 +89,7 @@ sub trending_videos_from_category {
         } if !defined($self->get_publishedAfter);
         local $self->{videoCategoryId} = $cat_id;
         local $self->{regionCode}      = "US" if !defined($self->get_regionCode);
-        $self->search_videos("");
+        $self->search_videos(undef);
     };
 
     return $results;

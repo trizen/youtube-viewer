@@ -62,7 +62,7 @@ my %valid_options = (
     videoLicense    => {valid => [qw(any creativeCommon youtube)], default => undef},
     videoSyndicated => {valid => [qw(any true)],                   default => undef},
     eventType       => {valid => [qw(completed live upcoming)],    default => undef},
-    chart           => {valid => [qw(mostPopular)],                default => 'mostPopular'},
+    chart           => {valid => [qw(mostPopular)],                default => undef},
 
     regionCode        => {valid => qr/^[A-Z]{2}\z/i,           default => undef},
     relevanceLanguage => {valid => qr/^[a-z]+(?:\-\w+)?\z/i,   default => undef},
@@ -590,15 +590,14 @@ sub _extract_from_invidious {
     if (@instances) {
         require List::Util;
         @instances = List::Util::shuffle(map { $_->[0] } @instances);
-        push @instances, 'invidious.13ad.de';
     }
     else {
         @instances = qw(
-          invidious.13ad.de
-          invidious.fdn.fr
-          invidious.site
           invidious.tube
+          invidious.site
+          invidious.fdn.fr
           invidious.snopyta.org
+          invidious.13ad.de
           );
     }
 

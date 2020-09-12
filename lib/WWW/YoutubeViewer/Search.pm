@@ -69,15 +69,23 @@ Search for a list of types (comma-separated).
 sub search_for {
     my ($self, $type, $keywords, $args) = @_;
 
-    $keywords //= [];
-    if (ref $keywords ne 'ARRAY') {
-        $keywords = [split ' ', $keywords];
+    if (ref($args) ne 'HASH') {
+        $args = {part => 'snippet'};
+    }
+
+    if (defined($keywords)) {
+
+        if (ref($keywords) ne 'ARRAY') {
+            $keywords = [split ' ', $keywords];
+        }
+
+        $keywords = $self->escape_string(join(' ', @{$keywords}));
     }
 
     my $url = $self->_make_search_url(
                                       type => $type,
-                                      q    => $self->escape_string(join(' ', @{$keywords})),
-                                      (ref $args eq 'HASH' ? %{$args} : (part => 'snippet')),
+                                      q    => $keywords,
+                                      %$args,
                                      );
 
     return $self->_get_results($url);

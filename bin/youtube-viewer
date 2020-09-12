@@ -711,7 +711,7 @@ usage: $execname [options] ([url] | [keywords])
 
 * Trending
    --trending:s       : show trending videos in a given category ID or name
-                        use the `--within=s` option to restrict the results
+                        use "--region=XX" to change the region
 
  * Channels
    -sc --channels     : search for YouTube channels
@@ -1368,7 +1368,7 @@ sub apply_configuration {
             warn_invalid('category', $str);
         }
 
-        print_videos($yv_obj->trending_videos_from_category($cat_id));
+        print_videos($yv_obj->videos_from_category($cat_id));
     }
 
     if (defined $opt->{subscriptions}) {
@@ -2834,11 +2834,6 @@ sub print_categories {
             my $category = $categories->[$key - 1];
             my $cat_id   = $category->{id};
             my $videos   = $yv_obj->videos_from_category($cat_id);
-
-            if (not $yv_utils->has_entries($videos)) {
-                $videos = $yv_obj->trending_videos_from_category($cat_id);
-            }
-
             print_videos($videos);
         }
         else {

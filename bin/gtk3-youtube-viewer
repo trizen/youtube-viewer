@@ -3172,10 +3172,6 @@ sub list_category {
       ? $yv_obj->get_video_lectures_from_category($cat_id)
       : $yv_obj->videos_from_category($cat_id);
 
-    if (not $yv_utils->has_entries($videos)) {
-        $videos = $yv_obj->trending_videos_from_category($cat_id);
-    }
-
     if ($yv_utils->has_entries($videos)) {
         $liststore->clear if $CONFIG{clear_search_list};
         display_results($videos);
