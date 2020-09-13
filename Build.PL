@@ -82,7 +82,7 @@ my $builder = Module::Build->new(
 
     recommends => {
                    'LWP::UserAgent::Cached'  => 0,    # cache support
-                   'Term::ReadLine::Gnu::XS' => 0,    # for better STDIN support
+                   'Term::ReadLine::Gnu'     => 0,    # for better STDIN support
                    'JSON::XS'                => 0,    # faster JSON to HASH conversion
                    'Mozilla::CA'             => 0,    # just in case if there are SSL problems
                   },

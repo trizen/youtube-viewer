@@ -29,7 +29,7 @@
             "JSON::XS" : "0",
             "LWP::UserAgent::Cached" : "0",
             "Mozilla::CA" : "0",
-            "Term::ReadLine::Gnu::XS" : "0"
+            "Term::ReadLine::Gnu" : "0"
          },
          "requires" : {
             "Data::Dump" : "0",
