@@ -133,6 +133,8 @@ Return string "04 May 2010" from "2010-05-04T00:25:55.000Z"
 sub format_date {
     my ($self, $date) = @_;
 
+    $date // return undef;
+
     # 2010-05-04T00:25:55.000Z
     # to: 04 May 2010
 
@@ -222,7 +224,16 @@ Returns true if a given result has entries.
 
 sub has_entries {
     my ($self, $result) = @_;
-    ref($result) eq 'HASH' and (($result->{results}{pageInfo}{totalResults} // 0) > 0);
+
+    ref($result) eq 'HASH' or return;
+
+    if (exists $result->{results}) {
+        $result = $result->{results};
+    }
+
+    ref($result) eq 'HASH' or return;
+
+    ($result->{pageInfo}{totalResults} // 0) > 0;
 }
 
 =head2 normalize_video_title($title, $fat32safe)

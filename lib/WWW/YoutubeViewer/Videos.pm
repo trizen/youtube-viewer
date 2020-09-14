@@ -195,8 +195,82 @@ When C<$part> is C<undef>, it defaults to I<snippet>.
 =cut
 
 sub video_details {
-    my ($self, $id, $part) = @_;
-    return $self->_get_results($self->_make_videos_url(id => $id, part => $part // 'snippet'));
+    my ($self, $ids, $part) = @_;
+
+    my $info = $self->_get_results($self->_make_videos_url(id => $ids, part => $part // 'snippet'));
+
+    state $yv_utils = WWW::YoutubeViewer::Utils->new;
+
+    if ($yv_utils->has_entries($info)) {
+        return $info;
+    }
+
+    if ($self->get_debug) {
+        say STDERR ":: Extracting video info using the fallback method...";
+    }
+
+    my @items;
+
+    foreach my $id (split(/,/, $ids)) {
+
+        # Fallback using the `get_video_info` URL
+        my %video_info = $self->_get_video_info($id);
+        my $video      = $self->parse_json_string($video_info{player_response} // next);
+
+        if (exists $video->{videoDetails}) {
+            $video = $video->{videoDetails};
+        }
+        else {
+            next;
+        }
+
+        my $length   = $video->{lengthSeconds};
+        my $duration = sprintf("PT%dH%dM%dS", int($length / 3600), int($length / 60) % 60, $length % 60);
+
+        my %details = (
+
+            contentDetails => {
+                               definition => "hd",
+                               dimension  => "2d",
+                               duration   => $duration,
+                               projection => "rectangular",
+                              },
+
+            id   => $id,
+            kind => "youtube#video",
+
+            snippet => {
+                channelId    => $video->{channelId},
+                channelTitle => $video->{author},
+                description  => $video->{shortDescription},
+                title        => $video->{title},
+                tags         => $video->{keywords},
+
+                liveBroadcastContent => ($video->{isLiveContent} ? 'live' : 'no'),
+
+                thumbnails => [default  => $video->{thumbnail}{thumbnails}[0],
+                               medium   => $video->{thumbnail}{thumbnails}[1],
+                               standard => $video->{thumbnail}{thumbnails}[2],
+                               high     => $video->{thumbnail}{thumbnails}[3],
+                               maxres   => $video->{thumbnail}{thumbnails}[4],
+                              ],
+                       },
+
+            statistics => {
+                           viewCount => $video->{viewCount},
+                          },
+                      );
+
+        push @items, \%details;
+    }
+
+    my %results = (
+                   items    => \@items,
+                   kind     => "youtube#videoListResponse",
+                   pageInfo => {resultsPerPage => scalar(@items), totalResults => scalar(@items)},
+                  );
+
+    return scalar {results => \%results};
 }
 
 =head2 Return details

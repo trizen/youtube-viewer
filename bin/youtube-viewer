@@ -648,9 +648,9 @@ EOT
 }
 
 if (not defined $yv_obj->get_key) {
-    die join("\n",
-             "\nError: no API key has been set!\n\nFor creating a new YouTube API key, please see:",
-             "https://github.com/trizen/youtube-viewer#logging-in\n\n");
+    warn join("\n",
+              "\nError: no API key has been set!\n\nFor creating/setting an YouTube API key, please see:",
+              "https://github.com/trizen/youtube-viewer#logging-in\n\n");
 }
 
 $yv_obj->load_authentication_tokens();
@@ -3622,22 +3622,27 @@ sub print_video_info {
 
     $rep = 0 if $rep < 0;
 
-    print "\n$hr\n", q{ } x $rep => (_bold_color("=>> $title <<=") . "\n\n"),
-      map(sprintf(q{-> } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]),
+    print(
+          "\n$hr\n",
+          q{ } x $rep => (_bold_color("=>> $title <<=") . "\n\n"),
           (
-           ['Channel'    => $yv_utils->get_channel_title($video)],
-           ['ChannelID'  => $yv_utils->get_channel_id($video)],
-           ['VideoID'    => $yv_utils->get_video_id($video)],
-           ['Category'   => $yv_utils->get_category_name($video)],
-           ['Definition' => $yv_utils->get_definition($video)],
-           ['Duration'   => $yv_utils->get_time($video)],
-           ['Likes'      => $yv_utils->set_thousands($yv_utils->get_likes($video))],
-           ['Dislikes'   => $yv_utils->set_thousands($yv_utils->get_dislikes($video))],
-           ['Comments'   => $yv_utils->set_thousands($yv_utils->get_comments($video))],
-           ['Views'      => $yv_utils->set_thousands($yv_utils->get_views($video))],
-           ['Published'  => $yv_utils->get_publication_date($video)],
-            )),
-      "$hr\n";
+           map    { sprintf(q{-> } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]) }
+             grep { defined($_->[1]) } (
+                                        ['Channel'    => $yv_utils->get_channel_title($video)],
+                                        ['ChannelID'  => $yv_utils->get_channel_id($video)],
+                                        ['VideoID'    => $yv_utils->get_video_id($video)],
+                                        ['Category'   => $yv_utils->get_category_name($video)],
+                                        ['Definition' => $yv_utils->get_definition($video)],
+                                        ['Duration'   => $yv_utils->get_time($video)],
+                                        ['Likes'      => $yv_utils->set_thousands($yv_utils->get_likes($video))],
+                                        ['Dislikes'   => $yv_utils->set_thousands($yv_utils->get_dislikes($video))],
+                                        ['Comments'   => $yv_utils->set_thousands($yv_utils->get_comments($video))],
+                                        ['Views'      => $yv_utils->set_thousands($yv_utils->get_views($video))],
+                                        ['Published'  => $yv_utils->get_publication_date($video)],
+                                       )
+          ),
+          "$hr\n"
+         );
 
     return 1;
 }
