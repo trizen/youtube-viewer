@@ -2794,7 +2794,7 @@ sub print_categories {
     print "\n" if @{$categories};
 
     # Filter out nonassignable categories
-    @$categories = grep { $_->{snippet}{assignable} } @$categories;
+    @$categories = grep { ($_->{id} == 44) || $_->{snippet}{assignable} } @$categories;
 
     foreach my $category (@{$categories}) {
         printf "%s. %-40s (id: %s)\n", colored(sprintf('%2d', ++$i), 'bold'), $yv_utils->get_title($category), $category->{id};

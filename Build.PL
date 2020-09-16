@@ -53,6 +53,7 @@ my $builder = Module::Build->new(
         'HTTP::Request'         => 0,
         'JSON'                  => 0,
         'Encode'                => 0,
+        'Memoize'               => 0,
         'MIME::Base64'          => 0,
         'List::Util'            => 0,
         'LWP::UserAgent'        => 0,
@@ -82,7 +83,7 @@ my $builder = Module::Build->new(
 
     recommends => {
                    'LWP::UserAgent::Cached'  => 0,    # cache support
-                   'Term::ReadLine::Gnu'     => 0,    # for better STDIN support
+                   'Term::ReadLine::Gnu'     => 0,    # for better STDIN support (+history)
                    'JSON::XS'                => 0,    # faster JSON to HASH conversion
                    'Mozilla::CA'             => 0,    # just in case if there are SSL problems
                   },

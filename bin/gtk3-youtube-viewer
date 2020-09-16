@@ -1849,11 +1849,13 @@ sub append_categories {
 
     foreach my $category (@{$categories->{items}}) {
 
-        # Ignore nonassignable categories
-        $category->{snippet}{assignable} || next;
-
         my $label = $yv_utils->get_title($category);
         my $id    = $category->{id};
+
+        # Ignore nonassignable categories
+        if (defined($id)) {
+            ($id == 44) || $category->{snippet}{assignable} || next;
+        }
 
         $label =~ s{&}{&amp;}g;
 
@@ -1874,6 +1876,7 @@ sub append_categories {
     add_category_header("Categories");
 
     my $cats = $yv_obj->video_categories();
+
     if (ref($cats) eq 'HASH' and ref($cats->{items}) eq 'ARRAY') {
 
         my $help_text = '';
@@ -1889,6 +1892,8 @@ sub append_categories {
         # Append the categories to the "Categories" tab
         append_categories($cats, 'cat');
     }
+
+    append_categories({items => [{snippet => {title => 'Trending', assignable => 1}, id => undef}]}, 'cat');
 
     # EDU categories:
     #add_category_header("EDU Categories");
@@ -3164,7 +3169,7 @@ sub play_video {
 
 sub list_category {
     my $iter   = $cat_treeview->get_selection->get_selected;
-    my $cat_id = $cats_liststore->get($iter, 1) // return;
+    my $cat_id = $cats_liststore->get($iter, 1);
     my $type   = $cats_liststore->get($iter, 3);
 
     my $videos =

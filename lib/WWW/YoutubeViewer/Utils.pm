@@ -160,6 +160,8 @@ Return the (approximated) age for a given date of the form "2010-05-04T00:25:55.
 sub date_to_age {
     my ($self, $date) = @_;
 
+    $date // return undef;
+
     $date =~ m{^
         (?<year>\d{4})
            -
@@ -523,7 +525,7 @@ sub get_publication_age {
 sub get_publication_age_approx {
     my ($self, $info) = @_;
 
-    my $age = $self->date_to_age($info->{snippet}{publishedAt});
+    my $age = $self->date_to_age($info->{snippet}{publishedAt}) // return undef;
 
     if ($age =~ /hour|min|sec/) {
         return "0d";
