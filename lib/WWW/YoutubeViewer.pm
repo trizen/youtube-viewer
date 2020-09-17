@@ -30,7 +30,7 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =cut
 
-our $VERSION = '3.7.8';
+our $VERSION = '3.7.9';
 
 =head1 SYNOPSIS
 
@@ -572,7 +572,7 @@ sub select_good_invidious_instances {
 
     my %ignored = (
                    'yewtu.be'                 => 1,
-                   'invidiou.site'            => 1,
+                   'invidiou.site'            => 0,
                    'invidious.xyz'            => 1,
                    'vid.mint.lgbt'            => 1,
                    'invidious.ggc-project.de' => 1,
