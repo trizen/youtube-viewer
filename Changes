@@ -6,7 +6,7 @@
 
 [CHANGELOG]
 - Added basic support for playing videos by URL when no API key is set.                      - NEW (v3.7.9)
-- Added support for chosing random invidious instances.                                      - NEW (v3.7.9)
+- Added support for choosing random invidious instances.                                     - NEW (v3.7.9)
 - Added support for reading cookies from a file. (`--cookies=file`)                          - NEW (v3.7.9)
 - Added the `:page=i` STDIN option for jumping to a specific page of results.                - NEW (v3.7.8)
 - Added the `--hfr!` option for prefering/ignoring High Frame Rate (HFR) videos.             - NEW (v3.7.7)
