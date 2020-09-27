@@ -662,12 +662,11 @@ sub _extract_from_ytdl {
     my $cookie_file = $self->get_cookie_file;
 
     if (defined($cookie_file) and -f $cookie_file) {
-        push @ytdl_cmd, '--cookies', $cookie_file;
+        push @ytdl_cmd, '--cookies', quotemeta($cookie_file);
     }
 
     my $json = $self->proxy_stdout(@ytdl_cmd, quotemeta("https://www.youtube.com/watch?v=" . $videoID));
-
-    my $ref = $self->parse_json_string($json);
+    my $ref  = $self->parse_json_string($json);
 
     my @formats;
     if (ref($ref) eq 'HASH' and exists($ref->{formats}) and ref($ref->{formats}) eq 'ARRAY') {
