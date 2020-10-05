@@ -1781,10 +1781,8 @@ sub append_categories {
 }
 
 {
-    # Standard categories:
-    add_category_header("Categories");
-
     my $cats = $yv_obj->video_categories();
+
     if (ref($cats) eq 'HASH' and ref($cats->{items}) eq 'ARRAY') {
 
         my $help_text = '';
@@ -1801,9 +1799,7 @@ sub append_categories {
         append_categories($cats, 'cat');
     }
 
-    # EDU categories:
-    #add_category_header("EDU Categories");
-    #append_categories($yv_obj->get_educategories(), 'edu-cat');
+    append_categories({items => [{snippet => {title => 'Trending', assignable => 1}, id => undef}]}, 'cat');
 }
 
 my $tops_liststore = $gui->get_object('liststore6');
@@ -3018,8 +3014,9 @@ sub play_video {
 }
 
 sub list_category {
+
     my $iter   = $cat_treeview->get_selection->get_selected;
-    my $cat_id = $cats_liststore->get($iter, 1) // return;
+    my $cat_id = $cats_liststore->get($iter, 1);
     my $type   = $cats_liststore->get($iter, 3);
 
     my $videos =
