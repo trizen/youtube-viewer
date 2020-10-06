@@ -1854,7 +1854,7 @@ sub append_categories {
 
         # Ignore nonassignable categories
         if (defined($id)) {
-            ($id == 44) || $category->{snippet}{assignable} || next;
+            $category->{snippet}{assignable} || next;
         }
 
         $label =~ s{&}{&amp;}g;
