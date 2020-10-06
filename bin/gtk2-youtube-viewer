@@ -2362,7 +2362,7 @@ sub append_next_page {
 
 sub determine_image_format {
     #
-    ## Code from: https://metacpan.org/source/SREZIC/Image-Info-1.39/lib/Image/Info.pm
+    ## Code from: https://metacpan.org/release/Image-Info/source/lib/Image/Info.pm
     #
 
     local ($_) = @_;
@@ -2374,9 +2374,10 @@ sub determine_image_format {
     return "BMP"  if /^BM/;
     return "ICO"  if /^\000\000\001\000/;
     return "PPM"  if /^P[1-6]/;
-    return "XPM"  if m,(^\/\* XPM \*\/)|(static\s+char\s+\*\w+\[\]\s*=\s*\{\s*"\d+),;
-    return "XBM"  if m|^(?:\/\*.*\*\/\n)?#define\s|;
-    return "SVG"  if /^(?:[\012\015\t ]*<svg\b|<\?xml)/;
+    return "XPM"  if /(^\/\* XPM \*\/)|(static\s+char\s+\*\w+\[\]\s*=\s*{\s*"\d+)/;
+    return "XBM"  if /^(?:\/\*.*\*\/\n)?#define\s/;
+    return "SVG"  if /^(<\?xml|[\012\015\t ]*<svg\b)/;
+    return "WEBP" if /^RIFF.{4}WEBP/s;
     return undef;
 }
 
