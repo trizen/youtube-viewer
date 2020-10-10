@@ -187,6 +187,7 @@ my %CONFIG = (
     dash_segmented  => 1,         # may load slow
     prefer_mp4      => 0,
     prefer_av1      => 0,
+    ignore_av1      => 0,
     maxResults      => 10,
     hfr             => 1,
     resolution      => 'best',
@@ -886,7 +887,8 @@ sub apply_configuration {
                              publishedAfter publishedBefore
                              regionCode videoCategoryId
                              debug http_proxy user_agent
-                             timeout cookie_file
+                             timeout cookie_file prefer_mp4
+                             prefer_av1
                              )
       ) {
 
@@ -906,12 +908,6 @@ sub apply_configuration {
 
     # Enable/disable thumbnails
     $thumbs_checkbutton->set_active($CONFIG{show_thumbs});
-
-    # Prefer MP4 over WEBM
-    $yv_obj->set_prefer_mp4($CONFIG{prefer_mp4} ? 1 : 0);
-
-    # Prefer AV1 over WEBM
-    $yv_obj->set_prefer_av1($CONFIG{prefer_av1} ? 1 : 0);
 
     # Set the "More options" expander
     $more_options_expander->set_expanded($CONFIG{active_more_options_expander});
@@ -1404,7 +1400,7 @@ set_text(
     CTRL+U : show the saved user-list
     CTRL+D : show more video details for a selected video
     CTRL+W : show the warnings window
-    CTRL+G : show videos favorited by the author of a selected video
+    CTRL+G : show favorite videos of the author of a selected video
     CTRL+R : show related videos for a selected video
     CTRL+M : show videos from the author of a selected video
     CTRL+K : show playlists from the author of a selected video
@@ -3055,15 +3051,17 @@ sub get_streaming_url {
     require WWW::YoutubeViewer::Itags;
     state $yv_itags = WWW::YoutubeViewer::Itags->new();
 
-    my ($streaming, $resolution) =
-      $yv_itags->find_streaming_url(
-                                    urls           => $urls,
-                                    hfr            => $CONFIG{hfr},
-                                    resolution     => $CONFIG{resolution},
-                                    dash           => $CONFIG{dash_support},
-                                    dash_mp4_audio => $CONFIG{dash_mp4_audio},
-                                    dash_segmented => $CONFIG{dash_segmented},
-                                   );
+    my ($streaming, $resolution) = $yv_itags->find_streaming_url(
+        urls => $urls,
+
+        hfr        => $CONFIG{hfr},
+        ignore_av1 => $CONFIG{ignore_av1},
+        resolution => $CONFIG{resolution},
+
+        dash           => $CONFIG{dash_support},
+        dash_mp4_audio => $CONFIG{dash_mp4_audio},
+        dash_segmented => $CONFIG{dash_segmented},
+                                                                );
 
     return {
             streaming  => $streaming,

@@ -241,6 +241,7 @@ my %CONFIG = (
     skip_if_exists       => 1,
     prefer_mp4           => 0,
     prefer_av1           => 0,
+    ignore_av1           => 0,
     fat32safe            => $constant{win32},
     fullscreen           => 0,
     results_with_details => 0,
@@ -692,7 +693,7 @@ usage: $execname [options] ([url] | [keywords])
  * Videos
    -uv --uploads=s      : list videos uploaded by a specific channel or user
    -pv --popular=s      : list the most popular videos from a specific channel
-   -uf --favorites=s    : list the videos favorited by a specific user
+   -uf --favorites=s    : list the favorite videos of a specific user
    -id --videoids=s,s   : play YouTube videos by their IDs
    -rv --related=s      : show related videos for a video ID or URL
    -sv --search-videos  : search for YouTube videos (default mode)
@@ -750,7 +751,7 @@ usage: $execname [options] ([url] | [keywords])
  * [GET] Personal
    -U  --uploads:s       : show the uploads from your channel *
    -P  --playlists:s     : show the playlists from your channel *
-   -F  --favorites:s     : show the latest favorited videos *
+   -F  --favorites:s     : show the latest favorite videos *
    -S  --subscriptions:s : show the subscribed channels *
    -SV --subs-videos:s   : show the subscription videos (slow) *
        --subs-order=s    : change the subscription order
@@ -814,6 +815,7 @@ usage: $execname [options] ([url] | [keywords])
        --confirm!        : show a confirmation message after each play
        --prefer-mp4!     : prefer videos in MP4 format, instead of WEBM
        --prefer-av1!     : prefer videos in AV1 format, instead of WEBM
+       --ignore-av1!     : ignore videos in AV1 format
 
  * Closed-captions
    --get-captions!      : download closed-captions for videos
@@ -1143,7 +1145,8 @@ sub apply_configuration {
                              safeSearch regionCode debug hl
                              http_proxy page comments_order
                              subscriptions_order user_agent
-                             cookie_file timeout
+                             cookie_file timeout prefer_mp4
+                             prefer_av1
                              )
       ) {
 
@@ -1170,14 +1173,6 @@ sub apply_configuration {
         else {
             warn_invalid('category', $str);
         }
-    }
-
-    if (defined $opt->{prefer_mp4}) {
-        $yv_obj->set_prefer_mp4(delete($opt->{prefer_mp4}) ? 1 : 0);
-    }
-
-    if (defined $opt->{prefer_av1}) {
-        $yv_obj->set_prefer_av1(delete($opt->{prefer_av1}) ? 1 : 0);
     }
 
     if (defined $opt->{hd}) {
@@ -1635,6 +1630,7 @@ sub parse_arguments {
 
         'prefer-mp4!' => \$opt{prefer_mp4},
         'prefer-av1!' => \$opt{prefer_av1},
+        'ignore-av1!' => \$opt{ignore_av1},
 
         'custom-layout!'         => \$opt{custom_layout},
         'custom-layout-format=s' => \$opt{custom_layout_format},
@@ -3124,15 +3120,17 @@ sub get_streaming_url {
         $dash = $opt{merge_into_mkv} ? 1 : 0;
     }
 
-    my ($streaming, $resolution) =
-      $yv_itags->find_streaming_url(
-                                    urls           => $urls,
-                                    resolution     => ($opt{novideo} ? 'audio' : $opt{resolution}),
-                                    hfr            => $opt{hfr},
-                                    dash           => $dash,
-                                    dash_mp4_audio => ($opt{novideo}        ? 1 : $opt{dash_mp4_audio}),
-                                    dash_segmented => ($opt{download_video} ? 0 : $opt{dash_segmented}),
-                                   );
+    my ($streaming, $resolution) = $yv_itags->find_streaming_url(
+        urls       => $urls,
+        resolution => ($opt{novideo} ? 'audio' : $opt{resolution}),
+
+        hfr        => $opt{hfr},
+        ignore_av1 => $opt{ignore_av1},
+
+        dash           => $dash,
+        dash_mp4_audio => ($opt{novideo}        ? 1 : $opt{dash_mp4_audio}),
+        dash_segmented => ($opt{download_video} ? 0 : $opt{dash_segmented}),
+                                                                );
 
     return {
             streaming  => $streaming,
