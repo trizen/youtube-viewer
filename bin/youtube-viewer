@@ -731,19 +731,18 @@ usage: $execname [options] ([url] | [keywords])
 
  * Filtering
    --author=s           : search in videos uploaded by a specific user
-   --duration=s         : filter search results based on video length
-                          valid values are: short medium long
-   --caption=s          : only videos with/without closed captions
-                          valid values are: any closedCaption none
-   --category=s         : search only for videos in a specific category name/ID
-   --safe-search=s      : YouTube will skip restricted videos for your location
-                          valid values are: none moderate strict
+   --duration=s         : set video duration (short, medium, long, any)
+   --caption=s          : set video caption (any, closedCaption, none)
+   --safe-search=s      : set safe search (strict, moderate, none)
    --order=s            : order the results using a specific sorting method
                           valid values: date rating viewCount title videoCount
    --within=s           : show only videos uploaded within the specified time
                           valid values are: Nd, Nw, Nm, Ny, where N is a number
    --hd!                : search only for videos available in at least 720p
-   --vd=s               : set the video definition (any, high or standard)
+   --vd=s               : set the video definition (any, high, standard)
+   --dimension=s        : set video dimension (2d, 3d, any)
+   --license=s          : set video license (any, creativeCommon, youtube)
+   --category=s         : search only for videos in a specific category name/ID
    --page=i             : get results starting with a specific page number
    --results=i          : how many results to display per page (max: 50)
    --hfr!               : prefer high frame rate (HFR) videos
@@ -1600,6 +1599,8 @@ sub parse_arguments {
         'safe-search|safeSearch=s' => \$opt{safeSearch},
         'vd|video-definition=s'    => \$opt{videoDefinition},
         'hd|high-definition!'      => \$opt{hd},
+        'license=s'                => \$opt{videoLicense},
+        'dimension=s'              => \$opt{videoDimension},
         'I|interactive!'           => \$opt{interactive},
         'convert-to|convert_to=s'  => \$opt{convert_to},
         'keep-original-video!'     => \$opt{keep_original_video},
@@ -4682,7 +4683,7 @@ Command for C<wget> when C<download_with_wget> is set to a true value.
 
 =head2 youtube_video_url
 
-Sprintf() format for an YouTube video URL, given the video ID.
+Sprintf format for an YouTube video URL, given the video ID.
 
 =head2 ytdl
 
