@@ -1,4 +1,3 @@
-#!/usr/bin/perl
 
 use utf8;
 use 5.010;
@@ -21,6 +20,8 @@ my $builder = Module::Build->new(
     build_requires => {
                        'Test::More' => 0,
                       },
+
+    extra_manify_args => { utf8 => 1 },
 
     configure_requires => {
                            'Module::Build' => 0,

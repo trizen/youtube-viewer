@@ -40,6 +40,8 @@
 # - AnyComputer (for a complete french review of gtk-youtube-viewer: https://www.youtube.com/watch?v=6-qbdDUlBqg)
 # - Jookia (for fixing the proxy system and improving the support for encrypted videos - https://github.com/Jookia)
 
+=encoding utf8
+
 =head1 NAME
 
 youtube-viewer - YouTube from command line.
@@ -48,20 +50,6 @@ See: youtube-viewer --help
      youtube-viewer --tricks
      youtube-viewer --examples
      youtube-viewer --stdin-help
-
-=head1 LICENSE AND COPYRIGHT
-
-Copyright 2010-2020 Trizen.
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-See L<https://dev.perl.org/licenses/> for more information.
 
 =cut
 
@@ -4276,3 +4264,456 @@ sub main_quit {
 }
 
 main_quit(0);
+
+=head1 CONFIGURATION OPTIONS
+
+=head2 auto_captions
+
+When set to C<1>, auto-generated captions will be retrieved. By default, auto-generated captions are ignored.
+
+=head2 autoplay_mode
+
+Enable autoplay mode, which will continuously play related videos.
+
+=head2 cache_dir
+
+Cache directory where to save temporary files.
+
+=head2 colors
+
+Use colors for text.
+
+=head2 comments_order
+
+The sorting order for comments. Valid values: "time", "relevance".
+
+=head2 confirm
+
+Display a confirmation message after each video played.
+
+=head2 convert_cmd
+
+Command to convert videos.
+
+Default value:
+
+    "ffmpeg -i *IN* *OUT*"
+
+B<*IN*> gets replaced with the input file.
+
+B<*OUT*> gets replaced with the output file.
+
+=head2 convert_to
+
+Format to convert each downloaded video into. (e.g.: C<"mp3">).
+
+=head2 cookie_file
+
+Load cookies from a file. Useful to overcome the "429: Too Many Requests" issue.
+
+The file must be a C<# Netscape HTTP Cookie File>. Same format as C<youtube-dl> requires.
+
+See also:
+
+    https://github.com/ytdl-org/youtube-dl#how-do-i-pass-cookies-to-youtube-dl
+
+=head2 copy_caption
+
+When downloading a video, copy the closed-caption (if any) in the same folder with the video.
+
+If C<merge_into_mkv> and C<merge_with_captions> are both enabled, there is no need to enable this option.
+
+=head2 custom_layout
+
+Use a custom layout for video results, defined in C<custom_layout_format>.
+
+Requires: L<Unicode::GCString> or L<Text::CharWidth>.
+
+=head2 custom_layout_format
+
+An array of hash values specifying a custom layout for video results.
+
+    align       # "left" or "right"
+    color       # any color supported by Term::ANSIColor
+    text        # the actual text
+    width       # width allocated for the text
+
+The value for C<width> can be either a number of characters (e.g.: 20) or can be a percentage of the terminal width (e.g.: "15%").
+
+The special tokens for C<text> are listed in:
+
+    youtube-viewer --tricks
+
+=head2 dash_mp4_audio
+
+Include or exclude MP4/M4A (AAC) audio files.
+
+=head2 dash_segmented
+
+Include or exclude streams in "Dynamic Adaptive Streaming over HTTP" (DASH) format.
+
+=head2 dash_support
+
+Enable or disable support for split videos.
+
+=head2 debug
+
+Enable debug/verbose mode, which will print some extra information.
+
+Valid values: 0, 1, 2, 3.
+
+=head2 download_and_play
+
+Play downloaded videos.
+
+=head2 download_with_wget
+
+Download videos with C<wget>.
+
+=head2 downloads_dir
+
+Directory where to download files and where to save converted files.
+
+=head2 env_proxy
+
+Load proxy settings from C<*_proxy> environment variables (if any).
+
+=head2 fat32safe
+
+When downloading a video, make the filename compatible with the FAT32 filesystem.
+
+=head2 ffmpeg_cmd
+
+Path to the C<ffmpeg> program.
+
+=head2 fullscreen
+
+Play videos in fullscreen mode.
+
+=head2 get_captions
+
+Download closed-captions for videos (if any).
+
+=head2 get_term_width
+
+Read the terminal width (`stty size`).
+
+=head2 hfr
+
+Include or exclude High Frame Rate (HFR) videos.
+
+=head2 highlight_color
+
+Highlight color used to highlight watched videos.
+
+Any color supported by L<Term::ANSIColor> can be used.
+
+=head2 highlight_watched
+
+Highlight watched videos.
+
+=head2 history
+
+Enable or disable support for input history.
+
+Requires L<Term::ReadLine::Gnu>.
+
+=head2 history_file
+
+File where to save the input history.
+
+=head2 history_limit
+
+Maximum number of entries in the history file.
+
+When the limit is reached, the first half of the history file will be deleted.
+
+Set the value to C<-1> for no limit.
+
+=head2 hl
+
+Language code for categories. Default: "en_US".
+
+=head2 http_proxy
+
+Set HTTP(S)/SOCKS proxy, using the format:
+
+    proto://domain.tld:port/
+
+If authentication is required, use:
+
+    proto://user:pass@domain.tld:port/
+
+=head2 ignore_av1
+
+Ignore videos in AV1 format.
+
+=head2 interactive
+
+Interactive mode, prompting for user-input.
+
+=head2 keep_original_video
+
+Keep the original video after conversion. When set to C<0>, the original video will be deleted.
+
+=head2 maxResults
+
+How many results to display per page.
+
+=head2 merge_into_mkv
+
+During download, merge the audio+video files into an MKV container.
+
+Requires C<ffmpeg>.
+
+=head2 merge_into_mkv_args
+
+Arguments for C<ffmpeg> how to merge the files.
+
+=head2 merge_with_captions
+
+Include closed-captions inside the MKV container (if any).
+
+=head2 order
+
+Search order for videos.
+
+Valid values: "date", "rating", "relevance", "title", "videoCount", "viewCount".
+
+=head2 page
+
+Page number of results.
+
+=head2 prefer_av1
+
+Prefer videos in AV1 format. (just for testing)
+
+=head2 prefer_mp4
+
+Prefer videos in MP4 (AVC) format.
+
+=head2 publishedAfter
+
+The C<publishedAfter> option indicates that the API response should only contain resources created at or after the specified time. The value is an RFC 3339 formatted date-time value (1970-01-01T00:00:00Z).
+
+=head2 publishedBefore
+
+The C<publishedBefore> option indicates that the API response should only contain resources created before or at the specified time. The value is an RFC 3339 formatted date-time value (1970-01-01T00:00:00Z).
+
+=head2 regionCode
+
+The C<regionCode> option instructs the API to return search results for videos that can be viewed in the specified country. The parameter value is an ISO 3166-1 alpha-2 country code. (default: "US")
+
+=head2 remember_watched
+
+Set to C<1> to remember and highlight watched videos across multiple sessions.
+
+The video IDs are saved in the filename specified by C<watched_file>.
+
+=head2 remove_played_file
+
+When C<download_and_play> is enabled, remove the file after playing it.
+
+=head2 resolution
+
+Preferred resolution for videos (if available).
+
+Valid values: best, 2160p, 1440p, 1080p, 720p, 480p, 360p, 240p, 144p, audio.
+
+=head2 results_fixed_width
+
+Results in fixed-width format.
+
+Requires: L<Unicode::GCString> or L<Text::CharWidth>.
+
+=head2 results_with_colors
+
+Results with colors.
+
+=head2 results_with_details
+
+Results with extra details.
+
+=head2 safeSearch
+
+The C<safeSearch> option indicates whether the search results should include restricted content as well as standard content.
+
+Valid values: "strict", "moderate", "none".
+
+=head2 show_video_info
+
+Show extra info for videos when selected.
+
+=head2 skip_if_exists
+
+When downloading, skip if the file already exists locally.
+
+=head2 skip_watched
+
+Skip already watched/downloaded videos.
+
+=head2 srt_languages
+
+List of SRT languages in the order of preference.
+
+=head2 subscriptions_order
+
+Sorting order for subscriptions.
+
+Valid values:
+
+    alphabetical – Sort alphabetically.
+    relevance    – Sort by relevance.
+    unread       – Sort by order of activity.
+
+=head2 thousand_separator
+
+Thousands separator character for numbers >= 1000.
+
+=head2 timeout
+
+HTTPS timeout value in seconds. The default value is 10 seconds.
+
+=head2 user_agent
+
+Token that is used to identify the user agent on the network. The agent value is sent as the C<User-Agent> header in the requests.
+
+=head2 video_filename_format
+
+The format of filename for downloaded files.
+
+The available special tokens are listed in:
+
+    youtube-viewer --tricks
+
+=head2 video_player_selected
+
+The selected video player defined the C<video_players> table.
+
+=head2 video_players
+
+A table of video players.
+
+The keys for each player are:
+
+    arg        # any arguments for the video player
+    audio      # option specifying the *AUDIO* file
+    cmd        # the main player command
+    fs         # the fullscreen option
+    novideo    # the no-video mode option
+    srt        # option specifying the *SUB* file
+
+=head2 videoCaption
+
+The C<videoCaption> option indicates whether the API should filter video search results based on whether they have captions.
+
+Valid values:
+
+    any           – Do not filter results based on caption availability.
+    closedCaption – Only include videos that have captions.
+    none          – Only include videos that do not have captions.
+
+=head2 videoDefinition
+
+The C<videoDefinition> option lets you restrict a search to only include either high definition (HD) or standard definition (SD) videos.
+
+Valid values:
+
+    any      – Return all videos, regardless of their resolution.
+    high     – Only retrieve HD videos.
+    standard – Only retrieve videos in standard definition.
+
+=head2 videoDimension
+
+The C<videoDimension> option lets you restrict a search to only retrieve 2D or 3D videos.
+
+Valid values:
+
+    2d  – Restrict search results to exclude 3D videos.
+    3d  – Restrict search results to only include 3D videos.
+    any – Include both 3D and non-3D videos in returned results.
+
+=head2 videoDuration
+
+The C<videoDuration> parameter filters video search results based on their duration.
+
+Valid values: "any", "short", "long".
+
+Valid values:
+
+    any     – Do not filter video search results based on their duration.
+    long    – Only include videos longer than 20 minutes.
+    medium  – Only include videos that are between 4-20 minutes.
+    short   – Only include videos that are less than 4 minutes long.
+
+=head2 videoLicense
+
+The C<videoLicense> option filters search results to only include videos with a particular license.
+
+Valid values:
+
+    any            – All videos, regardless of which license they have.
+    creativeCommon – Only return videos that have a "Creative Commons" license.
+    youtube        – Only return videos that have the standard YouTube license.
+
+=head2 videoSyndicated
+
+The C<videoSyndicated> option lets you to restrict a search to only videos that can be played outside B<youtube.com>.
+
+Valid values:
+
+    any  – Return all videos, syndicated or not.
+    true – Only retrieve syndicated videos.
+
+=head2 watched_file
+
+File where to save the video IDs of watched/downloaded videos when C<remember_watched> is set to a true value.
+
+=head2 wget_cmd
+
+Command for C<wget> when C<download_with_wget> is set to a true value.
+
+=head2 youtube_video_url
+
+Sprintf() format for an YouTube video URL, given the video ID.
+
+=head2 ytdl
+
+Use C<youtube-dl> for videos with encrypted signatures.
+
+When set to C<0>, invidious instances will be used instead.
+
+=head2 ytdl_cmd
+
+Command for C<youtube-dl> when C<ytdl> is set to a true value.
+
+=head1 CONFIGURATION FILES
+
+The configuration files are:
+
+    ~/.config/youtube-viewer/youtube-viewer.conf
+    ~/.config/youtube-viewer/gtk-youtube-viewer.conf
+
+=head1 YOUTUBE API REFERENCE
+
+https://developers.google.com/youtube/v3/docs/
+
+=head1 REPOSITORY
+
+https://github.com/trizen/youtube-viewer
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2010-2020 Trizen.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See L<https://dev.perl.org/licenses/> for more information.
+
+=cut
