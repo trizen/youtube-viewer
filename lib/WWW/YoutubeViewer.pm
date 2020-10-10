@@ -7,6 +7,7 @@ use warnings;
 use Memoize;
 
 memoize('_get_video_info');
+memoize('_ytdl_is_available');
 memoize('_extract_from_ytdl');
 memoize('_extract_from_invidious');
 
@@ -84,6 +85,10 @@ my %valid_options = (
     config_dir  => {valid => qr/^./,     default => q{.}},
     cache_dir   => {valid => qr/^./,     default => q{.}},
     cookie_file => {valid => qr/^./,     default => undef},
+
+    # Support for youtube-dl
+    ytdl     => {valid => [1, 0], default => 1},
+    ytdl_cmd => {valid => qr/\w/, default => "youtube-dl"},
 
     # Booleans
     env_proxy   => {valid => [1, 0], default => 1},
@@ -242,7 +247,7 @@ sub set_lwp_useragent {
           // do { require LWP::UserAgent; 'LWP::UserAgent' }
     );
 
-    $self->{lwp} = $lwp->new(
+    my $agent = $lwp->new(
 
         cookie_jar    => {},                      # temporary cookies
         timeout       => $self->get_timeout,
@@ -288,7 +293,6 @@ sub set_lwp_useragent {
         HTTP::Message::decodable();
     };
 
-    my $agent = $self->{lwp};
     $agent->ssl_opts(Timeout => $self->get_timeout);
     $agent->default_header('Accept-Encoding' => $accepted_encodings);
     $agent->conn_cache($cache);
@@ -325,8 +329,9 @@ sub set_lwp_useragent {
         $agent->cookie_jar($cookies);
     }
 
-    push @{$self->{lwp}->requests_redirectable}, 'POST';
-    return $self->{lwp};
+    push @{$agent->requests_redirectable}, 'POST';
+    $self->{lwp} = $agent;
+    return $agent;
 }
 
 =head2 prepare_access_token()
@@ -572,7 +577,7 @@ sub select_good_invidious_instances {
 
     my %ignored = (
                    'yewtu.be'                 => 1,
-                   'invidiou.site'            => 0,
+                   'invidiou.site'            => 1,
                    'invidious.xyz'            => 1,
                    'vid.mint.lgbt'            => 1,
                    'invidious.ggc-project.de' => 1,
@@ -586,7 +591,11 @@ sub select_good_invidious_instances {
       grep { lc($_->[1]{type} // '') eq 'https' } @$instances;
 
     if ($self->get_debug) {
-        print STDERR ":: Found ", scalar(@candidates), " invidious instances.\n";
+
+        my @hosts = map { $_->[0] } @candidates;
+        my $count = scalar(@candidates);
+
+        print STDERR ":: Found $count invidious instances: @hosts\n";
     }
 
     return @candidates;
@@ -601,7 +610,6 @@ sub _extract_from_invidious {
         require List::Util;
         @instances = List::Util::shuffle(map { $_->[0] } @instances);
         push @instances, 'invidious.snopyta.org';
-        push @instances, 'invidious.13ad.de';
     }
     else {
         @instances = qw(
@@ -609,7 +617,6 @@ sub _extract_from_invidious {
           invidious.site
           invidious.fdn.fr
           invidious.snopyta.org
-          invidious.13ad.de
           );
     }
 
@@ -649,7 +656,8 @@ sub _extract_from_invidious {
 }
 
 sub _ytdl_is_available {
-    (state $x = system('youtube-dl', '--version')) == 0;
+    my ($self) = @_;
+    ($self->proxy_stdout($self->get_ytdl_cmd(), '--version') // '') =~ /\d/;
 }
 
 sub _extract_from_ytdl {
@@ -657,7 +665,7 @@ sub _extract_from_ytdl {
 
     $self->_ytdl_is_available() || return;
 
-    my @ytdl_cmd = ('youtube-dl', '--all-formats', '--dump-single-json');
+    my @ytdl_cmd = ($self->get_ytdl_cmd(), '--all-formats', '--dump-single-json');
 
     my $cookie_file = $self->get_cookie_file;
 
@@ -693,7 +701,7 @@ sub _fallback_extract_urls {
     my @formats;
 
     # Use youtube-dl
-    if ($self->_ytdl_is_available) {
+    if ($self->get_ytdl and $self->_ytdl_is_available) {
 
         if ($self->get_debug) {
             say STDERR ":: Using youtube-dl to extract the streaming URLs...";
@@ -1115,6 +1123,8 @@ sub from_page_token {
 
             local $ENV{HTTP_PROXY}  = $self->{lwp}->proxy('http');
             local $ENV{HTTPS_PROXY} = $self->{lwp}->proxy('https');
+
+            local $" = " ";
 
                 $name eq 'exec'   ? exec(@args)
               : $name eq 'system' ? system(@args)
