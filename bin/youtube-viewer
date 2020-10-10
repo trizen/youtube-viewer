@@ -4478,7 +4478,14 @@ Include closed-captions inside the MKV container (if any).
 
 Search order for videos.
 
-Valid values: "date", "rating", "relevance", "title", "videoCount", "viewCount".
+Valid values:
+
+    date       – Sorted in reverse chronological order.
+    rating     – Sorted from highest to lowest rating.
+    relevance  – By relevance to the search query. (default)
+    title      – Sorted alphabetically by title.
+    videoCount – Sory by number of videos (for channels).
+    viewCount  – Sorted from highest to lowest number of views.
 
 =head2 page
 
@@ -4516,7 +4523,7 @@ When C<download_and_play> is enabled, remove the file after playing it.
 
 =head2 resolution
 
-Preferred resolution for videos (if available).
+Preferred resolution for videos.
 
 Valid values: best, 2160p, 1440p, 1080p, 720p, 480p, 360p, 240p, 144p, audio.
 
