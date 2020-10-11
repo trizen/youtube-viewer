@@ -123,6 +123,7 @@ else {
 # Configuration dir/file
 my $config_dir          = catdir($xdg_config_home, $execname);
 my $config_file         = catfile($config_dir, "$execname.conf");
+my $youtube_users_file  = catfile($config_dir, 'youtube_users.txt');
 my $authentication_file = catfile($config_dir, 'reg.dat');
 my $history_file        = catfile($config_dir, 'cli-history.txt');
 my $watched_file        = catfile($config_dir, 'watched.txt');
@@ -246,6 +247,7 @@ my %CONFIG = (
     skip_watched         => 0,
     remember_watched     => 0,
     watched_file         => $watched_file,
+    youtube_users_file   => $youtube_users_file,
     highlight_watched    => 1,
     highlight_color      => 'bold',
     remove_played_file   => 0,
@@ -360,6 +362,7 @@ $action_options
 :pv=i :popular=i  : display author's popular uploads
 :A(ctivity)=i     : display author's recent activity
 :p(laylists)=i    : display author's playlists
+:s=i :save=i      : save author's channel ID to file (see -fc)
 :ps=i :s2p=i,i    : save videos to a post-selected playlist
 :subscribe=i      : subscribe to author's channel
 :(dis)like=i      : like or dislike a video
@@ -722,7 +725,8 @@ usage: $execname [options] ([url] | [keywords])
                         use "--region=XX" to change the region
 
  * Channels
-   -sc --channels     : search for YouTube channels
+   -sc --channels       : search for YouTube channels
+   -fc --file-channels  : show saved channels from file
 
 * Comments
    --comments=s         : display comments for a video by ID or URL
@@ -1314,6 +1318,10 @@ sub apply_configuration {
         print_categories($yv_obj->video_categories);
     }
 
+    if (delete $opt->{channels_from_file}) {
+        print_channels_from_file();
+    }
+
     if (defined $opt->{uploads}) {
         my $str = delete $opt->{uploads};
 
@@ -1540,6 +1548,8 @@ sub parse_arguments {
 
         'c|categories'                => \$opt{categories},
         'video-ids|videoids|id|ids=s' => \$opt{play_video_ids},
+
+        'fc|cf|file-channels' => \$opt{channels_from_file},
 
         'search-videos|search|sv!'     => \$opt{search_videos},
         'search-channels|channels|sc!' => \$opt{search_channels},
@@ -2793,6 +2803,177 @@ sub print_comments {
     __SUB__->(@_);
 }
 
+sub save_channel_to_file {
+    my ($channel_id, $channel_title) = @_;
+
+    $yv_utils->is_channelID($channel_id) || return;
+
+    open(my $fh, '>>', $opt{youtube_users_file}) or do {
+        warn "Can't open file <<$opt{youtube_users_file}>> for appending: $!\n";
+        return;
+    };
+
+    print $fh "$channel_id $channel_title\n";
+
+    close $fh;
+}
+
+sub update_channel_file {
+    my (%channels) = @_;
+
+    open(my $fh, '>', $opt{youtube_users_file}) or do {
+        warn "Can't open file <<$opt{youtube_users_file}>> for writing: $!\n";
+        return;
+    };
+
+    foreach my $key (sort { CORE::fc($channels{$a}) cmp CORE::fc($channels{$b}) } keys %channels) {
+        say $fh "$key $channels{$key}";
+    }
+
+    close $fh;
+}
+
+sub print_channels_from_file {
+
+    open(my $fh, '<', $opt{youtube_users_file}) or do {
+        warn "Can't open file <<$opt{youtube_users_file}>> for reading: $!\n";
+        return;
+    };
+
+    my %channels;
+
+    while (defined(my $line = <$fh>)) {
+        if ($line =~ /^([a-zA-Z0-9_-]+) (.+)/) {
+            my ($channel_id, $channel_title) = ($1, $2);
+
+            if ($yv_utils->is_channelID($channel_id)) {
+                $channels{$channel_id} = $channel_title;
+            }
+            else {
+                warn "Invalid channel ID: $channel_id\n";
+            }
+        }
+    }
+
+    close $fh;
+
+    my $display_channels = sub {
+        my (@channels) = @_;
+
+        if (not @channels) {
+            warn_no_results("channel");
+            return;
+        }
+
+        print "\n";
+        foreach my $i (0 .. $#channels) {
+            my $channel = $channels[$i];
+            printf("%s. %-40s (id: %s)\n", colored(sprintf('%2d', $i + 1), 'bold'), $channel->{title}, $channel->{id});
+        }
+
+        my @keywords = get_input_for_channels();
+
+        foreach my $key (@keywords) {
+            if ($key =~ /$valid_opt_re/) {
+
+                my $opt = $1;
+
+                if (
+                    general_options(opt => $opt,
+                                    sub => __SUB__,)
+                  ) {
+                    ## ok
+                }
+                elsif ($opt =~ /^(?:h|help)\z/) {
+                    print <<"EOT";
+
+# Search for a channel
+<keyword>         : search for a channel
+
+# Select a channel
+<number>          : latest uploads from channel
+:pv=i :popular=i  : popular uploads from channel
+
+# Remove channels
+:rm=i :remove=i,i  : remove the selected channels from file
+EOT
+                    press_enter_to_continue();
+                }
+                elsif ($opt =~ /^(?:pv|popular)${digit_or_equal_re}(.*)/) {
+                    if (my @nums = get_valid_numbers($#channels, $1)) {
+
+                        foreach my $id (@nums) {
+
+                            my $channel_id = $channels[$id]{id};
+                            my $request    = $yv_obj->popular_videos($channel_id);
+
+                            if ($yv_utils->has_entries($request)) {
+                                print_videos($request);
+                            }
+                            else {
+                                warn_no_results('popular video');
+                            }
+                        }
+                    }
+                    else {
+                        warn_no_thing_selected('channel');
+                    }
+                }
+                elsif ($opt =~ /^(?:r|rm|remove)${digit_or_equal_re}(.*)/) {
+                    if (my @nums = get_valid_numbers($#channels, $1)) {
+
+                        my %removed;
+
+                        foreach my $id (@nums) {
+
+                            my $channel_id    = $channels[$id]{id};
+                            my $channel_title = $channels[$id]{title};
+
+                            say ":: Removing <<$channel_title>> (id: $channel_id)";
+
+                            delete $channels{$channel_id};
+                            $removed{$channel_id} = 1;
+                        }
+
+                        @channels = grep { not exists $removed{$_->{id}} } @channels;
+                        update_channel_file(%channels);
+                    }
+                    else {
+                        warn_no_thing_selected('channel');
+                    }
+                }
+                elsif ($opt =~ /^(?:r|return)\z/) {
+                    return;
+                }
+                else {
+                    warn_invalid('option', $opt);
+                }
+            }
+            elsif (youtube_urls($key)) {
+                ## ok
+            }
+            elsif (valid_num($key, \@channels)) {
+                my $channel    = $channels[$key - 1];
+                my $channel_id = $channel->{id};
+                my $videos     = $yv_obj->uploads($channel_id);
+                print_videos($videos);
+            }
+            else {
+                my $re = qr/\Q$key\E/i;
+                __SUB__->(grep { $_->{title} =~ /$re/ } @channels);
+            }
+        }
+
+        __SUB__->(@channels);
+    };
+
+    my @channels =
+      sort { $a->{key} cmp $b->{key} }
+      map { {id => $_, title => $channels{$_}, key => CORE::fc($channels{$_})} } keys %channels;
+
+    $display_channels->(@channels);
+}
+
 sub print_categories {
     my ($results) = @_;
 
@@ -3993,6 +4174,23 @@ sub print_videos {
                     warn_no_thing_selected('video');
                 }
             }
+            elsif ($opt =~ /^(?:s|save)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$videos}, $1)) {
+                    foreach my $id (@nums) {
+                        my $channel_id    = $yv_utils->get_channel_id($videos->[$id]);
+                        my $channel_title = $yv_utils->get_channel_title($videos->[$id]);
+                        if (save_channel_to_file($channel_id, $channel_title)) {
+                            say "\n:: Saved channel <<$channel_title>> (id: $channel_id) to file.";
+                        }
+                        else {
+                            say "\n[!] Unable to save channel <<$channel_title>> to file...";
+                        }
+                    }
+                }
+                else {
+                    warn_no_thing_selected('video');
+                }
+            }
             elsif ($opt =~ /^(?:pv|popular)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     foreach my $id (@nums) {
@@ -4681,9 +4879,17 @@ File where to save the video IDs of watched/downloaded videos when C<remember_wa
 
 Command for C<wget> when C<download_with_wget> is set to a true value.
 
+=head2 youtube_users_file
+
+Path to a list of YouTube channels, using the following format:
+
+    ChannelID NAME
+
+The channels can be listed with the command-line option: C<-fc>.
+
 =head2 youtube_video_url
 
-Sprintf format for an YouTube video URL, given the video ID.
+Format for C<sprintf()> for constructing an YouTube video URL given the video ID.
 
 =head2 ytdl
 
