@@ -2808,7 +2808,7 @@ sub save_channel_to_file {
 
     $yv_utils->is_channelID($channel_id) || return;
 
-    open(my $fh, '>>', $opt{youtube_users_file}) or do {
+    open(my $fh, '>>:utf8', $opt{youtube_users_file}) or do {
         warn "Can't open file <<$opt{youtube_users_file}>> for appending: $!\n";
         return;
     };
@@ -2820,7 +2820,7 @@ sub save_channel_to_file {
 sub update_channel_file {
     my (%channels) = @_;
 
-    open(my $fh, '>', $opt{youtube_users_file}) or do {
+    open(my $fh, '>:utf8', $opt{youtube_users_file}) or do {
         warn "Can't open file <<$opt{youtube_users_file}>> for writing: $!\n";
         return;
     };
@@ -2834,7 +2834,7 @@ sub update_channel_file {
 
 sub print_channels_from_file {
 
-    open(my $fh, '<', $opt{youtube_users_file}) or do {
+    open(my $fh, '<:utf8', $opt{youtube_users_file}) or do {
         warn "Can't open file <<$opt{youtube_users_file}>> for reading: $!\n";
         return;
     };
