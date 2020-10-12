@@ -2813,8 +2813,7 @@ sub save_channel_to_file {
         return;
     };
 
-    print $fh "$channel_id $channel_title\n";
-
+    say $fh "$channel_id $channel_title";
     close $fh;
 }
 

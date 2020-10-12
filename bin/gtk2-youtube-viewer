@@ -1881,7 +1881,6 @@ sub set_youtube_tops {
                          'UCUHW94eEFW7hkUMVaZz4eDg' => 'MinutePhysics',
                          'UCYeF244yNGuFefuFKqxIAXw' => 'The Royal Institution',
                          'UCX6b17PVsYBQ0ip5gyeme-Q' => 'CrashCourse',
-                         'UCwbsWIWfcOL2FiUZ2hKNJHQ' => 'UCBerkeley',
                          'UCEBb1b_L6zDS3xTUrIALZOw' => 'MIT OpenCourseWare',
                          'UCAuUUnT6oDeKwE6v1NGQxug' => 'TED',
                          'UCvBqzzvUBLCs8Y7Axb-jZew' => 'Sixty Symbols',
@@ -1894,10 +1893,15 @@ sub set_youtube_tops {
                          'UC0wbcfzV-bHhABbWGXKHwdg' => 'Utah Open Source',
                          'UCotwjyJnb-4KW7bmsOoLfkg' => 'Art of the Problem',
                          'UC7y4qaRSb5w2O8cCHOsKZDw' => 'YAPC NA',
+                         'UC1t6kKXoBvjdr8m9KJ2Fx7A' => 'Gresham College',
+                         'UCGHZpIpAWJQ-Jy_CeCdXhMA' => 'Cool Worlds',
+                         'UCXZIDlJ_DgzrEwYop2s3JOQ' => 'National Museum of Mathematics',
+                         'UCLnGGRG__uGSPLBLzyhg8dQ' => 'Oxford Mathematics',
+                         'UCmG6gHgD8JaEZVxuHWJijGQ' => 'UConn Mathematics',
                         );
         }
 
-        foreach my $channel (sort { ($channels{$a} // lc($a)) cmp($channels{$b} // lc($b)) } keys %channels) {
+        foreach my $channel (sort { CORE::fc($channels{$a} // $a) cmp CORE::fc($channels{$b} // $b) } keys %channels) {
             my $iter = $users_liststore->append;
 
             if (defined $channels{$channel}) {
@@ -1995,6 +1999,9 @@ sub set_youtube_tops {
     }
 
     sub save_usernames_to_file {
+
+        set_usernames();    # update %channels
+
         open(my $fh, '>:utf8', $CONFIG{youtube_users_file}) or return;
         foreach my $channel (
                              sort { ($channels{$a} // $a) cmp($channels{$b} // $b) }
