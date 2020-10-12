@@ -1837,6 +1837,7 @@ sub set_youtube_tops {
 
 {
     my %channels;
+    my %removed_channels;
 
     # ------------ Usernames list window ------------ #
     sub set_usernames {
@@ -1995,12 +1996,17 @@ sub set_youtube_tops {
         my $iter       = $selection->get_selected       // return;
         my $channel_id = $users_liststore->get($iter, 0);
         delete $channels{$channel_id};
+        $removed_channels{$channel_id} = 1;
         $users_liststore->remove($iter);
     }
 
     sub save_usernames_to_file {
 
         set_usernames();    # update %channels
+
+        foreach my $id (keys %removed_channels) {
+            delete $channels{$id};
+        }
 
         open(my $fh, '>:utf8', $CONFIG{youtube_users_file}) or return;
         foreach my $channel (
