@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 10 October 2020
+#  Latest edit on: 13 October 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -707,6 +707,7 @@ usage: $execname [options] ([url] | [keywords])
    -id --videoids=s,s   : play YouTube videos by their IDs
    -rv --related=s      : show related videos for a video ID or URL
    -sv --search-videos  : search for YouTube videos (default mode)
+   -wv --watched-videos : list the most recent watched videos
 
  * Playlists
    -up --playlists=s  : list playlists created by a specific channel or user
@@ -1322,6 +1323,10 @@ sub apply_configuration {
         print_channels_from_file();
     }
 
+    if (delete $opt->{watched_videos_from_file}) {
+        print_watched_videos_from_file();
+    }
+
     if (defined $opt->{uploads}) {
         my $str = delete $opt->{uploads};
 
@@ -1550,6 +1555,7 @@ sub parse_arguments {
         'video-ids|videoids|id|ids=s' => \$opt{play_video_ids},
 
         'fc|cf|file-channels' => \$opt{channels_from_file},
+        'wv|watched-videos'   => \$opt{watched_videos_from_file},
 
         'search-videos|search|sv!'     => \$opt{search_videos},
         'search-channels|channels|sc!' => \$opt{search_channels},
@@ -2424,7 +2430,7 @@ sub warn_last_page {
 }
 
 sub warn_first_page {
-    warn colored("\n[!] No previous page available...", 'bold red') . "\n";
+    warn colored("\n[!] This is the first page!", 'bold red') . "\n";
 }
 
 sub warn_no_thing_selected {
@@ -2830,6 +2836,61 @@ sub update_channel_file {
     }
 
     close $fh;
+}
+
+sub get_watched_videos_from_file {
+    my ($page) = @_;
+
+    $page //= $yv_obj->get_page;
+
+    my @ids;
+
+    if ($opt{remember_watched} and open(my $fh, '<', $opt{watched_file})) {
+        chomp(@ids = <$fh>);
+        close $fh;
+    }
+    else {
+        @ids = keys %watched_videos;
+    }
+
+    my %seen;
+
+    # Keep the most recent ones
+    @ids = reverse(@ids);
+    @ids = grep { !$seen{$_}++ } @ids;
+
+    my $maxResults = $yv_obj->get_maxResults;
+
+    if ($page >= 1 and scalar(@ids) >= $maxResults) {
+
+        @ids = grep { defined } @ids[($page - 1) * $maxResults .. $page * $maxResults - 1];
+
+        if (!@ids) {
+            warn_last_page();
+            return get_watched_videos_from_file($page - 1) if ($page > 1);
+        }
+    }
+
+    my %results;
+    my @videos;
+
+    foreach my $id (@ids) {
+        push @videos, {id => {kind => "youtube#video", videoId => $id},};
+    }
+
+#<<<
+    $results{items}         = \@videos;
+    $results{pageInfo}      = {resultsPerPage => scalar(@videos), totalResults => scalar(@videos)};
+    $results{nextPageToken} = sub { get_watched_videos_from_file($page + 1) };
+    $results{prevPageToken} = sub { get_watched_videos_from_file(($page > 1) ? ($page - 1) : do { warn_first_page(); 1 }) };
+#>>>
+
+    scalar {results => \%results, url => undef};
+}
+
+sub print_watched_videos_from_file {
+    my ($page) = @_;
+    print_videos(get_watched_videos_from_file($page));
 }
 
 sub print_channels_from_file {
@@ -3598,14 +3659,14 @@ sub download_video {
 sub save_watched_video {
     my ($video_id) = @_;
 
-    if ($opt{remember_watched} and not exists($watched_videos{$video_id})) {
-        $watched_videos{$video_id} = 1;
+    $watched_videos{$video_id} = 1;
+
+    if ($opt{remember_watched}) {
         open my $fh, '>>', $opt{watched_file} or return;
         say {$fh} $video_id;
         close $fh;
     }
 
-    $watched_videos{$video_id} = 1;
     return 1;
 }
 
@@ -4735,6 +4796,8 @@ The C<regionCode> option instructs the API to return search results for videos t
 Set to C<1> to remember and highlight watched videos across multiple sessions.
 
 The video IDs are saved in the filename specified by C<watched_file>.
+
+This option is also required for C<--watched-videos>.
 
 =head2 remove_played_file
 

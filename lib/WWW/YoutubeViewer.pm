@@ -1092,6 +1092,10 @@ sub post_as_json {
 sub from_page_token {
     my ($self, $url, $token) = @_;
 
+    if (ref($token) eq 'CODE') {
+        return $token->();
+    }
+
     my $pt_url = (
                   defined($token)
                   ? (
