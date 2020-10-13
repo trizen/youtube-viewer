@@ -158,7 +158,7 @@ my %CONFIG = (
                               srt   => q{--sub-file=*SUB*},
                               audio => q{--audio-file=*AUDIO*},
                               fs    => q{--fullscreen},
-                              arg   => q{--really-quiet --title=*TITLE* --no-ytdl},
+                              arg   => q{--really-quiet --force-media-title=*TITLE* --no-ytdl},
                              },
                       smplayer => {
                                    cmd => q{smplayer},
