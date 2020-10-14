@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 10 October 2020
+#  Latest edit on: 14 October 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -86,6 +86,7 @@ my $config_file         = catfile($config_dir, "gtk-youtube-viewer.conf");
 my $youtube_users_file  = catfile($config_dir, 'youtube_users.txt');
 my $history_file        = catfile($config_dir, 'gtk-history.txt');
 my $session_file        = catfile($config_dir, 'session.dat');
+my $watch_history_file  = catfile($config_dir, 'watched.txt');
 my $authentication_file = catfile($config_dir, 'reg.dat');
 my $api_file            = catfile($config_dir, 'api.json');
 my $default_api_file    = '/etc/youtube-viewer/api.json';
@@ -101,6 +102,9 @@ foreach my $dir ($config_dir) {
 
 # Video queue for the enqueue feature
 my @VIDEO_QUEUE;
+
+# Keep track of watched videos
+my %WATCHED_VIDEOS;
 
 sub which_command {
     my ($cmd) = @_;
@@ -249,6 +253,10 @@ my %CONFIG = (
     remember_session_max   => 10,
     save_titles_to_history => 0,
     entry_completion_limit => 10,
+
+    # Watch history
+    watch_history      => 1,
+    watch_history_file => $watch_history_file,
 );
 
 {
@@ -560,10 +568,12 @@ foreach my $path ($CONFIG{cache_dir}) {
                     my $word = $words[$i];
 
                     for (my $j = $i ; $j <= $end_p ; ++$j) {
-                        my $part = $parts[$j];
 
                         my $matched;
                         my $continue = 1;
+
+                        my $part = $parts[$j];
+
                         while ($part eq $word) {
                             $order_score += 1 - 1 / (length($word) + 1)**2;
                             $matched ||= 1;
@@ -572,8 +582,9 @@ foreach my $path ($CONFIG{cache_dir}) {
                         }
 
                         if ($matched) {
-                            $order_score += 1 - 1 / (length($word) + 1)
-                              if ($continue and index($part, $word) == 0);
+                            if ($continue and index($part, $word) == 0) {
+                                $order_score += 1 - 1 / (length($word) + 1);
+                            }
                             last;
                         }
                         elsif (index($part, $word) == 0) {
@@ -697,7 +708,7 @@ foreach my $path ($CONFIG{cache_dir}) {
                     search();
                 }
             );
-            $item->set_property(tooltip_text => $text);
+            $item->set_property(tooltip_text => "Search for „${text}”");
             $item->set_image('Gtk3::Image'->new_from_icon_name("history-view", q{menu}));
             $item->show;
             $history_menu->append($item);
@@ -2438,12 +2449,23 @@ sub get_code {
 
             my $type = $liststore->get($iter, 7);
 
-            $type eq 'playlist'                                 ? list_playlist($code)
-              : ($type eq 'channel' || $type eq 'subscription') ? uploads('channel', $code)
-              : $type eq 'next_page' && $code ne ''             ? do {
+            if ($type eq 'playlist') {
+                list_playlist($code);
+            }
+            elsif ($type eq 'channel' or $type eq 'subscription') {
+                uploads('channel', $code);
+            }
+            elsif ($type eq 'next_page' and $code ne '') {
 
+                my $results;
                 my $next_page_token = $liststore->get($iter, 5);
-                my $results         = $yv_obj->from_page_token($code, $next_page_token);
+
+                if ($next_page_token =~ /^watched (\d+)/) {
+                    $results = get_watched_videos_from_file($1);
+                }
+                else {
+                    $results = $yv_obj->from_page_token($code, $next_page_token);
+                }
 
                 if ($yv_utils->has_entries($results)) {
                     my $label = '<big><b>' . ('=' x 20) . '</b></big>';
@@ -2455,13 +2477,12 @@ sub get_code {
                 }
 
                 display_results($results);
-              }
-              : $type eq 'video' ? (
-                                    $CONFIG{audio_only}
-                                    ? execute_cli_youtube_viewer("--id=$code")
-                                    : play_video($yv_obj->parse_json_string($liststore->get($iter, 8)))
-                                   )
-              : ();
+            }
+            elsif ($type eq 'video') {
+                $CONFIG{audio_only}
+                  ? execute_cli_youtube_viewer("--id=$code")
+                  : play_video($yv_obj->parse_json_string($liststore->get($iter, 8)));
+            }
 
             return 0;
         },
@@ -2589,6 +2610,54 @@ sub get_pixbuf_thumbnail_from_entry {
     my $pixbuf        = get_pixbuf_thumbnail_from_content($thumbnail_data, ($square_format ? (160, 160) : ()));
 
     return $pixbuf;
+}
+
+sub get_watched_videos_from_file {
+    my ($page) = @_;
+
+    $page //= $yv_obj->get_page;
+
+    my @ids;
+
+    if ($CONFIG{watch_history} and open(my $fh, '<', $CONFIG{watch_history_file})) {
+        chomp(@ids = <$fh>);
+        close $fh;
+    }
+    else {
+        @ids = keys %WATCHED_VIDEOS;
+    }
+
+    my %seen;
+
+    # Keep the most recent ones
+    @ids = reverse(@ids);
+    @ids = grep { !$seen{$_}++ } @ids;
+
+    my $maxResults = $yv_obj->get_maxResults;
+
+    if ($page >= 1 and scalar(@ids) >= $maxResults) {
+        @ids = grep { defined } @ids[($page - 1) * $maxResults .. $page * $maxResults - 1];
+    }
+
+    my %results;
+    my @videos;
+
+    foreach my $id (@ids) {
+        push @videos, {id => {kind => "youtube#video", videoId => $id},};
+    }
+
+#<<<
+    $results{items}         = \@videos;
+    $results{pageInfo}      = {resultsPerPage => scalar(@videos), totalResults => scalar(@videos)};
+    $results{nextPageToken} = sprintf("%s %d", 'watched', $page+1);
+#>>>
+
+    scalar {results => \%results, url => "watched videos"};
+}
+
+sub display_watched_videos {
+    $liststore->clear if $CONFIG{clear_search_list};
+    display_results(get_watched_videos_from_file(1));
 }
 
 sub display_results {
@@ -3153,6 +3222,20 @@ sub get_player_command {
     $has_video ? $cmd : join(' ', $cmd, quotemeta($streaming->{streaming}{url}));
 }
 
+sub save_watched_video {
+    my ($video_id) = @_;
+
+    $WATCHED_VIDEOS{$video_id} = 1;
+
+    if ($CONFIG{watch_history}) {
+        open(my $fh, '>>', $CONFIG{watch_history_file}) or return;
+        say {$fh} $video_id;
+        close $fh;
+    }
+
+    return 1;
+}
+
 sub play_video {
     my ($video) = @_;
 
@@ -3181,7 +3264,13 @@ sub play_video {
     }
 
     my $code = execute_external_program($command);
-    warn "[!] Can't play this video -- player exited with code: $code\n" if $code != 0;
+
+    if ($code == 0) {
+        save_watched_video($video_id);
+    }
+    else {
+        warn "[!] Can't play this video -- player exited with code: $code\n";
+    }
 
     return 1;
 }

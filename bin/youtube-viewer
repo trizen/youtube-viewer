@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 13 October 2020
+#  Latest edit on: 14 October 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -91,7 +91,7 @@ my %opt;
 my $term_width = 80;
 
 # Keep track of watched videos by their ID
-my %watched_videos;
+my %WATCHED_VIDEOS;
 
 # Unchangeable data goes here
 my %constant = (win32 => ($^O eq 'MSWin32' ? 1 : 0));    # doh
@@ -126,7 +126,7 @@ my $config_file         = catfile($config_dir, "$execname.conf");
 my $youtube_users_file  = catfile($config_dir, 'youtube_users.txt');
 my $authentication_file = catfile($config_dir, 'reg.dat');
 my $history_file        = catfile($config_dir, 'cli-history.txt');
-my $watched_file        = catfile($config_dir, 'watched.txt');
+my $watch_history_file  = catfile($config_dir, 'watched.txt');
 my $api_file            = catfile($config_dir, 'api.json');
 my $default_api_file    = '/etc/youtube-viewer/api.json';
 
@@ -216,52 +216,62 @@ my %CONFIG = (
     copy_caption  => 0,
     cache_dir     => undef,          # auto-defined
 
-    # Others
-    autoplay_mode        => 0,
-    http_proxy           => undef,
-    cookie_file          => undef,
-    user_agent           => undef,
-    timeout              => undef,
-    env_proxy            => 1,
-    confirm              => 0,
-    debug                => 0,
-    page                 => 1,
-    colors               => $constant{win32} ^ 1,
-    skip_if_exists       => 1,
-    prefer_mp4           => 0,
-    prefer_av1           => 0,
-    ignore_av1           => 0,
-    fat32safe            => $constant{win32},
-    fullscreen           => 0,
+    # Misc options
+    autoplay_mode      => 0,
+    http_proxy         => undef,
+    cookie_file        => undef,
+    user_agent         => undef,
+    timeout            => undef,
+    env_proxy          => 1,
+    confirm            => 0,
+    debug              => 0,
+    page               => 1,
+    colors             => $constant{win32} ^ 1,
+    skip_if_exists     => 1,
+    prefer_mp4         => 0,
+    prefer_av1         => 0,
+    ignore_av1         => 0,
+    fat32safe          => $constant{win32},
+    fullscreen         => 0,
+    show_video_info    => 1,
+    interactive        => 1,
+    get_term_width     => $constant{win32} ^ 1,
+    download_with_wget => undef,                  # auto-defined
+    thousand_separator => q{,},
+    downloads_dir      => curdir(),
+    download_and_play  => 0,
+    youtube_users_file => $youtube_users_file,
+    remove_played_file => 0,
+
     results_with_details => 0,
     results_with_colors  => 0,
-    results_fixed_width  => undef,                    # auto-defined
-    show_video_info      => 1,
-    interactive          => 1,
-    get_term_width       => $constant{win32} ^ 1,
-    download_with_wget   => undef,                    # auto-defined
-    thousand_separator   => q{,},
-    downloads_dir        => curdir(),
-    keep_original_video  => 0,
-    download_and_play    => 0,
-    skip_watched         => 0,
-    remember_watched     => 0,
-    watched_file         => $watched_file,
-    youtube_users_file   => $youtube_users_file,
-    highlight_watched    => 1,
-    highlight_color      => 'bold',
-    remove_played_file   => 0,
-    history              => undef,                    # auto-defined
-    history_limit        => 100_000,
-    history_file         => $history_file,
-    convert_cmd          => 'ffmpeg -i *IN* *OUT*',
-    convert_to           => undef,
+    results_fixed_width  => undef,                # auto-defined
+
+    # Conversion options
+    convert_cmd         => 'ffmpeg -i *IN* *OUT*',
+    convert_to          => undef,
+    keep_original_video => 0,
+
+    # Search history
+    history       => undef,                       # auto-defined
+    history_limit => 100_000,
+    history_file  => $history_file,
+
+    # Watch history
+    watch_history      => 1,
+    watch_history_file => $watch_history_file,
+
+    # Options for watched videos
+    highlight_watched => 1,
+    highlight_color   => 'bold',
+    skip_watched      => 0,
 
     # youtube-dl support
     ytdl     => 1,
-    ytdl_cmd => undef,                                # auto-defined
+    ytdl_cmd => undef,    # auto-defined
 
-    custom_layout => undef,                           # auto-defined
+    # Custom layout
+    custom_layout => undef,    # auto-defined
     custom_layout_format => [{width => 3,     align => "right", color => "bold",      text => "*NO*.",},
                              {width => "55%", align => "left",  color => "bold blue", text => "*TITLE*",},
                              {width => "15%", align => "left",  color => "yellow",    text => "*AUTHOR*",},
@@ -574,15 +584,15 @@ sub load_config {
 
 load_config($config_file);
 
-if ($opt{remember_watched}) {
-    if (-f $opt{watched_file}) {
-        if (open my $fh, '<', $opt{watched_file}) {
+if ($opt{watch_history}) {
+    if (-f $opt{watch_history_file}) {
+        if (open my $fh, '<', $opt{watch_history_file}) {
             chomp(my @ids = <$fh>);
-            @watched_videos{@ids} = ();
+            @WATCHED_VIDEOS{@ids} = ();
             close $fh;
         }
         else {
-            warn "[!] Can't open the watched file `$opt{watched_file}' for reading: $!";
+            warn "[!] Can't open the watched file `$opt{watch_history_file}' for reading: $!";
         }
     }
 }
@@ -2845,12 +2855,12 @@ sub get_watched_videos_from_file {
 
     my @ids;
 
-    if ($opt{remember_watched} and open(my $fh, '<', $opt{watched_file})) {
+    if ($opt{watch_history} and open(my $fh, '<', $opt{watch_history_file})) {
         chomp(@ids = <$fh>);
         close $fh;
     }
     else {
-        @ids = keys %watched_videos;
+        @ids = keys %WATCHED_VIDEOS;
     }
 
     my %seen;
@@ -3659,10 +3669,10 @@ sub download_video {
 sub save_watched_video {
     my ($video_id) = @_;
 
-    $watched_videos{$video_id} = 1;
+    $WATCHED_VIDEOS{$video_id} = 1;
 
-    if ($opt{remember_watched}) {
-        open my $fh, '>>', $opt{watched_file} or return;
+    if ($opt{watch_history}) {
+        open(my $fh, '>>', $opt{watch_history_file}) or return;
         say {$fh} $video_id;
         close $fh;
     }
@@ -3748,7 +3758,7 @@ sub play_videos {
         }
 
         # Ignore already watched videos
-        if (exists($watched_videos{$video_id}) and $opt{skip_watched}) {
+        if (exists($WATCHED_VIDEOS{$video_id}) and $opt{skip_watched}) {
             say ":: Already watched video (ID: $video_id)... Skipping...";
             next;
         }
@@ -4118,7 +4128,7 @@ sub print_videos {
     if ($opt{highlight_watched}) {
         foreach my $i (0 .. $#{$videos}) {
             my $video = $videos->[$i];
-            if (exists($watched_videos{$yv_utils->get_video_id($video)})) {
+            if (exists($WATCHED_VIDEOS{$yv_utils->get_video_id($video)})) {
                 $formatted[$i] = colored(colorstrip($formatted[$i]), $opt{highlight_color});
             }
         }
@@ -4791,14 +4801,6 @@ The C<publishedBefore> option indicates that the API response should only contai
 
 The C<regionCode> option instructs the API to return search results for videos that can be viewed in the specified country. The parameter value is an ISO 3166-1 alpha-2 country code. (default: "US")
 
-=head2 remember_watched
-
-Set to C<1> to remember and highlight watched videos across multiple sessions.
-
-The video IDs are saved in the filename specified by C<watched_file>.
-
-This option is also required for C<--watched-videos>.
-
 =head2 remove_played_file
 
 When C<download_and_play> is enabled, remove the file after playing it.
@@ -4954,9 +4956,17 @@ Valid values:
     any  – Return all videos, syndicated or not.
     true – Only retrieve syndicated videos.
 
-=head2 watched_file
+=head2 watch_history
 
-File where to save the video IDs of watched/downloaded videos when C<remember_watched> is set to a true value.
+Remember watched videos across multiple sessions.
+
+The video IDs are saved in the filename specified by C<watch_history_file>.
+
+This option is also required for C<--watched-videos>.
+
+=head2 watch_history_file
+
+File where to save the video IDs of watched/downloaded videos when C<watch_history> is set to a true value.
 
 =head2 wget_cmd
 
