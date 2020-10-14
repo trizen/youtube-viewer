@@ -3538,7 +3538,7 @@ if (not defined $yv_obj->get_key) {
     Glib::Idle->add(
         sub {
             die join("\n",
-                     "\nError: no API key has been set!\n\nFor creating a new YouTube API key, please see:",
+                     "\nError: no API key has been set!\n\nFor creating/setting an YouTube API key, please see:",
                      "https://github.com/trizen/youtube-viewer#logging-in\n\n");
             return 0;
         },

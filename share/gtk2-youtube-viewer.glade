@@ -281,7 +281,7 @@
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="warnings_console">
-                        <property name="label" translatable="yes">Warnings console</property>
+                        <property name="label" translatable="yes">Warnings log</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Show the warnings window</property>
@@ -2560,8 +2560,8 @@ Full list of contributors: http://github.com/trizen/youtube-viewer/graphs/contri
     <property name="title" translatable="yes">Error!</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
-    <property name="default_width">300</property>
-    <property name="default_height">200</property>
+    <property name="default_width">360</property>
+    <property name="default_height">300</property>
     <property name="type_hint">dialog</property>
     <property name="transient_for">__MAIN__</property>
     <signal name="close" handler="hide_errors_window" swapped="no"/>
@@ -3186,7 +3186,7 @@ Full list of contributors: http://github.com/trizen/youtube-viewer/graphs/contri
   </object>
   <object class="GtkWindow" id="prefernces_window">
     <property name="can_focus">False</property>
-    <property name="title" translatable="yes">Configuration</property>
+    <property name="title" translatable="yes">Preferences</property>
     <property name="window_position">center-on-parent</property>
     <property name="default_width">600</property>
     <property name="default_height">480</property>
@@ -3504,10 +3504,12 @@ Full list of contributors: http://github.com/trizen/youtube-viewer/graphs/contri
   <object class="GtkDialog" id="warnings_window">
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
+    <property name="title" translatable="yes">Warnings log</property>
     <property name="window_position">center-on-parent</property>
-    <property name="default_width">320</property>
-    <property name="default_height">260</property>
+    <property name="default_width">400</property>
+    <property name="default_height">300</property>
     <property name="type_hint">dialog</property>
+    <property name="transient_for">__MAIN__</property>
     <signal name="destroy" handler="hide_warnings_window" swapped="no"/>
     <signal name="delete-event" handler="hide_warnings_window" swapped="no"/>
     <child internal-child="vbox">
