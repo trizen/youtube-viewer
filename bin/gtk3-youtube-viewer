@@ -1459,7 +1459,7 @@ $accel->connect(ord('d'), ['control-mask'], ['visible'], \&show_details_window);
 #$accel->connect(ord('c'), ['control-mask'], ['visible'], \&show_comments_window);
 $accel->connect(ord('s'), ['control-mask'], ['visible'], \&add_user_to_favorites);
 $accel->connect(ord('r'), ['control-mask'], ['visible'], \&show_related_videos);
-$accel->connect(ord('g'), ['control-mask'], ['visible'], \&show_user_favorited_videos);
+$accel->connect(ord('g'), ['control-mask'], ['visible'], \&show_user_favorite_videos);
 $accel->connect(ord('m'), ['control-mask'], ['visible'], \&show_videos_from_selected_author);
 $accel->connect(ord('k'), ['control-mask'], ['visible'], \&show_playlists_from_selected_author);
 $accel->connect(ord('w'), ['control-mask'], ['visible'], \&show_warnings_window);
@@ -2657,7 +2657,7 @@ sub get_watched_videos_from_file {
 
 sub display_watched_videos {
     $liststore->clear if $CONFIG{clear_search_list};
-    display_results(get_watched_videos_from_file(1));
+    display_results(get_watched_videos_from_file($yv_obj->get_page));
 }
 
 sub display_results {
@@ -3497,7 +3497,7 @@ sub comments_row_activated {
     return 1;
 }
 
-sub show_user_favorited_videos {
+sub show_user_favorite_videos {
     my $username = get_channel_id_for_selected_video() // return;
     favorites('channel', $username);
 }

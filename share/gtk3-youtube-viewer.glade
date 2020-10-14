@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.1 
+<!-- Generated with glade 3.38.1
 
 Copyright (C) Copyright © 2010-2020 Trizen
 
@@ -645,7 +645,7 @@ Author: Trizen https://github.com/trizen
                                                 </child>
                                                 <child>
                                                   <object class="GtkButton" id="button22">
-                                                    <property name="label" translatable="yes">Favorited videos</property>
+                                                    <property name="label" translatable="yes">Favorites</property>
                                                     <property name="visible">True</property>
                                                     <property name="can-focus">True</property>
                                                     <property name="receives-default">True</property>
