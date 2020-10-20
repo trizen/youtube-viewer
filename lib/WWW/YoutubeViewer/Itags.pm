@@ -199,7 +199,7 @@ sub _find_streaming_url {
 
         # Ignore segmented DASH URLs (they load pretty slow in mpv)
         if (not $args{dash_segmented}) {
-            next if ($entry->{url} =~ m{^https://manifest\.googlevideo\.com/api/manifest/dash/});
+            next if ($entry->{url} =~ m{/api/manifest/dash/});
         }
 
         return $entry;
