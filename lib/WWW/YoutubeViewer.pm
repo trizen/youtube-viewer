@@ -903,7 +903,7 @@ sub _extract_streaming_urls {
 
         if (defined $streamingData->{dashManifestUrl}) {
             say STDERR ":: Contains DASH manifest URL" if $self->get_debug;
-            return;
+            ##return;
         }
 
         if (exists $streamingData->{adaptiveFormats}) {
@@ -919,11 +919,14 @@ sub _extract_streaming_urls {
 
     if (grep { $_->{url} =~ /\bsc=yes\b/ } @results) {
         say STDERR ":: Contains SC = yes" if $self->get_debug;
-        return;
+        ##return;
     }
 
     # Keep only streams with contentLength > 0.
     @results = grep { $_->{itag} == 22 or (exists($_->{contentLength}) and $_->{contentLength} > 0) } @results;
+
+    # Filter out streams with "dur=0.000"
+    @results = grep { $_->{url} !~ /\bdur=0\.000\b/ } @results;
 
     # Detect livestream
     if (!@results and exists($json->{streamingData}) and exists($json->{streamingData}{hlsManifestUrl})) {
