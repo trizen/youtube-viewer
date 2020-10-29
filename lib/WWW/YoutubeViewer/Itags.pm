@@ -62,7 +62,7 @@ sub get_itags {
                    {value => 299, format => 'mp4',  dash => 1, hfr => 1},    # mp4 HFR (v)
                    {value => 248, format => 'webm', dash => 1},              # webm (v)
                    {value => 137, format => 'mp4',  dash => 1},              # mp4 (v)
-                   {value => 399, format => 'av1',  dash => 1},              # av1 (v)
+                   {value => 399, format => 'av1',  dash => 1, hfr => 1},    # av1 (v)
                    {value => 46,  format => 'webm'},                         # webm (v-a)
                    {value => 37,  format => 'mp4'},                          # mp4 (v-a)
                    {value => 301, format => 'mp4', live => 1},               # mp4 (live) (v-a)
@@ -73,7 +73,7 @@ sub get_itags {
                   {value => 298, format => 'mp4',  dash => 1, hfr => 1},    # mp4 HFR (v)
                   {value => 247, format => 'webm', dash => 1},              # webm (v)
                   {value => 136, format => 'mp4',  dash => 1},              # mp4 (v)
-                  {value => 398, format => 'av1',  dash => 1},              # av1 (v)
+                  {value => 398, format => 'av1',  dash => 1, hfr => 1},    # av1 (v)
                   {value => 45,  format => 'webm'},                         # webm (v-a)
                   {value => 22,  format => 'mp4'},                          # mp4 (v-a)
                   {value => 300, format => 'mp4', live => 1},               # mp4 (live) (v-a)
@@ -166,7 +166,9 @@ sub _find_streaming_url {
 
         next if not exists $stream->{$itag->{value}};
 
-        if ($itag->{hfr}) {
+        my $entry = $stream->{$itag->{value}};
+
+        if (defined($entry->{fps}) and $entry->{fps} >= 50) {
             $args{hfr} || next;    # skip high frame rate (HFR) videos
         }
 
@@ -194,8 +196,6 @@ sub _find_streaming_url {
                 next;    # skip m4a audio URLs
             }
         }
-
-        my $entry = $stream->{$itag->{value}};
 
         # Ignore segmented DASH URLs (they load pretty slow in mpv)
         if (not $args{dash_segmented}) {
