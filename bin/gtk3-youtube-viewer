@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 15 October 2020
+#  Latest edit on: 01 November 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -352,6 +352,7 @@ my %objects = (
     'comboboxtext8'          => \my $duration_combobox,
     'comboboxtext3'          => \my $caption_combobox,
     'comboboxtext4'          => \my $definition_combobox,
+    'comboboxtext10'         => \my $license_combobox,
     'comboboxtext5'          => \my $safesearch_combobox,
     'comboboxtext1'          => \my $published_within_combobox,
     'comboboxtext13'         => \my $subscriptions_order_combobox,
@@ -879,6 +880,7 @@ $definition_combobox->set_active(0);
 $duration_combobox->set_active(0);
 $caption_combobox->set_active(0);
 $order_combobox->set_active(0);
+$license_combobox->set_active(0);
 
 # Spin button start with page
 $spin_start_with_page->set_value(1);
@@ -895,7 +897,7 @@ sub apply_configuration {
     $audio_only_checkbutton->set_active($CONFIG{audio_only});
 
     # DASH mode
-    $dash_checkbutton->set_active($CONFIG{dash_support});
+    $dash_checkbutton->set_active($CONFIG{dash_segmented});
 
     $clear_list_checkbutton->set_active($CONFIG{clear_search_list});
     $panel_account_type_combobox->set_active($CONFIG{active_panel_account_combobox});
@@ -1795,6 +1797,11 @@ sub combobox_definition_changed {
     $yv_obj->set_videoDefinition($text);
 }
 
+sub combobox_license_changed {
+    my $text = $license_combobox->get_active_text;
+    $yv_obj->set_videoLicense($text);
+}
+
 sub combobox_published_within_changed {
     my $period = $published_within_combobox->get_active_text;
 
@@ -1848,7 +1855,7 @@ sub toggled_audio_only {
 
 # DASH mode
 sub toggled_dash_support {
-    $CONFIG{dash_support} = $dash_checkbutton->get_active() || 0;
+    $CONFIG{dash_segmented} = $dash_checkbutton->get_active() || 0;
 }
 
 # Check buttons toggles
@@ -3360,12 +3367,12 @@ sub run_cli_youtube_viewer {
 sub get_options_as_arguments {
     my @args;
     my %options = (
-                   'no-interactive' => q{},
-                   'resolution'     => $CONFIG{resolution},
-                   'download-dir'   => quotemeta(rel2abs($CONFIG{downloads_dir})),
-                   'fullscreen'     => $CONFIG{fullscreen}   ? q{}   : undef,
-                   'no-dash'        => $CONFIG{dash_support} ? undef : q{},
-                   'no-video'       => $CONFIG{audio_only}   ? q{}   : undef,
+                   'no-interactive'    => q{},
+                   'resolution'        => $CONFIG{resolution},
+                   'download-dir'      => quotemeta(rel2abs($CONFIG{downloads_dir})),
+                   'fullscreen'        => $CONFIG{fullscreen}     ? q{}   : undef,
+                   'no-dash-segmented' => $CONFIG{dash_segmented} ? undef : q{},
+                   'no-video'          => $CONFIG{audio_only}     ? q{}   : undef,
                   );
 
     while (my ($argv, $value) = each %options) {

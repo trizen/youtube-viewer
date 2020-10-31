@@ -922,6 +922,7 @@ Author: Trizen https://github.com/trizen
                                                             <property name="visible">True</property>
                                                             <property name="can-focus">True</property>
                                                             <property name="receives-default">False</property>
+                                                            <property name="tooltip-text" translatable="yes">Search for channels.</property>
                                                             <property name="draw-indicator">True</property>
                                                           </object>
                                                           <packing>
@@ -936,6 +937,7 @@ Author: Trizen https://github.com/trizen
                                                             <property name="visible">True</property>
                                                             <property name="can-focus">True</property>
                                                             <property name="receives-default">False</property>
+                                                            <property name="tooltip-text" translatable="yes">Search for playlists.</property>
                                                             <property name="draw-indicator">True</property>
                                                           </object>
                                                           <packing>
@@ -950,6 +952,7 @@ Author: Trizen https://github.com/trizen
                                                             <property name="visible">True</property>
                                                             <property name="can-focus">True</property>
                                                             <property name="receives-default">False</property>
+                                                            <property name="tooltip-text" translatable="yes">Search for videos.</property>
                                                             <property name="draw-indicator">True</property>
                                                           </object>
                                                           <packing>
@@ -996,6 +999,7 @@ Author: Trizen https://github.com/trizen
                                                           <object class="GtkComboBoxText" id="comboboxtext2">
                                                             <property name="visible">True</property>
                                                             <property name="can-focus">False</property>
+                                                            <property name="tooltip-text" translatable="yes">Video sorting order.</property>
                                                             <property name="active">0</property>
                                                             <items>
                                                             <item translatable="yes">relevance</item>
@@ -1092,6 +1096,7 @@ long – longer than 20 minutes</property>
                                                       <object class="GtkComboBoxText" id="comboboxtext3">
                                                         <property name="visible">True</property>
                                                         <property name="can-focus">False</property>
+                                                        <property name="tooltip-text" translatable="yes">Retrieve only videos with or without closed-captions.</property>
                                                         <property name="active">0</property>
                                                         <items>
                                                           <item translatable="yes">any</item>
@@ -1133,6 +1138,8 @@ long – longer than 20 minutes</property>
                                                       <object class="GtkComboBoxText" id="comboboxtext4">
                                                         <property name="visible">True</property>
                                                         <property name="can-focus">False</property>
+                                                        <property name="tooltip-text" translatable="yes">high – 720p and higher
+standard – 480p and lower</property>
                                                         <property name="active">0</property>
                                                         <items>
                                                           <item translatable="yes">any</item>
@@ -1174,6 +1181,7 @@ long – longer than 20 minutes</property>
                                                       <object class="GtkComboBoxText" id="comboboxtext5">
                                                         <property name="visible">True</property>
                                                         <property name="can-focus">False</property>
+                                                        <property name="tooltip-text" translatable="yes">Filter out search results based on your location.</property>
                                                         <property name="active">1</property>
                                                         <items>
                                                           <item translatable="yes">none</item>
@@ -1201,6 +1209,48 @@ long – longer than 20 minutes</property>
                                               </packing>
                                             </child>
                                             <child>
+                                              <object class="GtkFrame" id="frame14">
+                                                <property name="visible">True</property>
+                                                <property name="can-focus">False</property>
+                                                <property name="label-xalign">0</property>
+                                                <property name="shadow-type">none</property>
+                                                <child>
+                                                  <object class="GtkAlignment" id="alignment14">
+                                                    <property name="visible">True</property>
+                                                    <property name="can-focus">False</property>
+                                                    <property name="left-padding">12</property>
+                                                    <child>
+                                                      <object class="GtkComboBoxText" id="comboboxtext10">
+                                                        <property name="visible">True</property>
+                                                        <property name="can-focus">False</property>
+                                                        <property name="tooltip-text" translatable="yes">Retrieve videos that have a specific license.</property>
+                                                        <property name="active">0</property>
+                                                        <items>
+                                                          <item translatable="yes">any</item>
+                                                          <item translatable="yes">creativeCommon</item>
+                                                          <item translatable="yes">youtube</item>
+                                                        </items>
+                                                        <signal name="changed" handler="combobox_license_changed" swapped="no"/>
+                                                      </object>
+                                                    </child>
+                                                  </object>
+                                                </child>
+                                                <child type="label">
+                                                  <object class="GtkLabel" id="label23">
+                                                    <property name="visible">True</property>
+                                                    <property name="can-focus">False</property>
+                                                    <property name="label" translatable="yes">&lt;b&gt;Video License:&lt;/b&gt;</property>
+                                                    <property name="use-markup">True</property>
+                                                  </object>
+                                                </child>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">False</property>
+                                                <property name="position">6</property>
+                                              </packing>
+                                            </child>
+                                            <child>
                                               <object class="GtkExpander" id="more_options_expander">
                                                 <property name="visible">True</property>
                                                 <property name="can-focus">True</property>
@@ -1225,8 +1275,7 @@ long – longer than 20 minutes</property>
                                                             <object class="GtkSpinButton" id="spinbutton1">
                                                             <property name="visible">True</property>
                                                             <property name="can-focus">True</property>
-                                                            <property name="tooltip-text" translatable="yes">The maximum number of results per page.
-Recommended: 10</property>
+                                                            <property name="tooltip-text" translatable="yes">The maximum number of results per page.</property>
                                                             <property name="max-length">2</property>
                                                             <property name="invisible-char">•</property>
                                                             <property name="caps-lock-warning">False</property>
@@ -1321,6 +1370,7 @@ Recommended: 10</property>
                                                             <object class="GtkSpinButton" id="spinbutton3">
                                                             <property name="visible">True</property>
                                                             <property name="can-focus">True</property>
+                                                            <property name="tooltip-text" translatable="yes">Retrieve only videos newer than this.</property>
                                                             <property name="invisible-char">•</property>
                                                             <property name="caps-lock-warning">False</property>
                                                             <property name="primary-icon-activatable">False</property>
@@ -1484,6 +1534,7 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                             <property name="visible">True</property>
                                                             <property name="can-focus">True</property>
                                                             <property name="receives-default">False</property>
+                                                            <property name="tooltip-text" translatable="yes">Show thumbnails for results.</property>
                                                             <property name="draw-indicator">True</property>
                                                             <signal name="toggled" handler="thumbs_checkbutton_toggled" swapped="no"/>
                                                             </object>
@@ -1499,6 +1550,7 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                             <property name="visible">True</property>
                                                             <property name="can-focus">True</property>
                                                             <property name="receives-default">False</property>
+                                                            <property name="tooltip-text" translatable="yes">Start videos in fullscreen mode.</property>
                                                             <property name="draw-indicator">True</property>
                                                             <signal name="toggled" handler="toggled_fullscreen" swapped="no"/>
                                                             </object>
@@ -1509,32 +1561,34 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                             </packing>
                                                             </child>
                                                             <child>
-                                                            <object class="GtkCheckButton" id="dash_checkbutton">
-                                                            <property name="label" translatable="yes">DASH support</property>
-                                                            <property name="visible">True</property>
-                                                            <property name="can-focus">True</property>
-                                                            <property name="receives-default">False</property>
-                                                            <property name="draw-indicator">True</property>
-                                                            <signal name="toggled" handler="toggled_dash_support" swapped="no"/>
-                                                            </object>
-                                                            <packing>
-                                                            <property name="expand">False</property>
-                                                            <property name="fill">False</property>
-                                                            <property name="position">2</property>
-                                                            </packing>
-                                                            </child>
-                                                            <child>
                                                             <object class="GtkCheckButton" id="audio_only_checkbutton">
                                                             <property name="label" translatable="yes">Audio only</property>
                                                             <property name="visible">True</property>
                                                             <property name="can-focus">True</property>
                                                             <property name="receives-default">False</property>
+                                                            <property name="tooltip-text" translatable="yes">Activate audio-only mode.</property>
                                                             <property name="draw-indicator">True</property>
                                                             <signal name="toggled" handler="toggled_audio_only" swapped="no"/>
                                                             </object>
                                                             <packing>
                                                             <property name="expand">True</property>
                                                             <property name="fill">True</property>
+                                                            <property name="position">2</property>
+                                                            </packing>
+                                                            </child>
+                                                            <child>
+                                                            <object class="GtkCheckButton" id="dash_checkbutton">
+                                                            <property name="label" translatable="yes">DASH videos</property>
+                                                            <property name="visible">True</property>
+                                                            <property name="can-focus">True</property>
+                                                            <property name="receives-default">False</property>
+                                                            <property name="tooltip-text" translatable="yes">Include or exclude streams in DASH format.</property>
+                                                            <property name="draw-indicator">True</property>
+                                                            <signal name="toggled" handler="toggled_dash_support" swapped="no"/>
+                                                            </object>
+                                                            <packing>
+                                                            <property name="expand">False</property>
+                                                            <property name="fill">False</property>
                                                             <property name="position">3</property>
                                                             </packing>
                                                             </child>
@@ -1544,6 +1598,7 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                             <property name="visible">True</property>
                                                             <property name="can-focus">True</property>
                                                             <property name="receives-default">False</property>
+                                                            <property name="tooltip-text" translatable="yes">Clear the search list after each new search.</property>
                                                             <property name="draw-indicator">True</property>
                                                             <signal name="toggled" handler="toggled_clear_search_list" swapped="no"/>
                                                             </object>
@@ -1585,7 +1640,7 @@ Unless the categoryID is valid, this field is ignored.</property>
                                               <packing>
                                                 <property name="expand">False</property>
                                                 <property name="fill">False</property>
-                                                <property name="position">6</property>
+                                                <property name="position">7</property>
                                               </packing>
                                             </child>
                                             <child>
@@ -1614,7 +1669,7 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                 <property name="expand">False</property>
                                                 <property name="fill">False</property>
                                                 <property name="padding">14</property>
-                                                <property name="position">7</property>
+                                                <property name="position">8</property>
                                               </packing>
                                             </child>
                                             <child>
@@ -1663,7 +1718,7 @@ When the specified resolution is not found, the best available resolution is use
                                                 <property name="expand">False</property>
                                                 <property name="fill">False</property>
                                                 <property name="pack-type">end</property>
-                                                <property name="position">8</property>
+                                                <property name="position">9</property>
                                               </packing>
                                             </child>
                                           </object>
