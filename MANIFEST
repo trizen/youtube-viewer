@@ -40,3 +40,5 @@ share/icons/user.png
 t/00-load.t
 t/kwalitee.t
 t/pod.t
+utils/auto_perltidy.sh
+utils/bak_cleaner.sh

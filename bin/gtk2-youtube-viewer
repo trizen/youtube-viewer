@@ -1306,9 +1306,13 @@ sub menu_popup {
             my $item = 'Gtk2::ImageMenuItem'->new("Play as audio");
             $item->signal_connect(
                 activate => sub {
-                    my ($video_id, $iter) = get_selected_entry_code();
-                    if (defined($video_id) and $liststore->get($iter, 7) eq 'video') {
-                        execute_cli_youtube_viewer("--id=$video_id --no-video");
+                    my ($id, $iter) = get_selected_entry_code();
+                    my $type = $liststore->get($iter, 7);
+                    if (defined($id) and $type eq 'video') {
+                        execute_cli_youtube_viewer("--id=$id --no-video");
+                    }
+                    elsif (defined($id) and $type eq 'playlist') {
+                        execute_cli_youtube_viewer("--pp=$id --no-video");
                     }
                 }
             );
