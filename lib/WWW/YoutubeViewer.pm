@@ -569,7 +569,7 @@ sub get_invidious_instances {
 }
 
 sub select_good_invidious_instances {
-    my ($self) = @_;
+    my ($self, %args) = @_;
 
     state $instances = $self->get_invidious_instances;
 
@@ -582,12 +582,13 @@ sub select_good_invidious_instances {
                    'vid.mint.lgbt'            => 1,
                    'invidious.ggc-project.de' => 1,
                    'invidious.toot.koeln'     => 1,
-                   'invidious.snopyta.org'    => 1,    # too popular == too slow
+                   'invidious.kavin.rocks'    => 0,
+                   'invidious.snopyta.org'    => 0,
                   );
 
     my @candidates =
       grep { not $ignored{$_->[0]} }
-      grep { ref($_->[1]{monitor}) eq 'HASH' ? ($_->[1]{monitor}{statusClass} eq 'success') : 1 }
+      grep { ref($_->[1]{monitor}) eq 'HASH' ? ($_->[1]{monitor}{statusClass} eq 'success') : $args{lax} }
       grep { lc($_->[1]{type} // '') eq 'https' } @$instances;
 
     if ($self->get_debug) {
@@ -605,6 +606,10 @@ sub _extract_from_invidious {
     my ($self, $videoID) = @_;
 
     my @instances = $self->select_good_invidious_instances();
+
+    if (not @instances) {
+        @instances = $self->select_good_invidious_instances(lax => 1);
+    }
 
     if (@instances) {
         require List::Util;
