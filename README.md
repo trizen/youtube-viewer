@@ -126,6 +126,10 @@ See also: [#285](https://github.com/trizen/youtube-viewer/issues/285), [#308](ht
 
 [straw-viewer](https://github.com/trizen/straw-viewer) is a fork of `youtube-viewer`, which uses the [API](https://github.com/omarroth/invidious/wiki/API) of [invidio.us](https://invidio.us/), and thus it does not require an YouTube API key.
 
+### PIPE-VIEWER
+
+[pipe-viewer](https://github.com/trizen/pipe-viewer) is an experimental fork of `straw-viewer`, which parses the YouTube website directly.
+
 ### REVIEWS
 
 * [EN] YOUTUBE VIEWER: A COMPLETE YOUTUBE CLIENT FOR LINUX [UBUNTU PPA]
