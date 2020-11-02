@@ -3444,7 +3444,12 @@ sub download_from_url {
     if (defined($lwp_dl)) {
         my @cmd = ($lwp_dl, $url, "$output_filename.part");
         $yv_obj->proxy_system(@cmd);
-        return if $?;
+        if ($? == 256 and !defined(fileno(STDOUT))) {    # lwp-download bug
+            ## ok
+        }
+        else {
+            return if $?;
+        }
         rename("$output_filename.part", $output_filename) or return undef;
         return $output_filename;
     }
