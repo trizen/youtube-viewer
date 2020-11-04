@@ -266,8 +266,8 @@ sub set_lwp_useragent {
                $code >= 300                                # do not cache any bad response
                  or $response->request->method ne 'GET'    # cache only GET requests
 
-                 # don't cache if "cache-control" specifies "max-age=0" or "no-store"
-                 or (($response->header('cache-control') // '') =~ /\b(?:max-age=0|no-store)\b/)
+                 # don't cache if "cache-control" specifies "max-age=0", "no-store" or "no-cache"
+                 or (($response->header('cache-control') // '') =~ /\b(?:max-age=0|no-store|no-cache)\b/)
 
                  # don't cache video or audio files
                  or (($response->header('content-type') // '') =~ /\b(?:video|audio)\b/);
