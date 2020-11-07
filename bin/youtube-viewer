@@ -2848,10 +2848,52 @@ sub update_channel_file {
     close $fh;
 }
 
-sub get_watched_videos_from_file {
-    my ($page) = @_;
+sub get_videos_from_list {
+    my ($ids, $page) = @_;
 
     $page //= $yv_obj->get_page;
+
+    my @ids = @$ids;
+
+    my %seen;
+
+    # Keep the most recent ones
+    @ids = reverse(@ids);
+    @ids = grep { !$seen{$_}++ } @ids;
+
+    my $maxResults   = $yv_obj->get_maxResults;
+    my $totalResults = scalar(@ids);
+
+    if ($page >= 1 and scalar(@ids) >= $maxResults) {
+
+        @ids = grep { defined } @ids[($page - 1) * $maxResults .. $page * $maxResults - 1];
+
+        if (!@ids) {
+            warn_last_page();
+            return __SUB__->($ids, $page - 1) if ($page > 1);
+        }
+    }
+
+    my %results;
+    my @videos;
+
+    foreach my $id (@ids) {
+        push @videos, {id => {kind => "youtube#video", videoId => $id}};
+    }
+
+#<<<
+    $results{items}         = \@videos;
+    $results{pageInfo}      = {resultsPerPage => scalar(@videos), totalResults => $totalResults};
+    $results{fromPage}      = sub { get_videos_from_list($ids, $_[0]) };
+    $results{nextPageToken} = sub { get_videos_from_list($ids, $page + 1) };
+    $results{prevPageToken} = sub { get_videos_from_list($ids, (($page > 1) ? ($page - 1) : do { warn_first_page(); 1 })) };
+#>>>
+
+    scalar {results => \%results, url => undef};
+}
+
+sub print_watched_videos_from_file {
+    my ($page) = @_;
 
     my @ids;
 
@@ -2860,47 +2902,10 @@ sub get_watched_videos_from_file {
         close $fh;
     }
     else {
-        @ids = keys %WATCHED_VIDEOS;
+        @ids = sort keys %WATCHED_VIDEOS;
     }
 
-    my %seen;
-
-    # Keep the most recent ones
-    @ids = reverse(@ids);
-    @ids = grep { !$seen{$_}++ } @ids;
-
-    my $maxResults = $yv_obj->get_maxResults;
-
-    if ($page >= 1 and scalar(@ids) >= $maxResults) {
-
-        @ids = grep { defined } @ids[($page - 1) * $maxResults .. $page * $maxResults - 1];
-
-        if (!@ids) {
-            warn_last_page();
-            return get_watched_videos_from_file($page - 1) if ($page > 1);
-        }
-    }
-
-    my %results;
-    my @videos;
-
-    foreach my $id (@ids) {
-        push @videos, {id => {kind => "youtube#video", videoId => $id},};
-    }
-
-#<<<
-    $results{items}         = \@videos;
-    $results{pageInfo}      = {resultsPerPage => scalar(@videos), totalResults => scalar(@videos)};
-    $results{nextPageToken} = sub { get_watched_videos_from_file($page + 1) };
-    $results{prevPageToken} = sub { get_watched_videos_from_file(($page > 1) ? ($page - 1) : do { warn_first_page(); 1 }) };
-#>>>
-
-    scalar {results => \%results, url => undef};
-}
-
-sub print_watched_videos_from_file {
-    my ($page) = @_;
-    print_videos(get_watched_videos_from_file($page));
+    print_videos(get_videos_from_list(\@ids, $page));
 }
 
 sub print_channels_from_file {
@@ -3325,6 +3330,7 @@ sub parse_page_number {
     elsif ($page_number =~ /last|end/) {
 
         if (ref($info->{pageInfo}) eq 'HASH') {
+
             my $total    = $info->{pageInfo}{totalResults};
             my $per_page = $info->{pageInfo}{resultsPerPage};
 
@@ -4217,13 +4223,28 @@ sub print_videos {
                 print $complete_help;
                 press_enter_to_continue();
             }
+
+            # :page=i, :end, :beg, :last, :first
             elsif ($opt =~ /^(page=(\S+)\z|(last|end|beg|first))/) {
+
                 my $page_number = parse_page_number($+, $info);
                 say "\n:: Jumping to page $page_number" if ($page_number > 1);
-                my $page_token = $yv_obj->page_token($page_number);
-                my $request    = $yv_obj->from_page_token($url, $page_token);
-                __SUB__->($request, @keywords ? (auto => 1) : ());
+
+                if (defined($url)) {
+                    my $page_token = $yv_obj->page_token($page_number);
+                    my $request    = $yv_obj->from_page_token($url, $page_token);
+                    __SUB__->($request, @keywords ? (auto => 1) : ());
+                }
+                elsif (defined($info->{fromPage}) and ref($info->{fromPage}) eq 'CODE') {
+                    my $request = $info->{fromPage}->($page_number);
+                    __SUB__->($request, @keywords ? (auto => 1) : ());
+                }
+                else {
+                    warn_no_results('page');
+                }
             }
+
+            # :next
             elsif ($opt =~ /^(?:n|next)\z/) {
                 if (defined $info->{nextPageToken}) {
                     my $request = $yv_obj->from_page_token($url, $info->{nextPageToken});
@@ -4238,6 +4259,8 @@ sub print_videos {
                     }
                 }
             }
+
+            # :back, :previous
             elsif ($opt =~ /^(?:b|back|p|prev|previous)\z/) {
                 if (defined $info->{prevPageToken}) {
                     __SUB__->($yv_obj->from_page_token($url, $info->{prevPageToken}), @keywords ? (auto => 1) : ());
@@ -4246,13 +4269,19 @@ sub print_videos {
                     warn_first_page();
                 }
             }
-            elsif ($opt =~ /^(?:R|refresh)\z/) {
+
+            # :refresh
+            elsif ($opt =~ /^(?:R|refresh)\z/ and defined($url)) {
                 @{$videos} = @{$yv_obj->_get_results($url)->{results}{items}};
                 $results->{has_extra_info} = 0;
             }
+
+            # :return
             elsif ($opt =~ /^(?:r|return)\z/) {
                 return;
             }
+
+            # :author=i, :u=i
             elsif ($opt =~ /^(?:a|author|u|uploads)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     foreach my $id (@nums) {
@@ -4270,6 +4299,8 @@ sub print_videos {
                     warn_no_thing_selected('video');
                 }
             }
+
+            # :save=i
             elsif ($opt =~ /^(?:s|save)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     foreach my $id (@nums) {
@@ -4287,6 +4318,8 @@ sub print_videos {
                     warn_no_thing_selected('video');
                 }
             }
+
+            # :popular=i, :pv=i
             elsif ($opt =~ /^(?:pv|popular)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     foreach my $id (@nums) {
@@ -4304,6 +4337,8 @@ sub print_videos {
                     warn_no_thing_selected('video');
                 }
             }
+
+            # :activity
             elsif ($opt =~ /^(?:A|[Aa]ctivity)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     foreach my $id (@nums) {
@@ -4321,6 +4356,8 @@ sub print_videos {
                     warn_no_thing_selected('activity');
                 }
             }
+
+            # :ps
             elsif ($opt =~ /^(?:ps|s2p)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     select_and_save_to_playlist(map { $yv_utils->get_video_id($videos->[$_]) } @nums);
@@ -4329,6 +4366,8 @@ sub print_videos {
                     warn_no_thing_selected('video');
                 }
             }
+
+            # :p=i, :playlist=i, :up=i
             elsif ($opt =~ /^(?:p|playlists?|up)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     foreach my $id (@nums) {
@@ -4345,6 +4384,8 @@ sub print_videos {
                     warn_no_thing_selected('video');
                 }
             }
+
+            # :like=i, :dislike=i
             elsif ($opt =~ /^((?:dis)?like)${digit_or_equal_re}(.*)/) {
                 my $rating = $1;
                 if (my @nums = get_valid_numbers($#{$videos}, $2)) {
