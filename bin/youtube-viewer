@@ -122,6 +122,7 @@ else {
 
 # Configuration dir/file
 my $config_dir          = catdir($xdg_config_home, $execname);
+my $local_playlists_dir = catdir($config_dir,      'playlists');
 my $config_file         = catfile($config_dir, "$execname.conf");
 my $youtube_users_file  = catfile($config_dir, 'youtube_users.txt');
 my $authentication_file = catfile($config_dir, 'reg.dat');
@@ -130,10 +131,12 @@ my $watch_history_file  = catfile($config_dir, 'watched.txt');
 my $api_file            = catfile($config_dir, 'api.json');
 my $default_api_file    = '/etc/youtube-viewer/api.json';
 
-if (not -d $config_dir) {
-    require File::Path;
-    File::Path::make_path($config_dir)
-      or warn "[!] Can't create dir '$config_dir': $!";
+foreach my $dir ($config_dir, $local_playlists_dir) {
+    if (not -d $dir) {
+        require File::Path;
+        File::Path::make_path($dir)
+          or warn "[!] Can't create dir <<$dir>>: $!";
+    }
 }
 
 sub which_command {
@@ -720,13 +723,14 @@ usage: $execname [options] ([url] | [keywords])
    -wv --watched-videos : list the most recent watched videos
 
  * Playlists
-   -up --playlists=s  : list playlists created by a specific channel or user
-   -sp --search-pl    : search for playlists of videos
-       --pid=s        : list a playlist of videos by playlist ID
-       --pp=s,s       : play the videos from the given playlist IDs
-       --ps=s         : add video by ID or URL to a post-selected playlist
-                        or in a given playlist ID specified with `--pid`
-       --position=i   : position in the playlist where to add the video
+   -up --playlists=s      : list playlists created by a specific channel or user
+   -sp --search-pl        : search for playlists of videos
+       --pid=s            : list a playlist of videos by playlist ID
+       --pp=s,s           : play the videos from the given playlist IDs
+       --ps=s             : add video by ID or URL to a post-selected playlist
+                            or in a given playlist ID specified with `--pid`
+       --position=i       : position in the playlist where to add the video
+   -lp --local-playlist=s : display videos from a local playlist
 
 * Activities
    -ua --activities:s : show activity events for a given channel
@@ -1308,6 +1312,10 @@ sub apply_configuration {
         get_and_play_playlists(split(/[,\s]+/, delete $opt->{play_playlists}));
     }
 
+    if (defined $opt->{local_playlist}) {
+        print_local_playlist(delete $opt->{local_playlist});
+    }
+
     if (defined $opt->{playlist_id}) {
         my $playlistID = get_valid_playlist_id(delete($opt->{playlist_id})) // return;
         get_and_print_videos_from_playlist($playlistID);
@@ -1566,6 +1574,7 @@ sub parse_arguments {
 
         'fc|cf|file-channels' => \$opt{channels_from_file},
         'wv|watched-videos'   => \$opt{watched_videos_from_file},
+        'lp|local-playlist=s' => \$opt{local_playlist},
 
         'search-videos|search|sv!'     => \$opt{search_videos},
         'search-channels|channels|sc!' => \$opt{search_channels},
@@ -2855,12 +2864,6 @@ sub get_videos_from_list {
 
     my @ids = @$ids;
 
-    my %seen;
-
-    # Keep the most recent ones
-    @ids = reverse(@ids);
-    @ids = grep { !$seen{$_}++ } @ids;
-
     my $maxResults   = $yv_obj->get_maxResults;
     my $totalResults = scalar(@ids);
 
@@ -2869,7 +2872,7 @@ sub get_videos_from_list {
         @ids = grep { defined } @ids[($page - 1) * $maxResults .. $page * $maxResults - 1];
 
         if (!@ids) {
-            warn_last_page();
+            warn_last_page()                  if ($page == 1 + sprintf('%0.f', 0.5 + $totalResults / $maxResults));
             return __SUB__->($ids, $page - 1) if ($page > 1);
         }
     }
@@ -2892,20 +2895,55 @@ sub get_videos_from_list {
     scalar {results => \%results, url => undef};
 }
 
+sub read_video_ids_from_file {
+    my ($file) = @_;
+
+    open(my $fh, '<', $file) or return;
+    chomp(my @ids = <$fh>);
+    close $fh;
+
+    my %seen;
+
+    # Keep the most recent ones
+    @ids = reverse(@ids);
+    @ids = grep { !$seen{$_}++ } @ids;
+
+    return @ids;
+}
+
+sub print_local_playlist {
+    my ($name) = @_;
+
+    require File::Basename;
+
+    my @playlist_files = glob("$local_playlists_dir/*");
+    my $regex          = qr/\Q$name\E/i;
+
+    foreach my $file (@playlist_files) {
+        if (File::Basename::basename($file) =~ $regex) {
+            my @ids = reverse read_video_ids_from_file($file);
+            @ids || next;
+            return print_videos(get_videos_from_list(\@ids));
+        }
+    }
+
+    warn_no_thing_selected('playlist');
+    return 0;
+}
+
 sub print_watched_videos_from_file {
-    my ($page) = @_;
 
     my @ids;
 
-    if ($opt{watch_history} and open(my $fh, '<', $opt{watch_history_file})) {
-        chomp(@ids = <$fh>);
-        close $fh;
+    if ($opt{watch_history}) {
+        @ids = read_video_ids_from_file($opt{watch_history_file});
     }
-    else {
+
+    if (scalar(@ids) == 0) {
         @ids = sort keys %WATCHED_VIDEOS;
     }
 
-    print_videos(get_videos_from_list(\@ids, $page));
+    print_videos(get_videos_from_list(\@ids));
 }
 
 sub print_channels_from_file {
