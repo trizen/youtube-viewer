@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 15 October 2020
+#  Latest edit on: 07 November 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -730,6 +730,8 @@ usage: $execname [options] ([url] | [keywords])
        --ps=s             : add video by ID or URL to a post-selected playlist
                             or in a given playlist ID specified with `--pid`
        --position=i       : position in the playlist where to add the video
+       --save-playlist=s  : save a playlist locally given a filename
+                            playlist ID must be specified with `--pid`
    -lp --local-playlist=s : display videos from a local playlist
 
 * Activities
@@ -1316,6 +1318,30 @@ sub apply_configuration {
         print_local_playlist(delete $opt->{local_playlist});
     }
 
+    if (defined $opt->{save_playlist}) {
+
+        if (not defined $opt->{playlist_id}) {
+            warn_no_thing_selected('playlist (--pid=ID)');
+            return;
+        }
+
+        my $playlistID = get_valid_playlist_id(delete($opt->{playlist_id})) // return;
+        my $filename   = catfile($local_playlists_dir, delete($opt->{save_playlist}) // $playlistID);
+
+        if (-e $filename) {
+            warn ":: File <<$filename>> already exists!\n";
+            return;
+        }
+
+        open(my $fh, '>', $filename) or do {
+            warn "Can't open file <<$filename>> for writing: $!";
+            return;
+        };
+
+        extract_video_ids_from_playlist($playlistID, sub { say $fh $_[0] });
+        close $fh;
+    }
+
     if (defined $opt->{playlist_id}) {
         my $playlistID = get_valid_playlist_id(delete($opt->{playlist_id})) // return;
         get_and_print_videos_from_playlist($playlistID);
@@ -1575,6 +1601,7 @@ sub parse_arguments {
         'fc|cf|file-channels' => \$opt{channels_from_file},
         'wv|watched-videos'   => \$opt{watched_videos_from_file},
         'lp|local-playlist=s' => \$opt{local_playlist},
+        'save-playlist=s'     => \$opt{save_playlist},
 
         'search-videos|search|sv!'     => \$opt{search_videos},
         'search-channels|channels|sc!' => \$opt{search_channels},
@@ -2909,6 +2936,30 @@ sub read_video_ids_from_file {
     @ids = grep { !$seen{$_}++ } @ids;
 
     return @ids;
+}
+
+sub extract_video_ids_from_playlist {
+    my ($playlistID, $callback) = @_;
+
+    $playlistID = get_valid_playlist_id($playlistID) // return;
+    my $results = $yv_obj->videos_from_playlist_id($playlistID);
+
+    while (1) {
+        $yv_utils->has_entries($results) || last;
+
+        my $url    = $results->{url};
+        my $info   = $results->{results} // {};
+        my $videos = $info->{items}      // [];
+
+        foreach my $video (@$videos) {
+            my $video_id = $yv_utils->get_video_id($video);
+            $callback->($video_id) if defined($video_id);
+        }
+
+        $results = $yv_obj->from_page_token($url, $info->{nextPageToken} || last);
+    }
+
+    return 1;
 }
 
 sub print_local_playlist {
