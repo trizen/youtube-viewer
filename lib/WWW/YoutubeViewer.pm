@@ -577,19 +577,25 @@ sub select_good_invidious_instances {
 
     my %ignored = (
                    'yewtu.be'                 => 1,
-                   'invidiou.site'            => 1,
+                   'invidious.tube'           => 1,
+                   'invidiou.site'            => 0,
                    'invidious.xyz'            => 1,
                    'vid.mint.lgbt'            => 1,
                    'invidious.ggc-project.de' => 1,
                    'invidious.toot.koeln'     => 1,
                    'invidious.kavin.rocks'    => 0,
-                   'invidious.snopyta.org'    => 0,
+                   'invidious.snopyta.org'    => 1,
                   );
 
+#<<<
     my @candidates =
       grep { not $ignored{$_->[0]} }
-      grep { ref($_->[1]{monitor}) eq 'HASH' ? ($_->[1]{monitor}{statusClass} eq 'success') : $args{lax} }
+      grep { $args{lax} ? 1 : eval { lc($_->[1]{monitor}{dailyRatios}[0]{label} // '') eq 'success' } }
+      #~ grep { $args{lax} ? 1 : eval { lc($_->[1]{monitor}{weeklyRatio}{label} // '') eq 'success' } }
+      grep { $args{lax} ? 1 : eval { lc($_->[1]{monitor}{statusClass} // '') eq 'success' } }
+      #~ grep { $args{lax} ? 1 : !exists($_->[1]{stats}{error}) }
       grep { lc($_->[1]{type} // '') eq 'https' } @$instances;
+#>>>
 
     if ($self->get_debug) {
 
