@@ -617,7 +617,8 @@ sub _extract_from_invidious {
     require List::Util;
 
 #<<<
-    my @instances = (
+    my %seen;
+    my @instances = grep { !$seen{$_}++ } (
         List::Util::shuffle(map { $_->[0] } @candidates),
         List::Util::shuffle(map { $_->[0] } @extra_candidates),
     );
