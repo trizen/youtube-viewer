@@ -34,7 +34,7 @@ sub oauth_refresh_token {
     my $json_data = $self->lwp_post(
                                     $self->_get_token_oauth_url(),
                                     [Content       => $self->get_www_content_type,
-                                     client_id     => $self->get_client_id() // return,
+                                     client_id     => $self->get_client_id()     // return,
                                      client_secret => $self->get_client_secret() // return,
                                      refresh_token => $self->get_refresh_token() // return,
                                      grant_type    => 'refresh_token',
@@ -56,7 +56,7 @@ sub get_accounts_oauth_url {
     my $url = $self->_append_url_args(
                                       ($self->get_oauth_url() . 'auth'),
                                       response_type => 'code',
-                                      client_id     => $self->get_client_id() // return,
+                                      client_id     => $self->get_client_id()    // return,
                                       redirect_uri  => $self->get_redirect_uri() // return,
                                       scope         => 'https://www.googleapis.com/auth/youtube.force-ssl',
                                       access_type   => 'offline',
@@ -80,9 +80,9 @@ sub oauth_login {
     my $json_data = $self->lwp_post(
                                     $self->_get_token_oauth_url(),
                                     [Content       => $self->get_www_content_type,
-                                     client_id     => $self->get_client_id() // return,
+                                     client_id     => $self->get_client_id()     // return,
                                      client_secret => $self->get_client_secret() // return,
-                                     redirect_uri  => $self->get_redirect_uri() // return,
+                                     redirect_uri  => $self->get_redirect_uri()  // return,
                                      grant_type    => 'authorization_code',
                                      code          => $code,
                                     ]

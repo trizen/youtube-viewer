@@ -1392,7 +1392,10 @@ sub apply_configuration {
     if (defined $opt->{popular_videos}) {
         my $str = delete $opt->{popular_videos};
 
-        if (my $id = extract_channel_id($str)) {
+        if (!defined($str) or $str eq '') {
+            print_videos($yv_obj->popular_videos);
+        }
+        elsif (my $id = extract_channel_id($str)) {
 
             if (not $yv_utils->is_channelID($id)) {
                 $id = $yv_obj->channel_id_from_username($id) // do {
@@ -1401,7 +1404,7 @@ sub apply_configuration {
                 };
             }
 
-            if ($id eq 'mine') {
+            if (defined($id) and $id eq 'mine') {
                 $id = $yv_obj->my_channel_id() // do {
                     warn_invalid("username or channel ID", $id);
                     undef;
@@ -1628,7 +1631,7 @@ sub parse_arguments {
         'logout'             => \$opt{logout},
 
         'related-videos|rv=s'         => \$opt{related_videos},
-        'popular-videos|popular|pv=s' => \$opt{popular_videos},
+        'popular-videos|popular|pv:s' => \$opt{popular_videos},
 
         'cookie-file|cookies=s'          => \$opt{cookie_file},
         'user-agent|agent=s'             => \$opt{user_agent},
