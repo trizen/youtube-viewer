@@ -166,7 +166,7 @@ my %CONFIG = (
                               srt     => q{--sub-file=*SUB*},
                               audio   => q{--input-slave=*AUDIO*},
                               fs      => q{--fullscreen},
-                              arg     => q{--quiet --play-and-exit --no-video-title-show --input-title-format=*TITLE*},
+                              arg     => q{--quiet --play-and-exit --no-video-title-show --input-title-format=*TITLE* *VIDEO*},
                               novideo => q{--intf=dummy --novideo},
                              },
                       mpv => {
@@ -174,7 +174,7 @@ my %CONFIG = (
                               srt     => q{--sub-file=*SUB*},
                               audio   => q{--audio-file=*AUDIO*},
                               fs      => q{--fullscreen},
-                              arg     => q{--really-quiet --force-media-title=*TITLE* --no-ytdl},
+                              arg     => q{--really-quiet --force-media-title=*TITLE* --no-ytdl *VIDEO*},
                               novideo => q{--no-video},
                              },
                      },
@@ -3815,7 +3815,7 @@ sub get_player_command {
         )
     );
 
-    my $has_video = $cmd =~ /\*(?:VIDEO|URL|ID)\*/;
+    my $has_video = $cmd =~ /(?:^|\s)\*(?:VIDEO|URL|ID)\*(?:\s|\z)/;
 
     $cmd = $yv_utils->format_text(
                                   streaming => $streaming,

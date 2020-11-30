@@ -150,21 +150,15 @@ my %CONFIG = (
                               srt   => q{--sub-file=*SUB*},
                               audio => q{--input-slave=*AUDIO*},
                               fs    => q{--fullscreen},
-                              arg   => q{--quiet --play-and-exit --no-video-title-show --input-title-format=*TITLE*},
+                              arg   => q{--quiet --play-and-exit --no-video-title-show --input-title-format=*TITLE* *VIDEO*},
                              },
                       mpv => {
                               cmd   => q{mpv},
                               srt   => q{--sub-file=*SUB*},
                               audio => q{--audio-file=*AUDIO*},
                               fs    => q{--fullscreen},
-                              arg   => q{--really-quiet --force-media-title=*TITLE* --no-ytdl},
+                              arg   => q{--really-quiet --force-media-title=*TITLE* --no-ytdl *VIDEO*},
                              },
-                      smplayer => {
-                                   cmd => q{smplayer},
-                                   srt => q{-sub *SUB*},
-                                   fs  => q{-fullscreen},
-                                   arg => q{-close-at-end -media-title *TITLE* *URL*},
-                                  },
                      },
     video_player_selected => undef,    # autodetect it later
 
