@@ -2613,8 +2613,30 @@ sub get_pixbuf_thumbnail_from_content {
 
 sub get_pixbuf_thumbnail_from_url {
     my ($url, $xsize, $ysize) = @_;
+
+    state %cache;
+
+    my $key = "$url $xsize $ysize";
+
+    if (exists $cache{$key}) {
+        return $cache{$key};
+    }
+
     my $thumbnail = lwp_get($url);
-    return get_pixbuf_thumbnail_from_content($thumbnail, $xsize, $ysize);
+
+    if (not defined($thumbnail)) {
+        if ($url =~ s{/mq([0-9])\.}{/$1.}) {
+            $thumbnail = lwp_get($url);
+        }
+    }
+
+    my $pixbuf = get_pixbuf_thumbnail_from_content($thumbnail, $xsize, $ysize);
+
+    if (defined($pixbuf)) {
+        $cache{$key} = $pixbuf;
+    }
+
+    return $pixbuf;
 }
 
 sub get_pixbuf_thumbnail_from_entry {

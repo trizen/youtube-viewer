@@ -2419,6 +2419,16 @@ sub determine_image_format {
     return undef;
 }
 
+sub lwp_get {
+    my ($url) = @_;
+
+    state %cache;
+
+    my $data = $cache{$url} // $yv_obj->lwp_get($url, simple => 1);
+    $cache{$url} = $data if defined($data);
+    return $data;
+}
+
 sub get_pixbuf_thumbnail {
     my ($url, $xsize, $ysize) = @_;
 
@@ -2433,7 +2443,13 @@ sub get_pixbuf_thumbnail {
         return $cache{$key};
     }
 
-    my $thumbnail = $yv_obj->lwp_get($url, simple => 1);
+    my $thumbnail = lwp_get($url);
+
+    if (not defined($thumbnail)) {
+        if ($url =~ s{/mq([0-9])\.}{/$1.}) {
+            $thumbnail = lwp_get($url);
+        }
+    }
 
     my $pixbuf;
     if (defined $thumbnail) {
