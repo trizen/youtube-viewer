@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 01 November 2020
+#  Latest edit on: 06 December 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -3031,11 +3031,10 @@ sub add_playlist_entry {
                   . encode_entities($row_description)
                   . '</i>');
 
-    my $num_items_template = "<b>$symbols{numero}</b>  %d items\n";
-    my $num_items_text     = "";
+    my $num_items_text = $yv_utils->get_playlist_item_count($playlist) // "";
 
-    if (defined($playlist->{contentDetails}{itemCount})) {
-        $num_items_text = sprintf($num_items_template, $playlist->{contentDetails}->{itemCount});
+    if ($num_items_text ne '') {
+        $num_items_text = sprintf("<b>$symbols{numero}</b>  %d items\n", $num_items_text);
     }
 
     my $type_label = reflow_text("<b>$symbols{diamond}</b>  " . 'Playlist' . "\n" . $num_items_text);

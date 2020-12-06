@@ -433,6 +433,70 @@ sub get_playlist_id {
       : $info->{id};
 }
 
+sub get_playlist_item_count {
+    my ($self, $info) = @_;
+    $info->{contentDetails}{itemCount};
+}
+
+sub read_video_ids_from_file {
+    my ($self, $file) = @_;
+
+    open(my $fh, '<', $file) or return;
+    chomp(my @ids = <$fh>);
+    close $fh;
+
+    my %seen;
+
+    # Keep the most recent ones
+    @ids = reverse(@ids);
+    @ids = grep { !$seen{$_}++ } @ids;
+
+    return @ids;
+}
+
+sub local_playlist_snippet {
+    my ($self, $id) = @_;
+
+    my $first_video_id = do {
+        open(my $fh, '<', $id) or return;
+        chomp(my $video_id = <$fh>);
+        close $fh;
+        $video_id;
+    };
+
+    my $title = File::Basename::basename($id);
+
+    scalar {
+            id             => {kind => "youtube#playlist", playlistId => $id},
+            contentDetails => {
+                               itemCount => scalar $self->read_video_ids_from_file($id),
+                              },
+            snippet => {
+                        channelId    => "mine",
+                        channelTitle => "<local playlist>",
+                        description  => $id,
+                        thumbnails   => {
+                                       default => {
+                                                   height => 90,
+                                                   url    => "https://i.ytimg.com/vi/$first_video_id/default.jpg",
+                                                   width  => 120,
+                                                  },
+                                       high => {
+                                                height => 360,
+                                                url    => "https://i.ytimg.com/vi/$first_video_id/hqdefault.jpg",
+                                                width  => 480,
+                                               },
+                                       medium => {
+                                                  height => 180,
+                                                  url    => "https://i.ytimg.com/vi/$first_video_id/mqdefault.jpg",
+                                                  width  => 320,
+                                                 },
+                                      },
+                        title => $title,
+                       },
+           };
+}
+
 =head2 get_description($info)
 
 Get description.

@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 07 November 2020
+#  Latest edit on: 06 December 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -1603,7 +1603,7 @@ sub parse_arguments {
 
         'fc|cf|file-channels' => \$opt{channels_from_file},
         'wv|watched-videos'   => \$opt{watched_videos_from_file},
-        'lp|local-playlist=s' => \$opt{local_playlist},
+        'lp|local-playlist:s' => \$opt{local_playlist},
         'save-playlist=s'     => \$opt{save_playlist},
 
         'search-videos|search|sv!'     => \$opt{search_videos},
@@ -2887,58 +2887,47 @@ sub update_channel_file {
     close $fh;
 }
 
-sub get_videos_from_list {
-    my ($ids, $page) = @_;
+sub get_results_from_list {
+    my ($ids, %args) = @_;
 
-    $page //= $yv_obj->get_page;
+    $args{page} //= $yv_obj->get_page;
 
     my @ids = @$ids;
 
     my $maxResults   = $yv_obj->get_maxResults;
     my $totalResults = scalar(@ids);
 
-    if ($page >= 1 and scalar(@ids) >= $maxResults) {
+    if ($args{page} >= 1 and scalar(@ids) >= $maxResults) {
 
-        @ids = grep { defined } @ids[($page - 1) * $maxResults .. $page * $maxResults - 1];
+        @ids = grep { defined } @ids[($args{page} - 1) * $maxResults .. $args{page} * $maxResults - 1];
 
         if (!@ids) {
-            warn_last_page()                  if ($page == 1 + sprintf('%0.f', 0.5 + $totalResults / $maxResults));
-            return __SUB__->($ids, $page - 1) if ($page > 1);
+            warn_last_page()                        if ($args{page} == 1 + sprintf('%0.f', 0.5 + $totalResults / $maxResults));
+            return __SUB__->($ids, $args{page} - 1) if ($args{page} > 1);
         }
     }
 
     my %results;
-    my @videos;
+    my @entries;
 
     foreach my $id (@ids) {
-        push @videos, {id => {kind => "youtube#video", videoId => $id}};
+        if (defined($args{callback})) {
+            push @entries, $args{callback}($id);
+        }
+        else {
+            push @entries, {id => {kind => "youtube#video", videoId => $id}};
+        }
     }
 
 #<<<
-    $results{items}         = \@videos;
-    $results{pageInfo}      = {resultsPerPage => scalar(@videos), totalResults => $totalResults};
-    $results{fromPage}      = sub { get_videos_from_list($ids, $_[0]) };
-    $results{nextPageToken} = sub { get_videos_from_list($ids, $page + 1) };
-    $results{prevPageToken} = sub { get_videos_from_list($ids, (($page > 1) ? ($page - 1) : do { warn_first_page(); 1 })) };
+    $results{items}         = \@entries;
+    $results{pageInfo}      = {resultsPerPage => scalar(@entries), totalResults => $totalResults};
+    $results{fromPage}      = sub { get_results_from_list($ids, %args, page => $_[0]) };
+    $results{nextPageToken} = sub { get_results_from_list($ids, %args, page => ($args{page} + 1)) };
+    $results{prevPageToken} = sub { get_results_from_list($ids, %args, page => (($args{page} > 1) ? ($args{page} - 1) : do { warn_first_page(); 1 })) };
 #>>>
 
     scalar {results => \%results, url => undef};
-}
-
-sub read_video_ids_from_file {
-    my ($file) = @_;
-
-    open(my $fh, '<', $file) or return;
-    chomp(my @ids = <$fh>);
-    close $fh;
-
-    my %seen;
-
-    # Keep the most recent ones
-    @ids = reverse(@ids);
-    @ids = grep { !$seen{$_}++ } @ids;
-
-    return @ids;
 }
 
 sub extract_video_ids_from_playlist {
@@ -2970,14 +2959,26 @@ sub print_local_playlist {
 
     require File::Basename;
 
-    my @playlist_files = glob("$local_playlists_dir/*");
+    my @playlist_files = sort { CORE::fc($a) cmp CORE::fc($b) } glob("$local_playlists_dir/*");
     my $regex          = qr/\Q$name\E/i;
 
+    if (!defined($name) or $name eq '') {
+        my $results = get_results_from_list(
+            \@playlist_files,
+            callback => sub {
+                my ($id) = @_;
+                $yv_utils->local_playlist_snippet($id);
+            }
+        );
+        $results->{has_extra_info} = 1;
+        return print_playlists($results);
+    }
+
     foreach my $file (@playlist_files) {
-        if (File::Basename::basename($file) =~ $regex) {
-            my @ids = reverse read_video_ids_from_file($file);
+        if (File::Basename::basename($file) =~ $regex or $file eq $name) {
+            my @ids = reverse $yv_utils->read_video_ids_from_file($file);
             @ids || next;
-            return print_videos(get_videos_from_list(\@ids));
+            return print_videos(get_results_from_list(\@ids));
         }
     }
 
@@ -2990,14 +2991,14 @@ sub print_watched_videos_from_file {
     my @ids;
 
     if ($opt{watch_history}) {
-        @ids = read_video_ids_from_file($opt{watch_history_file});
+        @ids = $yv_utils->read_video_ids_from_file($opt{watch_history_file});
     }
 
     if (scalar(@ids) == 0) {
         @ids = sort keys %WATCHED_VIDEOS;
     }
 
-    print_videos(get_videos_from_list(\@ids));
+    print_videos(get_results_from_list(\@ids));
 }
 
 sub print_channels_from_file {
@@ -3238,6 +3239,20 @@ sub print_playlists {
     my $info      = $results->{results} // {};
     my $playlists = $info->{items}      // [];
 
+    if (@{$playlists} and not $results->{has_extra_info}) {
+
+        my @playlist_ids     = grep { defined } map { $yv_utils->get_playlist_id($_) } @{$playlists};
+        my $content_details  = $yv_obj->playlist_from_id(join(',', @playlist_ids), 'contentDetails');
+        my $playlist_details = $content_details->{results}{items};
+
+        foreach my $i (0 .. $#{$playlists}) {
+            @{$playlists->[$i]}{qw(contentDetails)} =
+              @{$playlist_details->[$i]}{qw(contentDetails)};
+        }
+
+        $results->{has_extra_info} = 1;
+    }
+
     state $info_format = <<"FORMAT";
 
 TITLE: %s
@@ -3252,8 +3267,8 @@ FORMAT
             printf(
                    "\n%s. %s\n    %s: %-25s %s: %s\n%s\n",
                    colored(sprintf('%2d', $i + 1), 'bold') => colored($yv_utils->get_title($playlist), 'bold blue'),
-                   colored('Updated' => 'bold') => $yv_utils->get_publication_date($playlist),
-                   colored('Author'  => 'bold') => $yv_utils->get_channel_title($playlist),
+                   colored('Videos' => 'bold') => $yv_utils->get_playlist_item_count($playlist),
+                   colored('Author' => 'bold') => $yv_utils->get_channel_title($playlist),
                    wrap_text(
                              i_tab => q{ } x 4,
                              s_tab => q{ } x 4,
@@ -3265,22 +3280,22 @@ FORMAT
             print "\n" if $i == 0;
             printf(
                    "%s. %s (%s) %s\n",
-                   colored(sprintf('%2d', $i + 1),                     'bold'),
-                   colored($yv_utils->get_title($playlist),            'blue'),
-                   colored($yv_utils->get_publication_date($playlist), 'magenta'),
-                   colored($yv_utils->get_channel_title($playlist),    'green'),
+                   colored(sprintf('%2d', $i + 1),                        'bold'),
+                   colored($yv_utils->get_title($playlist),               'blue'),
+                   colored($yv_utils->get_playlist_item_count($playlist), 'magenta'),
+                   colored($yv_utils->get_channel_title($playlist),       'green'),
                   );
         }
         elsif ($opt{results_fixed_width}) {
 
             require List::Util;
 
-            my @authors = map { $yv_utils->get_channel_title($_) } @{$playlists};
-            my @dates   = map { $yv_utils->get_publication_date($_) } @{$playlists};
+            my @authors     = map { $yv_utils->get_channel_title($_) } @{$playlists};
+            my @item_counts = map { $yv_utils->get_playlist_item_count($_) } @{$playlists};
 
-            my $author_width = List::Util::min(List::Util::max(map { length($_) } @authors), int($term_width / 5));
-            my $dates_width  = List::Util::max(map { length($_) } @dates);
-            my $title_length = $term_width - ($author_width + $dates_width + 2 + 3 + 1 + 2);
+            my $author_width     = List::Util::min(List::Util::max(map { length($_) } @authors), int($term_width / 5));
+            my $item_count_width = List::Util::max(map { length($_) } @item_counts);
+            my $title_length     = $term_width - ($author_width + $item_count_width + 2 + 3 + 1 + 2);
 
             print "\n";
             foreach my $i (0 .. $#{$playlists}) {
@@ -3291,16 +3306,16 @@ FORMAT
                 printf "%s. %s %s [%*s]\n", colored(sprintf('%2d', $i + 1), 'bold'),
                   adjust_width($title, $title_length),
                   adjust_width($authors[$i], $author_width, 1),
-                  $dates_width, $dates[$i];
+                  $item_count_width, $item_counts[$i];
             }
             last;
         }
         else {
             print "\n" if $i == 0;
             printf(
-                   "%s. %s (by %s) [%s]\n",
-                   colored(sprintf('%2d', $i + 1), 'bold'), $yv_utils->get_title($playlist),
-                   $yv_utils->get_channel_title($playlist), $yv_utils->get_publication_date($playlist)
+                   "%s. %s [%s] (%s)\n",
+                   colored(sprintf('%2d', $i + 1), 'bold'),       $yv_utils->get_title($playlist),
+                   $yv_utils->get_playlist_item_count($playlist), $yv_utils->get_channel_title($playlist)
                   );
         }
     }
@@ -3383,7 +3398,12 @@ FORMAT
                 return $id;
             }
 
-            get_and_print_videos_from_playlist($id);
+            if ($id =~ m{^/}) {
+                print_local_playlist($id);
+            }
+            else {
+                get_and_print_videos_from_playlist($id);
+            }
         }
         else {
             push @for_search, $key;
