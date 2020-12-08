@@ -375,7 +375,7 @@ $action_options
 :pv=i :popular=i  : display author's popular uploads
 :A(ctivity)=i     : display author's recent activity
 :p(laylists)=i    : display author's playlists
-:s=i :save=i      : save author's channel ID to file (see -fc)
+:s=i :save=i      : save author's channel ID to file (see -lc)
 :ps=i :s2p=i,i    : save videos to a post-selected playlist
 :subscribe=i      : subscribe to author's channel
 :(dis)like=i      : like or dislike a video
@@ -732,7 +732,7 @@ usage: $execname [options] ([url] | [keywords])
        --position=i       : position in the playlist where to add the video
        --save-playlist=s  : save a playlist locally given a filename
                             playlist ID must be specified with `--pid`
-   -lp --local-playlist=s : display videos from a local playlist
+   -lp --local-playlist:s : display videos from a local playlist
 
 * Activities
    -ua --activities:s : show activity events for a given channel
@@ -743,7 +743,7 @@ usage: $execname [options] ([url] | [keywords])
 
  * Channels
    -sc --channels       : search for YouTube channels
-   -fc --file-channels  : show saved channels from file
+   -lc --local-channels : show saved channels from file
 
 * Comments
    --comments=s         : display comments for a video by ID or URL
@@ -1363,12 +1363,12 @@ sub apply_configuration {
         print_categories($yv_obj->video_categories);
     }
 
-    if (delete $opt->{channels_from_file}) {
-        print_channels_from_file();
+    if (delete $opt->{local_channels}) {
+        print_local_channels();
     }
 
-    if (delete $opt->{watched_videos_from_file}) {
-        print_watched_videos_from_file();
+    if (delete $opt->{watched_videos}) {
+        print_watched_videos();
     }
 
     if (defined $opt->{uploads}) {
@@ -1601,10 +1601,10 @@ sub parse_arguments {
         'c|categories'                => \$opt{categories},
         'video-ids|videoids|id|ids=s' => \$opt{play_video_ids},
 
-        'fc|cf|file-channels' => \$opt{channels_from_file},
-        'wv|watched-videos'   => \$opt{watched_videos_from_file},
-        'lp|local-playlist:s' => \$opt{local_playlist},
-        'save-playlist=s'     => \$opt{save_playlist},
+        'lc|fc|local-channels' => \$opt{local_channels},
+        'lp|local-playlists:s' => \$opt{local_playlist},
+        'wv|watched-videos'    => \$opt{watched_videos},
+        'save-playlist=s'      => \$opt{save_playlist},
 
         'search-videos|search|sv!'     => \$opt{search_videos},
         'search-channels|channels|sc!' => \$opt{search_channels},
@@ -2986,7 +2986,7 @@ sub print_local_playlist {
     return 0;
 }
 
-sub print_watched_videos_from_file {
+sub print_watched_videos {
 
     my @ids;
 
@@ -3001,7 +3001,7 @@ sub print_watched_videos_from_file {
     print_videos(get_results_from_list(\@ids));
 }
 
-sub print_channels_from_file {
+sub print_local_channels {
 
     open(my $fh, '<:utf8', $opt{youtube_users_file}) or do {
         warn "Can't open file <<$opt{youtube_users_file}>> for reading: $!\n";
