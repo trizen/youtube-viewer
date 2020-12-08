@@ -349,18 +349,28 @@ Examples:
     -sp classical music : search for playlists
 HELP
 
-my $playlists_help = <<"PL_HELP" . $general_help;
+my $playlists_help = <<"PLAYLISTS_HELP" . $general_help;
 
 # Playlists
+<number>          : list videos from the selected playlist
 :pp=i,i           : play videos from the selected playlists
-:s=i :save=i      : save the playlist locally
-PL_HELP
+:s=i :save=i      : save the playlist locally (see -lp)
+PLAYLISTS_HELP
 
-my $comments_help = <<"COM_HELP" . $general_help;
+my $channels_help = <<"CHANNELS_HELP" . $general_help;
+
+# Channels
+<number>           : latest uploads from channel
+:pv=i :popular=i   : popular uploads from channel
+:p=i  :playlists=i : playlists from channel
+:s=i  :save=i      : save the channel ID locally (see -lc)
+CHANNELS_HELP
+
+my $comments_help = <<"COMMENTS_HELP" . $general_help;
 
 # Comments
 :c(omment)        : send a comment to this video
-COM_HELP
+COMMENTS_HELP
 
 my $complete_help = <<"STDIN_HELP";
 
@@ -2710,11 +2720,68 @@ sub print_channels {
                 ## ok
             }
             elsif ($opt =~ /^(?:h|help)\z/) {
-                print $general_help;
+                print $channels_help;
                 press_enter_to_continue();
             }
             elsif ($opt =~ /^(?:r|return)\z/) {
                 return;
+            }
+            elsif ($opt =~ /^(?:pv|popular)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$channels}, $1)) {
+
+                    foreach my $id (@nums) {
+
+                        my $channel_id = $yv_utils->get_channel_id($channels->[$id]);
+                        my $request    = $yv_obj->popular_videos($channel_id);
+
+                        if ($yv_utils->has_entries($request)) {
+                            print_videos($request);
+                        }
+                        else {
+                            warn_no_results('popular video');
+                        }
+                    }
+                }
+                else {
+                    warn_no_thing_selected('channel');
+                }
+            }
+            elsif ($opt =~ /^(?:p|playlists?|up)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$channels}, $1)) {
+
+                    foreach my $id (@nums) {
+
+                        my $channel_id = $yv_utils->get_channel_id($channels->[$id]);
+                        my $request    = $yv_obj->playlists($channel_id);
+
+                        if ($yv_utils->has_entries($request)) {
+                            print_playlists($request);
+                        }
+                        else {
+                            warn_no_results('playlist');
+                        }
+                    }
+                }
+                else {
+                    warn_no_thing_selected('channel');
+                }
+            }
+            elsif ($opt =~ /^(?:s|save)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$channels}, $1)) {
+                    foreach my $id (@nums) {
+                        my $channel_id    = $yv_utils->get_channel_id($channels->[$id]);
+                        my $channel_title = $yv_utils->get_channel_title($channels->[$id]);
+                        if (save_channel_to_file($channel_id, $channel_title)) {
+                            say "\n:: Saved channel <<$channel_title>> (id: $channel_id) to file.";
+                        }
+                        else {
+                            say "\n[!] Unable to save channel <<$channel_title>> to file...";
+                        }
+                    }
+                }
+                else {
+                    warn_no_thing_selected('video');
+                }
             }
             else {
                 warn_invalid('option', $opt);
@@ -3017,6 +3084,8 @@ sub print_watched_videos {
 
 sub print_local_channels {
 
+    # TODO: redirect to print_channels()
+
     open(my $fh, '<:utf8', $opt{youtube_users_file}) or do {
         warn "Can't open file <<$opt{youtube_users_file}>> for reading: $!\n";
         return;
@@ -3075,7 +3144,7 @@ sub print_local_channels {
 # Select a channel
 <number>           : latest uploads from channel
 :pv=i :popular=i   : popular uploads from channel
-:up=i :playlists=i : playlists from channel
+:p=i  :playlists=i : playlists from channel
 
 # Remove channels
 :rm=i :remove=i,i  : remove the selected channels from file
