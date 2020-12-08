@@ -224,6 +224,8 @@ my %CONFIG = (
     fullscreen  => 0,
     audio_only  => 0,
 
+    autoscroll_to_end => 0,
+
     # youtube-dl support
     ytdl     => 1,
     ytdl_cmd => undef,    # auto-detect
@@ -1040,11 +1042,11 @@ sub new_image_from_pixbuf {
 # Treeview signals
 {
     $treeview->signal_connect('button_press_event', \&menu_popup);
+    $treeview->signal_connect('size-allocate',      \&treeview_scroll_to_end) if $CONFIG{autoscroll_to_end};
     $users_treeview->signal_connect('button_press_event', \&users_menu_popup);
-    $treeview->signal_connect('size-allocate', \&treeview_scroll_to_end);
 }
 
-# Scroll treview to end
+# Scroll treeview to end
 sub treeview_scroll_to_end {
     my ($widget) = @_;
     my $adj = $widget->get_vadjustment;
