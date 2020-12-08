@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 15 October 2020
+#  Latest edit on: 08 December 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -956,6 +956,14 @@ sub new_image_from_pixbuf {
 {
     $treeview->signal_connect('button_press_event', \&menu_popup);
     $users_treeview->signal_connect('button_press_event', \&users_menu_popup);
+    $treeview->signal_connect('size-allocate', \&treeview_scroll_to_end);
+}
+
+# Scroll treview to end
+sub treeview_scroll_to_end {
+    my ($widget) = @_;
+    my $adj = $widget->get_vadjustment;
+    $adj->set_value($adj->upper - $adj->page_size);
 }
 
 # Menu popup
@@ -1822,7 +1830,8 @@ sub append_categories {
         append_categories($cats, 'cat');
     }
 
-    append_categories({items => [{snippet => {title => 'Trending', assignable => 1}, id => undef}]}, 'cat');
+    append_categories({items => [{snippet => {title => 'Trending', assignable => 1}, id => undef}]},     'cat');
+    append_categories({items => [{snippet => {title => 'Popular',  assignable => 1}, id => 'popular'}]}, 'cat');
 }
 
 my $tops_liststore = $gui->get_object('liststore6');

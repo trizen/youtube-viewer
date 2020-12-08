@@ -57,14 +57,21 @@ Get videos from a category ID.
 sub videos_from_category {
     my ($self, $cat_id) = @_;
 
+    state $yv_utils = WWW::YoutubeViewer::Utils->new;
+
+    if (defined($cat_id) and $cat_id eq 'popular') {
+        local $self->{publishedAfter} = do {
+            $yv_utils->period_to_date(1, 'd');
+        } if !defined($self->get_publishedAfter);
+        return $self->popular_videos;
+    }
+
     my $videos = $self->_get_results(
                                      $self->_make_videos_url(
                                                              chart           => 'mostPopular',
                                                              videoCategoryId => $cat_id,
                                                             )
                                     );
-
-    state $yv_utils = WWW::YoutubeViewer::Utils->new;
 
     if (not $yv_utils->has_entries($videos)) {
         $videos = $self->trending_videos_from_category($cat_id);
@@ -82,9 +89,10 @@ Get popular videos from a category ID.
 sub trending_videos_from_category {
     my ($self, $cat_id) = @_;
 
+    state $yv_utils = WWW::YoutubeViewer::Utils->new;
+
     my $results = do {
         local $self->{publishedAfter} = do {
-            state $yv_utils = WWW::YoutubeViewer::Utils->new;
             $yv_utils->period_to_date(1, 'w');
         } if !defined($self->get_publishedAfter);
         local $self->{videoCategoryId} = $cat_id;

@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 06 December 2020
+#  Latest edit on: 08 December 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -2780,7 +2780,7 @@ sub print_channels {
                     }
                 }
                 else {
-                    warn_no_thing_selected('video');
+                    warn_no_thing_selected('channel');
                 }
             }
             else {
