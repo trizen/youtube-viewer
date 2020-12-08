@@ -365,7 +365,6 @@ my %objects = (
     'clear_list_checkbutton' => \my $clear_list_checkbutton,
     'dash_checkbutton'       => \my $dash_checkbutton,
     'audio_only_checkbutton' => \my $audio_only_checkbutton,
-    'gif_spinner'            => \my $gif_spinner,
     'hbox2'                  => \my $hbox2,
     'feeds_title'            => \my $feeds_title,
     'channel_name_save'      => \my $save_channel_name_entry,
@@ -434,11 +433,10 @@ local $SIG{__DIE__} = sub {
 
 #---------------------- LOAD IMAGES ----------------------#
 my $app_icon_pixbuf       = 'Gtk3::Gdk::Pixbuf'->new_from_file(catfile($icons_path, "gtk-youtube-viewer.png"));
-my $user_icon_pixbuf      = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "user.png"), 16, 16);
-my $feed_icon_pixbuf      = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "feed.png"), 16, 16);
-my $feed_icon_gray_pixbuf = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "feed_gray.png"), 16, 16);
+my $user_icon_pixbuf      = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "user.png"),          16,  16);
+my $feed_icon_pixbuf      = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "feed.png"),          16,  16);
+my $feed_icon_gray_pixbuf = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "feed_gray.png"),     16,  16);
 my $default_thumb         = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "default_thumb.jpg"), 160, 90);
-my $animation             = 'Gtk3::Gdk::PixbufAnimation'->new_from_file(catfile($icons_path, "spinner.gif"));
 
 # Setting application title and icon
 $mainw->set_title("$appname $version");
