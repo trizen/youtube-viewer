@@ -466,6 +466,9 @@ sub local_playlist_snippet {
 
     my $title = File::Basename::basename($id);
 
+    $title =~ s/\.txt\z//;
+    $title = ucfirst($title);
+
     scalar {
             id             => {kind => "youtube#playlist", playlistId => $id},
             contentDetails => {

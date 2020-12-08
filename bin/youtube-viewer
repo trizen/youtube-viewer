@@ -353,6 +353,7 @@ my $playlists_help = <<"PL_HELP" . $general_help;
 
 # Playlists
 :pp=i,i           : play videos from the selected playlists
+:s=i :save=i      : save the playlist locally
 PL_HELP
 
 my $comments_help = <<"COM_HELP" . $general_help;
@@ -1328,18 +1329,7 @@ sub apply_configuration {
         my $playlistID = get_valid_playlist_id(delete($opt->{playlist_id})) // return;
         my $filename   = catfile($local_playlists_dir, delete($opt->{save_playlist}) // $playlistID);
 
-        if (-e $filename) {
-            warn ":: File <<$filename>> already exists!\n";
-            return;
-        }
-
-        open(my $fh, '>', $filename) or do {
-            warn "Can't open file <<$filename>> for writing: $!";
-            return;
-        };
-
-        extract_video_ids_from_playlist($playlistID, sub { say $fh $_[0] });
-        close $fh;
+        save_playlist_to_file($playlistID, $filename);
     }
 
     if (defined $opt->{playlist_id}) {
@@ -2902,8 +2892,8 @@ sub get_results_from_list {
         @ids = grep { defined } @ids[($args{page} - 1) * $maxResults .. $args{page} * $maxResults - 1];
 
         if (!@ids) {
-            warn_last_page()                        if ($args{page} == 1 + sprintf('%0.f', 0.5 + $totalResults / $maxResults));
-            return __SUB__->($ids, $args{page} - 1) if ($args{page} > 1);
+            warn_last_page() if ($args{page} == 1 + sprintf('%0.f', 0.5 + $totalResults / $maxResults));
+            return __SUB__->($ids, %args, page => $args{page} - 1) if ($args{page} > 1);
         }
     }
 
@@ -2952,6 +2942,23 @@ sub extract_video_ids_from_playlist {
     }
 
     return 1;
+}
+
+sub save_playlist_to_file {
+    my ($playlistID, $filename) = @_;
+
+    if (-e $filename) {
+        warn ":: File <<$filename>> already exists!\n";
+        return;
+    }
+
+    open(my $fh, '>', $filename) or do {
+        warn "Can't open file <<$filename>> for writing: $!";
+        return;
+    };
+
+    extract_video_ids_from_playlist($playlistID, sub { say $fh $_[0] });
+    close $fh;
 }
 
 sub print_local_playlist {
@@ -3356,7 +3363,24 @@ FORMAT
             elsif ($opt =~ /^(?:r|return)\z/) {
                 return;
             }
-            elsif ($opt =~ /^i(?:nfo)?${digit_or_equal_re}(.*)/) {
+            elsif ($opt =~ /^(?:s|save)${digit_or_equal_re}(.*)/) {
+                if (my @ids = get_valid_numbers($#{$playlists}, $1)) {
+                    foreach my $id (@ids) {
+                        my $playlist   = $playlists->[$id];
+                        my $playlistID = $yv_utils->get_playlist_id($playlist);
+                        my $title      = $yv_utils->get_title($playlist);
+                        my $basename   = $title . ' -- ' . $playlistID . '.txt';
+                        $basename =~ s{/}{%}g;
+                        my $filename = catfile($local_playlists_dir, $basename);
+                        say ":: Saving playlist <<$title>> as <<$filename>>";
+                        save_playlist_to_file($playlistID, $filename);
+                    }
+                }
+                else {
+                    warn_no_thing_selected('playlist');
+                }
+            }
+            elsif ($opt =~ /^(?:i|info)${digit_or_equal_re}(.*)/) {
                 if (my @ids = get_valid_numbers($#{$playlists}, $1)) {
                     foreach my $id (@ids) {
                         my $desc = wrap_text(
