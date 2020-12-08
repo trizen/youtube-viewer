@@ -2371,14 +2371,22 @@ sub general_options {
     if ($option =~ /^(?:q|quit|exit)\z/) {
         main_quit(0);
     }
-    elsif ($option =~ /^(page=(\S+)\z|(last|end|beg|first))/ and defined $url) {
+    elsif ($option =~ /^(page=(\S+)\z|(last|end|beg|first))/ and (defined($url) or ref($info->{fromPage}) eq 'CODE')) {
+
         my $page_number = parse_page_number($+, $info);
         say "\n:: Jumping to page $page_number" if ($page_number > 1);
-        my $page_token = $yv_obj->page_token($page_number);
-        my $request    = $yv_obj->from_page_token($url, $page_token);
-        $callback->($request);
+
+        if (defined($info->{fromPage}) and ref($info->{fromPage}) eq 'CODE') {
+            my $request = $info->{fromPage}->($page_number);
+            $callback->($request);
+        }
+        else {
+            my $page_token = $yv_obj->page_token($page_number);
+            my $request    = $yv_obj->from_page_token($url, $page_token);
+            $callback->($request);
+        }
     }
-    elsif ($option =~ /^(?:n|next)\z/ and defined $url) {
+    elsif ($option =~ /^(?:n|next)\z/ and (defined($url) or ref($info->{nextPageToken}) eq 'CODE')) {
         if (defined $info->{nextPageToken}) {
             my $request = $yv_obj->from_page_token($url, $info->{nextPageToken});
             $callback->($request);
@@ -2387,10 +2395,7 @@ sub general_options {
             warn_last_page();
         }
     }
-    elsif ($option =~ /^(?:R|refresh)\z/ and defined $url) {
-        @{$results} = @{$yv_obj->_get_results($url)->{results}{items}};
-    }
-    elsif ($option =~ /^(?:b|back|p|prev|previous)\z/ and defined $url) {
+    elsif ($option =~ /^(?:b|back|p|prev|previous)\z/ and (defined($url) or ref($info->{prevPageToken}) eq 'CODE')) {
         if (defined $info->{prevPageToken}) {
             my $request = $yv_obj->from_page_token($url, $info->{prevPageToken});
             $callback->($request);
@@ -2398,6 +2403,9 @@ sub general_options {
         else {
             warn_first_page();
         }
+    }
+    elsif ($option =~ /^(?:R|refresh)\z/ and defined $url) {
+        @{$results} = @{$yv_obj->_get_results($url)->{results}{items}};
     }
     elsif ($option eq 'login') {
         authenticate();
@@ -2977,7 +2985,6 @@ sub print_local_playlist {
                 $yv_utils->local_playlist_snippet($id);
             }
         );
-        $results->{has_extra_info} = 1;
         return print_playlists($results);
     }
 
@@ -3246,7 +3253,7 @@ sub print_playlists {
     my $info      = $results->{results} // {};
     my $playlists = $info->{items}      // [];
 
-    if (@{$playlists} and not $results->{has_extra_info}) {
+    if (@{$playlists} and not exists($playlists->[0]{contentDetails})) {
 
         my @playlist_ids     = grep { defined } map { $yv_utils->get_playlist_id($_) } @{$playlists};
         my $content_details  = $yv_obj->playlist_from_id(join(',', @playlist_ids), 'contentDetails');
@@ -3256,8 +3263,6 @@ sub print_playlists {
             @{$playlists->[$i]}{qw(contentDetails)} =
               @{$playlist_details->[$i]}{qw(contentDetails)};
         }
-
-        $results->{has_extra_info} = 1;
     }
 
     state $info_format = <<"FORMAT";
@@ -4366,13 +4371,13 @@ sub print_videos {
                 my $page_number = parse_page_number($+, $info);
                 say "\n:: Jumping to page $page_number" if ($page_number > 1);
 
-                if (defined($url)) {
-                    my $page_token = $yv_obj->page_token($page_number);
-                    my $request    = $yv_obj->from_page_token($url, $page_token);
+                if (defined($info->{fromPage}) and ref($info->{fromPage}) eq 'CODE') {
+                    my $request = $info->{fromPage}->($page_number);
                     __SUB__->($request, @keywords ? (auto => 1) : ());
                 }
-                elsif (defined($info->{fromPage}) and ref($info->{fromPage}) eq 'CODE') {
-                    my $request = $info->{fromPage}->($page_number);
+                elsif (defined($url)) {
+                    my $page_token = $yv_obj->page_token($page_number);
+                    my $request    = $yv_obj->from_page_token($url, $page_token);
                     __SUB__->($request, @keywords ? (auto => 1) : ());
                 }
                 else {

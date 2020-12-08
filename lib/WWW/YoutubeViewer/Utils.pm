@@ -467,6 +467,7 @@ sub local_playlist_snippet {
     my $title = File::Basename::basename($id);
 
     $title =~ s/\.txt\z//;
+    $title =~ s/ -- PL[-\w]+\z//;
     $title = ucfirst($title);
 
     scalar {
