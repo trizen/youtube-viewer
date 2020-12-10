@@ -2755,13 +2755,19 @@ sub print_channels {
               ) {
                 ## ok
             }
+
+            # :h, :help
             elsif ($opt =~ /^(?:h|help)\z/) {
                 print $channels_help;
                 press_enter_to_continue();
             }
+
+            # :r, :return
             elsif ($opt =~ /^(?:r|return)\z/) {
                 return;
             }
+
+            # :i=i, :info=i
             elsif ($opt =~ /^(?:i|info)${digit_or_equal_re}(.*)/) {
                 if (my @ids = get_valid_numbers($#{$channels}, $1)) {
                     foreach my $id (@ids) {
@@ -2773,6 +2779,8 @@ sub print_channels {
                     warn_no_thing_selected('playlist');
                 }
             }
+
+            # :pv=i, :popular=i
             elsif ($opt =~ /^(?:pv|popular)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$channels}, $1)) {
 
@@ -2793,6 +2801,8 @@ sub print_channels {
                     warn_no_thing_selected('channel');
                 }
             }
+
+            # :p=i, :playlist=i
             elsif ($opt =~ /^(?:p|playlists?|up)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$channels}, $1)) {
 
@@ -2813,11 +2823,13 @@ sub print_channels {
                     warn_no_thing_selected('channel');
                 }
             }
+
+            # :s=i, :save=i
             elsif ($opt =~ /^(?:s|save)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$channels}, $1)) {
                     foreach my $id (@nums) {
                         my $channel_id    = $yv_utils->get_channel_id($channels->[$id]);
-                        my $channel_title = $yv_utils->get_channel_title($channels->[$id]);
+                        my $channel_title = $yv_utils->get_title($channels->[$id]);
                         if (save_channel_to_file($channel_id, $channel_title)) {
                             say "\n:: Saved channel <<$channel_title>> (id: $channel_id) to file.";
                         }
@@ -2830,6 +2842,8 @@ sub print_channels {
                     warn_no_thing_selected('channel');
                 }
             }
+
+            # :r=i, :rm=i, :remove=i
             elsif ($opt =~ /^(?:r|rm|remove)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$channels}, $1)) {
                     remove_saved_channels(map { $yv_utils->get_channel_id($channels->[$_]) } @nums);
@@ -4079,7 +4093,7 @@ sub print_playlist_info {
         ## local playlist
     }
     else {
-        say STDOUT $hr, _bold_color('=> URL: '), sprintf("https://www.youtube.com/playlist?list=%s", $id);
+        say STDOUT $hr, "\n", _bold_color('=> URL: '), sprintf("https://www.youtube.com/playlist?list=%s", $id);
     }
 
     my $title        = $yv_utils->get_title($playlist);
@@ -4564,7 +4578,7 @@ sub print_videos {
                 }
             }
 
-            # :save=i
+            # :s=i, :save=i
             elsif ($opt =~ /^(?:s|save)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     foreach my $id (@nums) {
