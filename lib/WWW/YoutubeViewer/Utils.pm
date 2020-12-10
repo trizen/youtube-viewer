@@ -685,44 +685,44 @@ sub get_views {
     $info->{statistics}{viewCount} // 0;
 }
 
-sub human_readable_number {
-    my ($self, $number) = @_;
+sub short_human_number {
+    my ($self, $int) = @_;
 
-    if ($number < 1000) {
-        return $number;
+    if ($int < 1000) {
+        return $int;
     }
 
-    if ($number >= 10 * 1e9) {    # ten billions
-        return sprintf("%dB", int($number / 1e9));
+    if ($int >= 10 * 1e9) {    # ten billions
+        return sprintf("%dB", int($int / 1e9));
     }
 
-    if ($number >= 1e9) {         # billions
-        return sprintf("%.2gB", $number / 1e9);
+    if ($int >= 1e9) {         # billions
+        return sprintf("%.2gB", $int / 1e9);
     }
 
-    if ($number >= 10 * 1e6) {    # ten millions
-        return sprintf("%dM", int($number / 1e6));
+    if ($int >= 10 * 1e6) {    # ten millions
+        return sprintf("%dM", int($int / 1e6));
     }
 
-    if ($number >= 1e6) {         # millions
-        return sprintf("%.2gM", $number / 1e6);
+    if ($int >= 1e6) {         # millions
+        return sprintf("%.2gM", $int / 1e6);
     }
 
-    if ($number >= 10 * 1e3) {    # ten thousands
-        return sprintf("%dK", int($number / 1e3));
+    if ($int >= 10 * 1e3) {    # ten thousands
+        return sprintf("%dK", int($int / 1e3));
     }
 
-    if ($number >= 1e3) {         # thousands
-        return sprintf("%.2gK", $number / 1e3);
+    if ($int >= 1e3) {         # thousands
+        return sprintf("%.2gK", $int / 1e3);
     }
 
-    return $number;
+    return $int;
 }
 
 sub get_views_approx {
     my ($self, $info) = @_;
-    my $views = $info->{statistics}{viewCount} // 0;
-    $self->human_readable_number($views);
+    my $views = $self->get_views($info);
+    $self->short_human_number($views);
 }
 
 sub get_likes {

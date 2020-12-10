@@ -2691,8 +2691,9 @@ sub print_channels {
                            'magenta'
                           ),
                    colored(
-                           sprintf("%s subs",
-                                   $yv_utils->human_readable_number($yv_utils->get_channel_subscriber_count($channel))),
+                           sprintf(
+                                   "%s subs", $yv_utils->short_human_number($yv_utils->get_channel_subscriber_count($channel))
+                                  ),
                            'yellow'
                           ),
                   );
@@ -2703,7 +2704,7 @@ sub print_channels {
 
             my @video_counts = map { $yv_utils->set_thousands($yv_utils->get_channel_video_count($_)) } @$channels;
             my @sub_counts   = map { sprintf("[subs: %4s]", $_) }
-              map { $yv_utils->human_readable_number($yv_utils->get_channel_subscriber_count($_)) } @$channels;
+              map { $yv_utils->short_human_number($yv_utils->get_channel_subscriber_count($_)) } @$channels;
 
             my $sub_count_width   = List::Util::max(map { length($_) } @sub_counts);
             my $video_count_width = List::Util::max(map { length($_) } @video_counts);
@@ -2731,7 +2732,7 @@ sub print_channels {
                    colored(sprintf('%2d', $i + 1), 'bold'),
                    $yv_utils->get_title($channel),
                    $yv_utils->set_thousands($yv_utils->get_channel_video_count($channel)),
-                   $yv_utils->human_readable_number($yv_utils->get_channel_subscriber_count($channel)),
+                   $yv_utils->short_human_number($yv_utils->get_channel_subscriber_count($channel)),
                   );
         }
     }
