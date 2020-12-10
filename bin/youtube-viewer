@@ -2683,17 +2683,16 @@ sub print_channels {
         elsif ($opt{results_with_colors}) {
             print "\n" if $i == 0;
             printf(
-                   "%s. %-50s [%s] [%s]\n",
+                   "%s. %-50s %s  %s\n",
                    colored(sprintf('%2d', $i + 1),         'bold'),
                    colored($yv_utils->get_title($channel), 'blue'),
                    colored(
-                           sprintf("%s videos", $yv_utils->set_thousands($yv_utils->get_channel_video_count($channel))),
+                           sprintf("%5s videos", $yv_utils->set_thousands($yv_utils->get_channel_video_count($channel))),
                            'magenta'
                           ),
                    colored(
-                           sprintf(
-                                   "%s subs", $yv_utils->short_human_number($yv_utils->get_channel_subscriber_count($channel))
-                                  ),
+                           sprintf("%4s subs",
+                                   $yv_utils->short_human_number($yv_utils->get_channel_subscriber_count($channel))),
                            'yellow'
                           ),
                   );
@@ -2702,13 +2701,14 @@ sub print_channels {
 
             require List::Util;
 
-            my @video_counts = map { $yv_utils->set_thousands($yv_utils->get_channel_video_count($_)) } @$channels;
-            my @sub_counts   = map { sprintf("[subs: %4s]", $_) }
+            my @video_counts =
+              map { sprintf("%5s videos", $yv_utils->set_thousands($yv_utils->get_channel_video_count($_))) } @$channels;
+            my @sub_counts = map { sprintf("%4s subs", $_) }
               map { $yv_utils->short_human_number($yv_utils->get_channel_subscriber_count($_)) } @$channels;
 
             my $sub_count_width   = List::Util::max(map { length($_) } @sub_counts);
             my $video_count_width = List::Util::max(map { length($_) } @video_counts);
-            my $title_length      = $term_width - ($sub_count_width + $video_count_width + 2 + 3 + 1 + 2 + 7 + 2);
+            my $title_length      = $term_width - ($sub_count_width + $video_count_width + 2 + 3 + 2);
 
             print "\n";
             foreach my $i (0 .. $#{$channels}) {
@@ -2716,11 +2716,11 @@ sub print_channels {
                 my $channel = $channels->[$i];
                 my $title   = clear_title($yv_utils->get_title($channel));
 
-                printf("%s. %s [videos: %s] %s\n",
+                printf("%s. %s %s  %s\n",
                        colored(sprintf('%2d', $i + 1), 'bold'),
-                       adjust_width($title,            $title_length),
-                       adjust_width($video_counts[$i], $video_count_width, 1),
-                       adjust_width($sub_counts[$i],   $sub_count_width,   1),
+                       adjust_width($title, $title_length),
+                       colored(adjust_width($video_counts[$i], $video_count_width, 1), 'blue'),
+                       colored(adjust_width($sub_counts[$i],   $sub_count_width,   1), 'magenta'),
                       );
             }
             last;
@@ -2728,7 +2728,7 @@ sub print_channels {
         else {
             print "\n" if $i == 0;
             printf(
-                   "%s. %-40s [%s videos] [%4s subs]\n",
+                   "%s. %-40s %5s videos  %4s subs\n",
                    colored(sprintf('%2d', $i + 1), 'bold'),
                    $yv_utils->get_title($channel),
                    $yv_utils->set_thousands($yv_utils->get_channel_video_count($channel)),
