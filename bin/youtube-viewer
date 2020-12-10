@@ -355,6 +355,7 @@ my $playlists_help = <<"PLAYLISTS_HELP" . $general_help;
 <number>          : list videos from the selected playlist
 :pp=i,i           : play videos from the selected playlists
 :s=i :save=i      : save the playlist locally (see -lp)
+:r=i :remove=i    : remove a locally saved playlist from -lp
 PLAYLISTS_HELP
 
 my $channels_help = <<"CHANNELS_HELP" . $general_help;
@@ -745,8 +746,7 @@ usage: $execname [options] ([url] | [keywords])
        --ps=s             : add video by ID or URL to a post-selected playlist
                             or in a given playlist ID specified with `--pid`
        --position=i       : position in the playlist where to add the video
-       --save-playlist=s  : save a playlist locally given a filename
-                            playlist ID must be specified with `--pid`
+       --save-playlist=s  : save a playlist locally given a playlist ID
    -lp --local-playlists  : display saved local playlists
    -lp=s                  : display a local playlist by name
 
@@ -759,8 +759,10 @@ usage: $execname [options] ([url] | [keywords])
 
  * Channels
    -sc --channels         : search for YouTube channels
+       --save-channel=s   : save a channel locally given a channel ID
    -lc --local-channels   : display the list of local channels
    -lc=s                  : display videos from a local channel by name
+
 
 * Comments
    --comments=s         : display comments for a video by ID or URL
@@ -1340,16 +1342,13 @@ sub apply_configuration {
     }
 
     if (defined $opt->{save_playlist}) {
+        my $playlistID = get_valid_playlist_id(delete($opt->{save_playlist})) // return;
+        save_playlist_to_file($playlistID);
+    }
 
-        if (not defined $opt->{playlist_id}) {
-            warn_no_thing_selected('playlist (--pid=ID)');
-            return;
-        }
-
-        my $playlistID = get_valid_playlist_id(delete($opt->{playlist_id})) // return;
-        my $filename   = catfile($local_playlists_dir, delete($opt->{save_playlist}) // $playlistID);
-
-        save_playlist_to_file($playlistID, $filename);
+    if (defined $opt->{save_channel}) {
+        my $channelID = delete($opt->{save_channel});
+        save_channel_to_file($channelID);
     }
 
     if (defined $opt->{playlist_id}) {
@@ -1610,7 +1609,9 @@ sub parse_arguments {
         'lc|fc|local-channels:s' => \$opt{local_channels},
         'lp|local-playlists:s'   => \$opt{local_playlist},
         'wv|watched-videos'      => \$opt{watched_videos},
-        'save-playlist=s'        => \$opt{save_playlist},
+
+        'save-channel=s'  => \$opt{save_channel},
+        'save-playlist=s' => \$opt{save_playlist},
 
         'search-videos|search|sv!'     => \$opt{search_videos},
         'search-channels|channels|sc!' => \$opt{search_channels},
@@ -2090,7 +2091,7 @@ sub get_user_input {
 sub logout {
 
     unlink $authentication_file
-      or warn "Can't unlink: `$authentication_file' -> $!";
+      or warn "[!] Can't unlink: `$authentication_file' -> $!";
 
     $yv_obj->set_access_token();
     $yv_obj->set_refresh_token();
@@ -2128,7 +2129,7 @@ INFO
         if ($remember_me) {
             $yv_obj->set_authentication_file($authentication_file);
             $yv_obj->save_authentication_tokens()
-              or warn "Can't store the authentication tokens: $!";
+              or warn "[!] Can't store the authentication tokens: $!";
         }
         else {
             $yv_obj->set_authentication_file();
@@ -2832,12 +2833,7 @@ sub print_channels {
                     foreach my $id (@nums) {
                         my $channel_id    = $yv_utils->get_channel_id($channels->[$id]);
                         my $channel_title = $yv_utils->get_title($channels->[$id]);
-                        if (save_channel_to_file($channel_id, $channel_title)) {
-                            say "\n:: Saved channel <<$channel_title>> (id: $channel_id) to file.";
-                        }
-                        else {
-                            say "\n[!] Unable to save channel <<$channel_title>> to file...";
-                        }
+                        save_channel_to_file($channel_id, $channel_title);
                     }
                 }
                 else {
@@ -2997,22 +2993,49 @@ sub print_comments {
 sub save_channel_to_file {
     my ($channel_id, $channel_title) = @_;
 
-    $yv_utils->is_channelID($channel_id) || return;
+    $channel_id // return;
+
+    if ($channel_id = extract_channel_id($channel_id)) {
+        if (not $yv_utils->is_channelID($channel_id)) {
+            $channel_id = $yv_obj->channel_id_from_username($channel_id) // do {
+                warn_invalid("username or channel ID", $channel_id);
+                undef;
+            };
+        }
+
+        if ($channel_id eq 'mine') {
+            $channel_id = $yv_obj->my_channel_id() // do {
+                warn_invalid("username or channel ID", $channel_id);
+                undef;
+            };
+        }
+    }
+
+    $channel_id // return;
+
+    if (not defined($channel_title)) {
+        $channel_title = $yv_utils->get_title($yv_obj->channel_from_id($channel_id, 'snippet')->{results}{items}[0]);
+    }
+
+    say "\n:: Saving channel <<$channel_title>> (id: $channel_id) to file...";
 
     open(my $fh, '>>:utf8', $opt{youtube_users_file}) or do {
-        warn "Can't open file <<$opt{youtube_users_file}>> for appending: $!\n";
+        warn "[!] Can't open file <<$opt{youtube_users_file}>> for appending: $!\n";
         return;
     };
 
     say $fh "$channel_id $channel_title";
     close $fh;
+
+    say ":: Done.";
+    return 1;
 }
 
 sub update_channel_file {
     my (%channels) = @_;
 
     open(my $fh, '>:utf8', $opt{youtube_users_file}) or do {
-        warn "Can't open file <<$opt{youtube_users_file}>> for writing: $!\n";
+        warn "[!] Can't open file <<$opt{youtube_users_file}>> for writing: $!\n";
         return;
     };
 
@@ -3027,7 +3050,7 @@ sub remove_saved_channels {
     my (@channel_ids) = @_;
 
     open(my $fh, '<:utf8', $opt{youtube_users_file}) or do {
-        warn "Can't open file <<$opt{youtube_users_file}>> for reading: $!\n";
+        warn "[!] Can't open file <<$opt{youtube_users_file}>> for reading: $!\n";
         return;
     };
 
@@ -3041,7 +3064,7 @@ sub remove_saved_channels {
                 $channels{$channel_id} = $channel_title;
             }
             else {
-                warn "Invalid channel ID: $channel_id\n";
+                warn "[!] Invalid channel ID: $channel_id\n";
             }
         }
     }
@@ -3134,20 +3157,35 @@ sub extract_video_ids_from_playlist {
 }
 
 sub save_playlist_to_file {
-    my ($playlistID, $filename) = @_;
+    my ($playlistID, $title) = @_;
+
+    $playlistID // return;
+
+    if (not defined($title)) {
+        $title = $yv_utils->get_title($yv_obj->playlist_from_id($playlistID, 'snippet')->{results}{items}[0]);
+    }
+
+    my $basename = $title . ' -- ' . $playlistID . '.txt';
+    $basename =~ s{/}{%}g;
+
+    my $filename = catfile($local_playlists_dir, $basename);
+    say ":: Saving playlist <<$title>> (id: $playlistID) to file...";
 
     if (-e $filename) {
-        warn ":: File <<$filename>> already exists!\n";
+        warn "[!] File <<$filename>> already exists!\n";
         return;
     }
 
     open(my $fh, '>', $filename) or do {
-        warn "Can't open file <<$filename>> for writing: $!";
+        warn "[!] Can't open file <<$filename>> for writing: $!";
         return;
     };
 
     extract_video_ids_from_playlist($playlistID, sub { say $fh $_[0] });
     close $fh;
+
+    say ":: Done.";
+    return 1;
 }
 
 sub print_local_playlist {
@@ -3421,23 +3459,45 @@ sub print_playlists {
             elsif ($opt =~ /^(?:r|return)\z/) {
                 return;
             }
+
+            # :s=i, :save=i
             elsif ($opt =~ /^(?:s|save)${digit_or_equal_re}(.*)/) {
                 if (my @ids = get_valid_numbers($#{$playlists}, $1)) {
                     foreach my $id (@ids) {
                         my $playlist   = $playlists->[$id];
                         my $playlistID = $yv_utils->get_playlist_id($playlist);
                         my $title      = $yv_utils->get_title($playlist);
-                        my $basename   = $title . ' -- ' . $playlistID . '.txt';
-                        $basename =~ s{/}{%}g;
-                        my $filename = catfile($local_playlists_dir, $basename);
-                        say ":: Saving playlist <<$title>> as <<$filename>>";
-                        save_playlist_to_file($playlistID, $filename);
+                        save_playlist_to_file($playlistID, $title);
                     }
                 }
                 else {
                     warn_no_thing_selected('playlist');
                 }
             }
+
+            # :r=i, :rm=i, :remove=i
+            elsif ($opt =~ /^(?:r|rm|remove)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$playlists}, $1)) {
+
+                    foreach my $i (@nums) {
+                        my $id    = $yv_utils->get_playlist_id($playlists->[$i]);
+                        my $title = $yv_utils->get_title($playlists->[$i]);
+
+                        if ($id =~ m{^/} and -f $id) {
+                            say ":: Removing local playlist <<$title>>";
+                            say(unlink($id) ? ":: Done." : ":: Error: $!");
+                        }
+                        else {
+                            say ":: Playlist <<$title>> is not saved locally";
+                        }
+                    }
+                }
+                else {
+                    warn_no_thing_selected('playlist');
+                }
+            }
+
+            # :i=i, :info=i
             elsif ($opt =~ /^(?:i|info)${digit_or_equal_re}(.*)/) {
                 if (my @ids = get_valid_numbers($#{$playlists}, $1)) {
                     foreach my $id (@ids) {
@@ -3449,6 +3509,8 @@ sub print_playlists {
                     warn_no_thing_selected('playlist');
                 }
             }
+
+            # :pp=i
             elsif ($opt =~ /^pp${digit_or_equal_re}(.*)/) {
                 if (my @ids = get_valid_numbers($#{$playlists}, $1)) {
                     my $arg = "--pp=" . join(q{,}, map { $yv_utils->get_playlist_id($_) } @{$playlists}[@ids]);
@@ -4114,9 +4176,10 @@ sub print_playlist_info {
           (
            map    { sprintf(q{-> } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]) }
              grep { defined($_->[1]) } (
-                                        ['Title'     => $yv_utils->get_title($playlist)],
-                                        ['Channel'   => $yv_utils->get_channel_title($playlist)],
-                                        ['ChannelID' => $yv_utils->get_channel_id($playlist)],
+                                        ['Title'      => $yv_utils->get_title($playlist)],
+                                        ['Author'     => $yv_utils->get_channel_title($playlist)],
+                                        ['ChannelID'  => $yv_utils->get_channel_id($playlist)],
+                                        ['PlaylistID' => ($id =~ m{^/} ? undef : $id)],
                                         ['Videos' => $yv_utils->set_thousands($yv_utils->get_playlist_item_count($playlist))],
                                         ['Published' => $yv_utils->get_publication_date($playlist)],
                                        )
@@ -4590,12 +4653,7 @@ sub print_videos {
                     foreach my $id (@nums) {
                         my $channel_id    = $yv_utils->get_channel_id($videos->[$id]);
                         my $channel_title = $yv_utils->get_channel_title($videos->[$id]);
-                        if (save_channel_to_file($channel_id, $channel_title)) {
-                            say "\n:: Saved channel <<$channel_title>> (id: $channel_id) to file.";
-                        }
-                        else {
-                            say "\n[!] Unable to save channel <<$channel_title>> to file...";
-                        }
+                        save_channel_to_file($channel_id, $channel_title);
                     }
                 }
                 else {
