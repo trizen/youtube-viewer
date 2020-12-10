@@ -359,11 +359,14 @@ PLAYLISTS_HELP
 
 my $channels_help = <<"CHANNELS_HELP" . $general_help;
 
-# Channels
+# Select a channel
 <number>           : latest uploads from channel
 :pv=i :popular=i   : popular uploads from channel
 :p=i  :playlists=i : playlists from channel
+
+# Save and remove channels
 :s=i  :save=i      : save the channel ID locally (see -lc)
+:rm=i :remove=i,i  : remove the selected channels from file
 CHANNELS_HELP
 
 my $comments_help = <<"COMMENTS_HELP" . $general_help;
@@ -743,7 +746,8 @@ usage: $execname [options] ([url] | [keywords])
        --position=i       : position in the playlist where to add the video
        --save-playlist=s  : save a playlist locally given a filename
                             playlist ID must be specified with `--pid`
-   -lp --local-playlist:s : display videos from a local playlist
+   -lp --local-playlists  : display saved local playlists
+   -lp=s                  : display a local playlist by name
 
 * Activities
    -ua --activities:s : show activity events for a given channel
@@ -753,8 +757,9 @@ usage: $execname [options] ([url] | [keywords])
                         use "--region=XX" to change the region
 
  * Channels
-   -sc --channels       : search for YouTube channels
-   -lc --local-channels : show saved channels from file
+   -sc --channels         : search for YouTube channels
+   -lc --local-channels   : display the list of local channels
+   -lc=s                  : display videos from a local channel by name
 
 * Comments
    --comments=s         : display comments for a video by ID or URL
@@ -1325,6 +1330,10 @@ sub apply_configuration {
         get_and_play_playlists(split(/[,\s]+/, delete $opt->{play_playlists}));
     }
 
+    if (defined $opt->{local_channels}) {
+        print_local_channels(delete $opt->{local_channels});
+    }
+
     if (defined $opt->{local_playlist}) {
         print_local_playlist(delete $opt->{local_playlist});
     }
@@ -1361,10 +1370,6 @@ sub apply_configuration {
 
     if (delete $opt->{categories}) {
         print_categories($yv_obj->video_categories);
-    }
-
-    if (delete $opt->{local_channels}) {
-        print_local_channels();
     }
 
     if (delete $opt->{watched_videos}) {
@@ -1601,10 +1606,10 @@ sub parse_arguments {
         'c|categories'                => \$opt{categories},
         'video-ids|videoids|id|ids=s' => \$opt{play_video_ids},
 
-        'lc|fc|local-channels' => \$opt{local_channels},
-        'lp|local-playlists:s' => \$opt{local_playlist},
-        'wv|watched-videos'    => \$opt{watched_videos},
-        'save-playlist=s'      => \$opt{save_playlist},
+        'lc|fc|local-channels:s' => \$opt{local_channels},
+        'lp|local-playlists:s'   => \$opt{local_playlist},
+        'wv|watched-videos'      => \$opt{watched_videos},
+        'save-playlist=s'        => \$opt{save_playlist},
 
         'search-videos|search|sv!'     => \$opt{search_videos},
         'search-channels|channels|sc!' => \$opt{search_channels},
@@ -2645,6 +2650,20 @@ sub print_channels {
     my $info     = $results->{results} // {};
     my $channels = $info->{items}      // [];
 
+    my %table = map { $yv_utils->get_channel_id($_) => $_ } @$channels;
+
+    if (@{$channels} and not exists($channels->[0]{statistics})) {
+
+        my @channel_ids     = grep { defined } map { $yv_utils->get_channel_id($_) } @{$channels};
+        my $content_details = $yv_obj->channel_from_id(join(',', @channel_ids), 'statistics,snippet,id');
+        my $channel_details = $content_details->{results}{items};
+
+        foreach my $entry (@$channel_details) {
+            my $id = $yv_utils->get_channel_id($entry) // next;
+            @{$table{$id}}{qw(statistics snippet id)} = @{$entry}{qw(statistics snippet id)};
+        }
+    }
+
     foreach my $i (0 .. $#{$channels}) {
         my $channel = $channels->[$i];
 
@@ -2652,7 +2671,7 @@ sub print_channels {
             printf(
                    "\n%s. %s\n    %s: %-23s %s: %-12s\n%s\n",
                    colored(sprintf('%2d', $i + 1), 'bold') => colored($yv_utils->get_title($channel), 'bold blue'),
-                   colored('Updated' => 'bold') => $yv_utils->get_publication_date($channel),
+                   colored('Created' => 'bold') => $yv_utils->get_publication_date($channel),
                    colored('Author'  => 'bold') => $yv_utils->get_channel_title($channel),
                    wrap_text(
                              i_tab => q{ } x 4,
@@ -2663,22 +2682,32 @@ sub print_channels {
         }
         elsif ($opt{results_with_colors}) {
             print "\n" if $i == 0;
-            printf("%s. %s (%s)\n",
-                   colored(sprintf('%2d', $i + 1),                    'bold'),
-                   colored($yv_utils->get_title($channel),            'blue'),
-                   colored($yv_utils->get_publication_date($channel), 'magenta'),
+            printf(
+                   "%s. %-50s [%s] [%s]\n",
+                   colored(sprintf('%2d', $i + 1),         'bold'),
+                   colored($yv_utils->get_title($channel), 'blue'),
+                   colored(
+                           sprintf("%s videos", $yv_utils->set_thousands($yv_utils->get_channel_video_count($channel))),
+                           'magenta'
+                          ),
+                   colored(
+                           sprintf("%s subs",
+                                   $yv_utils->human_readable_number($yv_utils->get_channel_subscriber_count($channel))),
+                           'yellow'
+                          ),
                   );
         }
         elsif ($opt{results_fixed_width}) {
 
             require List::Util;
 
-            my @authors = map { $yv_utils->get_channel_id($_) } @{$channels};
-            my @dates   = map { $yv_utils->get_publication_date($_) } @{$channels};
+            my @video_counts = map { $yv_utils->set_thousands($yv_utils->get_channel_video_count($_)) } @$channels;
+            my @sub_counts   = map { sprintf("[subs: %4s]", $_) }
+              map { $yv_utils->human_readable_number($yv_utils->get_channel_subscriber_count($_)) } @$channels;
 
-            my $author_width = List::Util::min(List::Util::max(map { length($_) } @authors), int($term_width / 5));
-            my $dates_width  = List::Util::max(map { length($_) } @dates);
-            my $title_length = $term_width - ($author_width + $dates_width + 2 + 3 + 1 + 2);
+            my $sub_count_width   = List::Util::max(map { length($_) } @sub_counts);
+            my $video_count_width = List::Util::max(map { length($_) } @video_counts);
+            my $title_length      = $term_width - ($sub_count_width + $video_count_width + 2 + 3 + 1 + 2 + 7 + 2);
 
             print "\n";
             foreach my $i (0 .. $#{$channels}) {
@@ -2686,17 +2715,24 @@ sub print_channels {
                 my $channel = $channels->[$i];
                 my $title   = clear_title($yv_utils->get_title($channel));
 
-                printf "%s. %s %s [%*s]\n", colored(sprintf('%2d', $i + 1), 'bold'),
-                  adjust_width($title, $title_length),
-                  adjust_width($authors[$i], $author_width, 1),
-                  $dates_width, $dates[$i];
+                printf("%s. %s [videos: %s] %s\n",
+                       colored(sprintf('%2d', $i + 1), 'bold'),
+                       adjust_width($title,            $title_length),
+                       adjust_width($video_counts[$i], $video_count_width, 1),
+                       adjust_width($sub_counts[$i],   $sub_count_width,   1),
+                      );
             }
             last;
         }
         else {
             print "\n" if $i == 0;
-            printf "%s. %s [%s]\n", colored(sprintf('%2d', $i + 1), 'bold'), $yv_utils->get_title($channel),
-              $yv_utils->get_publication_date($channel);
+            printf(
+                   "%s. %-40s [%s videos] [%4s subs]\n",
+                   colored(sprintf('%2d', $i + 1), 'bold'),
+                   $yv_utils->get_title($channel),
+                   $yv_utils->set_thousands($yv_utils->get_channel_video_count($channel)),
+                   $yv_utils->human_readable_number($yv_utils->get_channel_subscriber_count($channel)),
+                  );
         }
     }
 
@@ -2725,6 +2761,17 @@ sub print_channels {
             }
             elsif ($opt =~ /^(?:r|return)\z/) {
                 return;
+            }
+            elsif ($opt =~ /^(?:i|info)${digit_or_equal_re}(.*)/) {
+                if (my @ids = get_valid_numbers($#{$channels}, $1)) {
+                    foreach my $id (@ids) {
+                        print_channel_info($channels->[$id]);
+                    }
+                    press_enter_to_continue();
+                }
+                else {
+                    warn_no_thing_selected('playlist');
+                }
             }
             elsif ($opt =~ /^(?:pv|popular)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$channels}, $1)) {
@@ -2778,6 +2825,14 @@ sub print_channels {
                             say "\n[!] Unable to save channel <<$channel_title>> to file...";
                         }
                     }
+                }
+                else {
+                    warn_no_thing_selected('channel');
+                }
+            }
+            elsif ($opt =~ /^(?:r|rm|remove)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$channels}, $1)) {
+                    remove_saved_channels(map { $yv_utils->get_channel_id($channels->[$_]) } @nums);
                 }
                 else {
                     warn_no_thing_selected('channel');
@@ -2952,6 +3007,49 @@ sub update_channel_file {
     close $fh;
 }
 
+sub remove_saved_channels {
+    my (@channel_ids) = @_;
+
+    open(my $fh, '<:utf8', $opt{youtube_users_file}) or do {
+        warn "Can't open file <<$opt{youtube_users_file}>> for reading: $!\n";
+        return;
+    };
+
+    my %channels;
+
+    while (defined(my $line = <$fh>)) {
+        if ($line =~ /^([a-zA-Z0-9_-]+) (.+)/) {
+            my ($channel_id, $channel_title) = ($1, $2);
+
+            if ($yv_utils->is_channelID($channel_id)) {
+                $channels{$channel_id} = $channel_title;
+            }
+            else {
+                warn "Invalid channel ID: $channel_id\n";
+            }
+        }
+    }
+
+    close $fh;
+
+    my $removed = 0;
+
+    foreach my $channel_id (@channel_ids) {
+        if (exists $channels{$channel_id}) {
+            say ":: Removing: $channel_id";
+            delete $channels{$channel_id};
+            ++$removed;
+        }
+        else {
+            say ":: $channel_id is not a saved channel...";
+        }
+    }
+
+    if ($removed > 0) {
+        update_channel_file(%channels);
+    }
+}
+
 sub get_results_from_list {
     my ($ids, %args) = @_;
 
@@ -3039,12 +3137,14 @@ sub save_playlist_to_file {
 sub print_local_playlist {
     my ($name) = @_;
 
+    $name //= '';
+
     require File::Basename;
 
     my @playlist_files = sort { CORE::fc($a) cmp CORE::fc($b) } glob("$local_playlists_dir/*");
     my $regex          = qr/\Q$name\E/i;
 
-    if (!defined($name) or $name eq '') {
+    if ($name eq '') {
         my $results = get_results_from_list(
             \@playlist_files,
             callback => sub {
@@ -3057,7 +3157,7 @@ sub print_local_playlist {
 
     foreach my $file (@playlist_files) {
         if (File::Basename::basename($file) =~ $regex or $file eq $name) {
-            my @ids = reverse $yv_utils->read_video_ids_from_file($file);
+            my @ids = reverse $yv_utils->read_lines_from_file($file);
             @ids || next;
             return print_videos(get_results_from_list(\@ids));
         }
@@ -3072,7 +3172,7 @@ sub print_watched_videos {
     my @ids;
 
     if ($opt{watch_history}) {
-        @ids = $yv_utils->read_video_ids_from_file($opt{watch_history_file});
+        @ids = $yv_utils->read_lines_from_file($opt{watch_history_file});
     }
 
     if (scalar(@ids) == 0) {
@@ -3083,167 +3183,37 @@ sub print_watched_videos {
 }
 
 sub print_local_channels {
+    my ($name) = @_;
 
-    # TODO: redirect to print_channels()
+    $name //= '';
 
-    open(my $fh, '<:utf8', $opt{youtube_users_file}) or do {
-        warn "Can't open file <<$opt{youtube_users_file}>> for reading: $!\n";
-        return;
-    };
+    my @users = sort { CORE::fc($a->[1]) cmp CORE::fc($b->[1]) }
+      map { [split(/ /, $_, 2)] } $yv_utils->read_lines_from_file($opt{youtube_users_file}, '<:utf8');
+    my $regex = qr/\Q$name\E/i;
 
-    my %channels;
-
-    while (defined(my $line = <$fh>)) {
-        if ($line =~ /^([a-zA-Z0-9_-]+) (.+)/) {
-            my ($channel_id, $channel_title) = ($1, $2);
-
-            if ($yv_utils->is_channelID($channel_id)) {
-                $channels{$channel_id} = $channel_title;
+    if ($name eq '') {
+        my $results = get_results_from_list(
+            \@users,
+            callback => sub {
+                my ($entry) = @_;
+                my ($id, $name) = @$entry;
+                $yv_utils->local_channel_snippet($id, $name);
             }
-            else {
-                warn "Invalid channel ID: $channel_id\n";
-            }
+        );
+        return print_channels($results);
+    }
+
+    foreach my $user (@users) {
+
+        my ($channel_id, $channel_name) = @$user;
+
+        if ($channel_id eq $name or $channel_name =~ $regex) {
+            return print_videos($yv_obj->uploads($channel_id));
         }
     }
 
-    close $fh;
-
-    my $display_channels = sub {
-        my (@channels) = @_;
-
-        if (not @channels) {
-            warn_no_results("channel");
-            return;
-        }
-
-        print "\n";
-        foreach my $i (0 .. $#channels) {
-            my $channel = $channels[$i];
-            printf("%s. %-40s (id: %s)\n", colored(sprintf('%2d', $i + 1), 'bold'), $channel->{title}, $channel->{id});
-        }
-
-        my @keywords = get_input_for_channels();
-
-        foreach my $key (@keywords) {
-            if ($key =~ /$valid_opt_re/) {
-
-                my $opt = $1;
-
-                if (
-                    general_options(opt => $opt,
-                                    sub => __SUB__,)
-                  ) {
-                    ## ok
-                }
-                elsif ($opt =~ /^(?:h|help)\z/) {
-                    print <<"EOT";
-
-# Search for a channel
-<keyword>          : search for a channel
-
-# Select a channel
-<number>           : latest uploads from channel
-:pv=i :popular=i   : popular uploads from channel
-:p=i  :playlists=i : playlists from channel
-
-# Remove channels
-:rm=i :remove=i,i  : remove the selected channels from file
-EOT
-                    press_enter_to_continue();
-                }
-                elsif ($opt =~ /^(?:pv|popular)${digit_or_equal_re}(.*)/) {
-                    if (my @nums = get_valid_numbers($#channels, $1)) {
-
-                        foreach my $id (@nums) {
-
-                            my $channel_id = $channels[$id]{id};
-                            my $request    = $yv_obj->popular_videos($channel_id);
-
-                            if ($yv_utils->has_entries($request)) {
-                                print_videos($request);
-                            }
-                            else {
-                                warn_no_results('popular video');
-                            }
-                        }
-                    }
-                    else {
-                        warn_no_thing_selected('channel');
-                    }
-                }
-                elsif ($opt =~ /^(?:p|playlists?|up)${digit_or_equal_re}(.*)/) {
-                    if (my @nums = get_valid_numbers($#channels, $1)) {
-
-                        foreach my $id (@nums) {
-
-                            my $channel_id = $channels[$id]{id};
-                            my $request    = $yv_obj->playlists($channel_id);
-
-                            if ($yv_utils->has_entries($request)) {
-                                print_playlists($request);
-                            }
-                            else {
-                                warn_no_results('playlist');
-                            }
-                        }
-                    }
-                    else {
-                        warn_no_thing_selected('channel');
-                    }
-                }
-                elsif ($opt =~ /^(?:r|rm|remove)${digit_or_equal_re}(.*)/) {
-                    if (my @nums = get_valid_numbers($#channels, $1)) {
-
-                        my %removed;
-
-                        foreach my $id (@nums) {
-
-                            my $channel_id    = $channels[$id]{id};
-                            my $channel_title = $channels[$id]{title};
-
-                            say ":: Removing <<$channel_title>> (id: $channel_id)";
-
-                            delete $channels{$channel_id};
-                            $removed{$channel_id} = 1;
-                        }
-
-                        @channels = grep { not exists $removed{$_->{id}} } @channels;
-                        update_channel_file(%channels);
-                    }
-                    else {
-                        warn_no_thing_selected('channel');
-                    }
-                }
-                elsif ($opt =~ /^(?:r|return)\z/) {
-                    return;
-                }
-                else {
-                    warn_invalid('option', $opt);
-                }
-            }
-            elsif (youtube_urls($key)) {
-                ## ok
-            }
-            elsif (valid_num($key, \@channels)) {
-                my $channel    = $channels[$key - 1];
-                my $channel_id = $channel->{id};
-                my $videos     = $yv_obj->uploads($channel_id);
-                print_videos($videos);
-            }
-            else {
-                my $re = qr/\Q$key\E/i;
-                __SUB__->(grep { $_->{title} =~ /$re/ } @channels);
-            }
-        }
-
-        __SUB__->(@channels);
-    };
-
-    my @channels =
-      sort { $a->{key} cmp $b->{key} }
-      map { {id => $_, title => $channels{$_}, key => CORE::fc($channels{$_})} } keys %channels;
-
-    $display_channels->(@channels);
+    warn_no_thing_selected('channel');
+    return 0;
 }
 
 sub print_categories {
@@ -3322,25 +3292,19 @@ sub print_playlists {
     my $info      = $results->{results} // {};
     my $playlists = $info->{items}      // [];
 
+    my %table = map { $yv_utils->get_playlist_id($_) => $_ } @$playlists;
+
     if (@{$playlists} and not exists($playlists->[0]{contentDetails})) {
 
         my @playlist_ids     = grep { defined } map { $yv_utils->get_playlist_id($_) } @{$playlists};
         my $content_details  = $yv_obj->playlist_from_id(join(',', @playlist_ids), 'contentDetails');
         my $playlist_details = $content_details->{results}{items};
 
-        foreach my $i (0 .. $#{$playlists}) {
-            @{$playlists->[$i]}{qw(contentDetails)} =
-              @{$playlist_details->[$i]}{qw(contentDetails)};
+        foreach my $entry (@$playlist_details) {
+            my $id = $yv_utils->get_playlist_id($entry) // next;
+            @{$table{$id}}{qw(contentDetails)} = @{$entry}{qw(contentDetails)};
         }
     }
-
-    state $info_format = <<"FORMAT";
-
-TITLE: %s
-   ID: %s
-  URL: https://www.youtube.com/playlist?list=%s
-DESCR: %s
-FORMAT
 
     foreach my $i (0 .. $#{$playlists}) {
         my $playlist = $playlists->[$i];
@@ -3360,11 +3324,11 @@ FORMAT
         elsif ($opt{results_with_colors}) {
             print "\n" if $i == 0;
             printf(
-                   "%s. %s (%s) %s\n",
-                   colored(sprintf('%2d', $i + 1),                        'bold'),
-                   colored($yv_utils->get_title($playlist),               'blue'),
-                   colored($yv_utils->get_playlist_item_count($playlist), 'magenta'),
-                   colored($yv_utils->get_channel_title($playlist),       'green'),
+                   "%s. %-50s (%s) %s\n",
+                   colored(sprintf('%2d', $i + 1),                                                              'bold'),
+                   colored($yv_utils->get_title($playlist),                                                     'blue'),
+                   colored($yv_utils->set_thousands($yv_utils->get_playlist_item_count($playlist)) . " videos", 'magenta'),
+                   colored($yv_utils->get_channel_title($playlist),                                             'green'),
                   );
         }
         elsif ($opt{results_fixed_width}) {
@@ -3372,7 +3336,7 @@ FORMAT
             require List::Util;
 
             my @authors     = map { $yv_utils->get_channel_title($_) } @{$playlists};
-            my @item_counts = map { $yv_utils->get_playlist_item_count($_) } @{$playlists};
+            my @item_counts = map { $yv_utils->set_thousands($yv_utils->get_playlist_item_count($_)) } @{$playlists};
 
             my $author_width     = List::Util::min(List::Util::max(map { length($_) } @authors), int($term_width / 5));
             my $item_count_width = List::Util::max(map { length($_) } @item_counts);
@@ -3393,11 +3357,11 @@ FORMAT
         }
         else {
             print "\n" if $i == 0;
-            printf(
-                   "%s. %s [%s] (%s)\n",
-                   colored(sprintf('%2d', $i + 1), 'bold'),       $yv_utils->get_title($playlist),
-                   $yv_utils->get_playlist_item_count($playlist), $yv_utils->get_channel_title($playlist)
-                  );
+            printf("%s. %-40s [%s videos] (%s)\n",
+                   colored(sprintf('%2d', $i + 1), 'bold'),
+                   $yv_utils->get_title($playlist),
+                   $yv_utils->set_thousands($yv_utils->get_playlist_item_count($playlist)),
+                   $yv_utils->get_channel_title($playlist));
         }
     }
 
@@ -3457,14 +3421,7 @@ FORMAT
             elsif ($opt =~ /^(?:i|info)${digit_or_equal_re}(.*)/) {
                 if (my @ids = get_valid_numbers($#{$playlists}, $1)) {
                     foreach my $id (@ids) {
-                        my $desc = wrap_text(
-                                       i_tab => q{ } x 7,
-                                       s_tab => q{ } x 7,
-                                       text => [$yv_utils->get_description($playlists->[$id]) || 'No description available...']
-                        );
-                        $desc =~ s/^\s+//;
-                        printf $info_format, $yv_utils->get_title($playlists->[$id]),
-                          ($yv_utils->get_playlist_id($playlists->[$id])) x 2, $desc;
+                        print_playlist_info($playlists->[$id]);
                     }
                     press_enter_to_continue();
                 }
@@ -4096,6 +4053,103 @@ sub play_videos_matched_by_regex {
             return;
         }
     }
+
+    return 1;
+}
+
+sub print_playlist_info {
+    my ($playlist) = @_;
+
+    my $hr = '-' x ($opt{get_term_width} ? get_term_width() : $term_width);
+
+    printf(
+           "\n%s\n%s\n%s\n",
+           _bold_color('=> Description'),
+           $hr,
+           wrap_text(
+                     i_tab => q{},
+                     s_tab => q{},
+                     text  => [$yv_utils->get_description($playlist) || 'No description available...']
+                    ),
+          );
+
+    my $id = $yv_utils->get_playlist_id($playlist);
+
+    if ($id =~ m{^/}) {
+        ## local playlist
+    }
+    else {
+        say STDOUT $hr, _bold_color('=> URL: '), sprintf("https://www.youtube.com/playlist?list=%s", $id);
+    }
+
+    my $title        = $yv_utils->get_title($playlist);
+    my $title_length = length($title);
+    my $rep          = ($term_width - $title_length) / 2 - 4;
+
+    $rep = 0 if $rep < 0;
+
+    print(
+          "$hr\n",
+          q{ } x $rep => (_bold_color("=>> $title <<=") . "\n\n"),
+          (
+           map    { sprintf(q{-> } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]) }
+             grep { defined($_->[1]) } (
+                                        ['Title'     => $yv_utils->get_title($playlist)],
+                                        ['Channel'   => $yv_utils->get_channel_title($playlist)],
+                                        ['ChannelID' => $yv_utils->get_channel_id($playlist)],
+                                        ['Videos' => $yv_utils->set_thousands($yv_utils->get_playlist_item_count($playlist))],
+                                        ['Published' => $yv_utils->get_publication_date($playlist)],
+                                       )
+          ),
+          "$hr\n"
+         );
+
+    return 1;
+}
+
+sub print_channel_info {
+    my ($channel) = @_;
+
+    my $hr = '-' x ($opt{get_term_width} ? get_term_width() : $term_width);
+
+    printf(
+           "\n%s\n%s\n%s\n%s\n%s",
+           _bold_color('=> Description'),
+           $hr,
+           wrap_text(
+                     i_tab => q{},
+                     s_tab => q{},
+                     text  => [$yv_utils->get_description($channel) || 'No description available...']
+                    ),
+           $hr,
+           _bold_color('=> URL: ')
+          );
+
+    print STDOUT sprintf("https://www.youtube.com/channel/%s", $yv_utils->get_channel_id($channel));
+
+    my $title        = $yv_utils->get_title($channel);
+    my $title_length = length($title);
+    my $rep          = ($term_width - $title_length) / 2 - 4;
+
+    $rep = 0 if $rep < 0;
+
+    print(
+          "\n$hr\n",
+          q{ } x $rep => (_bold_color("=>> $title <<=") . "\n\n"),
+          (
+           map    { sprintf(q{-> } . "%-*s: %s\n", $opt{_colors} ? 20 : 12, _bold_color($_->[0]), $_->[1]) }
+             grep { defined($_->[1]) } (
+                                ['Channel'     => $yv_utils->get_title($channel)],
+                                ['ChannelID'   => $yv_utils->get_channel_id($channel)],
+                                ['Country'     => $yv_utils->get_country($channel)],
+                                ['Videos'      => $yv_utils->set_thousands($yv_utils->get_channel_video_count($channel))],
+                                ['Subscribers' => $yv_utils->set_thousands($yv_utils->get_channel_subscriber_count($channel))],
+                                ['Views'       => $yv_utils->set_thousands($yv_utils->get_channel_view_count($channel))],
+                                ['Published'   => $yv_utils->get_publication_date($channel)],
+             )
+          ),
+          "$hr\n"
+         );
 
     return 1;
 }

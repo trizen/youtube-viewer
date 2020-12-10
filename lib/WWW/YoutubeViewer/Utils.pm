@@ -435,13 +435,30 @@ sub get_playlist_id {
 
 sub get_playlist_item_count {
     my ($self, $info) = @_;
-    $info->{contentDetails}{itemCount};
+    $info->{contentDetails}{itemCount} // 0;
 }
 
-sub read_video_ids_from_file {
-    my ($self, $file) = @_;
+sub get_channel_subscriber_count {
+    my ($self, $info) = @_;
+    $info->{statistics}{subscriberCount} // 0;
+}
 
-    open(my $fh, '<', $file) or return;
+sub get_channel_video_count {
+    my ($self, $info) = @_;
+    $info->{statistics}{videoCount} // 0;
+}
+
+sub get_channel_view_count {
+    my ($self, $info) = @_;
+    $info->{statistics}{viewCount} // 0;
+}
+
+sub read_lines_from_file {
+    my ($self, $file, $mode) = @_;
+
+    $mode //= '<';
+
+    open(my $fh, $mode, $file) or return;
     chomp(my @ids = <$fh>);
     close $fh;
 
@@ -473,7 +490,7 @@ sub local_playlist_snippet {
     scalar {
             id             => {kind => "youtube#playlist", playlistId => $id},
             contentDetails => {
-                               itemCount => scalar $self->read_video_ids_from_file($id),
+                               itemCount => scalar $self->read_lines_from_file($id),
                               },
             snippet => {
                         channelId    => "mine",
@@ -497,6 +514,20 @@ sub local_playlist_snippet {
                                                  },
                                       },
                         title => $title,
+                       },
+           };
+}
+
+sub local_channel_snippet {
+    my ($self, $id, $title) = @_;
+
+    scalar {
+            id      => {channelId => $id, kind => "youtube#channel"},
+            snippet => {
+                        channelId    => $id,
+                        channelTitle => $title,
+                        description  => "<local channel>",
+                        title        => $title,
                        },
            };
 }
@@ -538,7 +569,7 @@ sub get_thumbnail_url {
 
 sub get_channel_title {
     my ($self, $info) = @_;
-    $info->{snippet}{channelTitle} || $self->get_channel_id($info);
+    $info->{snippet}{channelTitle} // $info->{title} // $self->get_channel_id($info);
 }
 
 sub get_id {
@@ -546,9 +577,14 @@ sub get_id {
     $info->{id};
 }
 
+sub get_country {
+    my ($self, $info) = @_;
+    $info->{snippet}{country};
+}
+
 sub get_channel_id {
     my ($self, $info) = @_;
-    $info->{snippet}{resourceId}{channelId} // $info->{snippet}{channelId};
+    $info->{snippet}{resourceId}{channelId} // $info->{snippet}{channelId} // eval { $info->{id}{channelId} } // $info->{id};
 }
 
 sub get_category_id {
@@ -649,39 +685,44 @@ sub get_views {
     $info->{statistics}{viewCount} // 0;
 }
 
+sub human_readable_number {
+    my ($self, $number) = @_;
+
+    if ($number < 1000) {
+        return $number;
+    }
+
+    if ($number >= 10 * 1e9) {    # ten billions
+        return sprintf("%dB", int($number / 1e9));
+    }
+
+    if ($number >= 1e9) {         # billions
+        return sprintf("%.2gB", $number / 1e9);
+    }
+
+    if ($number >= 10 * 1e6) {    # ten millions
+        return sprintf("%dM", int($number / 1e6));
+    }
+
+    if ($number >= 1e6) {         # millions
+        return sprintf("%.2gM", $number / 1e6);
+    }
+
+    if ($number >= 10 * 1e3) {    # ten thousands
+        return sprintf("%dK", int($number / 1e3));
+    }
+
+    if ($number >= 1e3) {         # thousands
+        return sprintf("%.2gK", $number / 1e3);
+    }
+
+    return $number;
+}
+
 sub get_views_approx {
     my ($self, $info) = @_;
     my $views = $info->{statistics}{viewCount} // 0;
-
-    if ($views < 1000) {
-        return $views;
-    }
-
-    if ($views >= 10 * 1e9) {    # ten billions
-        return sprintf("%dB", int($views / 1e9));
-    }
-
-    if ($views >= 1e9) {         # billions
-        return sprintf("%.2gB", $views / 1e9);
-    }
-
-    if ($views >= 10 * 1e6) {    # ten millions
-        return sprintf("%dM", int($views / 1e6));
-    }
-
-    if ($views >= 1e6) {         # millions
-        return sprintf("%.2gM", $views / 1e6);
-    }
-
-    if ($views >= 10 * 1e3) {    # ten thousands
-        return sprintf("%dK", int($views / 1e3));
-    }
-
-    if ($views >= 1e3) {         # thousands
-        return sprintf("%.2gK", $views / 1e3);
-    }
-
-    return $views;
+    $self->human_readable_number($views);
 }
 
 sub get_likes {

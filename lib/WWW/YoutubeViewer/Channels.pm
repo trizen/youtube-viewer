@@ -86,6 +86,19 @@ For all functions, C<$channels->{results}{items}> contains:
     }
 }
 
+=head2 channel_from_id($channel_id, $part = "snippet")
+
+Return info for one or more channel IDs.
+
+Multiple channel IDs can be separated by commas.
+
+=cut
+
+sub channel_from_id {
+    my ($self, $id, $part) = @_;
+    $self->_get_results($self->_make_channels_url(id => $id, part => ($part // 'snippet')));
+}
+
 =head2 my_channel()
 
 Returns info about the channel of the current authenticated user.

@@ -44,10 +44,11 @@ sub get_playlist_id {
     return $res->{results}{items}[0]{contentDetails}{relatedPlaylists}{$playlist_name};
 }
 
-=head2 playlist_from_id($playlist_id)
+=head2 playlist_from_id($playlist_id, $part = "snippet")
 
-Return info for one or more playlists.
-PlaylistIDs can be separated by commas.
+Return info for one or more playlist IDs.
+
+Multiple playlist IDs can be separated by commas.
 
 =cut
 
