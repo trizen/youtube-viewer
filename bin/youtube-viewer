@@ -277,7 +277,7 @@ my %CONFIG = (
     custom_layout => undef,    # auto-defined
     custom_layout_format => [{width => 3,     align => "right", color => "bold",      text => "*NO*.",},
                              {width => "55%", align => "left",  color => "bold blue", text => "*TITLE*",},
-                             {width => "15%", align => "left",  color => "yellow",    text => "*AUTHOR*",},
+                             {width => "15%", align => "left",  color => "magenta",   text => "*AUTHOR*",},
                              {width => 3,     align => "right", color => "green",     text => "*AGE_SHORT*",},
                              {width => 5,     align => "right", color => "green",     text => "*VIEWS_SHORT*",},
                              {width => 8,     align => "right", color => "blue",      text => "*TIME*",},
@@ -561,6 +561,7 @@ sub load_config {
         else {
             $CONFIG{custom_layout}       = 0;
             $CONFIG{results_fixed_width} = 0;
+            $CONFIG{results_with_colors} = $CONFIG{colors};
         }
 
         $update_config = 1;
@@ -2693,7 +2694,7 @@ sub print_channels {
                    colored(
                            sprintf("%4s subs",
                                    $yv_utils->short_human_number($yv_utils->get_channel_subscriber_count($channel))),
-                           'yellow'
+                           'green'
                           ),
                   );
         }
@@ -2717,10 +2718,10 @@ sub print_channels {
                 my $title   = clear_title($yv_utils->get_title($channel));
 
                 printf("%s. %s %s  %s\n",
-                       colored(sprintf('%2d', $i + 1), 'bold'),
-                       adjust_width($title, $title_length),
-                       colored(adjust_width($video_counts[$i], $video_count_width, 1), 'blue'),
-                       colored(adjust_width($sub_counts[$i],   $sub_count_width,   1), 'magenta'),
+                       colored(sprintf('%2d', $i + 1),                                 'bold'),
+                       colored(adjust_width($title, $title_length),                    'blue'),
+                       colored(adjust_width($video_counts[$i], $video_count_width, 1), 'magenta'),
+                       colored(adjust_width($sub_counts[$i], $sub_count_width, 1),     'green'),
                       );
             }
             last;
@@ -3245,7 +3246,8 @@ sub print_categories {
     @$categories = grep { $_->{snippet}{assignable} } @$categories;
 
     foreach my $category (@{$categories}) {
-        printf "%s. %-40s (id: %s)\n", colored(sprintf('%2d', ++$i), 'bold'), $yv_utils->get_title($category), $category->{id};
+        printf("%s. %-40s (id: %s)\n", colored(sprintf('%2d', ++$i), 'bold'),
+               $yv_utils->get_title($category), $category->{id});
     }
 
     my @keywords = get_input_for_categories();
@@ -3339,7 +3341,7 @@ sub print_playlists {
         elsif ($opt{results_with_colors}) {
             print "\n" if $i == 0;
             printf(
-                   "%s. %-50s (%s) %s\n",
+                   "%s. %-50s %s  %s\n",
                    colored(sprintf('%2d', $i + 1),                                                              'bold'),
                    colored($yv_utils->get_title($playlist),                                                     'blue'),
                    colored($yv_utils->set_thousands($yv_utils->get_playlist_item_count($playlist)) . " videos", 'magenta'),
@@ -3350,12 +3352,13 @@ sub print_playlists {
 
             require List::Util;
 
-            my @authors     = map { $yv_utils->get_channel_title($_) } @{$playlists};
-            my @item_counts = map { $yv_utils->set_thousands($yv_utils->get_playlist_item_count($_)) } @{$playlists};
+            my @authors = map { $yv_utils->get_channel_title($_) } @{$playlists};
+            my @item_counts =
+              map { $yv_utils->set_thousands($yv_utils->get_playlist_item_count($_)) . " videos" } @{$playlists};
 
             my $author_width     = List::Util::min(List::Util::max(map { length($_) } @authors), int($term_width / 5));
             my $item_count_width = List::Util::max(map { length($_) } @item_counts);
-            my $title_length     = $term_width - ($author_width + $item_count_width + 2 + 3 + 1 + 2);
+            my $title_length     = $term_width - ($author_width + $item_count_width + 2 + 3 + 1 + 1);
 
             print "\n";
             foreach my $i (0 .. $#{$playlists}) {
@@ -3363,16 +3366,18 @@ sub print_playlists {
                 my $playlist = $playlists->[$i];
                 my $title    = clear_title($yv_utils->get_title($playlist));
 
-                printf "%s. %s %s [%*s]\n", colored(sprintf('%2d', $i + 1), 'bold'),
-                  adjust_width($title, $title_length),
-                  adjust_width($authors[$i], $author_width, 1),
-                  $item_count_width, $item_counts[$i];
+                printf("%s. %s %s  %s\n",
+                       colored(sprintf('%2d', $i + 1),                               'bold'),
+                       colored(adjust_width($title, $title_length),                  'blue'),
+                       colored(adjust_width($item_counts[$i], $item_count_width, 1), 'magenta'),
+                       colored(adjust_width($authors[$i], $author_width, 1),         'green'),
+                      );
             }
             last;
         }
         else {
             print "\n" if $i == 0;
-            printf("%s. %-40s [%s videos] (%s)\n",
+            printf("%s. %-40s %5s videos (%s)\n",
                    colored(sprintf('%2d', $i + 1), 'bold'),
                    $yv_utils->get_title($playlist),
                    $yv_utils->set_thousands($yv_utils->get_playlist_item_count($playlist)),
@@ -4373,7 +4378,7 @@ sub print_videos {
             my $definition = $yv_utils->get_definition($video);
             push @formatted,
               sprintf(
-                      "%s. %s (%s) %s\n",
+                      "%s. %-60s (%s) %s\n",
                       colored(sprintf('%2d', $i + 1),               'bold'),
                       colored($yv_utils->get_title($video),         'blue'),
                       colored($yv_utils->get_time($video),          'magenta'),
@@ -4408,7 +4413,7 @@ sub print_videos {
         else {
             push @formatted,
               sprintf(
-                      "%s. %s (by %s) [%s]\n",
+                      "%s. %-50s (by %s) [%s]\n",
                       colored(sprintf('%2d', $i + 1), 'bold'), $yv_utils->get_title($video),
                       $yv_utils->get_channel_title($video),    $yv_utils->get_time($video),
                      );
