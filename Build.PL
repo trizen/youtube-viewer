@@ -87,17 +87,8 @@ my $builder = Module::Build->new(
                    'Term::ReadLine::Gnu'     => 0,    # for better STDIN support (+history)
                    'JSON::XS'                => 0,    # faster JSON to HASH conversion
                    'Mozilla::CA'             => 0,    # just in case if there are SSL problems
+                   'Unicode::GCString'       => 0,    # fixed-width format (--fixed-width, -W)
                   },
-
-    auto_features => {
-        fixed_width_support => {
-            description => "Print the results in a fixed-width format (--fixed-width, -W)",
-            requires    => {
-                         'Unicode::GCString' => 0,    # this is recommended
-                         #'Text::CharWidth' => 0,     # this works as fallback
-                        },
-        },
-    },
 
     add_to_cleanup     => ['WWW-YoutubeViewer-*'],
     create_makefile_pl => 'traditional',
