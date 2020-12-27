@@ -58,7 +58,6 @@ For trying the latest commit of `youtube-viewer`, without installing it, execute
     wget https://github.com/trizen/youtube-viewer/archive/master.zip -O youtube-viewer-master.zip
     unzip -n youtube-viewer-master.zip
     cd youtube-viewer-master/bin
-    perl -pi -ne 's{DEVEL = 0}{DEVEL = 1}' {gtk2-,gtk3-,}youtube-viewer
     ./youtube-viewer
 ```
 
@@ -152,6 +151,8 @@ See also: [#285](https://github.com/trizen/youtube-viewer/issues/285), [#308](ht
     * https://www.edivaldobrito.com.br/youtube-viewer-um-cliente-completo/
 * [RO] youtube-viewer
     * https://stressat.blogspot.com/2012/01/youtube-viewer.html
+* [RU] Стримим и кастим youtube и не только
+    * https://habr.com/ru/post/534926/
 * [RU] Установить клиент Youtube Viewer в Linux
     * http://compizomania.blogspot.com/2015/02/youtube-viewer-linux.html
 * [RU] Youtube Viewer / GTK Youtube Viewer

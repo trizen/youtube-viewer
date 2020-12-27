@@ -25,8 +25,8 @@ use 5.016;
 use warnings;
 no warnings 'once';
 
-my $DEVEL;                                 # true in devel mode
-use if ($DEVEL = 0), lib => qw(../lib);    # devel only
+my $DEVEL;                                           # true in devel mode
+use if ($DEVEL = -w __FILE__), lib => qw(../lib);    # devel only
 
 use WWW::YoutubeViewer v3.8.0;
 use WWW::YoutubeViewer::RegularExpressions;
@@ -82,17 +82,21 @@ else {
 
 # Configuration dir/file
 my $config_dir          = catdir($xdg_config_home, 'youtube-viewer');
-my $config_file         = catfile($config_dir, "gtk-youtube-viewer.conf");
-my $youtube_users_file  = catfile($config_dir, 'youtube_users.txt');
-my $history_file        = catfile($config_dir, 'gtk-history.txt');
-my $session_file        = catfile($config_dir, 'session.dat');
-my $watch_history_file  = catfile($config_dir, 'watched.txt');
-my $authentication_file = catfile($config_dir, 'reg.dat');
-my $api_file            = catfile($config_dir, 'api.json');
-my $default_api_file    = '/etc/youtube-viewer/api.json';
+my $local_playlists_dir = catdir($config_dir,      'playlists');
+my $config_file         = catfile($config_dir,          "gtk-youtube-viewer.conf");
+my $youtube_users_file  = catfile($config_dir,          'youtube_users.txt');
+my $history_file        = catfile($config_dir,          'gtk-history.txt');
+my $session_file        = catfile($config_dir,          'session.dat');
+my $saved_videos_file   = catfile($local_playlists_dir, "saved_videos.txt");
+my $watch_history_file  = catfile($local_playlists_dir, 'watched_videos.txt');
+my $authentication_file = catfile($config_dir,          'reg.dat');
+my $api_file            = catfile($config_dir,          'api.json');
+
+# Default path to api.json
+my $default_api_file = '/etc/youtube-viewer/api.json';
 
 # Create the configuration directory
-foreach my $dir ($config_dir) {
+foreach my $dir ($config_dir, $local_playlists_dir) {
     if (not -d $dir) {
         require File::Path;
         File::Path::make_path($dir)

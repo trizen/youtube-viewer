@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 08 December 2020
+#  Latest edit on: 27 December 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -59,8 +59,8 @@ use 5.016;
 use warnings;
 no warnings 'once';
 
-my $DEVEL;                                 # true in devel mode
-use if ($DEVEL = 0), lib => qw(../lib);    # devel mode
+my $DEVEL;                                           # true in devel mode
+use if ($DEVEL = -w __FILE__), lib => qw(../lib);    # devel mode
 
 use WWW::YoutubeViewer v3.8.0;
 use WWW::YoutubeViewer::RegularExpressions;
@@ -123,13 +123,16 @@ else {
 # Configuration dir/file
 my $config_dir          = catdir($xdg_config_home, $execname);
 my $local_playlists_dir = catdir($config_dir,      'playlists');
-my $config_file         = catfile($config_dir, "$execname.conf");
-my $youtube_users_file  = catfile($config_dir, 'youtube_users.txt');
-my $authentication_file = catfile($config_dir, 'reg.dat');
-my $history_file        = catfile($config_dir, 'cli-history.txt');
-my $watch_history_file  = catfile($config_dir, 'watched.txt');
-my $api_file            = catfile($config_dir, 'api.json');
-my $default_api_file    = '/etc/youtube-viewer/api.json';
+my $config_file         = catfile($config_dir,          "$execname.conf");
+my $youtube_users_file  = catfile($config_dir,          'youtube_users.txt');
+my $authentication_file = catfile($config_dir,          'reg.dat');
+my $history_file        = catfile($config_dir,          'cli-history.txt');
+my $saved_videos_file   = catfile($local_playlists_dir, "saved_videos.txt");
+my $watch_history_file  = catfile($local_playlists_dir, 'watched_videos.txt');
+my $api_file            = catfile($config_dir,          'api.json');
+
+# Default path to api.json
+my $default_api_file = '/etc/youtube-viewer/api.json';
 
 foreach my $dir ($config_dir, $local_playlists_dir) {
     if (not -d $dir) {
@@ -264,6 +267,9 @@ my %CONFIG = (
     watch_history      => 1,
     watch_history_file => $watch_history_file,
 
+    # Saved videos
+    saved_videos_file => $saved_videos_file,
+
     # Options for watched videos
     highlight_watched => 1,
     highlight_color   => 'bold',
@@ -351,9 +357,11 @@ HELP
 
 my $playlists_help = <<"PLAYLISTS_HELP" . $general_help;
 
-# Playlists
+# Select a playlist
 <number>          : list videos from the selected playlist
 :pp=i,i           : play videos from the selected playlists
+
+# Save and remove playlists
 :s=i :save=i      : save the playlist locally (see -lp)
 :r=i :remove=i    : remove a locally saved playlist from -lp
 PLAYLISTS_HELP
@@ -367,7 +375,7 @@ my $channels_help = <<"CHANNELS_HELP" . $general_help;
 
 # Save and remove channels
 :s=i  :save=i      : save the channel ID locally (see -lc)
-:rm=i :remove=i,i  : remove the selected channels from file
+:r=i  :remove=i,i  : remove the selected channels from file
 CHANNELS_HELP
 
 my $comments_help = <<"COMMENTS_HELP" . $general_help;
@@ -390,7 +398,9 @@ $action_options
 :pv=i :popular=i  : display author's popular uploads
 :A(ctivity)=i     : display author's recent activity
 :p(laylists)=i    : display author's playlists
-:s=i :save=i      : save author's channel ID to file (see -lc)
+:s=i  :save=i     : save a video ID in a local playlist (see -lp)
+:rm=i :remove=i,i : remove a saved video from the local playlist
+:sc=i             : save author's channel ID to file (see -lc)
 :ps=i :s2p=i,i    : save videos to a post-selected playlist
 :subscribe=i      : subscribe to author's channel
 :(dis)like=i      : like or dislike a video
@@ -737,6 +747,8 @@ usage: $execname [options] ([url] | [keywords])
    -rv --related=s      : show related videos for a video ID or URL
    -sv --search-videos  : search for YouTube videos (default mode)
    -wv --watched-videos : list the most recent watched videos
+       --save-video=s   : save a video in a local playlist by video ID or URL
+       --saved-videos   : display the local playlist of saved videos
 
  * Playlists
    -up --playlists=s      : list playlists created by a specific channel or user
@@ -1341,6 +1353,11 @@ sub apply_configuration {
         print_local_playlist(delete $opt->{local_playlist});
     }
 
+    if (defined $opt->{save_video}) {
+        my $videoID = get_valid_video_id(delete($opt->{save_video})) // return;
+        save_video_to_file($videoID);
+    }
+
     if (defined $opt->{save_playlist}) {
         my $playlistID = get_valid_playlist_id(delete($opt->{save_playlist})) // return;
         save_playlist_to_file($playlistID);
@@ -1357,7 +1374,12 @@ sub apply_configuration {
     }
 
     if (delete $opt->{search_videos}) {
-        print_videos($yv_obj->search_videos([@{$keywords}]));
+        if (not @{$keywords}) {
+            print_saved_videos();
+        }
+        else {
+            print_videos($yv_obj->search_videos([@{$keywords}]));
+        }
     }
 
     if (delete $opt->{search_channels}) {
@@ -1374,6 +1396,10 @@ sub apply_configuration {
 
     if (delete $opt->{watched_videos}) {
         print_watched_videos();
+    }
+
+    if (delete $opt->{saved_videos}) {
+        print_saved_videos();
     }
 
     if (defined $opt->{uploads}) {
@@ -1609,9 +1635,11 @@ sub parse_arguments {
         'lc|fc|local-channels:s' => \$opt{local_channels},
         'lp|local-playlists:s'   => \$opt{local_playlist},
         'wv|watched-videos'      => \$opt{watched_videos},
+        'saved-videos'           => \$opt{saved_videos},
 
-        'save-channel=s'  => \$opt{save_channel},
-        'save-playlist=s' => \$opt{save_playlist},
+        'save-video|save=s' => \$opt{save_video},
+        'save-channel=s'    => \$opt{save_channel},
+        'save-playlist=s'   => \$opt{save_playlist},
 
         'search-videos|search|sv!'     => \$opt{search_videos},
         'search-channels|channels|sc!' => \$opt{search_channels},
@@ -3156,6 +3184,50 @@ sub extract_video_ids_from_playlist {
     return 1;
 }
 
+sub save_video_to_file {
+    my ($videoID) = @_;
+
+    say ":: Saving video ID <<$videoID>> to file...";
+
+    open(my $fh, '>>', $opt{saved_videos_file}) or do {
+        warn "[!] Can't open file <<$opt{saved_videos_file}>> for appending: $!";
+        return;
+    };
+
+    say {$fh} $videoID;
+
+    close $fh;
+}
+
+sub remove_saved_videos {
+    my (@video_ids) = @_;
+
+    @video_ids || return;
+
+    my @ids = reverse $yv_utils->read_lines_from_file($opt{saved_videos_file});
+
+    my %removed;
+    @removed{@video_ids} = ();
+
+    my @filtered = grep { not exists $removed{$_} } @ids;
+
+    if (scalar(@filtered) != scalar(@ids)) {
+
+        say ":: Removing ", scalar(@ids) - scalar(@filtered), " saved videos...";
+
+        open(my $fh, '>', $opt{saved_videos_file}) or do {
+            warn "[!] Can't open file <<$opt{saved_videos_file}>> for writing: $!";
+            return;
+        };
+
+        say {$fh} join("\n", @filtered);
+        close $fh;
+    }
+    else {
+        say ":: No video has been removed...";
+    }
+}
+
 sub save_playlist_to_file {
     my ($playlistID, $title) = @_;
 
@@ -3195,7 +3267,7 @@ sub print_local_playlist {
 
     require File::Basename;
 
-    my @playlist_files = sort { CORE::fc($a) cmp CORE::fc($b) } glob("$local_playlists_dir/*");
+    my @playlist_files = grep { -T $_ } sort { CORE::fc($a) cmp CORE::fc($b) } glob("$local_playlists_dir/*");
     my $regex          = qr/\Q$name\E/i;
 
     if ($name eq '') {
@@ -3210,8 +3282,18 @@ sub print_local_playlist {
     }
 
     foreach my $file (@playlist_files) {
+
         if (File::Basename::basename($file) =~ $regex or $file eq $name) {
-            my @ids = reverse $yv_utils->read_lines_from_file($file);
+
+            my @ids = $yv_utils->read_lines_from_file($file);
+
+            if ($file eq $opt{saved_videos_file} or $file eq $opt{watch_history_file}) {
+                ## ok
+            }
+            else {
+                @ids = reverse @ids;
+            }
+
             @ids || next;
             return print_videos(get_results_from_list(\@ids));
         }
@@ -3233,6 +3315,11 @@ sub print_watched_videos {
         @ids = sort keys %WATCHED_VIDEOS;
     }
 
+    print_videos(get_results_from_list(\@ids));
+}
+
+sub print_saved_videos {
+    my @ids = $yv_utils->read_lines_from_file($opt{saved_videos_file});
     print_videos(get_results_from_list(\@ids));
 }
 
@@ -4649,6 +4736,29 @@ sub print_videos {
 
             # :s=i, :save=i
             elsif ($opt =~ /^(?:s|save)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$videos}, $1)) {
+                    foreach my $id (@nums) {
+                        my $video_id = $yv_utils->get_video_id($videos->[$id]);
+                        save_video_to_file($video_id);
+                    }
+                }
+                else {
+                    warn_no_thing_selected('video');
+                }
+            }
+
+            # :rm=i :remove=i
+            elsif ($opt =~ /^(?:rm|remove)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$videos}, $1)) {
+                    remove_saved_videos(map { $yv_utils->get_video_id($videos->[$_]) } @nums);
+                }
+                else {
+                    warn_no_thing_selected('video');
+                }
+            }
+
+            # :sc=i, :save-channel=i
+            elsif ($opt =~ /^(?:sc|save-channel)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     foreach my $id (@nums) {
                         my $channel_id    = $yv_utils->get_channel_id($videos->[$id]);

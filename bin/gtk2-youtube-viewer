@@ -25,8 +25,8 @@ use 5.016;
 use warnings;
 no warnings 'once';
 
-my $DEVEL;                                 # true in devel mode
-use if ($DEVEL = 0), lib => qw(../lib);    # devel only
+my $DEVEL;                                           # true in devel mode
+use if ($DEVEL = -w __FILE__), lib => qw(../lib);    # devel only
 
 use WWW::YoutubeViewer v3.8.0;
 use WWW::YoutubeViewer::RegularExpressions;
@@ -87,7 +87,9 @@ my $youtube_users_file  = catfile($config_dir, 'youtube_users.txt');
 my $history_file        = catfile($config_dir, 'gtk-history.txt');
 my $authentication_file = catfile($config_dir, 'reg.dat');
 my $api_file            = catfile($config_dir, 'api.json');
-my $default_api_file    = '/etc/youtube-viewer/api.json';
+
+# Default path to api.json
+my $default_api_file = '/etc/youtube-viewer/api.json';
 
 # Create the configuration directory
 foreach my $dir ($config_dir) {

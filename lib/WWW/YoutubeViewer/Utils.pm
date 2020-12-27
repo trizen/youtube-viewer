@@ -485,6 +485,7 @@ sub local_playlist_snippet {
 
     $title =~ s/\.txt\z//;
     $title =~ s/ -- PL[-\w]+\z//;
+    $title =~ s/_/ /g;
     $title = ucfirst($title);
 
     scalar {
