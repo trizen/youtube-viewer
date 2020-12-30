@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 27 December 2020
+#  Latest edit on: 30 December 2020
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -62,7 +62,7 @@ no warnings 'once';
 my $DEVEL;                                           # true in devel mode
 use if ($DEVEL = -w __FILE__), lib => qw(../lib);    # devel mode
 
-use WWW::YoutubeViewer v3.8.0;
+use WWW::YoutubeViewer v3.8.1;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
@@ -120,16 +120,20 @@ else {
     $xdg_config_home = catdir($home_dir, '.config');
 }
 
-# Configuration dir/file
+# Configuration dirs
 my $config_dir          = catdir($xdg_config_home, $execname);
 my $local_playlists_dir = catdir($config_dir,      'playlists');
-my $config_file         = catfile($config_dir,          "$execname.conf");
-my $youtube_users_file  = catfile($config_dir,          'youtube_users.txt');
-my $authentication_file = catfile($config_dir,          'reg.dat');
-my $history_file        = catfile($config_dir,          'cli-history.txt');
-my $saved_videos_file   = catfile($local_playlists_dir, "saved_videos.txt");
-my $watch_history_file  = catfile($local_playlists_dir, 'watched_videos.txt');
-my $api_file            = catfile($config_dir,          'api.json');
+
+# Configuration files
+my $config_file         = catfile($config_dir, "$execname.conf");
+my $youtube_users_file  = catfile($config_dir, 'youtube_users.txt');
+my $authentication_file = catfile($config_dir, 'reg.dat');
+my $history_file        = catfile($config_dir, 'cli-history.txt');
+my $api_file            = catfile($config_dir, 'api.json');
+
+# Special local playlists
+my $saved_videos_file  = catfile($local_playlists_dir, "saved_videos.txt");
+my $watch_history_file = catfile($local_playlists_dir, 'watched_videos.txt');
 
 # Default path to api.json
 my $default_api_file = '/etc/youtube-viewer/api.json';
