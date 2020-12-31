@@ -752,7 +752,7 @@ usage: $execname [options] ([url] | [keywords])
    -sv --search-videos  : search for YouTube videos (default mode)
    -wv --watched-videos : list the most recent watched videos
        --save-video=s   : save a video in a local playlist by video ID or URL
-       --saved-videos   : display the local playlist of saved videos
+   -lv --local-videos   : display the local playlist of saved videos
 
  * Playlists
    -up --playlists=s      : list playlists created by a specific channel or user
@@ -1636,10 +1636,10 @@ sub parse_arguments {
         'c|categories'                => \$opt{categories},
         'video-ids|videoids|id|ids=s' => \$opt{play_video_ids},
 
-        'lc|fc|local-channels:s' => \$opt{local_channels},
-        'lp|local-playlists:s'   => \$opt{local_playlist},
-        'wv|watched-videos'      => \$opt{watched_videos},
-        'saved-videos'           => \$opt{saved_videos},
+        'lc|fc|local-channels:s'       => \$opt{local_channels},
+        'lp|local-playlists:s'         => \$opt{local_playlist},
+        'wv|watched-videos'            => \$opt{watched_videos},
+        'lv|local-videos|saved-videos' => \$opt{saved_videos},
 
         'save-video|save=s' => \$opt{save_video},
         'save-channel=s'    => \$opt{save_channel},
