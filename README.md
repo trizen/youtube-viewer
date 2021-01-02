@@ -123,7 +123,7 @@ See also: [#285](https://github.com/trizen/youtube-viewer/issues/285), [#308](ht
 
 ### STRAW-VIEWER
 
-[straw-viewer](https://github.com/trizen/straw-viewer) is a fork of `youtube-viewer`, which uses the [API](https://github.com/omarroth/invidious/wiki/API) of [invidio.us](https://invidio.us/), and thus it does not require an YouTube API key.
+[straw-viewer](https://github.com/trizen/straw-viewer) is a fork of `youtube-viewer`, which uses the [API](https://github.com/iv-org/documentation/blob/master/API.md) of [invidio.us](https://invidio.us/), and thus it does not require an YouTube API key.
 
 ### PIPE-VIEWER
 
