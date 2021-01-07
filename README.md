@@ -182,7 +182,7 @@ After installing, you can find documentation with the following commands:
 
 ### LICENSE AND COPYRIGHT
 
-Copyright (C) 2012-2020 Trizen
+Copyright (C) 2012-2021 Trizen
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
