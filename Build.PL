@@ -87,7 +87,7 @@ my $builder = Module::Build->new(
                    'Term::ReadLine::Gnu'     => 0,    # for better STDIN support (+history)
                    'JSON::XS'                => 0,    # faster JSON to HASH conversion
                    'Mozilla::CA'             => 0,    # just in case if there are SSL problems
-                   'Unicode::GCString'       => 0,    # fixed-width format (--fixed-width, -W)
+                   'Unicode::GCString'       => 0,    # fixed-width format
                   },
 
     add_to_cleanup     => ['WWW-YoutubeViewer-*'],

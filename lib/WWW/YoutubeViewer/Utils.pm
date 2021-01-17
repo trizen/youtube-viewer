@@ -285,15 +285,27 @@ sub format_text {
     my $fat32safe = $opt{fat32safe};
 
     my %special_tokens = (
-        ID          => sub { $self->get_video_id($info) },
-        AUTHOR      => sub { $self->get_channel_title($info) },
-        CHANNELID   => sub { $self->get_channel_id($info) },
-        DEFINITION  => sub { $self->get_definition($info) },
-        DIMENSION   => sub { $self->get_dimension($info) },
+        ID         => sub { $self->get_video_id($info) },
+        AUTHOR     => sub { $self->get_channel_title($info) },
+        CHANNELID  => sub { $self->get_channel_id($info) },
+        DEFINITION => sub { $self->get_definition($info) },
+        DIMENSION  => sub { $self->get_dimension($info) },
+
         VIEWS       => sub { $self->get_views($info) },
         VIEWS_SHORT => sub { $self->get_views_approx($info) },
-        LIKES       => sub { $self->get_likes($info) },
-        DISLIKES    => sub { $self->get_dislikes($info) },
+
+        VIDEOS       => sub { $self->set_thousands($self->get_channel_video_count($info)) },
+        VIDEOS_SHORT => sub { $self->short_human_number($self->get_channel_video_count($info)) },
+
+        SUBS       => sub { $self->get_channel_subscriber_count($info) },
+        SUBS_SHORT => sub { $self->short_human_number($self->get_channel_subscriber_count($info)) },
+
+        ITEMS       => sub { $self->set_thousands($self->get_playlist_item_count($info)) },
+        ITEMS_SHORT => sub { $self->short_human_number($self->get_playlist_item_count($info)) },
+
+        LIKES    => sub { $self->get_likes($info) },
+        DISLIKES => sub { $self->get_dislikes($info) },
+
         COMMENTS    => sub { $self->get_comments($info) },
         DURATION    => sub { $self->get_duration($info) },
         TIME        => sub { $self->get_time($info) },

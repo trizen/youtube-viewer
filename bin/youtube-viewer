@@ -72,7 +72,7 @@ use File::Spec::Functions qw(
   path
   rel2abs
   file_name_is_absolute
-  );
+);
 
 binmode(STDOUT, ':utf8');
 
@@ -253,17 +253,13 @@ my %CONFIG = (
     youtube_users_file => $youtube_users_file,
     remove_played_file => 0,
 
-    results_with_details => 0,
-    results_with_colors  => 0,
-    results_fixed_width  => undef,                # auto-defined
-
     # Conversion options
     convert_cmd         => 'ffmpeg -i *IN* *OUT*',
     convert_to          => undef,
     keep_original_video => 0,
 
     # Search history
-    history       => undef,                       # auto-defined
+    history       => undef,           # auto-defined
     history_limit => 100_000,
     history_file  => $history_file,
 
@@ -284,7 +280,6 @@ my %CONFIG = (
     ytdl_cmd => undef,    # auto-defined
 
     # Custom layout
-    custom_layout => undef,    # auto-defined
     custom_layout_format => [{width => 3,     align => "right", color => "bold",      text => "*NO*.",},
                              {width => "55%", align => "left",  color => "bold blue", text => "*TITLE*",},
                              {width => "15%", align => "left",  color => "magenta",   text => "*AUTHOR*",},
@@ -292,6 +287,19 @@ my %CONFIG = (
                              {width => 5,     align => "right", color => "green",     text => "*VIEWS_SHORT*",},
                              {width => 8,     align => "right", color => "blue",      text => "*TIME*",},
                             ],
+
+    custom_channel_layout_format => [{width => 3,     align => "right", color => "bold",      text => "*NO*.",},
+                                     {width => "55%", align => "left",  color => "bold blue", text => "*TITLE*",},
+                                     {width => 3,     align => "right", color => "yellow",    text => "*AGE_SHORT*",},
+                                     {width => 14,    align => "right", color => "magenta",   text => "*VIDEOS* videos",},
+                                     {width => 10,    align => "right", color => "green",     text => "*SUBS_SHORT* subs",},
+                                    ],
+
+    custom_playlist_layout_format => [{align => "right", color => "bold",      text => "*NO*.",          width => 3},
+                                      {align => "left",  color => "bold blue", text => "*TITLE*",        width => "55%"},
+                                      {align => "right", color => "green",     text => "*ITEMS* videos", width => 14},
+                                      {align => "left",  color => "magenta",   text => "*AUTHOR*",       width => "20%"},
+                                     ],
 
     ffmpeg_cmd => 'ffmpeg',
     wget_cmd   => 'wget',
@@ -559,24 +567,6 @@ sub load_config {
         }
         else {
             $CONFIG{merge_into_mkv} = 0;
-        }
-
-        $update_config = 1;
-    }
-
-    # Fixed-width format and custom layout
-    if (   not defined($CONFIG{results_fixed_width})
-        or not defined($CONFIG{custom_layout})) {
-
-        if (   eval { require Unicode::GCString; 1 }
-            or eval { require Text::CharWidth; 1 }) {
-            $CONFIG{custom_layout}       //= 1;
-            $CONFIG{results_fixed_width} //= 1;
-        }
-        else {
-            $CONFIG{custom_layout}       = 0;
-            $CONFIG{results_fixed_width} = 0;
-            $CONFIG{results_with_colors} = $CONFIG{colors};
         }
 
         $update_config = 1;
@@ -888,10 +878,6 @@ usage: $execname [options] ([url] | [keywords])
    --update-config!     : update the configuration file
 
  * Output
-   -C  --colorful!      : use colors to delimit the video results
-   -D  --details!       : display the results with extra details
-   -W  --fixed-width!   : adjust the results to fit inside the term width
-       --custom-layout! : display the results using a custom layout (see conf)
    -i  --info=s         : show information for a video ID or URL
    -e  --extract=s      : extract information from videos (see: -T)
        --extract-file=s : extract information from videos in this file
@@ -907,7 +893,7 @@ usage: $execname [options] ([url] | [keywords])
    --cookies=s          : file to read cookies from and dump cookie
    --user-agent=s       : specify a custom user agent
    --proxy=s            : set HTTP(S)/SOCKS proxy: 'proto://domain.tld:port/'
-                          If authentication required,
+                          If authentication is required,
                           use 'proto://user:pass\@domain.tld:port/'
    --dash!              : include or exclude the DASH itags
    --dash-mp4a!         : include or exclude the itags for MP4 audio streams
@@ -1006,26 +992,32 @@ sub tricks {
 
 -> Special tokens:
 
-  *ID*          : the YouTube video ID
-  *AUTHOR*      : the author name of the video
-  *CHANNELID*   : the channel ID of the video
-  *RESOLUTION*  : the resolution of the video
-  *VIEWS*       : the number of views
-  *VIEWS_SHORT* : the number of views in abbreviated notation
-  *LIKES*       : the number of likes
-  *DISLIKES*    : the number of dislikes
-  *RATING*      : the rating of the video from 0 to 5
-  *COMMENTS*    : the number of comments
-  *DURATION*    : the duration of the video in seconds
-  *PUBLISHED*   : the publication date as "DD MMM YYYY"
-  *AGE*         : the age of a video (N days, N months, N years)
-  *AGE_SHORT*   : the abbreviated age of a video (Nd, Nm, Ny)
-  *DIMENSION*   : the dimension of the video (2D or 3D)
-  *DEFINITION*  : the definition of the video (HD or SD)
-  *TIME*        : the duration of the video as "HH::MM::SS"
-  *TITLE*       : the title of the video
-  *FTITLE*      : the title of the video (filename safe)
-  *DESCRIPTION* : the description of the video
+  *ID*           : the YouTube video ID
+  *AUTHOR*       : the author name of the video
+  *CHANNELID*    : the channel ID of the video
+  *RESOLUTION*   : the resolution of the video
+  *VIEWS*        : the number of views
+  *VIEWS_SHORT*  : the number of views in abbreviated notation
+  *VIDEOS*       : the number of channel videos
+  *VIDEOS_SHORT* : the number of channel videos in abbreviated notation
+  *SUBS*         : the number of channel subscriptions
+  *SUBS_SHORT*   : the number of channel subscriptions in abbreviated notation
+  *ITEMS*        : the number of playlist items
+  *ITEMS_SHORT*  : the number of playlist items in abbreviated notation
+  *LIKES*        : the number of likes
+  *DISLIKES*     : the number of dislikes
+  *RATING*       : the rating of the video from 0 to 5
+  *COMMENTS*     : the number of comments
+  *DURATION*     : the duration of the video in seconds
+  *PUBLISHED*    : the publication date as "DD MMM YYYY"
+  *AGE*          : the age of a video (N days, N months, N years)
+  *AGE_SHORT*    : the abbreviated age of a video (Nd, Nm, Ny)
+  *DIMENSION*    : the dimension of the video (2D or 3D)
+  *DEFINITION*   : the definition of the video (HD or SD)
+  *TIME*         : the duration of the video as "HH::MM::SS"
+  *TITLE*        : the title of the video
+  *FTITLE*       : the title of the video (filename safe)
+  *DESCRIPTION*  : the description of the video
 
   *URL*      : the YouTube URL of the video
   *ITAG*     : the itag value of the video
@@ -1067,18 +1059,18 @@ sub examples {
     print <<"EXAMPLES";
 ==== COMMAND LINE EXAMPLES ====
 
-Command: $execname -A -n russian music -category=10
+Command: $execname -A -n russian music -category=music
 Results: play all the video results (-A)
          only audio, no video (-n)
          search for "russian music"
-         in category "10", which is the Music category.
-         -A will include the videos from the next pages as well.
+         in the Music category.
+Note:   -A will include the videos from the next pages as well.
 
 Command: $execname --comments 'https://www.youtube.com/watch?v=U6_8oIPFREY'
 Results: show video comments for a specific video URL or videoID.
 
-Command: $execname --results=5 -up=khanacademy -D
-Results: the most recent 5 videos by a specific author (-up), printed with extra details (-D).
+Command: $execname --results=5 -up=khanacademy
+Results: the most recent 5 playlists by a specific author (-up).
 
 Command: $execname --author=MIT atom
 Results: search only in videos by a specific author.
@@ -1098,7 +1090,7 @@ Results: show the latest videos uploaded by Google, starting with the page numbe
 Command: $execname cats --order=viewCount --duration=short
 Results: search for 'cats' videos, ordered by ViewCount and short duration.
 
-Command: $execname --channels math lessons
+Command: $execname -sc math lessons
 Results: search for YouTube channels.
 
 Command: $execname -uf=Google
@@ -1735,20 +1727,18 @@ sub parse_arguments {
         'append-arg|append-args=s' => \$MPLAYER{user_defined_arguments},
 
         # Others
-        'colorful|colourful|C!' => \$opt{results_with_colors},
-        'details|D!'            => \$opt{results_with_details},
-        'fixed-width|W|fw!'     => \$opt{results_fixed_width},
-        'caption=s'             => \$opt{videoCaption},
-        'fullscreen|fs|f!'      => \$opt{fullscreen},
-        'dash!'                 => \$opt{dash_support},
-        'confirm!'              => \$opt{confirm},
+        'caption=s'        => \$opt{videoCaption},
+        'fullscreen|fs|f!' => \$opt{fullscreen},
+        'dash!'            => \$opt{dash_support},
+        'confirm!'         => \$opt{confirm},
 
         'prefer-mp4!' => \$opt{prefer_mp4},
         'prefer-av1!' => \$opt{prefer_av1},
         'ignore-av1!' => \$opt{ignore_av1},
 
-        'custom-layout!'         => \$opt{custom_layout},
-        'custom-layout-format=s' => \$opt{custom_layout_format},
+        'custom-layout-format=s'          => \$opt{custom_layout_format},
+        'custom-channel-layout-format=s'  => \$opt{custom_channel_layout_format},
+        'custom-playlist-layout-format=s' => \$opt{custom_playlist_layout_format},
 
         'merge-into-mkv|mkv-merge!'           => \$opt{merge_into_mkv},
         'merge-with-captions|merge-captions!' => \$opt{merge_with_captions},
@@ -2605,10 +2595,9 @@ sub valid_num {
 sub adjust_width {
     my ($str, $len, $prepend) = @_;
 
-    $len > 0 or do {
-        warn "[WARN] Insufficient space for the title: increase your terminal width!\n";
+    if ($len <= 0) {
         return $str;
-    };
+    }
 
     state $pkg = (
         eval {
@@ -2623,52 +2612,109 @@ sub adjust_width {
         }
     );
 
-    #
-    ## Unicode::GCString
-    #
-    if ($pkg eq 'Unicode::GCString') {
+    my $adjust_str = sub {
 
-        my $gcstr     = Unicode::GCString->new($str);
-        my $str_width = $gcstr->columns;
+        # Unicode::GCString
+        if ($pkg eq 'Unicode::GCString') {
 
-        if ($str_width != $len) {
+            my $gcstr     = Unicode::GCString->new($str);
+            my $str_width = $gcstr->columns;
+
             while ($str_width > $len) {
                 $gcstr     = $gcstr->substr(0, -1);
                 $str_width = $gcstr->columns;
             }
 
             $str = $gcstr->as_string;
-            my $spaces = ' ' x ($len - $str_width);
-            $str = $prepend ? "$spaces$str" : "$str$spaces";
+            return ($str, $str_width);
         }
 
-        return $str;
-    }
+        # Text::CharWidth
+        if ($pkg eq 'Text::CharWidth') {
 
-    #
-    ## Text::CharWidth
-    #
-    if ($pkg eq 'Text::CharWidth') {
+            my $str_width = Text::CharWidth::mbswidth($str);
 
-        my $str_width = Text::CharWidth::mbswidth($str);
-
-        if ($str_width != $len) {
             while ($str_width > $len) {
                 chop $str;
                 $str_width = Text::CharWidth::mbswidth($str);
             }
 
-            my $spaces = ' ' x ($len - $str_width);
-            $str = $prepend ? "$spaces$str" : "$str$spaces";
+            return ($str, $str_width);
         }
 
-        return $str;
+        # Fallback to counting graphemes
+        my @graphemes = $str =~ /(\X)/g;
+
+        while (scalar(@graphemes) > $len) {
+            pop @graphemes;
+        }
+
+        $str = join('', @graphemes);
+        return ($str, scalar(@graphemes));
+    };
+
+    my ($new_str, $str_width) = $adjust_str->();
+
+    my $spaces = ' ' x ($len - $str_width);
+    my $result = $prepend ? join('', $spaces, $new_str) : join('', $new_str, $spaces);
+
+    return $result;
+}
+
+sub format_line_result {
+    my ($i, $entry, $info, %args) = @_;
+
+    if (ref($entry) eq '') {
+        $entry =~ s/\*NO\*/sprintf('%2d', $i+1)/ge;
+        $entry = $yv_utils->format_text(
+                                        info   => $info,
+                                        text   => $entry,
+                                        escape => 0,
+                                       );
+        return "$entry\n";
     }
 
-    return $str;
+    if (ref($entry) eq 'ARRAY') {
+
+        my @columns;
+
+        foreach my $slot (@$entry) {
+
+            my $text  = $slot->{text};
+            my $width = $slot->{width} // 10;
+            my $color = $slot->{color};
+            my $align = $slot->{align} // 'left';
+
+            if ($width =~ /^(\d+)%\z/) {
+                $width = int(($term_width * $1) / 100);
+            }
+
+            $text =~ s/\*NO\*/$i+1/ge;
+
+            $text = $yv_utils->format_text(
+                                           info   => $info,
+                                           text   => $text,
+                                           escape => 0,
+                                          );
+
+            $text = clear_title($text);
+            $text = adjust_width($text, $width, ($align eq 'right'));
+
+            if (defined($color)) {
+                $text = colored($text, $color);
+            }
+
+            push @columns, $text;
+        }
+
+        return (join(' ', @columns) . "\n");
+    }
+
+    die "ERROR: invalid custom layout format <<$entry>>\n";
 }
 
 # ... PRINT SUBROUTINES ... #
+
 sub print_channels {
     my ($results) = @_;
 
@@ -2676,7 +2722,7 @@ sub print_channels {
         warn_no_results("channel");
     }
 
-    if ($opt{get_term_width} and $opt{results_fixed_width}) {
+    if ($opt{get_term_width}) {
         get_term_width();
     }
 
@@ -2698,77 +2744,18 @@ sub print_channels {
         }
     }
 
+    my @formatted;
+
     foreach my $i (0 .. $#{$channels}) {
+
         my $channel = $channels->[$i];
+        my $entry   = $opt{custom_channel_layout_format};
 
-        if ($opt{results_with_details}) {
-            printf(
-                   "\n%s. %s\n    %s: %-23s %s: %-12s\n%s\n",
-                   colored(sprintf('%2d', $i + 1), 'bold') => colored($yv_utils->get_title($channel), 'bold blue'),
-                   colored('Created' => 'bold') => $yv_utils->get_publication_date($channel),
-                   colored('Author'  => 'bold') => $yv_utils->get_channel_title($channel),
-                   wrap_text(
-                             i_tab => q{ } x 4,
-                             s_tab => q{ } x 4,
-                             text  => [$yv_utils->get_description($channel) || 'No description available...']
-                            ),
-                  );
-        }
-        elsif ($opt{results_with_colors}) {
-            print "\n" if $i == 0;
-            printf(
-                   "%s. %-50s %s  %s\n",
-                   colored(sprintf('%2d', $i + 1),         'bold'),
-                   colored($yv_utils->get_title($channel), 'blue'),
-                   colored(
-                           sprintf("%5s videos", $yv_utils->set_thousands($yv_utils->get_channel_video_count($channel))),
-                           'magenta'
-                          ),
-                   colored(
-                           sprintf("%4s subs",
-                                   $yv_utils->short_human_number($yv_utils->get_channel_subscriber_count($channel))),
-                           'green'
-                          ),
-                  );
-        }
-        elsif ($opt{results_fixed_width}) {
+        push @formatted, format_line_result($i, $entry, $channel);
+    }
 
-            require List::Util;
-
-            my @video_counts =
-              map { sprintf("%5s videos", $yv_utils->set_thousands($yv_utils->get_channel_video_count($_))) } @$channels;
-            my @sub_counts = map { sprintf("%4s subs", $_) }
-              map { $yv_utils->short_human_number($yv_utils->get_channel_subscriber_count($_)) } @$channels;
-
-            my $sub_count_width   = List::Util::max(map { length($_) } @sub_counts);
-            my $video_count_width = List::Util::max(map { length($_) } @video_counts);
-            my $title_length      = $term_width - ($sub_count_width + $video_count_width + 2 + 3 + 2);
-
-            print "\n";
-            foreach my $i (0 .. $#{$channels}) {
-
-                my $channel = $channels->[$i];
-                my $title   = clear_title($yv_utils->get_title($channel));
-
-                printf("%s. %s %s  %s\n",
-                       colored(sprintf('%2d', $i + 1),                                 'bold'),
-                       colored(adjust_width($title, $title_length),                    'blue'),
-                       colored(adjust_width($video_counts[$i], $video_count_width, 1), 'magenta'),
-                       colored(adjust_width($sub_counts[$i], $sub_count_width, 1),     'green'),
-                      );
-            }
-            last;
-        }
-        else {
-            print "\n" if $i == 0;
-            printf(
-                   "%s. %-40s %5s videos  %4s subs\n",
-                   colored(sprintf('%2d', $i + 1), 'bold'),
-                   $yv_utils->get_title($channel),
-                   $yv_utils->set_thousands($yv_utils->get_channel_video_count($channel)),
-                   $yv_utils->short_human_number($yv_utils->get_channel_subscriber_count($channel)),
-                  );
-        }
+    if (@formatted) {
+        print "\n" . join("", @formatted);
     }
 
     my @keywords = get_input_for_channels();
@@ -3430,7 +3417,7 @@ sub print_playlists {
         warn_no_results("playlist");
     }
 
-    if ($opt{get_term_width} and $opt{results_fixed_width}) {
+    if ($opt{get_term_width}) {
         get_term_width();
     }
 
@@ -3452,66 +3439,18 @@ sub print_playlists {
         }
     }
 
+    my @formatted;
+
     foreach my $i (0 .. $#{$playlists}) {
+
         my $playlist = $playlists->[$i];
-        if ($opt{results_with_details}) {
-            printf(
-                   "\n%s. %s\n    %s: %-25s %s: %s\n%s\n",
-                   colored(sprintf('%2d', $i + 1), 'bold') => colored($yv_utils->get_title($playlist), 'bold blue'),
-                   colored('Videos' => 'bold') => $yv_utils->get_playlist_item_count($playlist),
-                   colored('Author' => 'bold') => $yv_utils->get_channel_title($playlist),
-                   wrap_text(
-                             i_tab => q{ } x 4,
-                             s_tab => q{ } x 4,
-                             text  => [$yv_utils->get_description($playlist) || 'No description available...']
-                            ),
-                  );
-        }
-        elsif ($opt{results_with_colors}) {
-            print "\n" if $i == 0;
-            printf(
-                   "%s. %-50s %s  %s\n",
-                   colored(sprintf('%2d', $i + 1),                                                              'bold'),
-                   colored($yv_utils->get_title($playlist),                                                     'blue'),
-                   colored($yv_utils->set_thousands($yv_utils->get_playlist_item_count($playlist)) . " videos", 'magenta'),
-                   colored($yv_utils->get_channel_title($playlist),                                             'green'),
-                  );
-        }
-        elsif ($opt{results_fixed_width}) {
+        my $entry    = $opt{custom_playlist_layout_format};
 
-            require List::Util;
+        push @formatted, format_line_result($i, $entry, $playlist);
+    }
 
-            my @authors = map { $yv_utils->get_channel_title($_) } @{$playlists};
-            my @item_counts =
-              map { $yv_utils->set_thousands($yv_utils->get_playlist_item_count($_)) . " videos" } @{$playlists};
-
-            my $author_width     = List::Util::min(List::Util::max(map { length($_) } @authors), int($term_width / 5));
-            my $item_count_width = List::Util::max(map { length($_) } @item_counts);
-            my $title_length     = $term_width - ($author_width + $item_count_width + 2 + 3 + 1 + 1);
-
-            print "\n";
-            foreach my $i (0 .. $#{$playlists}) {
-
-                my $playlist = $playlists->[$i];
-                my $title    = clear_title($yv_utils->get_title($playlist));
-
-                printf("%s. %s %s  %s\n",
-                       colored(sprintf('%2d', $i + 1),                               'bold'),
-                       colored(adjust_width($title, $title_length),                  'blue'),
-                       colored(adjust_width($item_counts[$i], $item_count_width, 1), 'magenta'),
-                       colored(adjust_width($authors[$i], $author_width, 1),         'green'),
-                      );
-            }
-            last;
-        }
-        else {
-            print "\n" if $i == 0;
-            printf("%s. %-40s %5s videos (%s)\n",
-                   colored(sprintf('%2d', $i + 1), 'bold'),
-                   $yv_utils->get_title($playlist),
-                   $yv_utils->set_thousands($yv_utils->get_playlist_item_count($playlist)),
-                   $yv_utils->get_channel_title($playlist));
-        }
+    if (@formatted) {
+        print "\n" . join("", @formatted);
     }
 
     state @keywords;
@@ -4388,7 +4327,7 @@ sub print_videos {
         warn_no_results("video");
     }
 
-    if ($opt{get_term_width} and $opt{results_fixed_width}) {
+    if ($opt{get_term_width}) {
         get_term_width();
     }
 
@@ -4457,121 +4396,11 @@ sub print_videos {
     my @formatted;
 
     foreach my $i (0 .. $#{$videos}) {
+
         my $video = $videos->[$i];
+        my $entry = $opt{custom_layout_format};
 
-        if ($opt{custom_layout}) {
-
-            my $entry = $opt{custom_layout_format};
-
-            if (ref($entry) eq '') {
-                $entry =~ s/\*NO\*/sprintf('%2d', $i+1)/ge;
-                $entry = $yv_utils->format_text(
-                                                info   => $video,
-                                                text   => $entry,
-                                                escape => 0,
-                                               );
-                push @formatted, "$entry\n";
-            }
-
-            if (ref($entry) eq 'ARRAY') {
-
-                my @columns;
-
-                foreach my $slot (@$entry) {
-
-                    my $text  = $slot->{text};
-                    my $width = $slot->{width} // 10;
-                    my $color = $slot->{color};
-                    my $align = $slot->{align} // 'left';
-
-                    if ($width =~ /^(\d+)%\z/) {
-                        $width = int(($term_width * $1) / 100);
-                    }
-
-                    $text =~ s/\*NO\*/$i+1/ge;
-
-                    $text = $yv_utils->format_text(
-                                                   info   => $video,
-                                                   text   => $text,
-                                                   escape => 0,
-                                                  );
-
-                    $text = clear_title($text);
-                    $text = adjust_width($text, $width, ($align eq 'right'));
-
-                    if (defined($color)) {
-                        $text = colored($text, $color);
-                    }
-
-                    push @columns, $text;
-                }
-
-                push @formatted, join(' ', @columns) . "\n";
-            }
-        }
-        elsif ($opt{results_with_details}) {
-            push @formatted,
-              ($i == 0 ? '' : "\n")
-              . sprintf(
-                        "%s. %s\n" . "    %s: %-16s %s: %-13s %s: %s\n" . "    %s: %-12s %s: %-10s %s: %s\n%s\n",
-                        colored(sprintf('%2d', $i + 1), 'bold') => colored($yv_utils->get_title($video), 'bold blue'),
-                        colored('Views'     => 'bold') => $yv_utils->set_thousands($yv_utils->get_views($video)),
-                        colored('Likes'     => 'bold') => $yv_utils->set_thousands($yv_utils->get_likes($video)),
-                        colored('Dislikes'  => 'bold') => $yv_utils->set_thousands($yv_utils->get_dislikes($video)),
-                        colored('Published' => 'bold') => $yv_utils->get_publication_date($video),
-                        colored('Duration'  => 'bold') => $yv_utils->get_time($video),
-                        colored('Author'    => 'bold') => $yv_utils->get_channel_title($video),
-                        wrap_text(
-                                  i_tab => q{ } x 4,
-                                  s_tab => q{ } x 4,
-                                  text  => [$yv_utils->get_description($video) || 'No description available...']
-                                 ),
-                       );
-        }
-        elsif ($opt{results_with_colors}) {
-            my $definition = $yv_utils->get_definition($video);
-            push @formatted,
-              sprintf(
-                      "%s. %-60s (%s) %s\n",
-                      colored(sprintf('%2d', $i + 1),               'bold'),
-                      colored($yv_utils->get_title($video),         'blue'),
-                      colored($yv_utils->get_time($video),          'magenta'),
-                      colored($yv_utils->get_channel_title($video), 'green'),
-                     );
-        }
-        elsif ($opt{results_fixed_width}) {
-
-            require List::Util;
-
-            my @durations = map { $yv_utils->get_duration($_) } @{$videos};
-            my @authors   = map { $yv_utils->get_channel_title($_) } @{$videos};
-
-            my $author_width = List::Util::min(List::Util::max(map { length($_) } @authors) || 1, int($term_width / 5));
-            my $time_width   = List::Util::first(sub { $_ >= 3600 }, @durations) ? 8 : 6;
-            my $title_length = $term_width - ($author_width + $time_width + 3 + 2 + 1);
-
-            foreach my $i (0 .. $#{$videos}) {
-
-                my $video = $videos->[$i];
-                my $title = clear_title($yv_utils->get_title($video));
-
-                push @formatted,
-                  sprintf("%s. %s %s %*s\n",
-                          colored(sprintf('%2d', $i + 1), 'bold'),
-                          adjust_width($title, $title_length),
-                          adjust_width($yv_utils->get_channel_title($video), $author_width, 1),
-                          $time_width, $yv_utils->get_time($video));
-            }
-            last;
-        }
-        else {
-            push @formatted,
-              sprintf(
-                      "%s. %-50s (by %s) [%s]\n",
-                      colored(sprintf('%2d', $i + 1), 'bold'), $yv_utils->get_title($video),
-                      $yv_utils->get_channel_title($video),    $yv_utils->get_time($video),
-                     );
-        }
+        push @formatted, format_line_result($i, $entry, $video);
     }
 
     if ($opt{highlight_watched}) {
@@ -5115,12 +4944,6 @@ When downloading a video, copy the closed-caption (if any) in the same folder wi
 
 If C<merge_into_mkv> and C<merge_with_captions> are both enabled, there is no need to enable this option.
 
-=head2 custom_layout
-
-Use a custom layout for video results, defined in C<custom_layout_format>.
-
-Requires: L<Unicode::GCString> or L<Text::CharWidth>.
-
 =head2 custom_layout_format
 
 An array of hash values specifying a custom layout for video results.
@@ -5135,6 +4958,16 @@ The value for C<width> can be either a number of characters (e.g.: 20) or can be
 The special tokens for C<text> are listed in:
 
     youtube-viewer --tricks
+
+For better formatting, it's highly recommended to install L<Unicode::GCString> or L<Text::CharWidth>.
+
+=head2 custom_channel_layout_format
+
+An array of hash values specifying a custom layout for channel results.
+
+=head2 custom_playlist_layout_format
+
+An array of hash values specifying a custom layout for playlist results.
 
 =head2 dash_mp4_audio
 
@@ -5312,20 +5145,6 @@ When C<download_and_play> is enabled, remove the file after playing it.
 Preferred resolution for videos.
 
 Valid values: best, 2160p, 1440p, 1080p, 720p, 480p, 360p, 240p, 144p, audio.
-
-=head2 results_fixed_width
-
-Results in fixed-width format.
-
-Requires: L<Unicode::GCString> or L<Text::CharWidth>.
-
-=head2 results_with_colors
-
-Results with colors.
-
-=head2 results_with_details
-
-Results with extra details.
 
 =head2 safeSearch
 
