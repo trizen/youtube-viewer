@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 07 January 2021
+#  Latest edit on: 17 January 2021
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -1064,7 +1064,7 @@ Results: play all the video results (-A)
          only audio, no video (-n)
          search for "russian music"
          in the Music category.
-Note:   -A will include the videos from the next pages as well.
+Note:    -A will include the videos from the next pages as well.
 
 Command: $execname --comments 'https://www.youtube.com/watch?v=U6_8oIPFREY'
 Results: show video comments for a specific video URL or videoID.
@@ -5025,7 +5025,9 @@ Read the terminal width (`stty size`).
 
 =head2 hfr
 
-Include or exclude High Frame Rate (HFR) videos.
+Prefer or ignore High Frame Rate (HFR) video streams.
+
+Try to disable this option if the videos are lagging or dropping frames.
 
 =head2 highlight_color
 
@@ -5063,11 +5065,11 @@ Language code for categories. Default: "en_US".
 
 Set HTTP(S)/SOCKS proxy, using the format:
 
-    proto://domain.tld:port/
+    'proto://domain.tld:port/'
 
 If authentication is required, use:
 
-    proto://user:pass@domain.tld:port/
+    'proto://user:pass@domain.tld:port/'
 
 =head2 ignore_av1
 
