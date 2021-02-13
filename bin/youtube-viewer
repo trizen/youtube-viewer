@@ -642,7 +642,8 @@ if ($opt{history}) {
     eval { $term->ReadHistory($opt{history_file}) };
 
     # All history entries
-    my @history = $term->history_list;
+    my @history;
+    eval { @history = $term->history_list };
 
     # Rewrite the history file, when the history_limit has been reached.
     if ($opt{history_limit} > 0 and @history > $opt{history_limit}) {
