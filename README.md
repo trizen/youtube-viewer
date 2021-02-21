@@ -127,7 +127,7 @@ See also: [#285](https://github.com/trizen/youtube-viewer/issues/285), [#308](ht
 
 ### PIPE-VIEWER
 
-[pipe-viewer](https://github.com/trizen/pipe-viewer) is an experimental fork of `straw-viewer`, which parses the YouTube website directly.
+[pipe-viewer](https://github.com/trizen/pipe-viewer) is a fork of `straw-viewer`, which parses the YouTube website directly.
 
 ### REVIEWS
 

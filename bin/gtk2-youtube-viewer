@@ -28,7 +28,7 @@ no warnings 'once';
 my $DEVEL;                                           # true in devel mode
 use if ($DEVEL = -w __FILE__), lib => qw(../lib);    # devel only
 
-use WWW::YoutubeViewer v3.8.1;
+use WWW::YoutubeViewer v3.8.2;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use Gtk2 qw(-init);
@@ -40,7 +40,7 @@ use File::Spec::Functions qw(
   updir
   path
   file_name_is_absolute
-  );
+);
 
 binmode(STDOUT, ':utf8');
 
