@@ -890,6 +890,12 @@ usage: $execname [options] ([url] | [keywords])
        --escape-info!   : quotemeta() the fields of the `--extract`
        --use-colors!    : enable or disable the ANSI colors for text
 
+* Formatting
+
+    --custom-layout=s          : custom layout format for videos
+    --custom-channel-layout=s  : custom layout format for channels
+    --custom-playlist-layout=s : custom layout format for playlists
+
  * Other
    --cookies=s          : file to read cookies from and dump cookie
    --user-agent=s       : specify a custom user agent
