@@ -95,12 +95,12 @@ sub get_itags {
                   {value => 43,  format => 'webm'},                         # webm (v-a)
                   {value => 34,  format => 'flv'},                          # flv (v-a)
                   {value => 93,  format => 'mp4', live => 1},               # mp4 (live) (v-a)
+                  {value => 18,  format => 'mp4'},                          # mp4 (v-a)
                  ],
 
         '240' => [{value => 242, format => 'webm', dash => 1},              # webm (v)
                   {value => 133, format => 'mp4',  dash => 1},              # mp4 (v)
                   {value => 395, format => 'av1',  dash => 1},              # av1 (v)
-                  {value => 18,  format => 'mp4'},                          # mp4 (v-a)
                   {value => 6,   format => 'flv'},                          # flv (270p) (v-a)
                   {value => 5,   format => 'flv'},                          # flv (v-a)
                   {value => 36,  format => '3gp'},                          # 3gp (v-a)
@@ -255,6 +255,7 @@ sub find_streaming_url {
 
     state $resolutions = $self->get_resolutions();
 
+    # Find the nearest available resolution
     if (defined($resolution) and not defined($streaming)) {
 
         my $end = $#{$resolutions} - 1;    # -1 to ignore 'audio'
