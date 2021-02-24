@@ -154,6 +154,8 @@ Send rating to a video. $rating can be either 'like' or 'dislike'.
 sub send_rating_to_video {
     my ($self, $video_id, $rating) = @_;
 
+    $self->get_access_token() // return;
+
     if ($rating eq 'none' or $rating eq 'like' or $rating eq 'dislike') {
         my $url = $self->_simple_feeds_url('videos/rate', id => $video_id, rating => $rating);
         return defined($self->lwp_post($url, $self->_auth_lwp_header()));

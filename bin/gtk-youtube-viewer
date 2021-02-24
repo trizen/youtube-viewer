@@ -232,6 +232,7 @@ my %CONFIG = (
     fullscreen  => 0,
     audio_only  => 0,
 
+    autolike_watched  => 0,
     autoscroll_to_end => 0,
 
     # youtube-dl support
@@ -1180,7 +1181,7 @@ sub menu_popup {
                 $item->set_property(tooltip_text => "Send a positive rating");
                 $item->signal_connect(
                     activate => sub {
-                        $yv_obj->send_rating_to_video($video_id, 'like')
+                        $yv_obj->like_video($video_id)
                           or warn "Failed to send a positive rating to <$video_id>: $!";
                     }
                 );
@@ -1195,7 +1196,7 @@ sub menu_popup {
                 $item->set_property(tooltip_text => "Send a negative rating");
                 $item->signal_connect(
                     activate => sub {
-                        $yv_obj->send_rating_to_video($video_id, 'dislike')
+                        $yv_obj->dislike_video($video_id)
                           or warn "Failed to send a negative rating to <$video_id>: $!";
                     }
                 );
@@ -3286,6 +3287,13 @@ sub get_player_command {
 
 sub save_watched_video {
     my ($video_id) = @_;
+
+    if (not exists $WATCHED_VIDEOS{$video_id}) {
+        if ($CONFIG{autolike_watched}) {
+            say ":: Sending a positive rating to video ID: $video_id";
+            $yv_obj->like_video($video_id) // do { say ":: Failed!" };
+        }
+    }
 
     $WATCHED_VIDEOS{$video_id} = 1;
 

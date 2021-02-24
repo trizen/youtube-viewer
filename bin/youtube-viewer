@@ -274,6 +274,7 @@ my %CONFIG = (
     highlight_watched => 1,
     highlight_color   => 'bold',
     skip_watched      => 0,
+    autolike_watched  => 0,
 
     # youtube-dl support
     ytdl     => 1,
@@ -864,7 +865,8 @@ usage: $execname [options] ([url] | [keywords])
        --min-seconds=i   : ignore videos shorter than i seconds
        --get-term-width! : allow $execname to read your terminal width
        --skip-watched!   : don't play already watched videos
-       --highlight!      : remember and highlight selected videos
+       --highlight!      : remember and highlight watched videos
+       --autolike!       : automatically like videos after watching them
        --confirm!        : show a confirmation message after each play
        --prefer-mp4!     : prefer videos in MP4 format, instead of WEBM
        --prefer-av1!     : prefer videos in AV1 format, instead of WEBM
@@ -1760,6 +1762,7 @@ sub parse_arguments {
         'page=i'                             => \$opt{page},
         'novideo|no-video|n|audio!'          => \$opt{novideo},
         'highlight!'                         => \$opt{highlight_watched},
+        'autolike!'                          => \$opt{autolike_watched},
         'skip-watched!'                      => \$opt{skip_watched},
         'results=i'                          => \$opt{maxResults},
         'shuffle|s!'                         => \$opt{shuffle},
@@ -3964,6 +3967,12 @@ sub download_video {
 
 sub save_watched_video {
     my ($video_id) = @_;
+
+    if (not exists $WATCHED_VIDEOS{$video_id}) {
+        if ($opt{autolike_watched}) {
+            rate_videos('like', $video_id);
+        }
+    }
 
     $WATCHED_VIDEOS{$video_id} = 1;
 
