@@ -47,9 +47,6 @@ To install `gtk-youtube-viewer` along with `youtube-viewer`, run:
     sudo ./Build install
 ```
 
-Replace `--gtk` with `--gtk2` or `--gtk3` to install only the Gtk2 or Gtk3 version.
-
-
 ### TRY
 
 For trying the latest commit of `youtube-viewer`, without installing it, execute the following commands:
@@ -72,14 +69,7 @@ For trying the latest commit of `youtube-viewer`, without installing it, execute
 * [Data::Dump](https://metacpan.org/release/Data-Dump)
 * [JSON](https://metacpan.org/release/JSON)
 
-
-#### For gtk2-youtube-viewer:
-
-* [Gtk2](https://metacpan.org/release/Gtk2)
-* [File::ShareDir](https://metacpan.org/release/File-ShareDir)
-* \+ the dependencies required by youtube-viewer.
-
-#### For gtk3-youtube-viewer:
+#### For gtk-youtube-viewer:
 
 * [Gtk3](https://metacpan.org/release/Gtk3)
 * [File::ShareDir](https://metacpan.org/release/File-ShareDir)

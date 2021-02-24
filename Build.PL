@@ -5,9 +5,7 @@ use strict;
 use warnings;
 use Module::Build;
 
-my $gtk  = grep { /^--?gtk\z/ } @ARGV;
-my $gtk2 = grep { /^--?gtk2\z/ } @ARGV;
-my $gtk3 = grep { /^--?gtk3\z/ } @ARGV;
+my $gtk3 = grep { /^--?gtk3?\z/ } @ARGV;
 
 my $builder = Module::Build->new(
 
@@ -28,20 +26,10 @@ my $builder = Module::Build->new(
                           },
 
     get_options => {
-        'gtk' => {
-                  type  => '!',
-                  store => \$gtk,
-                 },
-
-        'gtk2' => {
-                   type  => '!',
-                   store => \$gtk2,
-                  },
-
         'gtk3' => {
-                   type  => '!',
-                   store => \$gtk3,
-                  },
+                  type  => '!',
+                  store => \$gtk3,
+                 },
     },
 
     requires => {
@@ -64,13 +52,6 @@ my $builder = Module::Build->new(
         'Text::ParseWords'      => 0,
         'Text::Wrap'            => 0,
         'URI::Escape'           => 0,
-
-        ($gtk || $gtk2)
-        ? (
-           'Gtk2'           => 0,
-           'File::ShareDir' => 0,
-          )
-        : (),
 
         $gtk3
         ? (
@@ -96,11 +77,9 @@ my $builder = Module::Build->new(
 
 $builder->script_files(
                        ['bin/youtube-viewer',
-                        ($gtk ? ('bin/gtk-youtube-viewer', 'bin/gtk2-youtube-viewer', 'bin/gtk3-youtube-viewer') : ()),
-                        ($gtk2 ? ('bin/gtk-youtube-viewer', 'bin/gtk2-youtube-viewer') : ()),
-                        ($gtk3 ? ('bin/gtk-youtube-viewer', 'bin/gtk3-youtube-viewer') : ()),
+                        ($gtk3 ? ('bin/gtk-youtube-viewer') : ()),
                        ]
                       );
 
-$builder->share_dir('share') if ($gtk || $gtk2 || $gtk3);
+$builder->share_dir('share') if $gtk3;
 $builder->create_build_script();
