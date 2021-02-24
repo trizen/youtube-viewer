@@ -27,6 +27,7 @@ A lightweight application for searching and playing videos from YouTube.
 * Slackware: http://slackbuilds.org/repository/14.2/multimedia/youtube-viewer/
 * Solus: `sudo eopkg it youtube-viewer`
 * Ubuntu/Linux Mint: `sudo add-apt-repository ppa:nilarimogard/webupd8`
+* Void Linux: `sudo xbps-install youtube-viewer`
 
 ### INSTALLATION
 
