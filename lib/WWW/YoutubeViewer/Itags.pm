@@ -95,12 +95,12 @@ sub get_itags {
                   {value => 43,  format => 'webm'},                         # webm (v-a)
                   {value => 34,  format => 'flv'},                          # flv (v-a)
                   {value => 93,  format => 'mp4', live => 1},               # mp4 (live) (v-a)
-                  {value => 18,  format => 'mp4'},                          # mp4 (v-a)
                  ],
 
         '240' => [{value => 242, format => 'webm', dash => 1},              # webm (v)
                   {value => 133, format => 'mp4',  dash => 1},              # mp4 (v)
                   {value => 395, format => 'av1',  dash => 1},              # av1 (v)
+                  {value => 18,  format => 'mp4'},                          # mp4 (v-a)
                   {value => 6,   format => 'flv'},                          # flv (270p) (v-a)
                   {value => 5,   format => 'flv'},                          # flv (v-a)
                   {value => 36,  format => '3gp'},                          # 3gp (v-a)
@@ -253,11 +253,49 @@ sub find_streaming_url {
         $found_resolution = $resolution;
     }
 
+    state $resolutions = $self->get_resolutions();
+
+    if (defined($resolution) and not defined($streaming)) {
+
+        my $end = $#{$resolutions} - 1;    # -1 to ignore 'audio'
+
+        foreach my $i (0 .. $end) {
+            if ($resolutions->[$i] eq $resolution) {
+                for (my $k = 1 ; ; ++$k) {
+
+                    if ($i + $k > $end and $i - $k < 0) {
+                        last;
+                    }
+
+                    if ($i + $k <= $end) {    # nearest below
+
+                        my $res = $resolutions->[$i + $k];
+                        $streaming = $self->_find_streaming_url(%args, resolution => $res);
+
+                        if (defined($streaming)) {
+                            $found_resolution = $res;
+                            last;
+                        }
+                    }
+
+                    if ($i - $k >= 0) {       # nearest above
+
+                        my $res = $resolutions->[$i - $k];
+                        $streaming = $self->_find_streaming_url(%args, resolution => $res);
+
+                        if (defined($streaming)) {
+                            $found_resolution = $res;
+                            last;
+                        }
+                    }
+                }
+                last;
+            }
+        }
+    }
+
     # Otherwise, find the best resolution available
     if (not defined $streaming) {
-
-        state $resolutions = $self->get_resolutions();
-
         foreach my $res (@{$resolutions}) {
 
             $streaming = $self->_find_streaming_url(%args, resolution => $res);

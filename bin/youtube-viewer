@@ -891,7 +891,6 @@ usage: $execname [options] ([url] | [keywords])
        --use-colors!    : enable or disable the ANSI colors for text
 
 * Formatting
-
     --custom-layout=s          : custom layout format for videos
     --custom-channel-layout=s  : custom layout format for channels
     --custom-playlist-layout=s : custom layout format for playlists
