@@ -998,7 +998,6 @@ sub get_streaming_urls {
             push @caption_urls, @{$caption_data->{captions}{playerCaptionsTracklistRenderer}{captionTracks}};
 
             my $translationLanguages = $caption_data->{captions}{playerCaptionsTracklistRenderer}{translationLanguages};
-
             if (ref($translationLanguages) eq 'ARRAY') {
                 foreach my $caption (@caption_urls) {
                     $caption->{translationLanguages} = $translationLanguages;

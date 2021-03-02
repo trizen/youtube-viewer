@@ -132,6 +132,9 @@ sub find_caption_data {
 
             foreach my $lang (@{$self->{languages}}) {
                 foreach my $trans_lang (@{$caption->{translationLanguages}}) {
+
+                    ref($trans_lang) eq 'HASH' or next;
+
                     if ($trans_lang->{languageCode} =~ /^\Q$lang\E(?:\z|[_-])/i) {
                         my %caption_copy = %{$caption};
                         $caption_copy{languageCode} = $trans_lang->{languageCode};
@@ -215,17 +218,6 @@ sub xml2srt {
     return join("\n\n", @text);
 }
 
-=head2 get_xml_data($caption_data)
-
-Get the XML content for a given caption data.
-
-=cut
-
-sub get_xml_data {
-    my ($self, $url) = @_;
-    $self->{yv_obj}->lwp_get($url, simple => 1);
-}
-
 =head2 save_caption($video_ID)
 
 Save the caption in a .srt file and return its file path.
@@ -246,8 +238,9 @@ sub save_caption {
     return $srt_file if (-e $srt_file);
 
     # Get XML data, then transform it to SubRip data
-    my $xml = $self->get_xml_data($info->{baseUrl} // return) // return;
-    my $srt = $self->xml2srt($xml)                            // return;
+    my $url = $info->{baseUrl}                            // return;
+    my $xml = $self->{yv_obj}->lwp_get($url, simple => 1) // return;
+    my $srt = $self->xml2srt($xml)                        // return;
 
     # Write the SubRib data to the $srt_file
     open(my $fh, '>:utf8', $srt_file) or return;

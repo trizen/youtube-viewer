@@ -875,6 +875,7 @@ usage: $execname [options] ([url] | [keywords])
  * Closed-captions
    --get-captions!      : download closed-captions for videos
    --auto-captions!     : include or exclude auto-generated captions
+   --srt-languages=s    : comma separated list of preferred languages
 
  * Config
    --config=s           : configuration file
@@ -1782,6 +1783,7 @@ sub parse_arguments {
         'thousand-separator=s'           => \$opt{thousand_separator},
         'get-captions|get_captions!'     => \$opt{get_captions},
         'auto-captions|auto_captions!'   => \$opt{auto_captions},
+        'srt-languages=s'                => \$opt{srt_languages},
         'copy-caption|copy_caption!'     => \$opt{copy_caption},
         'skip-if-exists|skip_if_exists!' => \$opt{skip_if_exists},
         'downloads-dir|download-dir=s'   => \$opt{downloads_dir},
@@ -3676,11 +3678,18 @@ sub get_streaming_url {
     my $srt_file;
     if (ref($captions) eq 'ARRAY' and @$captions and $opt{get_captions} and not $opt{novideo}) {
         require WWW::YoutubeViewer::GetCaption;
+
+        my $languages = $opt{srt_languages};
+
+        if (ref($languages) ne 'ARRAY') {
+            $languages = [grep { /[a-z]/i } split(/\s*,\s*/, $languages)];
+        }
+
         my $yv_cap = WWW::YoutubeViewer::GetCaption->new(
                                                          auto_captions => $opt{auto_captions},
                                                          captions_dir  => $opt{cache_dir},
                                                          captions      => $captions,
-                                                         languages     => $CONFIG{srt_languages},
+                                                         languages     => $languages,
                                                          yv_obj        => $yv_obj,
                                                         );
         $srt_file = $yv_cap->save_caption($video_id);
