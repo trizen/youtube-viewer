@@ -266,6 +266,9 @@ my %CONFIG = (
     # Watch history
     watch_history      => 1,
     watch_history_file => $watch_history_file,
+
+    # Saved videos
+    saved_videos_file => $saved_videos_file,
 );
 
 {
@@ -1047,12 +1050,13 @@ sub new_image_from_pixbuf {
 
 # Setting application icons
 {
+#<<<
     $gui->get_object('username_list')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
     $gui->get_object('uploads_button')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
     $gui->get_object('button6')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
     $gui->get_object('subscription_videos')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
-    $gui->get_object('subscription_videos_button')
-      ->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_gray_pixbuf));
+    $gui->get_object('subscription_videos_button')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_gray_pixbuf));
+#>>>
 }
 
 # Treeview signals
@@ -1961,33 +1965,35 @@ sub append_categories {
     append_categories({items => [{snippet => {title => 'Popular',  assignable => 1}, id => 'popular'}]}, 'cat');
 }
 
-my $tops_liststore = $gui->get_object('liststore6');
-my $tops_treeview  = $gui->get_object('treeview4');
+my $playlists_liststore = $gui->get_object('liststore6');
+my $playlists_treeview  = $gui->get_object('treeview4');
 
-sub add_top_row {
-    my ($top_name, $top_type) = @_;
+sub add_local_playlist_row {
+    my ($playlist_name, $playlist_file) = @_;
 
-    (my $top_label = ucfirst $top_name) =~ tr/_/ /;
-    my $iter = $tops_liststore->append;
+    my $iter = $playlists_liststore->append;
 
-    $tops_liststore->set(
-                         $iter,
-                         0 => $top_label,
-                         1 => $feed_icon_pixbuf,
-                         2 => $top_name,
-                         3 => $top_type,
-                        );
+    $playlists_liststore->set(
+                              $iter,
+                              0 => $playlist_name,
+                              1 => $feed_icon_gray_pixbuf,
+                              2 => $playlist_name,
+                              3 => $playlist_file,
+                             );
 }
 
-sub set_youtube_tops {
+sub set_local_playlists {
     my ($top_time, $main_label) = @_;
 
-    ...;    # Unimplemented!
+    my @playlist_files = grep { -T $_ } sort { CORE::fc($a) cmp CORE::fc($b) } glob("$local_playlists_dir/*");
 
-    #my $iter = $tops_liststore->append;
-    #$tops_liststore->set($iter, 0, "<big><b>\t$main_label</b></big>");
-    #add_top_row($name, $type);
+    foreach my $file (@playlist_files) {
+        my $snippet = $yv_utils->local_playlist_snippet($file);
+        add_local_playlist_row($yv_utils->get_title($snippet), $file);
+    }
 }
+
+set_local_playlists();
 
 {
     my %channels;
@@ -2699,14 +2705,17 @@ sub get_results_from_list {
         push @entries, $yv_utils->local_video_snippet($id);
     }
 
-    $results{items}         = \@entries;
-    $results{pageInfo}      = {resultsPerPage => scalar(@entries), totalResults => $totalResults};
-    $results{nextPageToken} = 'json '
-      . $yv_obj->make_json_string(
-                                  {
-                                   %args, page => $args{page} + 1,
-                                  }
-                                 );
+    $results{items}    = \@entries;
+    $results{pageInfo} = {resultsPerPage => scalar(@entries), totalResults => $totalResults};
+
+    if ($args{page} * $maxResults < $totalResults) {
+        $results{nextPageToken} = 'json '
+          . $yv_obj->make_json_string(
+                                      {
+                                       %args, page => $args{page} + 1,
+                                      }
+                                     );
+    }
 
     scalar {results => \%results, url => 'file'};
 }
@@ -3428,31 +3437,19 @@ sub list_category {
     }
 }
 
-sub list_tops {
-    my $iter = $tops_treeview->get_selection->get_selected;
+sub list_local_playlist {
+    my $iter = $playlists_treeview->get_selection->get_selected;
 
-    my %top_opts;
-    $top_opts{feed_id} = $tops_liststore->get($iter, 2) // return;
-    my $top_type = $tops_liststore->get($iter, 3);
+    my $playlist_file = $playlists_liststore->get($iter, 3);
+    my @video_ids     = $yv_utils->read_lines_from_file($playlist_file);
 
-    if ($top_type ne q{}) {
-        $top_opts{time_id} = $top_type;
-    }
-
-    if (length(my $region = $gui->get_object('region_entry')->get_text)) {
-        $top_opts{region_id} = $region;
-    }
-
-    if (length(my $category = $gui->get_object('category_entry')->get_text)) {
-        $top_opts{cat_id} = $category;
+    if (    $playlist_file ne $CONFIG{watch_history_file}
+        and $playlist_file ne $CONFIG{saved_videos_file}) {
+        @video_ids = reverse(@video_ids);
     }
 
     $liststore->clear if $CONFIG{clear_search_list};
-    display_results(
-                      $top_type eq 'movies'
-                    ? $yv_obj->get_movies($top_opts{feed_id})
-                    : $yv_obj->get_video_tops(%top_opts)
-                   );
+    display_results(get_results_from_list(ids => \@video_ids));
 }
 
 sub clear_text {

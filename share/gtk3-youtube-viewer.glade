@@ -2105,6 +2105,7 @@ When the specified resolution is not found, the best available resolution is use
                                 </child>
                                 <child>
                                   <object class="GtkScrolledWindow" id="scrolledwindow7">
+                                    <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <child>
                                       <object class="GtkViewport" id="viewport4">
@@ -2120,7 +2121,7 @@ When the specified resolution is not found, the best available resolution is use
                                                 <property name="visible">True</property>
                                                 <property name="can-focus">True</property>
                                                 <property name="model">liststore6</property>
-                                                <signal name="row-activated" handler="list_tops" swapped="no"/>
+                                                <signal name="row-activated" handler="list_local_playlist" swapped="no"/>
                                                 <child internal-child="selection">
                                                   <object class="GtkTreeSelection"/>
                                                 </child>
@@ -2137,7 +2138,7 @@ When the specified resolution is not found, the best available resolution is use
                                                 </child>
                                                 <child>
                                                   <object class="GtkTreeViewColumn" id="treeviewcolumn5">
-                                                    <property name="title" translatable="yes">Top</property>
+                                                    <property name="title" translatable="yes">Playlist</property>
                                                     <child>
                                                       <object class="GtkCellRendererText" id="cellrenderertext3"/>
                                                       <attributes>
@@ -2154,105 +2155,6 @@ When the specified resolution is not found, the best available resolution is use
                                                 <property name="position">0</property>
                                               </packing>
                                             </child>
-                                            <child>
-                                              <object class="GtkExpander" id="expander1">
-                                                <property name="visible">True</property>
-                                                <property name="can-focus">True</property>
-                                                <child>
-                                                  <object class="GtkBox" id="vbox19">
-                                                    <property name="visible">True</property>
-                                                    <property name="can-focus">False</property>
-                                                    <property name="orientation">vertical</property>
-                                                    <child>
-                                                      <object class="GtkFrame" id="frame22">
-                                                        <property name="visible">True</property>
-                                                        <property name="can-focus">False</property>
-                                                        <property name="label-xalign">0</property>
-                                                        <property name="shadow-type">none</property>
-                                                        <child>
-                                                          <object class="GtkAlignment" id="alignment21">
-                                                            <property name="visible">True</property>
-                                                            <property name="can-focus">False</property>
-                                                            <property name="left-padding">12</property>
-                                                            <child>
-                                                            <object class="GtkEntry" id="region_entry">
-                                                            <property name="visible">True</property>
-                                                            <property name="can-focus">True</property>
-                                                            <property name="invisible-char">•</property>
-                                                            <property name="primary-icon-activatable">False</property>
-                                                            <property name="secondary-icon-activatable">False</property>
-                                                            </object>
-                                                            </child>
-                                                          </object>
-                                                        </child>
-                                                        <child type="label">
-                                                          <object class="GtkLabel" id="label28">
-                                                            <property name="visible">True</property>
-                                                            <property name="can-focus">False</property>
-                                                            <property name="label" translatable="yes">&lt;b&gt;Region ID&lt;/b&gt;</property>
-                                                            <property name="use-markup">True</property>
-                                                          </object>
-                                                        </child>
-                                                      </object>
-                                                      <packing>
-                                                        <property name="expand">True</property>
-                                                        <property name="fill">True</property>
-                                                        <property name="position">0</property>
-                                                      </packing>
-                                                    </child>
-                                                    <child>
-                                                      <object class="GtkFrame" id="frame23">
-                                                        <property name="visible">True</property>
-                                                        <property name="can-focus">False</property>
-                                                        <property name="label-xalign">0</property>
-                                                        <property name="shadow-type">none</property>
-                                                        <child>
-                                                          <object class="GtkAlignment" id="alignment22">
-                                                            <property name="visible">True</property>
-                                                            <property name="can-focus">False</property>
-                                                            <property name="left-padding">12</property>
-                                                            <child>
-                                                            <object class="GtkEntry" id="category_entry">
-                                                            <property name="visible">True</property>
-                                                            <property name="can-focus">True</property>
-                                                            <property name="invisible-char">•</property>
-                                                            <property name="primary-icon-activatable">False</property>
-                                                            <property name="secondary-icon-activatable">False</property>
-                                                            </object>
-                                                            </child>
-                                                          </object>
-                                                        </child>
-                                                        <child type="label">
-                                                          <object class="GtkLabel" id="label29">
-                                                            <property name="visible">True</property>
-                                                            <property name="can-focus">False</property>
-                                                            <property name="label" translatable="yes">&lt;b&gt;Category ID:&lt;/b&gt;</property>
-                                                            <property name="use-markup">True</property>
-                                                          </object>
-                                                        </child>
-                                                      </object>
-                                                      <packing>
-                                                        <property name="expand">True</property>
-                                                        <property name="fill">True</property>
-                                                        <property name="position">1</property>
-                                                      </packing>
-                                                    </child>
-                                                  </object>
-                                                </child>
-                                                <child type="label">
-                                                  <object class="GtkLabel" id="label27">
-                                                    <property name="visible">True</property>
-                                                    <property name="can-focus">False</property>
-                                                    <property name="label" translatable="yes">Options</property>
-                                                  </object>
-                                                </child>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
                                           </object>
                                         </child>
                                       </object>
@@ -2266,7 +2168,7 @@ When the specified resolution is not found, the best available resolution is use
                                   <object class="GtkLabel" id="label15">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
-                                    <property name="label" translatable="yes">Tops</property>
+                                    <property name="label" translatable="yes">Playlists</property>
                                   </object>
                                   <packing>
                                     <property name="position">4</property>
