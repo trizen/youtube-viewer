@@ -3381,7 +3381,7 @@ sub print_local_subscription_videos {
             push @{$info->{videos}}, @{$uploads->{results}{items}};
 
             my %seen;
-            @{$info->{videos}} = grep { !$seen{$yv_utils->get_video_id($_)} } @{$info->{videos}};
+            @{$info->{videos}} = grep { !$seen{$yv_utils->get_video_id($_)}++ } @{$info->{videos}};
         }
         else {
             $info->{videos} = $prev_info->{videos};
