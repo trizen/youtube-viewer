@@ -135,6 +135,10 @@ my $api_file            = catfile($config_dir, 'api.json');
 my $saved_videos_file  = catfile($local_playlists_dir, "saved_videos.txt");
 my $watch_history_file = catfile($local_playlists_dir, 'watched_videos.txt');
 
+# Local subscriptions files
+my $local_subscriptions_data_file  = catfile($config_dir,          "subscriptions.dat");
+my $local_subscription_videos_file = catfile($local_playlists_dir, "local_subscription_videos.txt");
+
 # Default path to api.json
 my $default_api_file = '/etc/youtube-viewer/api.json';
 
@@ -745,6 +749,7 @@ usage: $execname [options] ([url] | [keywords])
    -wv --watched-videos : list the most recent watched videos
        --save-video=s   : save a video in a local playlist by video ID or URL
    -lv --local-videos   : display the local playlist of saved videos
+   -ls --local-subs     : display subscription videos from local channels
 
  * Playlists
    -up --playlists=s      : list playlists created by a specific channel or user
@@ -1407,6 +1412,10 @@ sub apply_configuration {
         print_saved_videos();
     }
 
+    if (delete $opt->{local_subscriptions}) {
+        print_local_subscription_videos();
+    }
+
     if (defined $opt->{uploads}) {
         my $str = delete $opt->{uploads};
 
@@ -1641,6 +1650,7 @@ sub parse_arguments {
         'lp|local-playlists:s'         => \$opt{local_playlist},
         'wv|watched-videos'            => \$opt{watched_videos},
         'lv|local-videos|saved-videos' => \$opt{saved_videos},
+        'ls|local-subs'                => \$opt{local_subscriptions},
 
         'save-video|save=s' => \$opt{save_video},
         'save-channel=s'    => \$opt{save_channel},
@@ -3325,13 +3335,83 @@ sub print_saved_videos {
     print_videos(get_results_from_list(\@ids));
 }
 
+sub _get_local_channels {
+    my @channels = sort { CORE::fc($a->[1]) cmp CORE::fc($b->[1]) }
+      map { [split(/ /, $_, 2)] } $yv_utils->read_lines_from_file($opt{youtube_users_file}, '<:utf8');
+    return @channels;
+}
+
+sub print_local_subscription_videos {
+
+    # Reuse the subscription file if it's less than 10 minutes old
+    if (-f $local_subscription_videos_file and (-M _) < (1 / 6) / 24 and (-M _) < (-M $opt{youtube_users_file})) {
+        return print_local_playlist($local_subscription_videos_file);
+    }
+
+    my @channels      = _get_local_channels();
+    my @channel_ids   = map { $_->[0] } @channels;
+    my %channel_table = map { $_->[0] => $_->[1] } @channels;
+
+    my @items;
+
+    while (@channel_ids) {
+        push @items, @{$yv_obj->channel_from_id(join(',', splice(@channel_ids, 0, 50)), 'statistics,id')->{results}{items}};
+    }
+
+    my $prev_subscriptions_data = {channel_data => {},};
+
+    require Storable;
+
+    if (-f $local_subscriptions_data_file and not -z _) {
+        $prev_subscriptions_data = Storable::retrieve($local_subscriptions_data_file);
+    }
+
+    my $subscriptions_data = {channel_data => {map { $_->{id} => $_ } @items},};
+
+    foreach my $info (@items) {
+
+        my $prev_info = $prev_subscriptions_data->{channel_data}{$info->{id}};
+
+        if (   not defined($prev_info)
+            or not exists($prev_info->{videos})
+            or $yv_utils->get_channel_video_count($info) != $yv_utils->get_channel_video_count($prev_info)) {
+            local $yv_obj->{maxResults} = 10;
+
+            my $uploads = $yv_obj->uploads($info->{id});
+            push @{$info->{videos}}, @{$uploads->{results}{items}};
+
+            my %seen;
+            @{$info->{videos}} = grep { !$seen{$yv_utils->get_video_id($_)} } @{$info->{videos}};
+        }
+        else {
+            $info->{videos} = $prev_info->{videos};
+        }
+    }
+
+    if (@items) {
+        Storable::store($subscriptions_data, $local_subscriptions_data_file);
+    }
+
+    my @subscription_videos = sort { $yv_utils->compare_published_dates($b, $a) } map { @{$_->{videos}} } @items;
+    my @video_ids           = map  { $yv_utils->get_video_id($_) } @subscription_videos;
+
+    if (open(my $fh, '>', $local_subscription_videos_file)) {
+        say {$fh} join("\n", @video_ids);
+        close $fh;
+    }
+    else {
+        warn "Can't open file <<$local_subscription_videos_file>> for write: $!";
+    }
+
+    print_videos(get_results_from_list(\@video_ids));
+}
+
 sub print_local_channels {
     my ($name) = @_;
 
     $name //= '';
 
-    my @users = sort { CORE::fc($a->[1]) cmp CORE::fc($b->[1]) }
-      map { [split(/ /, $_, 2)] } $yv_utils->read_lines_from_file($opt{youtube_users_file}, '<:utf8');
+    my @users = _get_local_channels();
     my $regex = qr/\Q$name\E/i;
 
     if ($name eq '') {

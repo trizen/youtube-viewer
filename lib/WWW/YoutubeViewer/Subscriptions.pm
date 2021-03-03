@@ -182,15 +182,7 @@ sub subscription_videos {
 
     $self->set_maxResults($max_results);
 
-    state $parse_time_re = qr/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/;
-
-    @videos =
-      sort {
-        my ($y1, $M1, $d1, $h1, $m1, $s1) = $a->{snippet}{publishedAt} =~ $parse_time_re;
-        my ($y2, $M2, $d2, $h2, $m2, $s2) = $b->{snippet}{publishedAt} =~ $parse_time_re;
-
-        ($y2 <=> $y1) || ($M2 <=> $M1) || ($d2 <=> $d1) || ($h2 <=> $h1) || ($m2 <=> $m1) || ($s2 <=> $s1)
-      } @videos;
+    @videos = sort { $self->compare_published_dates($b, $a) } @videos;
 
     return {results => {pageInfo => {totalResults => $#videos + 1}, items => \@videos}};
 }

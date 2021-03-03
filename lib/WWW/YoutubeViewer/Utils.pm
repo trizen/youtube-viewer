@@ -196,6 +196,14 @@ sub date_to_age {
                 }
                 return join(' ', $day - $+{day}, 'days');
             }
+
+            if ($month - $+{month} == 1) {
+                my $day_diff = $+{day} - $day;
+                if ($day_diff > 0) {
+                    return join(' ', abs(sprintf('%.0f', 30.44 - $day_diff)), 'days');
+                }
+            }
+
             return join(' ', $month - $+{month}, 'months');
         }
 
@@ -815,6 +823,17 @@ sub period_to_date {
     my @time = gmtime($now - $time);
     join('-', $time[5] + 1900, sprintf('%02d', $time[4] + 1), sprintf('%02d', $time[3])) . 'T'
       . join(':', sprintf('%02d', $time[2]), sprintf('%02d', $time[1]), sprintf('%02d', $time[0])) . 'Z';
+}
+
+sub compare_published_dates {
+    my ($self, $info_1, $info_2) = @_;
+
+    state $parse_time_re = qr/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/;
+
+    my ($y1, $M1, $d1, $h1, $m1, $s1) = $info_1->{snippet}{publishedAt} =~ $parse_time_re;
+    my ($y2, $M2, $d2, $h2, $m2, $s2) = $info_2->{snippet}{publishedAt} =~ $parse_time_re;
+
+    ($y1 <=> $y2) || ($M1 <=> $M2) || ($d1 <=> $d2) || ($h1 <=> $h2) || ($m1 <=> $m2) || ($s1 <=> $s2);
 }
 
 =head1 AUTHOR
