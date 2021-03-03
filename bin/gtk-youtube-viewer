@@ -1975,7 +1975,7 @@ sub add_local_playlist_row {
 
     $playlists_liststore->set(
                               $iter,
-                              0 => $playlist_name,
+                              0 => encode_entities($playlist_name),
                               1 => $feed_icon_gray_pixbuf,
                               2 => $playlist_name,
                               3 => $playlist_file,
