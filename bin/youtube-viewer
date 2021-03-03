@@ -3157,7 +3157,7 @@ sub get_results_from_list {
             push @entries, $args{callback}($id);
         }
         else {
-            push @entries, {id => {kind => "youtube#video", videoId => $id}};
+            push @entries, $yv_utils->local_video_snippet($id);
         }
     }
 
@@ -3335,12 +3335,6 @@ sub print_saved_videos {
     print_videos(get_results_from_list(\@ids));
 }
 
-sub _get_local_channels {
-    my @channels = sort { CORE::fc($a->[1]) cmp CORE::fc($b->[1]) }
-      map { [split(/ /, $_, 2)] } $yv_utils->read_lines_from_file($opt{youtube_users_file}, '<:utf8');
-    return @channels;
-}
-
 sub print_local_subscription_videos {
 
     # Reuse the subscription file if it's less than 10 minutes old
@@ -3348,9 +3342,8 @@ sub print_local_subscription_videos {
         return print_local_playlist($local_subscription_videos_file);
     }
 
-    my @channels      = _get_local_channels();
-    my @channel_ids   = map { $_->[0] } @channels;
-    my %channel_table = map { $_->[0] => $_->[1] } @channels;
+    my @channels    = $yv_utils->read_channels_from_file($opt{youtube_users_file});
+    my @channel_ids = map { $_->[0] } @channels;
 
     my @items;
 
@@ -3375,8 +3368,8 @@ sub print_local_subscription_videos {
         if (   not defined($prev_info)
             or not exists($prev_info->{videos})
             or $yv_utils->get_channel_video_count($info) != $yv_utils->get_channel_video_count($prev_info)) {
-            local $yv_obj->{maxResults} = 10;
 
+            local $yv_obj->{maxResults} = 10;
             my $uploads = $yv_obj->uploads($info->{id});
             push @{$info->{videos}}, @{$uploads->{results}{items}};
 
@@ -3411,7 +3404,7 @@ sub print_local_channels {
 
     $name //= '';
 
-    my @users = _get_local_channels();
+    my @users = $yv_utils->read_channels_from_file($opt{youtube_users_file});
     my $regex = qr/\Q$name\E/i;
 
     if ($name eq '') {

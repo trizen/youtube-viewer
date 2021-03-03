@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.1
+<!-- Generated with glade 3.38.2 
 
 Copyright (C) Copyright © 2010-2021 Trizen
 
@@ -72,6 +72,16 @@ Author: Trizen https://github.com/trizen
     <property name="visible">True</property>
     <property name="can-focus">False</property>
     <property name="stock">gtk-missing-image</property>
+  </object>
+  <object class="GtkImage" id="image10">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="stock">gtk-missing-image</property>
+  </object>
+  <object class="GtkImage" id="image11">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="stock">gtk-index</property>
   </object>
   <object class="GtkImage" id="image14">
     <property name="visible">True</property>
@@ -301,6 +311,18 @@ Author: Trizen https://github.com/trizen
                       </object>
                     </child>
                     <child>
+                      <object class="GtkImageMenuItem" id="subscription_videos">
+                        <property name="label" translatable="yes">Subscription videos</property>
+                        <property name="use-action-appearance">True</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="tooltip-text" translatable="yes">Display local subscription videos</property>
+                        <property name="image">image10</property>
+                        <property name="use-stock">False</property>
+                        <signal name="activate" handler="display_subscription_videos" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkImageMenuItem" id="cli_version">
                         <property name="label" translatable="yes">YouTube Viewer</property>
                         <property name="visible">True</property>
@@ -320,17 +342,6 @@ Author: Trizen https://github.com/trizen
                         <property name="image">image6</property>
                         <property name="use-stock">False</property>
                         <signal name="activate" handler="show_login_to_youtube_window" swapped="no"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkImageMenuItem" id="warnings_console">
-                        <property name="label" translatable="yes">Warnings log</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="tooltip-text" translatable="yes">Show the warnings window</property>
-                        <property name="image">image76</property>
-                        <property name="use-stock">False</property>
-                        <signal name="activate" handler="show_warnings_window" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -442,6 +453,17 @@ Author: Trizen https://github.com/trizen
                         <property name="image">image79</property>
                         <property name="use-stock">False</property>
                         <signal name="activate" handler="donate" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="warnings_console">
+                        <property name="label" translatable="yes">Warnings</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="tooltip-text" translatable="yes">Show the warnings window</property>
+                        <property name="image">image76</property>
+                        <property name="use-stock">False</property>
+                        <signal name="activate" handler="show_warnings_window" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -676,6 +698,22 @@ Author: Trizen https://github.com/trizen
                                                   </packing>
                                                 </child>
                                                 <child>
+                                                  <object class="GtkButton" id="subscription_videos_button">
+                                                    <property name="label" translatable="yes">Subscription videos</property>
+                                                    <property name="visible">True</property>
+                                                    <property name="can-focus">True</property>
+                                                    <property name="receives-default">True</property>
+                                                    <property name="image">image11</property>
+                                                    <property name="image-position">top</property>
+                                                    <signal name="clicked" handler="display_subscription_videos" swapped="no"/>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="expand">False</property>
+                                                    <property name="fill">False</property>
+                                                    <property name="position">3</property>
+                                                  </packing>
+                                                </child>
+                                                <child>
                                                   <object class="GtkButton" id="button25">
                                                     <property name="label" translatable="yes">Liked videos</property>
                                                     <property name="visible">True</property>
@@ -688,7 +726,7 @@ Author: Trizen https://github.com/trizen
                                                   <packing>
                                                     <property name="expand">False</property>
                                                     <property name="fill">False</property>
-                                                    <property name="position">3</property>
+                                                    <property name="position">4</property>
                                                   </packing>
                                                 </child>
                                                 <child>
@@ -704,7 +742,7 @@ Author: Trizen https://github.com/trizen
                                                   <packing>
                                                     <property name="expand">False</property>
                                                     <property name="fill">False</property>
-                                                    <property name="position">4</property>
+                                                    <property name="position">5</property>
                                                   </packing>
                                                 </child>
                                                 <child>
@@ -720,7 +758,7 @@ Author: Trizen https://github.com/trizen
                                                   <packing>
                                                     <property name="expand">False</property>
                                                     <property name="fill">False</property>
-                                                    <property name="position">5</property>
+                                                    <property name="position">6</property>
                                                   </packing>
                                                 </child>
                                                 <child>
@@ -736,7 +774,7 @@ Author: Trizen https://github.com/trizen
                                                   <packing>
                                                     <property name="expand">False</property>
                                                     <property name="fill">False</property>
-                                                    <property name="position">6</property>
+                                                    <property name="position">7</property>
                                                   </packing>
                                                 </child>
                                                 <child>
@@ -752,7 +790,7 @@ Author: Trizen https://github.com/trizen
                                                   <packing>
                                                     <property name="expand">False</property>
                                                     <property name="fill">False</property>
-                                                    <property name="position">7</property>
+                                                    <property name="position">8</property>
                                                   </packing>
                                                 </child>
                                               </object>

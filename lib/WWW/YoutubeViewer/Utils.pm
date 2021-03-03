@@ -491,6 +491,15 @@ sub read_lines_from_file {
     return @ids;
 }
 
+sub read_channels_from_file {
+    my ($self, $file, $mode) = @_;
+
+    $mode //= '<:utf8';
+
+    sort { CORE::fc($a->[1]) cmp CORE::fc($b->[1]) }
+      map { [split(/ /, $_, 2)] } $self->read_lines_from_file($file, $mode);
+}
+
 sub local_playlist_snippet {
     my ($self, $id) = @_;
 
@@ -537,6 +546,11 @@ sub local_playlist_snippet {
                         title => $title,
                        },
            };
+}
+
+sub local_video_snippet {
+    my ($self, $id) = @_;
+    scalar {id => {kind => "youtube#video", videoId => $id}};
 }
 
 sub local_channel_snippet {

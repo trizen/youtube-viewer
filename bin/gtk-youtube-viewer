@@ -96,6 +96,10 @@ my $api_file            = catfile($config_dir, 'api.json');
 my $saved_videos_file  = catfile($local_playlists_dir, "saved_videos.txt");
 my $watch_history_file = catfile($local_playlists_dir, 'watched_videos.txt');
 
+# Local subscriptions files
+my $local_subscriptions_data_file  = catfile($config_dir,          "subscriptions.dat");
+my $local_subscription_videos_file = catfile($local_playlists_dir, "local_subscription_videos.txt");
+
 # Default path to api.json
 my $default_api_file = '/etc/youtube-viewer/api.json';
 
@@ -1046,6 +1050,9 @@ sub new_image_from_pixbuf {
     $gui->get_object('username_list')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
     $gui->get_object('uploads_button')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
     $gui->get_object('button6')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
+    $gui->get_object('subscription_videos')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
+    $gui->get_object('subscription_videos_button')
+      ->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_gray_pixbuf));
 }
 
 # Treeview signals
@@ -2494,8 +2501,9 @@ sub get_code {
                 my $results;
                 my $next_page_token = $liststore->get($iter, 5);
 
-                if ($next_page_token =~ /^watched (\d+)/) {
-                    $results = get_watched_videos_from_file($1);
+                if ($next_page_token =~ /^json (.*)/s) {
+                    my $data = $yv_obj->parse_json_string($1);
+                    $results = get_results_from_list(%$data);
                 }
                 else {
                     $results = $yv_obj->from_page_token($code, $next_page_token);
@@ -2670,52 +2678,113 @@ sub get_pixbuf_thumbnail_from_entry {
     return $pixbuf;
 }
 
-sub get_watched_videos_from_file {
-    my ($page) = @_;
+sub get_results_from_list {
+    my (%args) = @_;
 
-    $page //= $yv_obj->get_page;
+    $args{page} //= $yv_obj->get_page;
 
-    my @ids;
+    my @ids = @{$args{ids}};
 
-    if ($CONFIG{watch_history} and open(my $fh, '<', $CONFIG{watch_history_file})) {
-        chomp(@ids = <$fh>);
-        close $fh;
-    }
-    else {
-        @ids = keys %WATCHED_VIDEOS;
-    }
+    my $maxResults   = $yv_obj->get_maxResults;
+    my $totalResults = scalar(@ids);
 
-    my %seen;
-
-    # Keep the most recent ones
-    @ids = reverse(@ids);
-    @ids = grep { !$seen{$_}++ } @ids;
-
-    my $maxResults = $yv_obj->get_maxResults;
-
-    if ($page >= 1 and scalar(@ids) >= $maxResults) {
-        @ids = grep { defined } @ids[($page - 1) * $maxResults .. $page * $maxResults - 1];
+    if ($args{page} >= 1 and scalar(@ids) >= $maxResults) {
+        @ids = grep { defined } @ids[($args{page} - 1) * $maxResults .. $args{page} * $maxResults - 1];
     }
 
     my %results;
-    my @videos;
+    my @entries;
 
     foreach my $id (@ids) {
-        push @videos, {id => {kind => "youtube#video", videoId => $id},};
+        push @entries, $yv_utils->local_video_snippet($id);
     }
 
-#<<<
-    $results{items}         = \@videos;
-    $results{pageInfo}      = {resultsPerPage => scalar(@videos), totalResults => scalar(@videos)};
-    $results{nextPageToken} = sprintf("%s %d", 'watched', $page+1);
-#>>>
+    $results{items}         = \@entries;
+    $results{pageInfo}      = {resultsPerPage => scalar(@entries), totalResults => $totalResults};
+    $results{nextPageToken} = 'json '
+      . $yv_obj->make_json_string(
+                                  {
+                                   %args, page => $args{page} + 1,
+                                  }
+                                 );
 
-    scalar {results => \%results, url => "watched videos"};
+    scalar {results => \%results, url => 'file'};
+}
+
+sub get_subscription_video_results {
+
+    # Reuse the subscription file if it's less than 10 minutes old
+    if (-f $local_subscription_videos_file and (-M _) < (1 / 6) / 24 and (-M _) < (-M $CONFIG{youtube_users_file})) {
+        return get_results_from_list(ids => [reverse $yv_utils->read_lines_from_file($local_subscription_videos_file)]);
+    }
+
+    my @channels    = $yv_utils->read_channels_from_file($CONFIG{youtube_users_file});
+    my @channel_ids = map { $_->[0] } @channels;
+
+    my @items;
+
+    while (@channel_ids) {
+        push @items, @{$yv_obj->channel_from_id(join(',', splice(@channel_ids, 0, 50)), 'statistics,id')->{results}{items}};
+    }
+
+    my $prev_subscriptions_data = {channel_data => {},};
+
+    require Storable;
+
+    if (-f $local_subscriptions_data_file and not -z _) {
+        $prev_subscriptions_data = Storable::retrieve($local_subscriptions_data_file);
+    }
+
+    my $subscriptions_data = {channel_data => {map { $_->{id} => $_ } @items},};
+
+    foreach my $info (@items) {
+
+        my $prev_info = $prev_subscriptions_data->{channel_data}{$info->{id}};
+
+        if (   not defined($prev_info)
+            or not exists($prev_info->{videos})
+            or $yv_utils->get_channel_video_count($info) != $yv_utils->get_channel_video_count($prev_info)) {
+
+            local $yv_obj->{maxResults} = 10;
+            my $uploads = $yv_obj->uploads($info->{id});
+            push @{$info->{videos}}, @{$uploads->{results}{items}};
+
+            my %seen;
+            @{$info->{videos}} = grep { !$seen{$yv_utils->get_video_id($_)}++ } @{$info->{videos}};
+        }
+        else {
+            $info->{videos} = $prev_info->{videos};
+        }
+    }
+
+    if (@items) {
+        Storable::store($subscriptions_data, $local_subscriptions_data_file);
+    }
+
+    my @subscription_videos = sort { $yv_utils->compare_published_dates($b, $a) } map { @{$_->{videos}} } @items;
+    my @video_ids           = map  { $yv_utils->get_video_id($_) } @subscription_videos;
+
+    if (open(my $fh, '>', $local_subscription_videos_file)) {
+        say {$fh} join("\n", @video_ids);
+        close $fh;
+    }
+
+    get_results_from_list(ids => \@video_ids);
+}
+
+sub get_watched_video_results {
+    my @ids = $yv_utils->read_lines_from_file($CONFIG{watch_history_file});
+    get_results_from_list(ids => \@ids);
 }
 
 sub display_watched_videos {
     $liststore->clear if $CONFIG{clear_search_list};
-    display_results(get_watched_videos_from_file($yv_obj->get_page));
+    display_results(get_watched_video_results());
+}
+
+sub display_subscription_videos {
+    $liststore->clear if $CONFIG{clear_search_list};
+    display_results(get_subscription_video_results());
 }
 
 sub display_results {
