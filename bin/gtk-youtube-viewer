@@ -1985,7 +1985,7 @@ sub add_local_playlist_row {
 sub set_local_playlists {
     my ($top_time, $main_label) = @_;
 
-    my @playlist_files = grep { -T $_ } sort { CORE::fc($a) cmp CORE::fc($b) } glob("$local_playlists_dir/*");
+    my @playlist_files = $yv_utils->get_local_playlist_filenames($local_playlists_dir);
 
     foreach my $file (@playlist_files) {
         my $snippet = $yv_utils->local_playlist_snippet($file);
@@ -2045,10 +2045,8 @@ set_local_playlists();
                          'UC0wbcfzV-bHhABbWGXKHwdg' => 'Utah Open Source',
                          'UCotwjyJnb-4KW7bmsOoLfkg' => 'Art of the Problem',
                          'UC7y4qaRSb5w2O8cCHOsKZDw' => 'YAPC NA',
-                         'UC1t6kKXoBvjdr8m9KJ2Fx7A' => 'Gresham College',
                          'UCGHZpIpAWJQ-Jy_CeCdXhMA' => 'Cool Worlds',
                          'UCXZIDlJ_DgzrEwYop2s3JOQ' => 'National Museum of Mathematics',
-                         'UCLnGGRG__uGSPLBLzyhg8dQ' => 'Oxford Mathematics',
                          'UCmG6gHgD8JaEZVxuHWJijGQ' => 'UConn Mathematics',
                          'UC81mayGa63QaJE1SjKIYp0w' => 'metaRising',
                          'UCSHZKyawb77ixDdsGog4iWA' => 'Lex Fridman',

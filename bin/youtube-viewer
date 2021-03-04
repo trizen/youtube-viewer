@@ -3279,7 +3279,7 @@ sub print_local_playlist {
 
     require File::Basename;
 
-    my @playlist_files = grep { -T $_ } sort { CORE::fc($a) cmp CORE::fc($b) } glob("$local_playlists_dir/*");
+    my @playlist_files = $yv_utils->get_local_playlist_filenames($local_playlists_dir);
     my $regex          = qr/\Q$name\E/i;
 
     if ($name eq '') {

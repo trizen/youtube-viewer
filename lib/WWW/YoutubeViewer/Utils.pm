@@ -515,6 +515,12 @@ sub read_channels_from_file {
       map { [split(/ /, $_, 2)] } $self->read_lines_from_file($file, $mode);
 }
 
+sub get_local_playlist_filenames {
+    my ($self, $dir) = @_;
+    require Encode;
+    grep { -T $_ } sort { CORE::fc($a) cmp CORE::fc($b) } map { Encode::decode_utf8($_) } glob("$dir/*");
+}
+
 sub local_playlist_snippet {
     my ($self, $id) = @_;
 
