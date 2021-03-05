@@ -182,7 +182,8 @@ sub subscription_videos {
 
     $self->set_maxResults($max_results);
 
-    @videos = sort { $self->compare_published_dates($b, $a) } @videos;
+    state $yv_utils = WWW::YoutubeViewer::Utils->new;
+    @videos = sort { $yv_utils->compare_published_dates($b, $a) } @videos;
 
     return {results => {pageInfo => {totalResults => $#videos + 1}, items => \@videos}};
 }
