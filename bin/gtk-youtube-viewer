@@ -1407,6 +1407,37 @@ sub menu_popup {
         }
     }
 
+    if ($type eq 'video') {
+
+        # Separator
+        {
+            my $item = 'Gtk3::SeparatorMenuItem'->new;
+            $item->show;
+            $menu->append($item);
+        }
+
+        # Add-to submenu
+        {
+            my $add_to = 'Gtk3::Menu'->new;
+            my $cat    = 'Gtk3::ImageMenuItem'->new("Add to");
+            $cat->set_image('Gtk3::Image'->new_from_icon_name("add", q{menu}));
+            $cat->show;
+
+            foreach my $filename ($yv_utils->get_local_playlist_filenames($local_playlists_dir)) {
+                my $playlist = $yv_utils->local_playlist_snippet($filename);
+                my $item     = 'Gtk3::ImageMenuItem'->new($yv_utils->get_title($playlist));
+                $item->signal_connect(activate => sub { save_video_to_file($filename) });
+                $item->set_property(tooltip_text => "Save video to playlist");
+                $item->set_image('Gtk3::Image'->new_from_icon_name("list", q{menu}));
+                $item->show;
+                $add_to->append($item);
+            }
+
+            $cat->set_submenu($add_to);
+            $menu->append($cat);
+        }
+    }
+
     if ($type eq 'video' or $type eq 'playlist') {
 
         # Separator
@@ -2491,6 +2522,21 @@ sub decode_entities {
     return $text;
 }
 
+sub save_video_to_file {
+    my ($filename) = @_;
+
+    my $video_id = get_selected_entry_code(type => 'video') // return;
+
+    open(my $fh, '>>', $filename) or do {
+        warn "[!] Can't open file <<$filename>> for appending: $!";
+        return;
+    };
+
+    say {$fh} $video_id;
+
+    close $fh;
+}
+
 sub get_code {
     my ($code, $iter) = get_selected_entry_code();
 
@@ -3498,6 +3544,10 @@ sub list_local_playlist {
 
     if (    $playlist_file ne $CONFIG{watch_history_file}
         and $playlist_file ne $CONFIG{saved_videos_file}) {
+        @video_ids = reverse(@video_ids);
+    }
+
+    if ($gui->get_object('reverse_playlist')->get_active) {
         @video_ids = reverse(@video_ids);
     }
 
