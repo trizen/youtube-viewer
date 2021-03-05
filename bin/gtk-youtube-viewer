@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 07 January 2021
+#  Latest edit on: 05 March 2021
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -135,19 +135,21 @@ sub which_command {
 }
 
 my %symbols = (
-               up_arrow    => '↑',
-               down_arrow  => '↓',
-               diamond     => '❖',
-               face        => '☺',
-               black_face  => '☻',
-               average     => 'x̄',
-               ellipsis    => '…',
-               play        => '▶',
-               views       => '◈',
-               heart       => '❤',
-               right_arrow => '→',
-               crazy_arrow => '↬',
-               numero      => '№',
+               thumbs_up   => '👍',
+               thumbs_down => '👎',
+               type        => '💡',
+               author      => '😃',
+               author_id   => '🤖',
+               average     => '📊',
+               category    => '🗃️',
+               play        => '▶️',
+               views       => '👀',
+               heart       => '❤️',
+               published   => '⏱️',
+               updated     => '✨',
+               numero      => '#️⃣',
+               video       => '🎞️',
+               subs        => '👪',
               );
 
 # Main configuration
@@ -1005,6 +1007,12 @@ sub apply_configuration {
 
     # Select text from text entry
     $search_entry->select_region(0, -1);
+
+    # Create the "Saved videos" playlists if it does not exists
+    if (defined($CONFIG{saved_videos_file}) and not -e $CONFIG{saved_videos_file}) {
+        open(my $fh, '>', $CONFIG{saved_videos_file});
+        close $fh;
+    }
 }
 
 # Apply the configuration file
@@ -2840,6 +2848,7 @@ sub display_results {
 
         my @video_ids;
         my @playlist_ids;
+        my @channel_ids;
 
         foreach my $i (0 .. $#{$items}) {
             my $item = $items->[$i];
@@ -2850,6 +2859,9 @@ sub display_results {
             elsif ($yv_utils->is_video($item)) {
                 push @video_ids, $yv_utils->get_video_id($item);
             }
+            elsif ($yv_utils->is_channel($item)) {
+                push @channel_ids, $yv_utils->get_channel_id($item);
+            }
         }
 
         my %id_lookup;
@@ -2858,8 +2870,8 @@ sub display_results {
             my $content_details = $yv_obj->video_details(join(',', @video_ids), VIDEO_PART);
             my $video_details   = $content_details->{results}{items};
 
-            foreach my $i (0 .. $#video_ids) {
-                $id_lookup{$video_ids[$i]} = $video_details->[$i];
+            foreach my $video (@$video_details) {
+                $id_lookup{$video->{id}} = $video;
             }
         }
 
@@ -2867,8 +2879,17 @@ sub display_results {
             my $content_details  = $yv_obj->playlist_from_id(join(',', @playlist_ids), 'contentDetails');
             my $playlist_details = $content_details->{results}{items};
 
-            foreach my $i (0 .. $#playlist_ids) {
-                $id_lookup{$playlist_ids[$i]} = $playlist_details->[$i];
+            foreach my $playlist (@$playlist_details) {
+                $id_lookup{$playlist->{id}} = $playlist;
+            }
+        }
+
+        if (@channel_ids) {
+            my $content_details = $yv_obj->channel_from_id(join(',', @channel_ids), 'statistics,snippet,id');
+            my $channel_details = $content_details->{results}{items};
+
+            foreach my $channel (@$channel_details) {
+                $id_lookup{$channel->{id}} = $channel;
             }
         }
 
@@ -2890,6 +2911,14 @@ sub display_results {
             add_playlist_entry($item);
         }
         elsif ($yv_utils->is_channel($item)) {
+
+            my $channel_id = $yv_utils->get_channel_id($item) || next;
+
+            if (exists($info->{__extra_info__}{$channel_id})) {
+                @{$item}{qw(statistics snippet)} =
+                  @{$info->{__extra_info__}{$channel_id}}{qw(statistics snippet)};
+            }
+
             add_channel_entry($item);
         }
         elsif ($yv_utils->is_subscription($item)) {
@@ -2971,14 +3000,14 @@ sub add_subscription_entry {
         '<big><b>'
       . encode_entities($title)
       . "</b></big>\n\n"
-      . "<b>$symbols{face}\t</b> "
+      . "$symbols{author}\t "
       . encode_entities($channel_id) . "\n"
-      . "<b>$symbols{crazy_arrow}\t</b> "
+      . "$symbols{updated}\t "
       . $yv_utils->get_publication_date($subscription)
       . "\n\n<i>"
       . encode_entities($row_description) . '</i>';
 
-    my $type_label = "<b>$symbols{diamond}</b>  " . 'Subscription' . "\n";
+    my $type_label = "$symbols{type}\t " . 'Subscription' . "\n";
 
     $liststore->set(
                     $iter,
@@ -3012,30 +3041,38 @@ sub add_video_entry {
 
     set_entry_tooltip($iter, $title, $description);
 
-    my $title_label =
-      reflow_text(  "<big><b>"
-                  . encode_entities($title)
-                  . "</b></big>\n"
-                  . "<b>$symbols{up_arrow}\t</b> "
-                  . $yv_utils->set_thousands($yv_utils->get_likes($video)) . "\n"
-                  . "<b>$symbols{down_arrow}\t</b> "
-                  . $yv_utils->set_thousands($yv_utils->get_dislikes($video)) . "\n"
-                  . "<b>$symbols{ellipsis}\t</b> "
-                  . encode_entities($yv_utils->get_category_name($video)) . "\n"
-                  . "<b>$symbols{face}\t</b> "
-                  . encode_entities($yv_utils->get_channel_title($video)) . "\n" . "<i>"
-                  . encode_entities($row_description)
-                  . "</i>");
+    my $title_label = reflow_text(
+        sprintf(
+            "<big><b>%s</b></big>
+$symbols{thumbs_up}\t %s
+$symbols{thumbs_down}\t %s
+$symbols{category}\t %s
+$symbols{author}\t %s
+<i>%s</i>",
 
-    my $info_label =
-      reflow_text(  "<b>$symbols{play}\t</b> "
-                  . $yv_utils->get_time($video) . "\n"
-                  . "<b>$symbols{diamond}\t</b> "
-                  . $yv_utils->get_definition($video) . "\n"
-                  . "<b>$symbols{views}\t</b> "
-                  . $yv_utils->set_thousands($yv_utils->get_views($video)) . "\n"
-                  . "<b>$symbols{right_arrow}\t </b>"
-                  . $yv_utils->get_publication_date($video));
+            encode_entities($title),
+            $yv_utils->set_thousands($yv_utils->get_likes($video)),
+            $yv_utils->set_thousands($yv_utils->get_dislikes($video)),
+            encode_entities($yv_utils->get_category_name($video)),
+            encode_entities($yv_utils->get_channel_title($video)),
+            encode_entities($row_description),
+               )
+    );
+
+    my $info_label = reflow_text(
+        sprintf(
+            "$symbols{play}\t %s
+$symbols{type}\t %s
+$symbols{views}\t %s
+$symbols{published}\t %s",
+
+            $yv_utils->get_time($video),
+            $yv_utils->get_definition($video),
+            $yv_utils->set_thousands($yv_utils->get_views($video)),
+            $yv_utils->get_publication_date($video),
+
+               )
+    );
 
     $liststore->set(
                     $iter,
@@ -3064,21 +3101,34 @@ sub add_channel_entry {
 
     set_entry_tooltip($iter, $title, $description);
 
-    my $title_label =
-      reflow_text(  '<big><b>'
-                  . encode_entities($title)
-                  . "</b></big>\n\n"
-                  . "<b>$symbols{face}\t</b> "
-                  . encode_entities($yv_utils->get_channel_title($channel)) . "\n"
-                  . "<b>$symbols{play}\t</b> "
-                  . encode_entities($channel_id) . "\n"
-                  . "<b>$symbols{crazy_arrow}\t</b> "
-                  . $yv_utils->get_publication_date($channel)
-                  . "\n\n<i>"
-                  . encode_entities($row_description)
-                  . '</i>');
+    my $title_label = reflow_text(
+        sprintf(
+            "<big><b>%s</b></big>
 
-    my $type_label = reflow_text("<b>$symbols{diamond}</b>  " . 'Channel' . "\n");
+$symbols{author}\t %s
+$symbols{play}\t %s
+$symbols{published}\t %s
+
+<i>%s</i>",
+
+            encode_entities($title),
+            encode_entities($title),
+            encode_entities($channel_id),
+            $yv_utils->get_publication_date($channel),
+            encode_entities($row_description),
+               )
+    );
+
+    my $type_label = reflow_text(
+        sprintf(
+            "$symbols{type}\t Channel
+$symbols{video}\t %s videos
+$symbols{subs}\t %s subs",
+
+            $yv_utils->set_thousands($yv_utils->get_channel_video_count($channel)           // 0),
+            $yv_utils->short_human_number($yv_utils->get_channel_subscriber_count($channel) // 0),
+               )
+    );
 
     $liststore->set(
                     $iter,
@@ -3108,26 +3158,31 @@ sub add_playlist_entry {
 
     set_entry_tooltip($iter, $title, $description);
 
-    my $title_label =
-      reflow_text(  '<big><b>'
-                  . encode_entities($title)
-                  . "</b></big>\n\n"
-                  . "<b>$symbols{face}\t</b> "
-                  . encode_entities($channel_title) . "\n"
-                  . "<b>$symbols{play}\t</b> "
-                  . encode_entities($playlist_id) . "\n"
-                  . "<b>$symbols{crazy_arrow}\t</b> "
-                  . $yv_utils->get_publication_date($playlist) . "\n\n" . '<i>'
-                  . encode_entities($row_description)
-                  . '</i>');
+    my $title_label = reflow_text(
+        sprintf(
+            "<big><b>%s</b></big>
 
-    my $num_items_text = $yv_utils->get_playlist_item_count($playlist) // "";
+$symbols{author}\t %s
+$symbols{play}\t %s
 
-    if ($num_items_text ne '') {
-        $num_items_text = sprintf("<b>$symbols{numero}</b>  %d items\n", $num_items_text);
-    }
+<i>%s</i>",
 
-    my $type_label = reflow_text("<b>$symbols{diamond}</b>  " . 'Playlist' . "\n" . $num_items_text);
+            encode_entities($title),
+            encode_entities($channel_title),
+            $playlist_id,
+            encode_entities($row_description),
+               )
+    );
+
+    my $type_label = reflow_text(
+        sprintf(
+            "$symbols{type}\t Playlist
+$symbols{video}\t %s videos
+$symbols{published}\t %s",
+            $yv_utils->set_thousands($yv_utils->get_playlist_item_count($playlist) // 0),
+            $yv_utils->get_publication_date($playlist),
+               )
+    );
 
     $liststore->set(
                     $iter,
@@ -3842,28 +3897,44 @@ sub show_playlists_from_selected_author {
 sub set_entry_details {
     my ($code, $iter) = @_;
 
-    my $type         = $liststore->get($iter, 7);
-    my $main_details = $liststore->get($iter, 0);
-    my $channel_id   = get_channel_id_for_selected_video();
+    # Currently, only video entries are supported.
+
+    my $type = $liststore->get($iter, 7);
+    my $info = $yv_obj->parse_json_string($liststore->get($iter, 8));
 
     # Setting title
-    my $title = substr($main_details, 0, index($main_details, '</big>') + 6, '');
-    $gui->get_object('video_title_label')->set_label("<big>$title</big>");
-    $gui->get_object('video_title_label')->set_tooltip_markup("$title");
+    my $title = encode_entities($yv_utils->get_title($info));
+    $gui->get_object('video_title_label')->set_label("<big><big><b>$title</b></big></big>");
+    $gui->get_object('video_title_label')->set_tooltip_markup("<b>$title</b>");
 
-    # Setting video details
-    $main_details =~ s/^\s+//;
-    $main_details =~ s{\s*<i>.+</i>\s*}{\n};
-    $main_details =~ s{\h+}{ }g;
-    $main_details =~ s{^.*?<b>.*?</b>\K\h*}{\t}gm;
+    my $details_format = <<"EOT";
+$symbols{thumbs_up}\t%s
+$symbols{thumbs_down}\t%s
+‎$symbols{author}\t%s
+‎$symbols{category}\t%s
+$symbols{play}\t%s
+‎$symbols{average}\t%s
+‎$symbols{views}\t%s
+‎$symbols{published}\t%s
+$symbols{author_id}\t%s
+EOT
 
-    my $secondary_details = $liststore->get($iter, 2);
-    $secondary_details =~ s{\h+}{ }g;
-    $secondary_details =~ s{^.*?<b>.*?</b>\K\h*}{\t}gm;
-    $secondary_details .= "\n$symbols{black_face}\t$channel_id";
+    my $likes    = $yv_utils->get_likes($info);
+    my $dislikes = $yv_utils->get_dislikes($info);
+    my $rating   = 1;
 
-    my $text_info = join("\n", grep { !/^&#\w+;$/ } split(/\R/, "$main_details$secondary_details"));
-    $gui->get_object('video_details_label')->set_label($text_info);
+    if ($likes > 0) {
+        $rating = sprintf('%.2f', $likes / ($likes + $dislikes) * 4 + 1);
+    }
+
+    my $text_info = sprintf($details_format,
+                            $yv_utils->set_thousands($likes),                      $yv_utils->set_thousands($dislikes),
+                            $yv_utils->get_channel_title($info),                   $yv_utils->get_category_name($info),
+                            $yv_utils->get_time($info),                            $rating,
+                            $yv_utils->set_thousands($yv_utils->get_views($info)), $yv_utils->get_publication_date($info),
+                            $yv_utils->get_channel_id($info),);
+
+    $gui->get_object('video_details_label')->set_label("<big>" . encode_entities("\n" . $text_info) . "</big>");
 
     # Setting the link button
     my $url        = make_youtube_url($type, $code);
@@ -3871,8 +3942,6 @@ sub set_entry_details {
 
     $linkbutton->set_label($url);
     $linkbutton->set_uri($url);
-
-    my $info = $yv_obj->parse_json_string($liststore->get($iter, 8));
 
     # Getting thumbs
     foreach my $nr (qw(1 2 3)) {

@@ -526,7 +526,7 @@ sub local_playlist_snippet {
 
     my $first_video_id = do {
         open(my $fh, '<', $id) or return;
-        chomp(my $video_id = <$fh>);
+        chomp(my $video_id = <$fh> // '3Txcjo85lEA');
         close $fh;
         $video_id;
     };
@@ -640,7 +640,8 @@ sub get_country {
 
 sub get_channel_id {
     my ($self, $info) = @_;
-    $info->{snippet}{resourceId}{channelId} // $info->{snippet}{channelId} // eval { $info->{id}{channelId} } // $info->{id};
+    eval { $info->{snippet}{resourceId}{channelId} }
+      // eval { $info->{snippet}{channelId} } // eval { $info->{id}{channelId} } // $info->{id};
 }
 
 sub get_category_id {
@@ -714,7 +715,7 @@ sub get_duration {
 sub get_time {
     my ($self, $info) = @_;
 
-    if ($info->{snippet}{liveBroadcastContent} eq 'live') {
+    if (($info->{snippet}{liveBroadcastContent} // '') eq 'live') {
         return 'LIVE';
     }
 
