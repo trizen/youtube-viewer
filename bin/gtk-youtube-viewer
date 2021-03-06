@@ -1718,7 +1718,7 @@ sub show_details_window {
     my ($code, $iter) = get_selected_entry_code();
     $code // return;
     $details_window->show;
-    set_entry_details($code, $iter);
+    Glib::Idle->add(sub { set_entry_details($code, $iter); return 0 }, [], Glib::G_PRIORITY_LOW);
     return 1;
 }
 
@@ -1747,14 +1747,7 @@ sub show_comments_window {
     $feeds_window->show;
     $feeds_statusbar->pop(0);
 
-    Glib::Idle->add(
-        sub {
-            display_comments($yv_obj->comments_from_video_id($videoID));
-            return 0;
-        },
-        [],
-        Glib::G_PRIORITY_DEFAULT_IDLE
-                   );
+    Glib::Idle->add(sub { display_comments($yv_obj->comments_from_video_id($videoID)); return 0 }, [], Glib::G_PRIORITY_LOW);
 
     return 1;
 }
@@ -2587,7 +2580,7 @@ sub get_code {
             return 0;
         },
         [$code, $iter],
-        Glib::G_PRIORITY_DEFAULT_IDLE
+        Glib::G_PRIORITY_LOW
                    );
 }
 
@@ -3027,7 +3020,7 @@ sub set_thumbnail {
             return 0;
         },
         [$entry, $liststore, $iter],
-        Glib::G_PRIORITY_DEFAULT_IDLE
+        Glib::G_PRIORITY_LOW
                    );
 }
 
@@ -3788,22 +3781,22 @@ sub display_comments {
         my $snippet     = (($comment->{snippet} // next)->{topLevelComment} // next)->{snippet};
         my $comment_age = $yv_utils->date_to_age($snippet->{publishedAt});
         my $comment_text = reflow_text(
-                                           "<big><b>"
-                                         . encode_entities($snippet->{authorDisplayName})
-                                         . "</b> ("
-                                         . (
-                                            $comment_age =~ /sec|min|hour|day/
-                                            ? "$comment_age ago"
-                                            : $yv_utils->format_date($snippet->{publishedAt})
-                                           )
-                                         . ") commented:</big>\n"
-                                         . encode_entities(
-                                                           wrap_text(
-                                                                     i_tab => "\t",
-                                                                     s_tab => "\t",
-                                                                     text  => [$snippet->{textDisplay} // 'Empty comment...'],
-                                                                    )
-                                                          )
+                                       sprintf(
+                                               "<big><b>%s</b> (%s) commented:</big>\n%s",
+                                               encode_entities($snippet->{authorDisplayName}),
+                                               (
+                                                $comment_age =~ /sec|min|hour|day/
+                                                ? "$comment_age ago"
+                                                : $yv_utils->format_date($snippet->{publishedAt})
+                                               ),
+                                               encode_entities(
+                                                               wrap_text(
+                                                                       i_tab => "\t",
+                                                                       s_tab => "\t",
+                                                                       text => [$snippet->{textDisplay} // 'Empty comment...'],
+                                                               )
+                                                              )
+                                              )
                                       );
 
         my $iter = $feeds_liststore->append;
@@ -3818,22 +3811,22 @@ sub display_comments {
             foreach my $reply (reverse @{$comment->{replies}{comments}}) {
                 my $reply_age = $yv_utils->date_to_age($reply->{snippet}{publishedAt});
                 my $reply_text = reflow_text(
-                                                 "\t<big><b>"
-                                               . encode_entities($reply->{snippet}{authorDisplayName})
-                                               . "</b> ("
-                                               . (
-                                                  $reply_age =~ /sec|min|hour|day/
-                                                  ? "$reply_age ago"
-                                                  : $yv_utils->format_date($reply->{snippet}{publishedAt})
-                                                 )
-                                               . ") replied:</big>\n"
-                                               . encode_entities(
+                                             sprintf(
+                                                     "\t<big><b>%s</b> (%s) replied:</big>\n%s",
+                                                     encode_entities($reply->{snippet}{authorDisplayName}),
+                                                     (
+                                                      $reply_age =~ /sec|min|hour|day/
+                                                      ? "$reply_age ago"
+                                                      : $yv_utils->format_date($reply->{snippet}{publishedAt})
+                                                     ),
+                                                     encode_entities(
                                                              wrap_text(
                                                                  i_tab => "\t\t",
                                                                  s_tab => "\t\t",
                                                                  text => [$reply->{snippet}{textDisplay} // 'Empty comment...']
                                                              )
-                                               )
+                                                     )
+                                                    )
                                             );
 
                 my $iter = $feeds_liststore->append;
@@ -4024,7 +4017,7 @@ EOT
                 return 0;
             },
             [$nr],
-            Glib::G_PRIORITY_DEFAULT_IDLE
+            Glib::G_PRIORITY_LOW
                        );
     }
 
@@ -4066,7 +4059,7 @@ if ($CONFIG{remember_session} and -f $session_file) {
                     return 0;
                 },
                 [],
-                Glib::G_PRIORITY_DEFAULT_IDLE
+                Glib::G_PRIORITY_LOW
                            );
         }
     }
@@ -4080,15 +4073,7 @@ if (@ARGV) {
     my $text = join(' ', @ARGV);
     $search_entry->set_text($text);
     $search_entry->set_position(length($text));
-
-    Glib::Idle->add(
-        sub {
-            search();
-            return 0;
-        },
-        [],
-        Glib::G_PRIORITY_DEFAULT_IDLE
-                   );
+    Glib::Idle->add(sub { search(); return 0 }, [], Glib::G_PRIORITY_LOW);
 }
 
 if (not defined $yv_obj->get_key) {
@@ -4100,7 +4085,7 @@ if (not defined $yv_obj->get_key) {
             return 0;
         },
         [],
-        Glib::G_PRIORITY_DEFAULT_IDLE
+        Glib::G_PRIORITY_LOW
                    );
 }
 
