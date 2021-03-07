@@ -1105,19 +1105,19 @@ sub menu_popup {
     # Create the main right-click menu
     my $menu = 'Gtk3::Menu'->new;
 
+    # More details
+    {
+        my $item = 'Gtk3::ImageMenuItem'->new("Show more details");
+        $item->set_image('Gtk3::Image'->new_from_icon_name("window-new", q{menu}));
+        $item->signal_connect(activate => \&show_details_window);
+        $item->show;
+        $menu->append($item);
+    }
+
     # Video menu
     if ($type eq 'video') {
 
         my $video_id = $liststore->get($iter, 3);
-
-        # More details
-        {
-            my $item = 'Gtk3::ImageMenuItem'->new("Show more details");
-            $item->set_image('Gtk3::Image'->new_from_icon_name("window-new", q{menu}));
-            $item->signal_connect(activate => \&show_details_window);
-            $item->show;
-            $menu->append($item);
-        }
 
         # Youtube comments
         {
@@ -1544,7 +1544,7 @@ set_text(
     CTRL+E : enqueue the selected video
 
     CTRL+U : show the saved user-list
-    CTRL+D : show more video details for a selected video
+    CTRL+D : show more details for a selected entry
     CTRL+W : show the warnings window
     CTRL+G : show favorite videos of the author of a selected video
     CTRL+R : show related videos for a selected video
@@ -1754,6 +1754,13 @@ sub hide_login_to_youtube_window {
 sub show_details_window {
     my ($code, $iter) = get_selected_entry_code();
     $code // return;
+
+    my $type = $liststore->get($iter, 7);
+
+    if ($type eq 'next_page') {
+        return 1;
+    }
+
     $details_window->show;
     Glib::Idle->add(sub { set_entry_details($code, $iter); return 0 }, [], Glib::G_PRIORITY_LOW);
     return 1;
@@ -4039,8 +4046,6 @@ sub show_playlists_from_selected_author {
 sub set_entry_details {
     my ($code, $iter) = @_;
 
-    # Currently, only video entries are supported.
-
     my $type = $liststore->get($iter, 7);
     my $info = $yv_obj->parse_json_string($liststore->get($iter, 8));
 
@@ -4049,7 +4054,11 @@ sub set_entry_details {
     $gui->get_object('video_title_label')->set_label("<big><big><b>$title</b></big></big>");
     $gui->get_object('video_title_label')->set_tooltip_markup("<b>$title</b>");
 
-    my $details_format = <<"EOT";
+    my $text_info;
+
+    if ($type eq 'video') {
+
+        my $details_format = <<"EOT";
 $symbols{thumbs_up}\t%s
 $symbols{thumbs_down}\t%s
 ‎$symbols{author}\t%s
@@ -4061,20 +4070,69 @@ $symbols{play}\t%s
 $symbols{author_id}\t%s
 EOT
 
-    my $likes    = $yv_utils->get_likes($info);
-    my $dislikes = $yv_utils->get_dislikes($info);
-    my $rating   = 1;
+        my $likes    = $yv_utils->get_likes($info);
+        my $dislikes = $yv_utils->get_dislikes($info);
+        my $rating   = 1;
 
-    if ($likes > 0) {
-        $rating = sprintf('%.2f', $likes / ($likes + $dislikes) * 4 + 1);
+        if ($likes > 0) {
+            $rating = sprintf('%.2f', $likes / ($likes + $dislikes) * 4 + 1);
+        }
+
+        $text_info = sprintf($details_format,
+                             $yv_utils->set_thousands($likes),                      $yv_utils->set_thousands($dislikes),
+                             $yv_utils->get_channel_title($info),                   $yv_utils->get_category_name($info),
+                             $yv_utils->get_time($info),                            $rating,
+                             $yv_utils->set_thousands($yv_utils->get_views($info)), $yv_utils->get_publication_date($info),
+                             $yv_utils->get_channel_id($info));
     }
+    elsif ($type eq 'subscription') {
 
-    my $text_info = sprintf($details_format,
-                            $yv_utils->set_thousands($likes),                      $yv_utils->set_thousands($dislikes),
-                            $yv_utils->get_channel_title($info),                   $yv_utils->get_category_name($info),
-                            $yv_utils->get_time($info),                            $rating,
-                            $yv_utils->set_thousands($yv_utils->get_views($info)), $yv_utils->get_publication_date($info),
-                            $yv_utils->get_channel_id($info),);
+        my $details_format = <<"EOT";
+‎$symbols{author}\t%s
+‎$symbols{published}\t%s
+$symbols{author_id}\t%s
+EOT
+
+        $text_info = sprintf($details_format,
+                             $yv_utils->get_title($info),
+                             $yv_utils->get_publication_date($info),
+                             $yv_utils->get_channel_id($info));
+    }
+    elsif ($type eq 'channel') {
+
+        my $details_format = <<"EOT";
+‎$symbols{author}\t%s
+$symbols{video}\t%s videos
+$symbols{subs}\t%s subscribers
+‎$symbols{published}\t%s
+$symbols{author_id}\t%s
+EOT
+
+        $text_info = sprintf($details_format,
+                             $yv_utils->get_title($info),
+                             $yv_utils->set_thousands($yv_utils->get_channel_video_count($info)),
+                             $yv_utils->short_human_number($yv_utils->get_channel_subscriber_count($info)),
+                             $yv_utils->get_publication_date($info),
+                             $yv_utils->get_channel_id($info));
+    }
+    elsif ($type eq 'playlist') {
+
+        my $details_format = <<"EOT";
+‎$symbols{author}\t%s
+$symbols{video}\t%s videos
+‎$symbols{published}\t%s
+$symbols{author_id}\t%s
+$symbols{updated}\t%s
+EOT
+
+        $text_info = sprintf($details_format,
+                             $yv_utils->get_channel_title($info),
+                             $yv_utils->set_thousands($yv_utils->get_playlist_item_count($info)),
+                             $yv_utils->get_publication_date($info),
+                             $yv_utils->get_channel_id($info),
+                             $yv_utils->get_playlist_id($info),
+                            );
+    }
 
     $gui->get_object('video_details_label')->set_label("<big>" . encode_entities("\n" . $text_info) . "</big>");
 
@@ -4094,7 +4152,10 @@ EOT
             sub {
                 my ($nr) = @{$_[0]};
 
-                if ($code =~ /$valid_video_id_re/) {
+                if (   $type eq 'video'
+                    or $type eq 'subscription'
+                    or $type eq 'playlist'
+                    or $type eq 'channel') {
 
                     my $thumbnail = $info->{snippet}{thumbnails}{medium};
                     my $url       = $thumbnail->{url};
@@ -4106,7 +4167,13 @@ EOT
                         $url =~ s{/\w+\.(\w+)\z}{/mq$nr.$1};
                     }
 
-                    my $pixbuf = get_pixbuf_thumbnail_from_url($url, 160, 90);
+                    my ($size_x, $size_y) = (160, 90);
+
+                    if ($type eq 'subscription' or $type eq 'channel') {
+                        $size_y = 160;
+                    }
+
+                    my $pixbuf = get_pixbuf_thumbnail_from_url($url, $size_x, $size_y);
                     $gui->get_object("image$nr")->set_from_pixbuf($pixbuf);
                 }
                 else {
