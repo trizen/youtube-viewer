@@ -2276,15 +2276,18 @@ sub rate_videos {
 
 sub get_and_play_video_ids {
     (my @ids = grep { defined($_) } map { get_valid_video_id($_) } @_) || return;
-    my $info = $yv_obj->video_details(join(',', @ids), VIDEO_PART);
 
-    if ($yv_utils->has_entries($info)) {
-        if (not play_videos($info->{results}{items})) {
-            return;
+    while (@ids) {
+        my $info = $yv_obj->video_details(join(',', splice(@ids, 0, 50)), VIDEO_PART);
+
+        if ($yv_utils->has_entries($info)) {
+            if (not play_videos($info->{results}{items})) {
+                return;
+            }
         }
-    }
-    else {
-        warn_cant_do('get info for', @ids);
+        else {
+            warn_cant_do('get info for', @ids);
+        }
     }
 
     return 1;
@@ -3633,8 +3636,18 @@ sub print_playlists {
             # :pp=i
             elsif ($opt =~ /^pp${digit_or_equal_re}(.*)/) {
                 if (my @ids = get_valid_numbers($#{$playlists}, $1)) {
-                    my $arg = "--pp=" . join(q{,}, map { $yv_utils->get_playlist_id($_) } @{$playlists}[@ids]);
-                    apply_input_arguments([$arg]);
+                    foreach my $playlist (@{$playlists}[@ids]) {
+
+                        my $id = $yv_utils->get_playlist_id($playlist);
+
+                        if ($id =~ m{^/}) {    # local playlist
+                            my @ids = reverse $yv_utils->read_lines_from_file($id);
+                            apply_input_arguments(["--id=" . join(",", @ids)]) if @ids;
+                        }
+                        else {
+                            apply_input_arguments(["--pp=$id"]);
+                        }
+                    }
                 }
                 else {
                     warn_no_thing_selected('playlist');
@@ -3655,7 +3668,7 @@ sub print_playlists {
                 return $id;
             }
 
-            if ($id =~ m{^/}) {
+            if ($id =~ m{^/}) {    # local playlist
                 print_local_playlist($id);
             }
             else {
