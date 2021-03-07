@@ -1257,8 +1257,7 @@ sub menu_popup {
     }
     elsif ($type eq 'playlist') {
 
-        my $playlist_id   = $liststore->get($iter, 3);
-        my $playlist_name = $yv_utils->get_title($yv_obj->parse_json_string($liststore->get($iter, 8)));
+        my $playlist_id = $liststore->get($iter, 3);
 
         # Playlist videos
         {
@@ -1266,21 +1265,6 @@ sub menu_popup {
             $item->set_property(tooltip_text => "Display the videos from this playlist");
             $item->signal_connect(activate => sub { list_playlist($playlist_id) });
             $item->set_image('Gtk3::Image'->new_from_icon_name("folder-open", q{menu}));
-            $item->show;
-            $menu->append($item);
-        }
-
-        # Save as a local playlist
-        {
-            my $item = 'Gtk3::ImageMenuItem'->new("Save playlist");
-            $item->set_property(tooltip_text => "Save the playlist as a local playlist");
-            $item->signal_connect(
-                activate => sub {
-                    my $filename = save_playlist_to_file($playlist_id, $playlist_name);
-                    add_local_playlist_row($playlist_name, $filename) if defined($filename);
-                }
-            );
-            $item->set_image('Gtk3::Image'->new_from_icon_name("document-save", q{menu}));
             $item->show;
             $menu->append($item);
         }
@@ -1454,6 +1438,34 @@ sub menu_popup {
         }
     }
 
+    if ($type eq 'playlist') {
+
+        my $playlist_id   = $liststore->get($iter, 3);
+        my $playlist_name = $yv_utils->get_title($yv_obj->parse_json_string($liststore->get($iter, 8)));
+
+        # Separator
+        {
+            my $item = 'Gtk3::SeparatorMenuItem'->new;
+            $item->show;
+            $menu->append($item);
+        }
+
+        # Save as a local playlist
+        {
+            my $item = 'Gtk3::ImageMenuItem'->new("Save playlist");
+            $item->set_property(tooltip_text => "Save the playlist as a local playlist");
+            $item->signal_connect(
+                activate => sub {
+                    my $filename = save_playlist_to_file($playlist_id, $playlist_name);
+                    add_local_playlist_row($playlist_name, $filename) if defined($filename);
+                }
+            );
+            $item->set_image('Gtk3::Image'->new_from_icon_name("document-save", q{menu}));
+            $item->show;
+            $menu->append($item);
+        }
+    }
+
     if ($type eq 'video' or $type eq 'playlist') {
 
         # Separator
@@ -1493,7 +1505,6 @@ sub menu_popup {
             $item->show;
             $menu->append($item);
         }
-
     }
 
     $menu->popup(undef, undef, undef, undef, $event->button, $event->time);
