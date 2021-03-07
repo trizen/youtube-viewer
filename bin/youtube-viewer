@@ -3176,6 +3176,8 @@ sub extract_video_ids_from_playlist {
     my ($playlistID, $callback) = @_;
 
     $playlistID = get_valid_playlist_id($playlistID) // return;
+
+    local $yv_obj->{maxResults} = 50;
     my $results = $yv_obj->videos_from_playlist_id($playlistID);
 
     while (1) {
@@ -3249,10 +3251,14 @@ sub save_playlist_to_file {
         $title = $yv_utils->get_title($yv_obj->playlist_from_id($playlistID, 'snippet')->{results}{items}[0]);
     }
 
-    my $basename = $title . ' -- ' . $playlistID . '.txt';
-    $basename =~ s{/}{%}g;
+    if (not defined($title)) {
+        warn "[!] Unable to determine the title of the playlist...\n";
+        return;
+    }
 
+    my $basename = $yv_utils->make_local_playlist_filename($title, $playlistID);
     my $filename = catfile($local_playlists_dir, $basename);
+
     say ":: Saving playlist <<$title>> (id: $playlistID) to file...";
 
     if (-e $filename) {
@@ -3866,19 +3872,12 @@ sub download_from_url {
 sub download_video {
     my ($streaming, $info) = @_;
 
-    my $fat32safe = $opt{fat32safe};
-    state $unix_like = $^O =~ /^(?:linux|freebsd|openbsd)\z/i;
-
-    if (not $fat32safe and not $unix_like) {
-        $fat32safe = 1;
-    }
-
     my $video_filename = $yv_utils->format_text(
                                                 streaming => $streaming,
                                                 info      => $info,
                                                 text      => $opt{video_filename_format},
                                                 escape    => 0,
-                                                fat32safe => $fat32safe,
+                                                fat32safe => $opt{fat32safe},
                                                );
 
     my $naked_filename = $video_filename =~ s/\.\w+\z//r;

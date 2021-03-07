@@ -1257,14 +1257,30 @@ sub menu_popup {
     }
     elsif ($type eq 'playlist') {
 
-        my $playlist_id = $liststore->get($iter, 3);
+        my $playlist_id   = $liststore->get($iter, 3);
+        my $playlist_name = $yv_utils->get_title($yv_obj->parse_json_string($liststore->get($iter, 8)));
 
-        # More details
+        # Playlist videos
         {
             my $item = 'Gtk3::ImageMenuItem'->new("Videos");
             $item->set_property(tooltip_text => "Display the videos from this playlist");
             $item->signal_connect(activate => sub { list_playlist($playlist_id) });
             $item->set_image('Gtk3::Image'->new_from_icon_name("folder-open", q{menu}));
+            $item->show;
+            $menu->append($item);
+        }
+
+        # Save as a local playlist
+        {
+            my $item = 'Gtk3::ImageMenuItem'->new("Save playlist");
+            $item->set_property(tooltip_text => "Save the playlist as a local playlist");
+            $item->signal_connect(
+                activate => sub {
+                    my $filename = save_playlist_to_file($playlist_id, $playlist_name);
+                    add_local_playlist_row($playlist_name, $filename) if defined($filename);
+                }
+            );
+            $item->set_image('Gtk3::Image'->new_from_icon_name("document-save", q{menu}));
             $item->show;
             $menu->append($item);
         }
@@ -3109,7 +3125,6 @@ $symbols{published}\t %s",
             $yv_utils->get_definition($video),
             $yv_utils->set_thousands($yv_utils->get_views($video)),
             $yv_utils->get_publication_date($video),
-
                )
     );
 
@@ -3231,11 +3246,72 @@ $symbols{published}\t %s",
                     4 => encode_entities($description),
                     6 => $channel_id,
                     7 => 'playlist',
+                    8 => $yv_obj->make_json_string($playlist),
                    );
 
     if ($CONFIG{show_thumbs}) {
         set_thumbnail($playlist, $liststore, $iter);
     }
+}
+
+sub extract_video_ids_from_playlist {
+    my ($playlistID, $callback) = @_;
+
+    local $yv_obj->{maxResults} = 50;
+    my $results = $yv_obj->videos_from_playlist_id($playlistID);
+
+    while (1) {
+        $yv_utils->has_entries($results) || last;
+
+        my $url    = $results->{url};
+        my $info   = $results->{results} // {};
+        my $videos = $info->{items}      // [];
+
+        foreach my $video (@$videos) {
+            my $video_id = $yv_utils->get_video_id($video);
+            $callback->($video_id) if defined($video_id);
+        }
+
+        $results = $yv_obj->from_page_token($url, $info->{nextPageToken} || last);
+    }
+
+    return 1;
+}
+
+sub save_playlist_to_file {
+    my ($playlistID, $title) = @_;
+
+    $playlistID // return;
+
+    if (not defined($title)) {
+        $title = $yv_utils->get_title($yv_obj->playlist_from_id($playlistID, 'snippet')->{results}{items}[0]);
+    }
+
+    if (not defined($title)) {
+        warn "[!] Unable to determine the title of the playlist...\n";
+        return;
+    }
+
+    my $basename = $yv_utils->make_local_playlist_filename($title, $playlistID);
+    my $filename = catfile($local_playlists_dir, $basename);
+
+    say ":: Saving playlist <<$title>> (id: $playlistID) to file...";
+
+    if (-e $filename) {
+        warn "[!] File <<$filename>> already exists!\n";
+        return;
+    }
+
+    open(my $fh, '>', $filename) or do {
+        warn "[!] Can't open file <<$filename>> for writing: $!";
+        return;
+    };
+
+    extract_video_ids_from_playlist($playlistID, sub { say $fh $_[0] });
+    close $fh;
+
+    say ":: Done.";
+    return $filename;
 }
 
 sub list_playlist {

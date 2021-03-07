@@ -261,14 +261,20 @@ sub has_entries {
     ($result->{pageInfo}{totalResults} // 0) > 0;
 }
 
-=head2 normalize_video_title($title, $fat32safe)
+=head2 normalize_filename($title, $fat32safe)
 
 Replace file-unsafe characters and trim spaces.
 
 =cut
 
-sub normalize_video_title {
+sub normalize_filename {
     my ($self, $title, $fat32safe) = @_;
+
+    state $unix_like = $^O =~ /^(?:linux|freebsd|openbsd)\z/i;
+
+    if (not $fat32safe and not $unix_like) {
+        $fat32safe = 1;
+    }
 
     if ($fat32safe) {
         $title =~ s/: / - /g;
@@ -279,7 +285,9 @@ sub normalize_video_title {
         $title =~ tr{/}{%};
     }
 
-    join(q{ }, split(q{ }, $title));
+    my $basename = join(q{ }, split(q{ }, $title));
+    $basename = substr($basename, 0, 255);    # make sure the filename is not too long
+    return $basename;
 }
 
 =head2 format_text(%opt)
@@ -333,7 +341,7 @@ sub format_text {
         DURATION    => sub { $self->get_duration($info) },
         TIME        => sub { $self->get_time($info) },
         TITLE       => sub { $self->get_title($info) },
-        FTITLE      => sub { $self->normalize_video_title($self->get_title($info), $fat32safe) },
+        FTITLE      => sub { $self->normalize_filename($self->get_title($info), $fat32safe) },
         CAPTION     => sub { $self->get_caption($info) },
         PUBLISHED   => sub { $self->get_publication_date($info) },
         AGE         => sub { $self->get_publication_age($info) },
@@ -519,6 +527,13 @@ sub get_local_playlist_filenames {
     my ($self, $dir) = @_;
     require Encode;
     grep { -T $_ } sort { CORE::fc($a) cmp CORE::fc($b) } map { Encode::decode_utf8($_) } glob("$dir/*");
+}
+
+sub make_local_playlist_filename {
+    my ($self, $title, $playlistID) = @_;
+    my $basename = $title . ' -- ' . $playlistID . '.txt';
+    $basename = $self->normalize_filename($basename);
+    return $basename;
 }
 
 sub local_playlist_snippet {
