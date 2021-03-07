@@ -2278,7 +2278,8 @@ sub get_and_play_video_ids {
     (my @ids = grep { defined($_) } map { get_valid_video_id($_) } @_) || return;
 
     while (@ids) {
-        my $info = $yv_obj->video_details(join(',', splice(@ids, 0, 50)), VIDEO_PART);
+        my @video_ids = splice(@ids, 0, 50);
+        my $info      = $yv_obj->video_details(join(',', @video_ids), VIDEO_PART);
 
         if ($yv_utils->has_entries($info)) {
             if (not play_videos($info->{results}{items})) {
@@ -2286,7 +2287,7 @@ sub get_and_play_video_ids {
             }
         }
         else {
-            warn_cant_do('get info for', @ids);
+            warn_cant_do('get info for', @video_ids);
         }
     }
 

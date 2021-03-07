@@ -1368,6 +1368,16 @@ sub menu_popup {
             $author->append($item);
         }
 
+        # Save channel in the user-list
+        {
+            my $item = 'Gtk3::ImageMenuItem'->new("Save channel");
+            $item->set_property(tooltip_text => "Save the channel in the user-list");
+            $item->signal_connect(activate => sub { save_channel_by_id($channel_id) });
+            $item->set_image('Gtk3::Image'->new_from_icon_name("star-new-symbolic", q{menu}));
+            $item->show;
+            $author->append($item);
+        }
+
         # Open the YouTube channel page
         {
             my $item = 'Gtk3::ImageMenuItem'->new("YouTube page");
@@ -3083,6 +3093,7 @@ sub add_subscription_entry {
                     4 => encode_entities($description),
                     6 => $channel_id,
                     7 => 'subscription',
+                    8 => $yv_obj->make_json_string($subscription),
                    );
 
     if ($CONFIG{show_thumbs}) {
@@ -3203,6 +3214,7 @@ $symbols{subs}\t %s subs",
                     4 => encode_entities($description),
                     6 => $channel_id,
                     7 => 'channel',
+                    8 => $yv_obj->make_json_string($channel),
                    );
 
     if ($CONFIG{show_thumbs}) {
