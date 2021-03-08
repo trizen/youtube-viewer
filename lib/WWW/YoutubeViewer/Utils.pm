@@ -881,8 +881,19 @@ sub compare_published_dates {
 
     state $parse_time_re = qr/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/;
 
-    my ($y1, $M1, $d1, $h1, $m1, $s1) = $info_1->{snippet}{publishedAt} =~ $parse_time_re;
-    my ($y2, $M2, $d2, $h2, $m2, $s2) = $info_2->{snippet}{publishedAt} =~ $parse_time_re;
+    my @published_dates;
+
+    foreach my $info ($info_1, $info_2) {
+        if (exists($info->{contentDetails}) and exists($info->{contentDetails}{videoPublishedAt})) {
+            push @published_dates, $info->{contentDetails}{videoPublishedAt};
+        }
+        else {
+            push @published_dates, $info->{snippet}{publishedAt};
+        }
+    }
+
+    my ($y1, $M1, $d1, $h1, $m1, $s1) = $published_dates[0] =~ $parse_time_re;
+    my ($y2, $M2, $d2, $h2, $m2, $s2) = $published_dates[1] =~ $parse_time_re;
 
     ($y1 <=> $y2) || ($M1 <=> $M2) || ($d1 <=> $d2) || ($h1 <=> $h2) || ($m1 <=> $m2) || ($s1 <=> $s2);
 }
