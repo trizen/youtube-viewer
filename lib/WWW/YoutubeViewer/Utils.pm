@@ -546,6 +546,7 @@ sub local_playlist_snippet {
         $video_id;
     };
 
+    require File::Basename;
     my $title = File::Basename::basename($id);
 
     $title =~ s/\.txt\z//;
