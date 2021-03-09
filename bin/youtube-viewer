@@ -3381,10 +3381,14 @@ sub print_local_subscription_videos {
 
             local $yv_obj->{maxResults} = 10;
             my $uploads = $yv_obj->uploads($info->{id});
-            push @{$info->{videos}}, @{$uploads->{results}{items}};
 
-            my %seen;
-            @{$info->{videos}} = grep { !$seen{$yv_utils->get_video_id($_)}++ } @{$info->{videos}};
+            if ($yv_utils->has_entries($uploads)) {
+                push @{$info->{videos}}, @{$uploads->{results}{items} // []};
+                @{$info->{videos}} = do {
+                    my %seen;
+                    grep { !$seen{$yv_utils->get_video_id($_)}++ } @{$info->{videos}};
+                };
+            }
         }
         else {
             $info->{videos} = $prev_info->{videos};
