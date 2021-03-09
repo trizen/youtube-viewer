@@ -286,7 +286,7 @@ sub normalize_filename {
     }
 
     my $basename = join(q{ }, split(q{ }, $title));
-    $basename = substr($basename, 0, 255);    # make sure the filename is not too long
+    $basename = substr($basename, 0, 200);    # make sure the filename is not too long
     return $basename;
 }
 
