@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 05 March 2021
+#  Latest edit on: 10 March 2021
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -28,7 +28,7 @@ no warnings 'once';
 my $DEVEL;                                           # true in devel mode
 use if ($DEVEL = -w __FILE__), lib => qw(../lib);    # devel only
 
-use WWW::YoutubeViewer v3.8.2;
+use WWW::YoutubeViewer v3.9.0;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use Gtk3 qw(-init);
@@ -4063,10 +4063,10 @@ sub set_entry_details {
     if ($type eq 'video') {
 
         my $details_format = <<"EOT";
-$symbols{thumbs_up}\t%s
-$symbols{thumbs_down}\t%s
 ‎$symbols{author}\t%s
 ‎$symbols{category}\t%s
+$symbols{thumbs_up}\t%s
+$symbols{thumbs_down}\t%s
 $symbols{play}\t%s
 ‎$symbols{average}\t%s
 ‎$symbols{views}\t%s
@@ -4083,8 +4083,8 @@ EOT
         }
 
         $text_info = sprintf($details_format,
-                             $yv_utils->set_thousands($likes),                      $yv_utils->set_thousands($dislikes),
                              $yv_utils->get_channel_title($info),                   $yv_utils->get_category_name($info),
+                             $yv_utils->set_thousands($likes),                      $yv_utils->set_thousands($dislikes),
                              $yv_utils->get_time($info),                            $rating,
                              $yv_utils->set_thousands($yv_utils->get_views($info)), $yv_utils->get_publication_date($info),
                              $yv_utils->get_channel_id($info));

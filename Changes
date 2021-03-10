@@ -6,6 +6,8 @@
 
 [CHANGELOG]
 
+- Added support for local subscription videos (-ls).                                         - (v3.9.0)
+- Added support for local playlists in the Gtk3 version.                                     - (v3.9.0)
 - Added support for saving YouTube playlists locally (--save-playlist=ID)                    - (v3.8.1)
 - Added support for local playlists. (-lp, --local-playlists)                                - (v3.8.1)
 - Added support for listing saved channels from file (-lc, --local-channels).                - (v3.8.1)
