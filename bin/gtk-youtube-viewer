@@ -2689,7 +2689,7 @@ sub get_pixbuf_thumbnail_from_content {
 
     require Digest::MD5;
 
-    my $md5 = Digest::MD5::md5_hex($thumbnail);
+    my $md5 = Digest::MD5::md5_hex($thumbnail // return $default_thumb);
     my $key = "$md5 $xsize $ysize";
 
     state %cache;
@@ -4076,10 +4076,15 @@ EOT
 
         my $likes    = $yv_utils->get_likes($info);
         my $dislikes = $yv_utils->get_dislikes($info);
-        my $rating   = 1;
+        my $rating   = "1.00";
 
-        if ($likes > 0) {
-            $rating = sprintf('%.2f', $likes / ($likes + $dislikes) * 4 + 1);
+        if (defined($likes)) {
+            if ($likes > 0) {
+                $rating = sprintf('%.2f', $likes / ($likes + $dislikes) * 4 + 1);
+            }
+        }
+        else {
+            $rating = "N/A";
         }
 
         $text_info = sprintf($details_format,
