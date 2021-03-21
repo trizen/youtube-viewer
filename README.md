@@ -112,13 +112,9 @@ Starting with version 3.7.4, youtube-viewer provides the `~/.config/youtube-view
 
 See also: [#285](https://github.com/trizen/youtube-viewer/issues/285), [#308](https://github.com/trizen/youtube-viewer/issues/308).
 
-### STRAW-VIEWER
-
-[straw-viewer](https://github.com/trizen/straw-viewer) is a fork of `youtube-viewer`, which uses the [API](https://github.com/iv-org/documentation/blob/master/API.md) of [invidio.us](https://invidio.us/), and thus it does not require an YouTube API key.
-
 ### PIPE-VIEWER
 
-[pipe-viewer](https://github.com/trizen/pipe-viewer) is a fork of `straw-viewer`, which parses the YouTube website directly.
+[pipe-viewer](https://github.com/trizen/pipe-viewer) is a fork of [straw-viewer](https://github.com/trizen/straw-viewer), which parses the YouTube website directly, and thus it does not require an YouTube API key.
 
 ### REVIEWS
 
