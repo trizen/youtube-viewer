@@ -829,7 +829,7 @@ usage: $execname [options] ([url] | [keywords])
 
  * Arguments
    -f  --fullscreen!  : play videos in fullscreen mode
-   -n  --audio!       : play audio only, without displaying video
+   -n  --novideo      : play audio only, without displaying video
    --append-arg=s     : append some command-line parameters to the media player
    --player=s         : select a player to stream videos
                         available players: @{[keys %{$CONFIG->{video_players}}]}
@@ -1771,7 +1771,7 @@ sub parse_arguments {
         'info|i|video-info=s'                => \$opt{print_video_info},
         'get-term-width!'                    => \$opt{get_term_width},
         'page=i'                             => \$opt{page},
-        'novideo|no-video|n|audio!'          => \$opt{novideo},
+        'novideo|no-video|n'                 => \$opt{novideo},
         'highlight!'                         => \$opt{highlight_watched},
         'autolike!'                          => \$opt{autolike_watched},
         'skip-watched!'                      => \$opt{skip_watched},
@@ -2849,8 +2849,8 @@ sub print_channels {
                 }
             }
 
-            # :p=i, :playlist=i
-            elsif ($opt =~ /^(?:p|playlists?|up)${digit_or_equal_re}(.*)/) {
+            # :p=i, :playlist=i, :up=i
+            elsif ($opt =~ /^(?:p|l|playlists?|up)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$channels}, $1)) {
 
                     foreach my $id (@nums) {
@@ -4767,7 +4767,7 @@ sub print_videos {
             }
 
             # :p=i, :playlist=i, :up=i
-            elsif ($opt =~ /^(?:p|playlists?|up)${digit_or_equal_re}(.*)/) {
+            elsif ($opt =~ /^(?:p|l|playlists?|up)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     foreach my $id (@nums) {
                         my $request = $yv_obj->playlists($yv_utils->get_channel_id($videos->[$id]));
