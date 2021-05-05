@@ -728,6 +728,12 @@ sub get_duration {
     $self->format_duration($info->{contentDetails}{duration});
 }
 
+sub get_time2 {
+        my $time = get_time(@_);
+        $time =~ s/^\s{3}//;
+        $time;
+}
+
 sub get_time {
     my ($self, $info) = @_;
 
