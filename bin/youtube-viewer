@@ -4420,7 +4420,7 @@ sub print_video_info {
                                         ['VideoID'    => $yv_utils->get_video_id($video)],
                                         ['Category'   => $yv_utils->get_category_name($video)],
                                         ['Definition' => $yv_utils->get_definition($video)],
-                                        ['Duration'   => $yv_utils->get_time($video)],
+                                        ['Duration'   => $yv_utils->get_time2($video)],
                                         ['Likes'      => $yv_utils->set_thousands($yv_utils->get_likes($video))],
                                         ['Dislikes'   => $yv_utils->set_thousands($yv_utils->get_dislikes($video))],
                                         ['Comments'   => $yv_utils->set_thousands($yv_utils->get_comments($video))],
@@ -4503,7 +4503,7 @@ sub print_videos {
     # Filter out private or deleted videos
     @$videos = grep {
            $yv_utils->get_video_id($_)
-       and $yv_utils->get_time($_) ne '00:00'
+       and $yv_utils->get_time2($_) ne '00:00'
     } @$videos;
 #>>>
 
