@@ -800,6 +800,8 @@ usage: $execname [options] ([url] | [keywords])
    --results=i          : how many results to display per page (max: 50)
    --hfr!               : prefer high frame rate (HFR) videos
    -2  -3  -4  -7  -1   : resolutions: 240p, 360p, 480p, 720p and 1080p
+   --audio              : prefer audio part only (implied by --novideo)
+   --best               : prefer best resolution available
    --resolution=s       : supported resolutions: best, 2160p, 1440p,
                           1080p, 720p, 480p, 360p, 240p, 144p, audio.
 
@@ -1631,11 +1633,16 @@ sub parse_arguments {
         'update-config!' => sub { dump_configuration($config_file) },
 
         # Resolutions
+        'audio'   => sub { $opt{resolution} = 'audio' },
+        '144p'    => sub { $opt{resolution} = 144 },
         '240p|2'  => sub { $opt{resolution} = 240 },
         '360p|3'  => sub { $opt{resolution} = 360 },
         '480p|4'  => sub { $opt{resolution} = 480 },
         '720p|7'  => sub { $opt{resolution} = 720 },
         '1080p|1' => sub { $opt{resolution} = 1080 },
+        '1440p'   => sub { $opt{resolution} = 1440 },
+        '2160p'   => sub { $opt{resolution} = 2160 },
+        'best'    => sub { $opt{resolution} = 'best' },
 
         'hfr!'             => \$opt{hfr},
         'res|resolution=s' => \$opt{resolution},
