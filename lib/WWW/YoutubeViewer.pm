@@ -110,7 +110,7 @@ my %valid_options = (
     feeds_url        => {valid => q[], default => 'https://www.googleapis.com/youtube/v3/'},
     video_info_url   => {valid => q[], default => 'https://www.youtube.com/get_video_info'},
     oauth_url        => {valid => q[], default => 'https://accounts.google.com/o/oauth2/'},
-    video_info_args  => {valid => q[], default => '?video_id=%s&el=detailpage&ps=default&eurl=&gl=US&hl=en'},
+    video_info_args  => {valid => q[], default => '?video_id=%s&el=detailpage&ps=default&eurl=&gl=US&hl=en&html5=1'},
     www_content_type => {valid => q[], default => 'application/x-www-form-urlencoded'},
 
 #<<<
