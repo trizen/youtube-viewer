@@ -67,7 +67,6 @@ my $builder = Module::Build->new(
                    'LWP::UserAgent::Cached'  => 0,    # cache support
                    'Term::ReadLine::Gnu'     => 0,    # for better STDIN support (+history)
                    'JSON::XS'                => 0,    # faster JSON to HASH conversion
-                   'Mozilla::CA'             => 0,    # just in case if there are SSL problems
                    'Unicode::GCString'       => 0,    # fixed-width format
                   },
 

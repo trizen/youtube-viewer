@@ -1430,6 +1430,7 @@ standard – 480p and lower</property>
                                                             <object class="GtkComboBoxText" id="comboboxtext1">
                                                             <property name="visible">True</property>
                                                             <property name="can-focus">False</property>
+                                                            <property name="tooltip-text" translatable="yes">Retrieve only videos newer than this.</property>
                                                             <items>
                                                             <item translatable="yes">anytime</item>
                                                             <item translatable="yes">days</item>
@@ -1604,7 +1605,7 @@ Unless the categoryID is valid, this field is ignored.</property>
                                                             <property name="visible">True</property>
                                                             <property name="can-focus">True</property>
                                                             <property name="receives-default">False</property>
-                                                            <property name="tooltip-text" translatable="yes">Activate audio-only mode.</property>
+                                                            <property name="tooltip-text" translatable="yes">Play videos as audio.</property>
                                                             <property name="draw-indicator">True</property>
                                                             <signal name="toggled" handler="toggled_audio_only" swapped="no"/>
                                                             </object>
@@ -1737,6 +1738,7 @@ When the specified resolution is not found, the best available resolution is use
                                                           <item translatable="yes">480p</item>
                                                           <item translatable="yes">360p</item>
                                                           <item translatable="yes">240p</item>
+                                                          <item translatable="yes">144p</item>
                                                         </items>
                                                         <signal name="changed" handler="combobox_resolution_changed" swapped="no"/>
                                                       </object>
