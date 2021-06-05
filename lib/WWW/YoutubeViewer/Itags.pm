@@ -176,6 +176,13 @@ sub _find_streaming_url {
             $args{ignore_av1} && next;    # ignore videos in AV1 format
         }
 
+        # Ignored video projections
+        if (ref($args{ignored_projections}) eq 'ARRAY') {
+            if (grep { lc($entry->{projectionType} // '') eq lc($_) } @{$args{ignored_projections}}) {
+                next;
+            }
+        }
+
         if ($itag->{dash}) {
 
             $args{dash} || next;

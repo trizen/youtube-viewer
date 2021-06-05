@@ -238,6 +238,8 @@ my %CONFIG = (
     fullscreen  => 0,
     audio_only  => 0,
 
+    ignored_projections => [],
+
     autolike_watched  => 0,
     autoscroll_to_end => 0,
 
@@ -3490,6 +3492,8 @@ sub get_streaming_url {
         dash           => $CONFIG{dash_support},
         dash_mp4_audio => $CONFIG{dash_mp4_audio},
         dash_segmented => $CONFIG{dash_segmented},
+
+        ignored_projections => $CONFIG{ignored_projections},
                                                                 );
 
     return {

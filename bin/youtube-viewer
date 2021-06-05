@@ -257,6 +257,8 @@ my %CONFIG = (
     youtube_users_file => $youtube_users_file,
     remove_played_file => 0,
 
+    ignored_projections => [],
+
     # Conversion options
     convert_cmd         => 'ffmpeg -i *IN* *OUT*',
     convert_to          => undef,
@@ -3823,6 +3825,8 @@ sub get_streaming_url {
         dash           => $dash,
         dash_mp4_audio => ($opt{novideo}        ? 1 : $opt{dash_mp4_audio}),
         dash_segmented => ($opt{download_video} ? 0 : $opt{dash_segmented}),
+
+        ignored_projections => $opt{ignored_projections},
                                                                 );
 
     return {
@@ -5195,6 +5199,14 @@ If authentication is required, use:
 =head2 ignore_av1
 
 Ignore videos in AV1 format.
+
+=head2 ignored_projections
+
+An array of video projects to ignore.
+
+For example, to prefer rectagular versions of 360° videos, use:
+
+    ignored_projections => ["mesh", "equirectangular"],
 
 =head2 interactive
 
