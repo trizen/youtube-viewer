@@ -198,7 +198,6 @@ my %CONFIG = (
 
     # YouTube options
     dash_support    => 1,
-    dash_mp4_audio  => 1,
     dash_segmented  => 1,        # may load slow
     maxResults      => 20,
     hfr             => 1,
@@ -243,6 +242,7 @@ my %CONFIG = (
     colors             => $constant{win32} ^ 1,
     skip_if_exists     => 1,
     prefer_mp4         => 0,
+    prefer_m4a         => 0,
     prefer_av1         => 0,
     ignore_av1         => 0,
     fat32safe          => $constant{win32},
@@ -877,8 +877,9 @@ usage: $execname [options] ([url] | [keywords])
        --highlight!      : remember and highlight watched videos
        --autolike!       : automatically like videos after watching them
        --confirm!        : show a confirmation message after each play
-       --prefer-mp4!     : prefer videos in MP4 format, instead of WEBM
-       --prefer-av1!     : prefer videos in AV1 format, instead of WEBM
+       --prefer-mp4!     : prefer videos in MP4 format, instead of VP9
+       --prefer-av1!     : prefer videos in AV1 format, instead of VP9
+       --prefer-m4a!     : prefer audios in AAC format, instead of OPUS
        --ignore-av1!     : ignore videos in AV1 format
 
  * Closed-captions
@@ -914,7 +915,6 @@ usage: $execname [options] ([url] | [keywords])
                           If authentication is required,
                           use 'proto://user:pass\@domain.tld:port/'
    --dash!              : include or exclude the DASH itags
-   --dash-mp4a!         : include or exclude the itags for MP4 audio streams
    --dash-segmented!    : include or exclude segmented DASH streams
    --ytdl!              : use youtube-dl for videos with encrypted signatures
                           `--no-ytdl` will use invidious instances
@@ -1761,6 +1761,7 @@ sub parse_arguments {
         'confirm!'         => \$opt{confirm},
 
         'prefer-mp4!' => \$opt{prefer_mp4},
+        'prefer-m4a!' => \$opt{prefer_m4a},
         'prefer-av1!' => \$opt{prefer_av1},
         'ignore-av1!' => \$opt{ignore_av1},
 
@@ -1771,24 +1772,23 @@ sub parse_arguments {
         'merge-into-mkv|mkv-merge!'           => \$opt{merge_into_mkv},
         'merge-with-captions|merge-captions!' => \$opt{merge_with_captions},
 
-        'convert-command|convert-cmd=s'      => \$opt{convert_cmd},
-        'dash-m4a|dash-mp4-audio|dash-mp4a!' => \$opt{dash_mp4_audio},
-        'dash-segmented!'                    => \$opt{dash_segmented},
-        'wget-dl|wget-download!'             => \$opt{download_with_wget},
-        'filename|filename-format=s'         => \$opt{video_filename_format},
-        'rp|rem-played|remove-played-file!'  => \$opt{remove_played_file},
-        'info|i|video-info=s'                => \$opt{print_video_info},
-        'get-term-width!'                    => \$opt{get_term_width},
-        'page=i'                             => \$opt{page},
-        'novideo|no-video|n'                 => \$opt{novideo},
-        'highlight!'                         => \$opt{highlight_watched},
-        'autolike!'                          => \$opt{autolike_watched},
-        'skip-watched!'                      => \$opt{skip_watched},
-        'results=i'                          => \$opt{maxResults},
-        'shuffle|s!'                         => \$opt{shuffle},
-        'more|m!'                            => \$opt{more_results},
-        'pos|position=i'                     => \$opt{position},
-        'ps|playlist-save=s'                 => \$opt{playlist_save},
+        'convert-command|convert-cmd=s'     => \$opt{convert_cmd},
+        'dash-segmented!'                   => \$opt{dash_segmented},
+        'wget-dl|wget-download!'            => \$opt{download_with_wget},
+        'filename|filename-format=s'        => \$opt{video_filename_format},
+        'rp|rem-played|remove-played-file!' => \$opt{remove_played_file},
+        'info|i|video-info=s'               => \$opt{print_video_info},
+        'get-term-width!'                   => \$opt{get_term_width},
+        'page=i'                            => \$opt{page},
+        'novideo|no-video|n'                => \$opt{novideo},
+        'highlight!'                        => \$opt{highlight_watched},
+        'autolike!'                         => \$opt{autolike_watched},
+        'skip-watched!'                     => \$opt{skip_watched},
+        'results=i'                         => \$opt{maxResults},
+        'shuffle|s!'                        => \$opt{shuffle},
+        'more|m!'                           => \$opt{more_results},
+        'pos|position=i'                    => \$opt{position},
+        'ps|playlist-save=s'                => \$opt{playlist_save},
 
         'ytdl!'      => \$opt{ytdl},
         'ytdl-cmd=s' => \$opt{ytdl_cmd},
@@ -3821,9 +3821,9 @@ sub get_streaming_url {
 
         hfr        => $opt{hfr},
         ignore_av1 => $opt{ignore_av1},
+        prefer_m4a => $opt{prefer_m4a},
 
         dash           => $dash,
-        dash_mp4_audio => ($opt{novideo}        ? 1 : $opt{dash_mp4_audio}),
         dash_segmented => ($opt{download_video} ? 0 : $opt{dash_segmented}),
 
         ignored_projections => $opt{ignored_projections},
@@ -5094,10 +5094,6 @@ An array of hash values specifying a custom layout for channel results.
 
 An array of hash values specifying a custom layout for playlist results.
 
-=head2 dash_mp4_audio
-
-Include or exclude MP4/M4A (AAC) audio files.
-
 =head2 dash_segmented
 
 Include or exclude streams in "Dynamic Adaptive Streaming over HTTP" (DASH) format.
@@ -5204,7 +5200,7 @@ Ignore videos in AV1 format.
 
 An array of video projects to ignore.
 
-For example, to prefer rectagular versions of 360° videos, use:
+For example, to prefer rectangular projections of 360° videos, use:
 
     ignored_projections => ["mesh", "equirectangular"],
 
@@ -5258,6 +5254,14 @@ Prefer videos in AV1 format. (just for testing)
 =head2 prefer_mp4
 
 Prefer videos in MP4 (AVC) format.
+
+Try to enable this option if the videos are lagging or dropping frames.
+
+=head2 prefer_m4a
+
+Prefer audio streams in M4A (AAC) format.
+
+By default, the OPUS format for audio is preferred.
 
 =head2 publishedAfter
 

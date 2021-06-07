@@ -198,9 +198,9 @@ sub _find_streaming_url {
             next;
         }
 
-        if ($resolution eq 'audio' and not $args{dash_mp4_audio}) {
-            if ($itag->{format} eq 'm4a') {
-                next;    # skip m4a audio URLs
+        if ($resolution eq 'audio' and $args{prefer_m4a}) {
+            if ($itag->{format} ne 'm4a') {
+                next;    # skip non-M4A audio URLs
             }
         }
 
@@ -223,7 +223,6 @@ Return the streaming URL which corresponds with the specified resolution.
         urls           => \@streaming_urls,
         resolution     => 'resolution_name',     # from $obj->get_resolutions(),
         dash           => 1/0,                   # include or exclude DASH itags
-        dash_mp4_audio => 1/0,                   # include or exclude DASH videos with MP4 audio
         dash_segmented => 1/0,                   # include or exclude segmented DASH videos
     )
 

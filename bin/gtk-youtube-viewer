@@ -195,9 +195,9 @@ my %CONFIG = (
 
     # Youtube options
     dash_support    => 1,
-    dash_mp4_audio  => 1,
     dash_segmented  => 1,         # may load slow
     prefer_mp4      => 0,
+    prefer_m4a      => 0,
     prefer_av1      => 0,
     ignore_av1      => 0,
     maxResults      => 10,
@@ -3483,14 +3483,14 @@ sub get_streaming_url {
     state $yv_itags = WWW::YoutubeViewer::Itags->new();
 
     my ($streaming, $resolution) = $yv_itags->find_streaming_url(
-        urls => $urls,
+        urls       => $urls,
+        resolution => $CONFIG{resolution},
 
         hfr        => $CONFIG{hfr},
         ignore_av1 => $CONFIG{ignore_av1},
-        resolution => $CONFIG{resolution},
+        prefer_m4a => $CONFIG{prefer_m4a},
 
         dash           => $CONFIG{dash_support},
-        dash_mp4_audio => $CONFIG{dash_mp4_audio},
         dash_segmented => $CONFIG{dash_segmented},
 
         ignored_projections => $CONFIG{ignored_projections},
