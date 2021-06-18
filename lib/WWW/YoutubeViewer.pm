@@ -1010,7 +1010,10 @@ sub get_streaming_urls {
 
         if (eval { ref($caption_data->{captions}{playerCaptionsTracklistRenderer}{captionTracks}) eq 'ARRAY' }) {
 
-            push @caption_urls, @{$caption_data->{captions}{playerCaptionsTracklistRenderer}{captionTracks}};
+            my @caption_tracks = @{$caption_data->{captions}{playerCaptionsTracklistRenderer}{captionTracks}};
+            my @human_made_cc  = grep { ($_->{kind} // '') ne 'asr' } @caption_tracks;
+
+            push @caption_urls, @human_made_cc, @caption_tracks;
 
             my $translationLanguages = $caption_data->{captions}{playerCaptionsTracklistRenderer}{translationLanguages};
 
@@ -1022,6 +1025,10 @@ sub get_streaming_urls {
         }
     }
     else {
+
+        if ($self->get_debug) {
+            say STDERR ":: Extracting closed-caption URLs with `youtube-dl`...";
+        }
 
         # Extract closed-caption URLs with youtube-dl if our code failed
         my $ytdl_info = $self->_info_from_ytdl($videoID);
