@@ -107,12 +107,14 @@ my %valid_options = (
 
     authentication_file => {valid => qr/^./, default => undef},
 
+#<<<
     # No input value allowed
     feeds_url        => {valid => q[], default => 'https://www.googleapis.com/youtube/v3/'},
     video_info_url   => {valid => q[], default => 'https://www.youtube.com/get_video_info'},
     oauth_url        => {valid => q[], default => 'https://accounts.google.com/o/oauth2/'},
     video_info_args  => {valid => q[], default => '?video_id=%s&el=detailpage&ps=default&eurl=&gl=US&hl=en&html5=1&c=TVHTML5&cver=6.20180913'},
     www_content_type => {valid => q[], default => 'application/x-www-form-urlencoded'},
+#>>>
 
 #<<<
     # LWP user agent
@@ -1001,7 +1003,7 @@ sub get_streaming_urls {
 
     my @caption_urls;
 
-    if (exists $info{player_response}) {
+    if (defined $info{player_response}) {
 
         my $captions_json = $info{player_response};                     # don't run uri_unescape() on this
         my $caption_data  = $self->parse_json_string($captions_json);
@@ -1019,10 +1021,9 @@ sub get_streaming_urls {
             }
         }
     }
+    else {
 
-    # Extract closed-captions with youtube-dl if our code failed
-    if (!@caption_urls) {
-
+        # Extract closed-caption URLs with youtube-dl if our code failed
         my $ytdl_info = $self->_info_from_ytdl($videoID);
 
         if (defined($ytdl_info) and ref($ytdl_info) eq 'HASH') {
