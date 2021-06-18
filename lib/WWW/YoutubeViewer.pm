@@ -1053,47 +1053,37 @@ sub get_streaming_urls {
                         }
                     }
                 }
-            }
 
-            # When there exists a human-made subtitle, use that for translation
-            if (@caption_urls and $has_subtitles) {
-                foreach my $caption (@caption_urls) {
-                    $caption->{baseUrl} =~ s/&kind=asr&/&/;
-                }
+                last if $has_subtitles;
             }
 
             # Auto-translated captions
-            if (@caption_urls and not defined $ytdl_info->{automatic_captions}) {
+            if ($has_subtitles) {
 
                 if ($self->get_debug) {
                     say STDERR ":: Generating translated closed-caption URLs...";
                 }
 
+                my %trans_languages = map { $_->{languageCode} => 1 } @caption_urls;
+
+                my @languages = qw(
+                  af am ar az be bg bn bs ca ceb co cs cy da de el en eo es et eu fa fi fil
+                  fr fy ga gd gl gu ha haw hi hmn hr ht hu hy id ig is it iw ja jv ka kk km
+                  kn ko ku ky la lb lo lt lv mg mi mk ml mn mr ms mt my ne nl no ny or pa pl
+                  ps pt ro ru rw sd si sk sl sm sn so sq sr st su sv sw ta te tg th tk tr tt
+                  ug uk ur uz vi xh yi yo zh-Hans zh-Hant zu
+                );
+
+                @languages = grep { not exists $trans_languages{$_} } @languages;
+
                 my @asr;
                 foreach my $caption (@caption_urls) {
-                    if ($caption->{baseUrl} =~ /\basr_langs=([^&]+)/) {
-                        my @languages = split(/%2C/, $1);
-
-                        push @languages, qw(
-                          af am ar az be bg bn bs ca ceb co cs cy da de el en eo es et eu fa fi fil
-                          fr fy ga gd gl gu ha haw hi hmn hr ht hu hy id ig is it iw ja jv ka kk km
-                          kn ko ku ky la lb lo lt lv mg mi mk ml mn mr ms mt my ne nl no ny or pa pl
-                          ps pt ro ru rw sd si sk sl sm sn so sq sr st su sv sw ta te tg th tk tr tt
-                          ug uk ur uz vi xh yi yo zh-Hans zh-Hant zu
-                        );
-
-                        @languages = do {
-                            my %seen;
-                            grep { $_ ne $caption->{languageCode} } grep { !$seen{$_}++ } @languages;
-                        };
-
-                        foreach my $lang_code (@languages) {
-                            my %caption_copy = %$caption;
-                            $caption_copy{languageCode} = $lang_code;
-                            $caption_copy{kind}         = 'asr';
-                            $caption_copy{baseUrl}      = $caption_copy{baseUrl} . "&tlang=$lang_code";
-                            push @asr, \%caption_copy;
-                        }
+                    foreach my $lang_code (@languages) {
+                        my %caption_copy = %$caption;
+                        $caption_copy{languageCode} = $lang_code;
+                        $caption_copy{kind}         = 'asr';
+                        $caption_copy{baseUrl}      = $caption_copy{baseUrl} . "&tlang=$lang_code";
+                        push @asr, \%caption_copy;
                     }
                 }
 
