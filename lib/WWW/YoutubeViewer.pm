@@ -1008,19 +1008,20 @@ sub _get_youtubei_content {
     return $content;
 }
 
+sub _old_get_video_info {
+    my ($self, $videoID) = @_;
+
+    my $url     = $self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID);
+    my $content = $self->lwp_get($url, simple => 1) // return;
+    my %info    = $self->parse_query_string($content);
+
+    return %info;
+}
+
 sub _get_video_info {
     my ($self, $videoID) = @_;
 
-    if (0) {    # old way
-
-        my $url     = $self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID);
-        my $content = $self->lwp_get($url, simple => 1) // return;
-        my %info    = $self->parse_query_string($content);
-
-        return %info;
-    }
-
-    my $content = $self->_get_youtubei_content('player', $videoID);
+    my $content = $self->_get_youtubei_content('player', $videoID) // return $self->_old_get_video_info($videoID);
     my %info    = (player_response => $content);
 
     return %info;
@@ -1028,7 +1029,7 @@ sub _get_video_info {
 
 sub _get_video_next_info {
     my ($self, $videoID) = @_;
-    $self->_get_youtubei_content('next', $videoID);
+    $self->_get_youtubei_content('next', $videoID) // return $self->_old_get_video_info($videoID);
 }
 
 sub _make_translated_captions {
