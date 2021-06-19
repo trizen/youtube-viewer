@@ -122,30 +122,6 @@ sub find_caption_data {
         return $caption if defined($caption);
     }
 
-    # Return a translated subtitle (if available)
-    if ($self->{auto_captions}) {
-        foreach my $caption (@{$self->{captions}}) {
-
-            $caption->{isTranslatable}                       or next;
-            exists($caption->{translationLanguages})         or next;
-            ref($caption->{translationLanguages}) eq 'ARRAY' or next;
-
-            foreach my $lang (@{$self->{languages}}) {
-                foreach my $trans_lang (@{$caption->{translationLanguages}}) {
-
-                    ref($trans_lang) eq 'HASH' or next;
-
-                    if ($trans_lang->{languageCode} =~ /^\Q$lang\E(?:\z|[_-])/i) {
-                        my %caption_copy = %{$caption};
-                        $caption_copy{languageCode} = $trans_lang->{languageCode};
-                        $caption_copy{baseUrl} .= "&tlang=$trans_lang->{languageCode}";
-                        return \%caption_copy;
-                    }
-                }
-            }
-        }
-    }
-
     return;
 }
 

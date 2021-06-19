@@ -114,6 +114,7 @@ my %valid_options = (
     oauth_url        => {valid => q[], default => 'https://accounts.google.com/o/oauth2/'},
     video_info_args  => {valid => q[], default => '?video_id=%s&el=detailpage&ps=default&eurl=&gl=US&hl=en&html5=1&c=TVHTML5&cver=6.20180913'},
     www_content_type => {valid => q[], default => 'application/x-www-form-urlencoded'},
+    youtubei_url     => {valid => q[], default => 'https://youtubei.googleapis.com/youtubei/v1/%s?key=' . reverse("8Wcq11_9Y_wliCGLHETS4Q8UqlS2JF_OAySazIA")},
 #>>>
 
 #<<<
@@ -954,7 +955,7 @@ sub _extract_streaming_urls {
     @results = grep { $_->{itag} == 22 or (exists($_->{contentLength}) and $_->{contentLength} > 0) } @results;
 
     # Filter out streams with "dur=0.000"
-    @results = grep { $_->{url} !~ /\bdur=0\.000\b/ } @results;
+    @results = grep { $_->{url} !~ /\bdur=0\.000\b/ } grep { defined($_->{url}) } @results;
 
     # Detect livestream
     if (!@results and exists($json->{streamingData}) and exists($json->{streamingData}{hlsManifestUrl})) {
@@ -981,11 +982,66 @@ sub _extract_streaming_urls {
 sub _get_video_info {
     my ($self, $videoID) = @_;
 
-    my $url     = $self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID);
-    my $content = $self->lwp_get($url, simple => 1) // return;
-    my %info    = $self->parse_query_string($content);
+    if (0) {    # old way
+
+        my $url     = $self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID);
+        my $content = $self->lwp_get($url, simple => 1) // return;
+        my %info    = $self->parse_query_string($content);
+
+        return %info;
+    }
+
+    my $url = sprintf($self->get_youtubei_url(), 'player');
+
+    require Time::Piece;
+
+    local $self->{access_token} = undef;
+    my $content = $self->post_as_json(
+                                      $url,
+                                      scalar {
+                                              "videoId" => $videoID,
+                                              "context" => {
+                                                       "client" => {
+                                                           "hl"            => "en",
+                                                           "gl"            => "US",
+                                                           "clientName"    => "WEB",
+                                                           "clientVersion" =>
+                                                             sprintf("2.%s.05.00", Time::Piece->new(time)->strftime("%Y%m%d")),
+                                                       }
+                                              }
+                                             }
+                                     );
+
+    my %info = (player_response => $content);
 
     return %info;
+}
+
+sub _make_translated_captions {
+    my ($self, $caption_urls) = @_;
+
+    my @languages = qw(
+      af am ar az be bg bn bs ca ceb co cs cy da de el en eo es et eu fa fi fil
+      fr fy ga gd gl gu ha haw hi hmn hr ht hu hy id ig is it iw ja jv ka kk km
+      kn ko ku ky la lb lo lt lv mg mi mk ml mn mr ms mt my ne nl no ny or pa pl
+      ps pt ro ru rw sd si sk sl sm sn so sq sr st su sv sw ta te tg th tk tr tt
+      ug uk ur uz vi xh yi yo zh-Hans zh-Hant zu
+    );
+
+    my %trans_languages = map { $_->{languageCode} => 1 } @$caption_urls;
+    @languages = grep { not exists $trans_languages{$_} } @languages;
+
+    my @asr;
+    foreach my $caption (@$caption_urls) {
+        foreach my $lang_code (@languages) {
+            my %caption_copy = %$caption;
+            $caption_copy{languageCode} = $lang_code;
+            $caption_copy{baseUrl}      = $caption_copy{baseUrl} . "&tlang=$lang_code";
+            push @asr, \%caption_copy;
+        }
+    }
+
+    return @asr;
 }
 
 =head2 get_streaming_urls($videoID)
@@ -1015,13 +1071,16 @@ sub get_streaming_urls {
 
             push @caption_urls, @human_made_cc, @caption_tracks;
 
-            my $translationLanguages = $caption_data->{captions}{playerCaptionsTracklistRenderer}{translationLanguages};
-
-            if (ref($translationLanguages) eq 'ARRAY') {
-                foreach my $caption (@caption_urls) {
-                    $caption->{translationLanguages} = $translationLanguages;
-                }
+            foreach my $caption (@caption_urls) {
+                $caption->{baseUrl} =~ s{\bfmt=srv[0-9]\b}{fmt=srv1}g;
             }
+
+            push @caption_urls, $self->_make_translated_captions(\@caption_urls);
+        }
+
+        # Try again with youtube-dl
+        if (!@streaming_urls or (($caption_data->{playabilityStatus}{status} // '') =~ /fail|error/i)) {
+            @streaming_urls = $self->_fallback_extract_urls($videoID);
         }
     }
     else {
@@ -1072,30 +1131,7 @@ sub get_streaming_urls {
                     say STDERR ":: Generating translated closed-caption URLs...";
                 }
 
-                my %trans_languages = map { $_->{languageCode} => 1 } @caption_urls;
-
-                my @languages = qw(
-                  af am ar az be bg bn bs ca ceb co cs cy da de el en eo es et eu fa fi fil
-                  fr fy ga gd gl gu ha haw hi hmn hr ht hu hy id ig is it iw ja jv ka kk km
-                  kn ko ku ky la lb lo lt lv mg mi mk ml mn mr ms mt my ne nl no ny or pa pl
-                  ps pt ro ru rw sd si sk sl sm sn so sq sr st su sv sw ta te tg th tk tr tt
-                  ug uk ur uz vi xh yi yo zh-Hans zh-Hant zu
-                );
-
-                @languages = grep { not exists $trans_languages{$_} } @languages;
-
-                my @asr;
-                foreach my $caption (@caption_urls) {
-                    foreach my $lang_code (@languages) {
-                        my %caption_copy = %$caption;
-                        $caption_copy{languageCode} = $lang_code;
-                        $caption_copy{kind}         = 'asr';
-                        $caption_copy{baseUrl}      = $caption_copy{baseUrl} . "&tlang=$lang_code";
-                        push @asr, \%caption_copy;
-                    }
-                }
-
-                push @caption_urls, @asr;
+                push @caption_urls, $self->_make_translated_captions(\@caption_urls);
             }
         }
     }
@@ -1106,7 +1142,7 @@ sub get_streaming_urls {
     }
 
     # Try again with youtube-dl
-    if (!@streaming_urls or $info{status} =~ /fail|error/i) {
+    if (!@streaming_urls or (($info{status} // '') =~ /fail|error/i)) {
         @streaming_urls = $self->_fallback_extract_urls($videoID);
     }
 
