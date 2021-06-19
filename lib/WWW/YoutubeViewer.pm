@@ -979,19 +979,12 @@ sub _extract_streaming_urls {
     return @results;
 }
 
-sub _get_video_info {
-    my ($self, $videoID) = @_;
+sub _get_youtubei_content {
+    my ($self, $endpoint, $videoID) = @_;
 
-    if (0) {    # old way
+    # Valid endpoints: browse, player, next
 
-        my $url     = $self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID);
-        my $content = $self->lwp_get($url, simple => 1) // return;
-        my %info    = $self->parse_query_string($content);
-
-        return %info;
-    }
-
-    my $url = sprintf($self->get_youtubei_url(), 'player');
+    my $url = sprintf($self->get_youtubei_url(), $endpoint);
 
     require Time::Piece;
 
@@ -1012,9 +1005,30 @@ sub _get_video_info {
                                              }
                                      );
 
-    my %info = (player_response => $content);
+    return $content;
+}
+
+sub _get_video_info {
+    my ($self, $videoID) = @_;
+
+    if (0) {    # old way
+
+        my $url     = $self->get_video_info_url() . sprintf($self->get_video_info_args(), $videoID);
+        my $content = $self->lwp_get($url, simple => 1) // return;
+        my %info    = $self->parse_query_string($content);
+
+        return %info;
+    }
+
+    my $content = $self->_get_youtubei_content('player', $videoID);
+    my %info    = (player_response => $content);
 
     return %info;
+}
+
+sub _get_video_next_info {
+    my ($self, $videoID) = @_;
+    $self->_get_youtubei_content('next', $videoID);
 }
 
 sub _make_translated_captions {
