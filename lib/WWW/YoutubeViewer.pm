@@ -1029,7 +1029,7 @@ sub _get_video_info {
 
 sub _get_video_next_info {
     my ($self, $videoID) = @_;
-    $self->_get_youtubei_content('next', $videoID) // return $self->_old_get_video_info($videoID);
+    $self->_get_youtubei_content('next', $videoID);
 }
 
 sub _make_translated_captions {
