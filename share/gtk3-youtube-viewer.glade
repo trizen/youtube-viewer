@@ -488,6 +488,48 @@ Author: Trizen https://github.com/trizen
           </packing>
         </child>
         <child>
+          <object class="GtkBox" id="hbox1">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <child>
+              <object class="GtkEntry" id="search_entry">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="buffer">entrybuffer1</property>
+                <property name="invisible-char">•</property>
+                <property name="activates-default">True</property>
+                <property name="text" translatable="yes">Search for YouTube videos...</property>
+                <property name="caps-lock-warning">False</property>
+                <property name="primary-icon-stock">gtk-find</property>
+                <property name="secondary-icon-activatable">False</property>
+                <signal name="activate" handler="search" swapped="no"/>
+                <signal name="button-press-event" handler="clear_text" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="pack-type">end</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkImage" id="gif_spinner">
+                <property name="can-focus">False</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
           <object class="GtkPaned" id="hbox2">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
@@ -568,49 +610,6 @@ Author: Trizen https://github.com/trizen
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
-                <child>
-                  <object class="GtkBox" id="hbox1">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <child>
-                      <object class="GtkEntry" id="search_entry">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="has-focus">True</property>
-                        <property name="is-focus">True</property>
-                        <property name="buffer">entrybuffer1</property>
-                        <property name="invisible-char">•</property>
-                        <property name="activates-default">True</property>
-                        <property name="caps-lock-warning">False</property>
-                        <property name="primary-icon-stock">gtk-find</property>
-                        <property name="secondary-icon-activatable">False</property>
-                        <signal name="activate" handler="search" swapped="no"/>
-                        <signal name="button-press-event" handler="clear_text" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="pack-type">end</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkImage" id="gif_spinner">
-                        <property name="can-focus">False</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">False</property>
-                        <property name="position">1</property>
-                      </packing>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">False</property>
-                    <property name="position">0</property>
-                  </packing>
-                </child>
                 <child>
                   <object class="GtkScrolledWindow" id="scrolledwindow1">
                     <property name="visible">True</property>
@@ -2231,7 +2230,7 @@ When the specified resolution is not found, the best available resolution is use
           <packing>
             <property name="expand">True</property>
             <property name="fill">True</property>
-            <property name="position">1</property>
+            <property name="position">2</property>
           </packing>
         </child>
       </object>
