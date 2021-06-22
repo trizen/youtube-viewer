@@ -504,6 +504,7 @@ Author: Trizen https://github.com/trizen
                 <property name="secondary-icon-activatable">False</property>
                 <signal name="activate" handler="search" swapped="no"/>
                 <signal name="button-press-event" handler="clear_text" swapped="no"/>
+                <signal name="icon-release" handler="search" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
