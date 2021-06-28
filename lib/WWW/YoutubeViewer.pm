@@ -6,7 +6,7 @@ use warnings;
 
 use Memoize;
 
-memoize('_get_video_info');
+#memoize('_get_video_info');
 memoize('_ytdl_is_available');
 memoize('_info_from_ytdl');
 memoize('_extract_from_ytdl');
@@ -1021,8 +1021,12 @@ sub _old_get_video_info {
 sub _get_video_info {
     my ($self, $videoID) = @_;
 
-    my $content = $self->_get_youtubei_content('player', $videoID) // return $self->_old_get_video_info($videoID);
-    my %info    = (player_response => $content);
+    my ($content, %info);
+
+    for (1 .. 2) {
+        $content = $self->_get_youtubei_content('player', $videoID) // return $self->_old_get_video_info($videoID);
+        %info    = (player_response => $content);
+    }
 
     return %info;
 }
