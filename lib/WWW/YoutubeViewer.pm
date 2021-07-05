@@ -1023,7 +1023,7 @@ sub _get_video_info {
 
     my ($content, %info);
 
-    for (1 .. 2) {
+    for (1 .. 1) {
         $content = $self->_get_youtubei_content('player', $videoID) // return $self->_old_get_video_info($videoID);
         %info    = (player_response => $content);
     }
