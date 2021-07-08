@@ -32,7 +32,7 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =cut
 
-our $VERSION = '3.9.2';
+our $VERSION = '3.9.3';
 
 =head1 SYNOPSIS
 
