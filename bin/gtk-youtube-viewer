@@ -264,8 +264,11 @@ my %CONFIG = (
     recent_history         => 10,
     remember_session       => 1,
     remember_session_max   => 10,
-    save_titles_to_history => 0,
     entry_completion_limit => 10,
+
+    # Save titles
+    save_titles_to_history  => 0,
+    save_watched_to_history => 0,
 
     # Watch history
     watch_history      => 1,
@@ -1559,7 +1562,7 @@ set_text(
     F11    : minimize-maximize the main window
 
 HELP_TEXT
-        );
+);
 
 {
     my $font = Pango::FontDescription::from_string('Monospace 8');
@@ -2246,7 +2249,7 @@ set_local_playlists();
 
         open(my $fh, '>:utf8', $CONFIG{youtube_users_file}) or return;
         foreach my $channel (
-                             sort { ($channels{$a} // $a) cmp($channels{$b} // $b) }
+                             sort { CORE::fc($channels{$a} // $a) cmp CORE::fc($channels{$b} // $b) }
                              keys %channels
           ) {
             if (defined($channels{$channel})) {
@@ -3560,12 +3563,18 @@ sub get_player_command {
 }
 
 sub save_watched_video {
-    my ($video_id) = @_;
+    my ($video_id, $video_data) = @_;
 
-    if (not exists $WATCHED_VIDEOS{$video_id}) {
-        if ($CONFIG{autolike_watched}) {
+    # Store the video title to history (when `save_watched_to_history` is true)
+    if ($CONFIG{save_watched_to_history}) {
+        append_to_history($yv_utils->get_title($video_data), 0);
+    }
+
+    # Autolike watched videos (when `autolike_watched` is true)
+    if ($CONFIG{autolike_watched}) {
+        if (not exists $WATCHED_VIDEOS{$video_id}) {
             say ":: Sending a positive rating to video ID: $video_id";
-            $yv_obj->like_video($video_id) // do { say ":: Failed!" };
+            $yv_obj->like_video($video_id) // do { say ":: Failed to like <<$video_id>>!" };
         }
     }
 
@@ -3610,7 +3619,7 @@ sub play_video {
     my $code = execute_external_program($command);
 
     if ($code == 0) {
-        save_watched_video($video_id);
+        save_watched_video($video_id, $video);
     }
     else {
         warn "[!] Can't play this video -- player exited with code: $code\n";
