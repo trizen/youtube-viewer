@@ -577,18 +577,23 @@ sub select_good_invidious_instances {
     ref($instances) eq 'ARRAY' or return;
 
     my %ignored = (
-                   'yewtu.be'                 => 1,
-                   'invidious.tube'           => 1,
+                   'yewtu.be'                 => 1,    # 403 Forbidden (API)
+                   'invidious.tube'           => 1,    # down?
                    'invidiou.site'            => 0,
-                   'invidious.site'           => 1,
-                   'invidious.zee.li'         => 1,
-                   'invidious.048596.xyz'     => 1,
-                   'invidious.xyz'            => 1,
-                   'vid.mint.lgbt'            => 1,
-                   'invidious.ggc-project.de' => 1,
-                   'invidious.toot.koeln'     => 1,
-                   'invidious.kavin.rocks'    => 1,
+                   'invidious.site'           => 1,    # AGPL Violation + trackers
+                   'invidious.zee.li'         => 1,    # uses Cloudflare // 500 read timeout
+                   'invidious.048596.xyz'     => 1,    # broken API
+                   'invidious.xyz'            => 1,    # 502 Bad Gateway
+                   'vid.mint.lgbt'            => 0,
+                   'invidious.ggc-project.de' => 1,    # broken API
+                   'invidious.toot.koeln'     => 1,    # broken API
+                   'invidious.kavin.rocks'    => 1,    # 403 Forbidden (API)
                    'invidious.snopyta.org'    => 0,
+                   'invidious.silkky.cloud'   => 0,
+                   'invidious.moomoo.me'      => 1,    # uses Cloudflare
+                   'y.com.cm'                 => 1,    # uses Cloudflare
+                   'invidious.exonip.de'      => 1,    # 403 Forbidden (API)
+                   'invidious-us.kavin.rocks' => 1,    # 403 Forbidden (API)
                   );
 
 #<<<
@@ -633,10 +638,10 @@ sub _extract_from_invidious {
     }
     else {
         @instances = qw(
-          invidious.tube
-          invidious.site
-          invidious.fdn.fr
           invidious.snopyta.org
+          invidious.silkky.cloud
+          invidious.namazso.eu
+          ytprivate.com
         );
     }
 
