@@ -2819,7 +2819,10 @@ sub get_subscription_video_results {
     my @items;
 
     while (@channel_ids) {
-        push @items, @{$yv_obj->channel_from_id(join(',', splice(@channel_ids, 0, 50)), 'statistics,id')->{results}{items}};
+        my $results = $yv_obj->channel_from_id(join(',', splice(@channel_ids, 0, 50)), 'statistics,id')->{results}{items};
+        if (ref($results) eq 'ARRAY') {
+            push @items, @{$results};
+        }
     }
 
     my $prev_subscriptions_data = {channel_data => {},};
