@@ -12,7 +12,7 @@ A lightweight application for searching and playing videos from YouTube.
 
 * GTK+ interface to YouTube.
 
-![gtk-youtube-viewer](https://user-images.githubusercontent.com/614513/127562961-bc55b70e-baad-4463-b2ec-8dda4acdba1a.png)
+![gtk-youtube-viewer](https://user-images.githubusercontent.com/614513/127563797-704a7fcf-54eb-4540-bd32-a11edc629dac.png)
 
 ### AVAILABILITY
 
