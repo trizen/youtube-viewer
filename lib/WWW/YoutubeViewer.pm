@@ -1004,6 +1004,7 @@ sub _get_youtubei_content {
                                                            "hl"            => "en",
                                                            "gl"            => "US",
                                                            "clientName"    => "WEB",
+                                                           "clientScreen"  => "EMBED",
                                                            "clientVersion" =>
                                                              sprintf("2.%s.05.00", Time::Piece->new(time)->strftime("%Y%m%d")),
                                                        }
