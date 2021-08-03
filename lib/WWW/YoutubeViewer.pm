@@ -917,17 +917,11 @@ sub _old_extract_streaming_urls {
 }
 
 sub _extract_streaming_urls {
-    my ($self, $info, $videoID) = @_;
-
-    if (exists $info->{url_encoded_fmt_stream_map}) {
-        return $self->_old_extract_streaming_urls($info, $videoID);
-    }
+    my ($self, $json, $videoID) = @_;
 
     if ($self->get_debug) {
         say STDERR ":: Using `player_response` to extract the streaming URLs...";
     }
-
-    my $json = $self->parse_json_string($info->{player_response} // return);
 
     if ($self->get_debug >= 2) {
         require Data::Dump;
@@ -986,7 +980,7 @@ sub _extract_streaming_urls {
 }
 
 sub _get_youtubei_content {
-    my ($self, $endpoint, $videoID) = @_;
+    my ($self, $endpoint, $videoID, %args) = @_;
 
     # Valid endpoints: browse, player, next
 
@@ -1004,9 +998,9 @@ sub _get_youtubei_content {
                                                            "hl"            => "en",
                                                            "gl"            => "US",
                                                            "clientName"    => "WEB",
-                                                           "clientScreen"  => "EMBED",
                                                            "clientVersion" =>
                                                              sprintf("2.%s.05.00", Time::Piece->new(time)->strftime("%Y%m%d")),
+                                                           %args,
                                                        }
                                               }
                                              }
@@ -1026,12 +1020,12 @@ sub _old_get_video_info {
 }
 
 sub _get_video_info {
-    my ($self, $videoID) = @_;
+    my ($self, $videoID, %args) = @_;
 
     my ($content, %info);
 
     for (1 .. 1) {
-        $content = $self->_get_youtubei_content('player', $videoID) // return $self->_old_get_video_info($videoID);
+        $content = $self->_get_youtubei_content('player', $videoID, %args) // return $self->_old_get_video_info($videoID);
         %info    = (player_response => $content);
     }
 
@@ -1138,49 +1132,42 @@ Returns a list of streaming URLs for a videoID.
 sub get_streaming_urls {
     my ($self, $videoID) = @_;
 
-    my %info           = $self->_get_video_info($videoID);
-    my @streaming_urls = $self->_extract_streaming_urls(\%info, $videoID);
+    my %info = $self->_get_video_info($videoID);
+    my $json = defined($info{player_response}) ? $self->parse_json_string($info{player_response}) : {};
+
+    if (not defined $json->{streamingData}) {
+        say STDERR ":: Trying to bypass age-restricted gate..." if $self->get_debug;
+        %info = $self->_get_video_info($videoID, "clientScreen" => "EMBED");
+        $json = defined($info{player_response}) ? $self->parse_json_string($info{player_response}) : {};
+    }
+
+    my @streaming_urls = $self->_extract_streaming_urls($json, $videoID);
 
     my @caption_urls;
 
-    if (defined $info{player_response}) {
+    if (eval { ref($json->{captions}{playerCaptionsTracklistRenderer}{captionTracks}) eq 'ARRAY' }) {
 
-        my $captions_json = $info{player_response};                     # don't run uri_unescape() on this
-        my $caption_data  = $self->parse_json_string($captions_json);
+        my @caption_tracks = @{$json->{captions}{playerCaptionsTracklistRenderer}{captionTracks}};
+        my @human_made_cc  = grep { ($_->{kind} // '') ne 'asr' } @caption_tracks;
 
-        if (eval { ref($caption_data->{captions}{playerCaptionsTracklistRenderer}{captionTracks}) eq 'ARRAY' }) {
+        push @caption_urls, @human_made_cc, @caption_tracks;
 
-            my @caption_tracks = @{$caption_data->{captions}{playerCaptionsTracklistRenderer}{captionTracks}};
-            my @human_made_cc  = grep { ($_->{kind} // '') ne 'asr' } @caption_tracks;
-
-            push @caption_urls, @human_made_cc, @caption_tracks;
-
-            foreach my $caption (@caption_urls) {
-                $caption->{baseUrl} =~ s{\bfmt=srv[0-9]\b}{fmt=srv1}g;
-            }
-
-            push @caption_urls, $self->_make_translated_captions(\@caption_urls);
+        foreach my $caption (@caption_urls) {
+            $caption->{baseUrl} =~ s{\bfmt=srv[0-9]\b}{fmt=srv1}g;
         }
 
-        # Try again with youtube-dl
-        if (!@streaming_urls or (($caption_data->{playabilityStatus}{status} // '') =~ /fail|error/i)) {
-            @streaming_urls = $self->_fallback_extract_urls($videoID);
-            push @caption_urls, $self->_fallback_extract_captions($videoID);
-        }
+        push @caption_urls, $self->_make_translated_captions(\@caption_urls);
     }
-    else {
+
+    # Try again with youtube-dl
+    if (!@streaming_urls or (($json->{playabilityStatus}{status} // '') =~ /fail|error/i)) {
+        @streaming_urls = $self->_fallback_extract_urls($videoID);
         push @caption_urls, $self->_fallback_extract_captions($videoID);
     }
 
     if ($self->get_debug) {
         my $count = scalar(@streaming_urls);
         say STDERR ":: Found $count streaming URLs...";
-    }
-
-    # Try again with youtube-dl
-    if (!@streaming_urls or (($info{status} // '') =~ /fail|error/i)) {
-        @streaming_urls = $self->_fallback_extract_urls($videoID);
-        push @caption_urls, $self->_fallback_extract_captions($videoID);
     }
 
     if ($self->get_prefer_mp4 or $self->get_prefer_av1) {
