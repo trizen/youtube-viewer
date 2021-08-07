@@ -124,7 +124,7 @@ Author: Trizen https://github.com/trizen
         <property name="tooltip-text" translatable="yes">Remove the selected user from list...</property>
         <property name="use-underline">True</property>
         <property name="use-stock">True</property>
-        <signal name="activate" handler="remove_selected_user" swapped="no"/>
+        <signal name="activate" handler="remove_selected_username" swapped="no"/>
       </object>
     </child>
   </object>

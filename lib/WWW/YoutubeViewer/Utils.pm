@@ -519,8 +519,16 @@ sub read_channels_from_file {
 
     $mode //= '<:utf8';
 
-    sort { CORE::fc($a->[1]) cmp CORE::fc($b->[1]) }
-      map { [split(/ /, $_, 2)] } $self->read_lines_from_file($file, $mode);
+    # Read channels and remove duplicates
+    my %channels = map { split(/ /, $_, 2) } $self->read_lines_from_file($file, $mode);
+
+    # Filter valid channels and pair with channel ID with title
+    my @channels = map { [$_, $channels{$_}] } grep { defined($channels{$_}) } keys %channels;
+
+    # Sort channels by channel name
+    @channels = sort { CORE::fc($a->[1]) cmp CORE::fc($b->[1]) } @channels;
+
+    return @channels;
 }
 
 sub get_local_playlist_filenames {
@@ -656,8 +664,9 @@ sub get_country {
 
 sub get_channel_id {
     my ($self, $info) = @_;
-    eval { $info->{snippet}{resourceId}{channelId} }
-      // eval { $info->{snippet}{channelId} } // eval { $info->{id}{channelId} } // $info->{id};
+    eval      { $info->{snippet}{resourceId}{channelId} }
+      // eval { $info->{snippet}{channelId} }
+      // eval { ref($info->{id}) eq 'HASH' ? $info->{id}{channelId} : undef } // $info->{id};
 }
 
 sub get_category_id {
