@@ -1376,6 +1376,20 @@ sub menu_popup {
             $author->append($item);
         }
 
+        # Unsubscribe from channel
+        {
+            my $item = 'Gtk3::ImageMenuItem'->new("Unsubscribe");
+            $item->signal_connect(
+                activate => sub {
+                    $yv_obj->unsubscribe_channel($channel_id) // warn "Failed to unsubscribe from channel <$channel_id>: $!";
+                }
+            );
+            $item->set_property(tooltip_text => "Unsubscribe from this channel");
+            $item->set_image('Gtk3::Image'->new_from_icon_name("remove-symbolic", q{menu}));
+            $item->show;
+            $author->append($item);
+        }
+
         # Save channel in the user-list
         {
             my $item = 'Gtk3::ImageMenuItem'->new("Save channel");

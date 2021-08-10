@@ -1246,22 +1246,10 @@ sub get_streaming_urls {
     return (\@streaming_urls, \@caption_urls, \%info);
 }
 
-sub _request {
-    my ($self, $req) = @_;
+#~ sub _request {
+#~ my ($self, $req) = @_;
 
-    $self->{lwp} // $self->set_lwp_useragent();
-
-    my $res = $self->{lwp}->request($req);
-
-    if ($res->is_success) {
-        return $res->decoded_content;
-    }
-    else {
-        warn 'Request error: ' . $res->status_line();
-    }
-
-    return;
-}
+#~ }
 
 sub _prepare_request {
     my ($self, $req, $length) = @_;
@@ -1276,21 +1264,44 @@ sub _prepare_request {
 }
 
 sub _save {
-    my ($self, $method, $uri, $content) = @_;
+    my ($self, $method, $url, $content) = @_;
 
-    require HTTP::Request;
-    my $req = HTTP::Request->new($method => $uri);
-    $req->content_type('application/json; charset=UTF-8');
-    $self->_prepare_request($req, length($content));
-    $req->content($content);
+    $self->{lwp} // $self->set_lwp_useragent();
 
-    $self->_request($req);
+    my $response = $self->_request_with_authorization(
+        sub {
+            require HTTP::Request;
+
+            my $req = HTTP::Request->new($method => $url);
+            $req->header('Authorization' => $self->prepare_access_token) if defined($self->get_access_token);
+
+            if (defined($content)) {
+                $req->content_type('application/json; charset=UTF-8');
+                $req->header('Content-Length' => length($content));
+                $req->content($content);
+            }
+
+            $self->{lwp}->request($req);
+          },
+    );
+
+    if ($response->is_success) {
+        return $response->decoded_content;
+    }
+
+    _warn_reponse_error($response, $url);
+    return;
 }
 
 sub post_as_json {
     my ($self, $url, $ref) = @_;
     my $json_str = $self->make_json_string($ref);
     $self->_save('POST', $url, $json_str);
+}
+
+sub delete_request {
+    my ($self, $url) = @_;
+    $self->_save('DELETE', $url);
 }
 
 sub from_page_token {

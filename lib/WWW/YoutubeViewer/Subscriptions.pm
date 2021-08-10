@@ -56,6 +56,47 @@ sub subscribe_channel_from_username {
     $self->subscribe_channel($self->channel_id_from_username($username) // $username);
 }
 
+=head2 unsubscribe_channel($channel_id)
+
+Unsubscribe from an YouTube channel.
+
+=cut
+
+sub unsubscribe_channel {
+    my ($self, $channel_id) = @_;
+
+    my $info = $self->subscriptions_from_channel_id(
+                                                    undef,
+                                                    mine         => 'true',
+                                                    part         => 'id',
+                                                    forChannelId => $channel_id
+                                                   );
+
+    my $id;
+
+    if (defined($info) and ref($info->{results}) eq 'HASH' and ref($info->{results}{items}) eq 'ARRAY') {
+        ($id) = grep { defined($_) } map { ref($_) eq 'HASH' ? $_->{id} : undef } @{$info->{results}{items}};
+    }
+
+    if (defined($id)) {
+        my $url = $self->_simple_feeds_url('subscriptions', id => $id);
+        return $self->delete_request($url);
+    }
+
+    return;
+}
+
+=head2 unsubscribe_channel_from_username($username)
+
+Unsubscribe from an YouTube channel via username.
+
+=cut
+
+sub unsubscribe_channel_from_username {
+    my ($self, $username) = @_;
+    $self->unsubscribe_channel($self->channel_id_from_username($username) // $username);
+}
+
 =head2 subscriptions(;$channel_id)
 
 Retrieve the subscriptions for a channel ID or for the authenticated user.

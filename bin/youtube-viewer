@@ -395,6 +395,10 @@ my $channels_help = <<"CHANNELS_HELP" . $general_help;
 # Save and remove channels
 :s=i  :save=i      : save the channel ID locally (see -lc)
 :r=i  :remove=i,i  : remove the selected channels from file
+
+# Subscribe and unsubscribe from channels
+:sub=i             : subscribe to channel
+:unsub=i           : unsubscribe from channel
 CHANNELS_HELP
 
 my $comments_help = <<"COMMENTS_HELP" . $general_help;
@@ -421,7 +425,8 @@ $action_options
 :rm=i :remove=i,i : remove a saved video from the local playlist
 :sc=i             : save author's channel ID to file (see -lc)
 :ps=i :s2p=i,i    : save videos to a post-selected playlist
-:subscribe=i      : subscribe to author's channel
+:sub(scribe)=i    : subscribe to author's channel
+:unsub(scribe)=i  : unsubscribe from author's channel
 :(dis)like=i      : like or dislike a video
 :fav(orite)=i     : favorite a video
 :autoplay=i       : autoplay mode, starting from video i
@@ -824,6 +829,7 @@ usage: $execname [options] ([url] | [keywords])
 
 * [POST] Personal
    --subscribe=s        : subscribe to a given channel ID or username *
+   --unsubscribe=s      : unsubscribe from a given channel ID or username *
    --favorite=s         : favorite a video by URL or ID *
    --like=s             : send a 'like' rating to a video URL or ID *
    --dislike=s          : send a 'dislike' rating to a video URL or ID *
@@ -1329,6 +1335,10 @@ sub apply_configuration {
         subscribe(split(/[,\s]+/, delete $opt->{subscribe}));
     }
 
+    if (defined $opt->{unsubscribe}) {
+        unsubscribe(split(/[,\s]+/, delete $opt->{unsubscribe}));
+    }
+
     if (defined $opt->{favorite_video}) {
         favorite_videos(split(/[,\s]+/, delete $opt->{favorite_video}));
     }
@@ -1679,6 +1689,7 @@ sub parse_arguments {
         'likes|L|user-likes|ul:s'           => \$opt{likes},
         'dislikes'                          => \$opt{dislikes},
         'subscribe=s'                       => \$opt{subscribe},
+        'unsubscribe=s'                     => \$opt{unsubscribe},
 
         'trending|trends:s' => \$opt{trending},
         'playlist-id|pid=s' => \$opt{playlist_id},
@@ -2395,6 +2406,34 @@ sub subscribe {
     return 1;
 }
 
+sub unsubscribe {
+    my (@ids) = @_;
+
+    return if not authenticated();
+
+    foreach my $channel (@ids) {
+
+        my $id = extract_channel_id($channel) // do {
+            warn_invalid("channel ID or username", $channel);
+            next;
+        };
+
+        my $ok =
+            $yv_utils->is_channelID($id)
+          ? $yv_obj->unsubscribe_channel($id)
+          : $yv_obj->unsubscribe_channel_from_username($id);
+
+        if (defined($ok)) {
+            print ":: Successfully unsubscribed from channel: $id\n";
+        }
+        else {
+            warn colored("\n[!] Unable to unsubscribe from channel: $id", 'bold red') . "\n";
+        }
+    }
+
+    return 1;
+}
+
 sub _bold_color {
     my ($text) = @_;
     return colored($text, 'bold');
@@ -2891,6 +2930,26 @@ sub print_channels {
                 }
                 else {
                     warn_no_thing_selected('channel');
+                }
+            }
+
+            # :sub=i, :subscribe=i
+            elsif ($opt =~ /^(?:sub(?:scribe)?|S)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$channels}, $1)) {
+                    subscribe(map { $yv_utils->get_channel_id($channels->[$_]) } @nums);
+                }
+                else {
+                    warn_no_thing_selected('video');
+                }
+            }
+
+            # :unsub=i, unsubscribe=i
+            elsif ($opt =~ /^(?:unsub(?:scribe)?)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$channels}, $1)) {
+                    unsubscribe(map { $yv_utils->get_channel_id($channels->[$_]) } @nums);
+                }
+                else {
+                    warn_no_thing_selected('video');
                 }
             }
 
@@ -4808,6 +4867,8 @@ sub print_videos {
                     warn_no_thing_selected('video');
                 }
             }
+
+            # :fav=i, :favorite=i
             elsif ($opt =~ /^(?:fav|favorite|F)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     favorite_videos(map { $yv_utils->get_video_id($videos->[$_]) } @nums);
@@ -4816,9 +4877,21 @@ sub print_videos {
                     warn_no_thing_selected('video');
                 }
             }
-            elsif ($opt =~ /^(?:subscribe|S)${digit_or_equal_re}(.*)/) {
+
+            # # :sub=i, :subscribe=i
+            elsif ($opt =~ /^(?:sub(?:scribe)?|S)${digit_or_equal_re}(.*)/) {
                 if (my @nums = get_valid_numbers($#{$videos}, $1)) {
                     subscribe(map { $yv_utils->get_channel_id($videos->[$_]) } @nums);
+                }
+                else {
+                    warn_no_thing_selected('video');
+                }
+            }
+
+            # :unsub=i, :unsubscribe=i
+            elsif ($opt =~ /^(?:unsub(?:scribe)?)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$videos}, $1)) {
+                    unsubscribe(map { $yv_utils->get_channel_id($videos->[$_]) } @nums);
                 }
                 else {
                     warn_no_thing_selected('video');
