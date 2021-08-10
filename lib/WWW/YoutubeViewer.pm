@@ -367,6 +367,51 @@ sub _warn_reponse_error {
     warn sprintf("[%s] Error occurred on URL: %s\n", $resp->status_line, $url =~ s/([&?])key=(.*?)&/${1}key=[...]&/r);
 }
 
+sub _request_with_authorization {
+    my ($self, $block, %opt) = @_;
+
+    my $response = $opt{simple} ? $block->() : $block->($self->_auth_lwp_header);
+
+    if ($response->is_success or $opt{simple}) {
+        return $response;
+    }
+
+    if ($response->status_line() =~ /^401 / and defined($self->get_refresh_token)) {
+        if (defined(my $refresh_token = $self->oauth_refresh_token())) {
+            if (defined $refresh_token->{access_token}) {
+
+                $self->set_access_token($refresh_token->{access_token});
+
+                # Don't be tempted to use recursion here, because bad things will happen!
+                $response = $block->($self->_auth_lwp_header);
+
+                if ($response->is_success) {
+                    $self->save_authentication_tokens();
+                    return $response;
+                }
+
+                if ($response->status_line() =~ /^401 /) {
+                    $self->set_refresh_token();    # refresh token was invalid
+                    $self->set_access_token();     # access token is also broken
+                    warn "[!] Can't refresh the access token! Logging out...\n";
+                }
+            }
+            else {
+                warn "[!] Can't get the access_token! Logging out...\n";
+                $self->set_refresh_token();
+                $self->set_access_token();
+            }
+        }
+        else {
+            warn "[!] Invalid refresh_token! Logging out...\n";
+            $self->set_refresh_token();
+            $self->set_access_token();
+        }
+    }
+
+    return $response;
+}
+
 =head2 lwp_get($url, %opt)
 
 Get and return the content for $url.
@@ -390,43 +435,10 @@ sub lwp_get {
         return undef if not $opt{simple};
     }
 
-    my %lwp_header = ($opt{simple} ? () : $self->_auth_lwp_header);
-    my $response   = $self->{lwp}->get($url, %lwp_header);
+    my $response = $self->_request_with_authorization(sub { $self->{lwp}->get($url, @_) }, %opt);
 
     if ($response->is_success) {
         return $response->decoded_content;
-    }
-
-    if ($response->status_line() =~ /^401 / and defined($self->get_refresh_token)) {
-        if (defined(my $refresh_token = $self->oauth_refresh_token())) {
-            if (defined $refresh_token->{access_token}) {
-
-                $self->set_access_token($refresh_token->{access_token});
-
-                # Don't be tempted to use recursion here, because bad things will happen!
-                $response = $self->{lwp}->get($url, $self->_auth_lwp_header);
-
-                if ($response->is_success) {
-                    $self->save_authentication_tokens();
-                    return $response->decoded_content;
-                }
-                elsif ($response->status_line() =~ /^401 /) {
-                    $self->set_refresh_token();    # refresh token was invalid
-                    $self->set_access_token();     # access token is also broken
-                    warn "[!] Can't refresh the access token! Logging out...\n";
-                }
-            }
-            else {
-                warn "[!] Can't get the access_token! Logging out...\n";
-                $self->set_refresh_token();
-                $self->set_access_token();
-            }
-        }
-        else {
-            warn "[!] Invalid refresh_token! Logging out...\n";
-            $self->set_refresh_token();
-            $self->set_access_token();
-        }
     }
 
     $opt{depth} ||= 0;
@@ -449,19 +461,22 @@ Post and return the content for $url.
 =cut
 
 sub lwp_post {
-    my ($self, $url, @args) = @_;
+    my ($self, $url, %opt) = @_;
 
     $self->{lwp} // $self->set_lwp_useragent();
 
-    my $response = $self->{lwp}->post($url, @args);
+    my $response = $self->_request_with_authorization(
+        sub {
+            $self->{lwp}->post($url, (exists($opt{headers}) ? $opt{headers} : ()), @_);
+        },
+        %opt
+                                                     );
 
     if ($response->is_success) {
         return $response->decoded_content;
     }
-    else {
-        _warn_reponse_error($response, $url);
-    }
 
+    _warn_reponse_error($response, $url);
     return;
 }
 

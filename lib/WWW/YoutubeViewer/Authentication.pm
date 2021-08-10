@@ -33,12 +33,13 @@ sub oauth_refresh_token {
 
     my $json_data = $self->lwp_post(
                                     $self->_get_token_oauth_url(),
-                                    [Content       => $self->get_www_content_type,
-                                     client_id     => $self->get_client_id()     // return,
-                                     client_secret => $self->get_client_secret() // return,
-                                     refresh_token => $self->get_refresh_token() // return,
-                                     grant_type    => 'refresh_token',
-                                    ]
+                                    headers => [Content       => $self->get_www_content_type,
+                                                client_id     => $self->get_client_id()     // return,
+                                                client_secret => $self->get_client_secret() // return,
+                                                refresh_token => $self->get_refresh_token() // return,
+                                                grant_type    => 'refresh_token',
+                                               ],
+                                    simple => 1,
                                    );
 
     return $self->parse_json_string($json_data);
@@ -79,13 +80,14 @@ sub oauth_login {
 
     my $json_data = $self->lwp_post(
                                     $self->_get_token_oauth_url(),
-                                    [Content       => $self->get_www_content_type,
-                                     client_id     => $self->get_client_id()     // return,
-                                     client_secret => $self->get_client_secret() // return,
-                                     redirect_uri  => $self->get_redirect_uri()  // return,
-                                     grant_type    => 'authorization_code',
-                                     code          => $code,
-                                    ]
+                                    headers => [Content       => $self->get_www_content_type,
+                                                client_id     => $self->get_client_id()     // return,
+                                                client_secret => $self->get_client_secret() // return,
+                                                redirect_uri  => $self->get_redirect_uri()  // return,
+                                                grant_type    => 'authorization_code',
+                                                code          => $code,
+                                               ],
+                                    simple => 1,
                                    );
 
     return $self->parse_json_string($json_data);

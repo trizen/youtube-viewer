@@ -67,10 +67,8 @@ sub videos_from_category {
     }
 
     my $videos = $self->_get_results(
-                                     $self->_make_videos_url(
-                                                             chart           => 'mostPopular',
-                                                             videoCategoryId => $cat_id,
-                                                            )
+                                     $self->_make_videos_url(chart           => 'mostPopular',
+                                                             videoCategoryId => $cat_id,)
                                     );
 
     if (not $yv_utils->has_entries($videos)) {
@@ -158,7 +156,7 @@ sub send_rating_to_video {
 
     if ($rating eq 'none' or $rating eq 'like' or $rating eq 'dislike') {
         my $url = $self->_simple_feeds_url('videos/rate', id => $video_id, rating => $rating);
-        return defined($self->lwp_post($url, $self->_auth_lwp_header()));
+        return defined($self->lwp_post($url));
     }
 
     return;
