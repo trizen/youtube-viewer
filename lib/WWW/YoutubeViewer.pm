@@ -362,7 +362,7 @@ sub _auth_lwp_header {
     return %lwp_header;
 }
 
-sub _warn_reponse_error {
+sub _warn_response_error {
     my ($resp, $url) = @_;
     warn sprintf("[%s] Error occurred on URL: %s\n", $resp->status_line, $url =~ s/([&?])key=(.*?)&/${1}key=[...]&/r);
 }
@@ -450,7 +450,7 @@ sub lwp_get {
         return $self->lwp_get($url, %opt, depth => $opt{depth} + 1);
     }
 
-    _warn_reponse_error($response, $url);
+    _warn_response_error($response, $url);
     return;
 }
 
@@ -476,7 +476,7 @@ sub lwp_post {
         return $response->decoded_content;
     }
 
-    _warn_reponse_error($response, $url);
+    _warn_response_error($response, $url);
     return;
 }
 
@@ -518,7 +518,7 @@ sub _send_request {
         return $response->decoded_content;
     }
 
-    _warn_reponse_error($response, $url);
+    _warn_response_error($response, $url);
     return;
 }
 
@@ -536,7 +536,7 @@ sub post_as_json {
 
 =head2 lwp_delete($url)
 
-Send a C<DELETE> request to the given URL. Returns the reponse content.
+Send a C<DELETE> request to the given URL. Returns the response content.
 
 =cut
 

@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 09 July 2021
+#  Latest edit on: 11 August 2021
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -945,7 +945,7 @@ sub apply_configuration {
             my $set_value = $yv_obj->$code($value);
 
             if (not defined($set_value) or $set_value ne $value) {
-                warn "[!] Invalid value <$value> for option <$option_name>.\n";
+                warn "[!] Invalid value <<$value>> for option <<$option_name>>.\n";
             }
         }
     }
@@ -1177,7 +1177,7 @@ sub menu_popup {
                 $item->signal_connect(
                     activate => sub {
                         $yv_obj->favorite_video($video_id)
-                          or warn "Failed to favorite the video <$video_id>: $!";
+                          or warn "Failed to favorite the video <<$video_id>>!";
                     }
                 );
                 $item->set_image('Gtk3::Image'->new_from_icon_name("starred-symbolic", q{menu}));
@@ -1209,7 +1209,7 @@ sub menu_popup {
                 $item->signal_connect(
                     activate => sub {
                         $yv_obj->like_video($video_id)
-                          or warn "Failed to send a positive rating to <$video_id>: $!";
+                          or warn "Failed to send a positive rating to <<$video_id>>!";
                     }
                 );
                 $item->set_image('Gtk3::Image'->new_from_icon_name("go-up-symbolic", q{menu}));
@@ -1224,7 +1224,7 @@ sub menu_popup {
                 $item->signal_connect(
                     activate => sub {
                         $yv_obj->dislike_video($video_id)
-                          or warn "Failed to send a negative rating to <$video_id>: $!";
+                          or warn "Failed to send a negative rating to <<$video_id>>!";
                     }
                 );
                 $item->set_image('Gtk3::Image'->new_from_icon_name("go-down-symbolic", q{menu}));
@@ -1367,7 +1367,7 @@ sub menu_popup {
             $item->signal_connect(
                 activate => sub {
                     $yv_obj->subscribe_channel($channel_id)
-                      or warn "Failed to subscribe to channel <$channel_id>: $!";
+                      or warn "Failed to subscribe to channel <<$channel_id>>!";
                 }
             );
             $item->set_property(tooltip_text => "Subscribe to this channel");
@@ -1381,7 +1381,7 @@ sub menu_popup {
             my $item = 'Gtk3::ImageMenuItem'->new("Unsubscribe");
             $item->signal_connect(
                 activate => sub {
-                    $yv_obj->unsubscribe_channel($channel_id) // warn "Failed to unsubscribe from channel <$channel_id>: $!";
+                    $yv_obj->unsubscribe_channel($channel_id) // warn "Failed to unsubscribe from channel <<$channel_id>>!";
                 }
             );
             $item->set_property(tooltip_text => "Unsubscribe from this channel");
@@ -3555,8 +3555,8 @@ sub save_watched_video {
     # Autolike watched videos (when `autolike_watched` is true)
     if ($CONFIG{autolike_watched}) {
         if (not exists $WATCHED_VIDEOS{$video_id}) {
-            say ":: Sending a positive rating to video ID: $video_id";
-            $yv_obj->like_video($video_id) // do { say ":: Failed to like <<$video_id>>!" };
+            say ":: Sending a positive rating to video ID: $video_id" if $yv_obj->get_debug;
+            $yv_obj->like_video($video_id) // do { warn "Failed to like video ID <<$video_id>>!" };
         }
     }
 
@@ -3625,7 +3625,7 @@ sub list_category {
         display_results($videos);
     }
     else {
-        die "No video found for categoryID: <$cat_id>\n";
+        die "No video found for categoryID: <<$cat_id>>\n";
     }
 }
 
@@ -3732,7 +3732,7 @@ sub open_external_url {
 
 sub enqueue_video {
     my $video_id = get_selected_entry_code(type => 'video') // return;
-    print "[*] Added: <$video_id>\n" if $yv_obj->get_debug;
+    print "[*] Added: <<$video_id>>\n" if $yv_obj->get_debug;
     push @VIDEO_QUEUE, $video_id;
     return 1;
 }
@@ -3840,7 +3840,7 @@ sub show_related_videos {
         display_results($results);
     }
     else {
-        die "No related video for videoID: <$video_id>\n";
+        die "No related video for videoID: <<$video_id>>\n";
     }
 }
 
