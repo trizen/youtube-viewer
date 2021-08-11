@@ -492,6 +492,59 @@ sub lwp_mirror {
     $self->{lwp}->mirror($url, $output_file);
 }
 
+sub _send_request {
+    my ($self, $method, $url, $content) = @_;
+
+    $self->{lwp} // $self->set_lwp_useragent();
+
+    my $response = $self->_request_with_authorization(
+        sub {
+            require HTTP::Request;
+
+            my $req = HTTP::Request->new($method => $url);
+            $req->header('Authorization' => $self->prepare_access_token) if defined($self->get_access_token);
+
+            if (defined($content)) {
+                $req->content_type('application/json; charset=UTF-8');
+                $req->header('Content-Length' => length($content));
+                $req->content($content);
+            }
+
+            $self->{lwp}->request($req);
+          },
+    );
+
+    if ($response->is_success) {
+        return $response->decoded_content;
+    }
+
+    _warn_reponse_error($response, $url);
+    return;
+}
+
+=head2 post_as_json($url, $ref)
+
+Send a C<POST> request to the given URL, with JSON content given as a Perl REF structure. Returns the response content.
+
+=cut
+
+sub post_as_json {
+    my ($self, $url, $ref) = @_;
+    my $json_str = $self->make_json_string($ref);
+    $self->_send_request('POST', $url, $json_str);
+}
+
+=head2 lwp_delete($url)
+
+Send a C<DELETE> request to the given URL. Returns the reponse content.
+
+=cut
+
+sub lwp_delete {
+    my ($self, $url) = @_;
+    $self->_send_request('DELETE', $url);
+}
+
 sub _get_results {
     my ($self, $url, %opt) = @_;
 
@@ -1244,64 +1297,6 @@ sub get_streaming_urls {
     }
 
     return (\@streaming_urls, \@caption_urls, \%info);
-}
-
-#~ sub _request {
-#~ my ($self, $req) = @_;
-
-#~ }
-
-sub _prepare_request {
-    my ($self, $req, $length) = @_;
-
-    $req->header('Content-Length' => $length) if ($length);
-
-    if (defined $self->get_access_token) {
-        $req->header('Authorization' => $self->prepare_access_token);
-    }
-
-    return 1;
-}
-
-sub _save {
-    my ($self, $method, $url, $content) = @_;
-
-    $self->{lwp} // $self->set_lwp_useragent();
-
-    my $response = $self->_request_with_authorization(
-        sub {
-            require HTTP::Request;
-
-            my $req = HTTP::Request->new($method => $url);
-            $req->header('Authorization' => $self->prepare_access_token) if defined($self->get_access_token);
-
-            if (defined($content)) {
-                $req->content_type('application/json; charset=UTF-8');
-                $req->header('Content-Length' => length($content));
-                $req->content($content);
-            }
-
-            $self->{lwp}->request($req);
-          },
-    );
-
-    if ($response->is_success) {
-        return $response->decoded_content;
-    }
-
-    _warn_reponse_error($response, $url);
-    return;
-}
-
-sub post_as_json {
-    my ($self, $url, $ref) = @_;
-    my $json_str = $self->make_json_string($ref);
-    $self->_save('POST', $url, $json_str);
-}
-
-sub delete_request {
-    my ($self, $url) = @_;
-    $self->_save('DELETE', $url);
 }
 
 sub from_page_token {

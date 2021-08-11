@@ -32,6 +32,8 @@ Subscribe to an YouTube channel.
 sub subscribe_channel {
     my ($self, $channel_id) = @_;
 
+    $self->get_access_token() // return;
+
     my $resource = {
                     snippet => {
                                 resourceId => {
@@ -65,6 +67,8 @@ Unsubscribe from an YouTube channel.
 sub unsubscribe_channel {
     my ($self, $channel_id) = @_;
 
+    $self->get_access_token() // return;
+
     my $info = $self->subscriptions_from_channel_id(
                                                     undef,
                                                     mine         => 'true',
@@ -80,7 +84,7 @@ sub unsubscribe_channel {
 
     if (defined($id)) {
         my $url = $self->_simple_feeds_url('subscriptions', id => $id);
-        return $self->delete_request($url);
+        return $self->lwp_delete($url);
     }
 
     return;
