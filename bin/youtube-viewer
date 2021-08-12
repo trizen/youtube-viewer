@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 09 July 2021
+#  Latest edit on: 12 August 2021
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -62,7 +62,7 @@ no warnings 'once';
 my $DEVEL;                                           # true in devel mode
 use if ($DEVEL = -w __FILE__), lib => qw(../lib);    # devel mode
 
-use WWW::YoutubeViewer v3.9.3;
+use WWW::YoutubeViewer v3.9.4;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(
