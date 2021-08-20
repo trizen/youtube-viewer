@@ -8,8 +8,8 @@ use Memoize;
 
 #memoize('_get_video_info');
 memoize('_ytdl_is_available');
-memoize('_info_from_ytdl');
-memoize('_extract_from_ytdl');
+#memoize('_info_from_ytdl');
+#memoize('_extract_from_ytdl');
 memoize('_extract_from_invidious');
 
 use parent qw(
@@ -662,6 +662,7 @@ sub select_good_invidious_instances {
                    'y.com.cm'                 => 1,    # uses Cloudflare
                    'invidious.exonip.de'      => 1,    # 403 Forbidden (API)
                    'invidious-us.kavin.rocks' => 1,    # 403 Forbidden (API)
+                   'invidious-jp.kavin.rocks' => 1,    # 403 Forbidden (API)
                   );
 
 #<<<

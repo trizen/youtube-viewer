@@ -443,13 +443,13 @@ $action_options
 :pq, :play-queue  : play the enqueued videos (if any)
 :anp, :nnp        : auto-next-page, no-next-page
 :play=i,i,...     : play a group of selected videos
-:regex=my?[regex] : play videos matched by a regex (/i)
+:regex='RE'       : play videos matched by a regex (/i)
 :kregex=KEY,RE    : play videos if the value of KEY matches the RE
 
 $other_options
 $notes_options
 ** Examples:
-:regex="\\w \\d" -> play videos matched by a regular expression.
+:regex='\\w \\d' -> play videos matched by a regular expression.
 :info=1        -> show extra information for the first video.
 :d18-20,1,2    -> download the selected videos: 18, 19, 20, 1 and 2.
 3 4 :next 9    -> play the 3rd and 4th videos from the current
@@ -1010,7 +1010,7 @@ sub tricks {
 
  > ":anp" stands for "Auto Next Page". How do we use it?
    Well, let's search for some videos. Now, if we want to play
-   only the videos matched by a regex, we'd say :re="REGEX".
+   only the videos matched by a regex, we'd say :re='REGEX'.
    But, what if we want to play the videos from the next pages too?
    In this case, ":anp" is your friend. Use it wisely!
 
@@ -1167,11 +1167,11 @@ Results: enqueue the selected videos to play them later.
 Command: :pq, :play-queue
 Results: play the videos enqueued by the :queue option.
 
-Command: :re="^Linux"
+Command: :re='^Linux'
 Results: play videos matched by a regex.
 Example: matches title: "Linux video"
 
-Command: :regex="linux.*part \\d+/\\d+"
+Command: :regex='linux.*part \\d+/\\d+'
 Example: matches title: "Introduction to Linux (part 1/4)"
 
 Command: :anp 1 2 3
@@ -2094,7 +2094,7 @@ sub parse_options {
         return \@args, \@keywords;
     }
 
-    foreach my $word (get_quotewords(qr/\s+/, 1, $input)) {
+    foreach my $word (get_quotewords(qr/\s+/, 0, $input)) {
         if (chr ord $word eq q{-}) {
             push @args, $word;
         }
@@ -3765,7 +3765,8 @@ sub print_playlists {
 
 sub compile_regex {
     my ($value) = @_;
-    $value =~ s{^(?<quote>['"])(?<regex>.+)\g{quote}$}{$+{regex}}s;
+
+    #~ $value =~ s{^(?<quote>['"])(?<regex>.+)\g{quote}$}{$+{regex}}s;
 
     my $re = eval { use re qw(eval); qr/$value/i };
 
