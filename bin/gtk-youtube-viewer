@@ -2851,8 +2851,11 @@ sub get_subscription_video_results {
         Storable::store($subscriptions_data, $local_subscriptions_data_file);
     }
 
-    my @subscription_videos = sort { $yv_utils->compare_published_dates($b, $a) } map { @{$_->{videos}} } @items;
-    my @video_ids           = map  { $yv_utils->get_video_id($_) } @subscription_videos;
+    my @subscription_videos =
+      sort { $yv_utils->compare_published_dates($b, $a) }
+      map { (ref($_->{videos}) eq 'ARRAY') ? @{$_->{videos}} : () } @items;
+
+    my @video_ids = map { $yv_utils->get_video_id($_) } @subscription_videos;
 
     if (open(my $fh, '>', $local_subscription_videos_file)) {
         say {$fh} join("\n", @video_ids);
