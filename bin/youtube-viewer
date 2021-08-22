@@ -26,17 +26,17 @@
 
 # Special thanks to:
 # - Army (for the bug reports and for his great ideas: https://aur.archlinux.org/packages.php?ID=37779&comments=all)
-# - dhn (for adding youtube-viewer in freshports.org: http://www.freshports.org/multimedia/youtube-viewer)
-# - stressat (for the great review of youtube-viewer: http://stressat.blogspot.com/2012/01/youtube-viewer.html)
+# - dhn (for adding youtube-viewer in freshports.org: https://www.freshports.org/multimedia/youtube-viewer)
+# - stressat (for the great review of youtube-viewer: https://stressat.blogspot.com/2012/01/youtube-viewer.html)
 # - symbianflo (for packaging youtube-viewer for Mandriva: https://abf.rosalinux.ru/symbianflo/youtube-viewer)
-# - gotbletu (for the great video review of youtube-viewer: http://www.youtube.com/watch?v=FnJ67oAxVQ4)
-# - Julian Ospald (for adding youtube-viewer in the gentoo portage tree: http://packages.gentoo.org/package/net-misc/youtube-viewer)
-# - 666philb (for packaging gtk-youtube-viewer for Puppy Linux: http://www.murga-linux.com/puppy/viewtopic.php?t=76835)
+# - gotbletu (for the great video review of youtube-viewer: https://www.youtube.com/watch?v=FnJ67oAxVQ4)
+# - Julian Ospald (for adding youtube-viewer in the gentoo portage tree: https://packages.gentoo.org/package/net-misc/youtube-viewer)
+# - 666philb (for packaging gtk-youtube-viewer for Puppy Linux: https://www.murga-linux.com/puppy/viewtopic.php?t=76835)
 # - Kevin Lemonnier (for adding proxy support - https://github.com/trizen/youtube-viewer/pull/18)
 # - Georgo (for adding the 'Watch Later' feature - https://github.com/trizen/youtube-viewer/pull/44)
 # - Daniel Wallace (for adding youtube-viewer in the Arch Official Community repository - https://www.archlinux.org/packages/community/any/youtube-viewer/)
 # - NTmatter (for adding reverse range support - https://github.com/trizen/youtube-viewer/pull/2)
-# - Andrew (for a nice review of (gtk-)youtube-viewer: http://www.webupd8.org/2015/02/youtube-viewer-complete-youtube-client.html)
+# - Andrew (for a nice review of (gtk-)youtube-viewer: https://www.webupd8.org/2015/02/youtube-viewer-complete-youtube-client.html)
 # - AnyComputer (for a complete french review of gtk-youtube-viewer: https://www.youtube.com/watch?v=6-qbdDUlBqg)
 # - Jookia (for fixing the proxy system and improving the support for encrypted videos - https://github.com/Jookia)
 

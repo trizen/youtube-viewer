@@ -63,7 +63,6 @@
 - Added colors for text (--use_colors), 360p support (-3), playlist support                  - (v2.5.0)
 - Added support for today and all time YouTube tops (usage: -t, --tops, -a, --all-time)      - (v2.4.*)
 - Re-added the support for the next page / Added support for download (-d, --download)       - (v2.4.*)
-- Added support for YouTube CCaptions. (Depends on: 'gcap' - http://gcap.googlecode.com)     - (v2.4.*)
 - First version with Windows support. Require SMPlayer to play videos. See MPlayer Line      - (v2.4.*)
 - Code has been changed in a proportion of ~60% and optimized for speed // --480 became -4   - (v2.4.*)
 - Added mega-powers of omnibox to the STDIN :)                                               - (v2.3.*)

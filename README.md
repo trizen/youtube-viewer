@@ -19,12 +19,12 @@ A lightweight application for searching and playing videos from YouTube.
 * Arch Linux (AUR) (release): https://aur.archlinux.org/packages/youtube-viewer
 * Arch Linux (AUR) (git): https://aur.archlinux.org/packages/gtk-youtube-viewer-git/
 * Fedora: https://copr.fedorainfracloud.org/coprs/itsuki/Youtube-viewer/
-* FreeBSD: http://www.freshports.org/multimedia/gtk-youtube-viewer
-* Frugalware: http://frugalware.org/packages/203103
+* FreeBSD: https://www.freshports.org/multimedia/gtk-youtube-viewer
+* Frugalware: https://frugalware.org/packages/203103
 * Gentoo: https://packages.gentoo.org/package/net-misc/youtube-viewer
 * OSX: `brew install thekevjames/youtube-viewer/youtube-viewer`
-* Puppy Linux: http://www.murga-linux.com/puppy/viewtopic.php?t=76835
-* Slackware: http://slackbuilds.org/repository/14.2/multimedia/youtube-viewer/
+* Puppy Linux: https://www.murga-linux.com/puppy/viewtopic.php?t=76835
+* Slackware: https://slackbuilds.org/repository/14.2/multimedia/youtube-viewer/
 * Solus: `sudo eopkg it youtube-viewer`
 * Ubuntu/Linux Mint: `sudo add-apt-repository ppa:nilarimogard/webupd8`
 * Void Linux: `sudo xbps-install youtube-viewer`
@@ -119,13 +119,13 @@ See also: [#285](https://github.com/trizen/youtube-viewer/issues/285), [#308](ht
 ### REVIEWS
 
 * [EN] YOUTUBE VIEWER: A COMPLETE YOUTUBE CLIENT FOR LINUX [UBUNTU PPA]
-    * http://www.webupd8.org/2015/02/youtube-viewer-complete-youtube-client.html
+    * https://www.webupd8.org/2015/02/youtube-viewer-complete-youtube-client.html
 * [EN] YOUTUBE-VIEWER – ALTERNATIVE WAY TO INTERACT WITH YOUTUBE
     * https://www.ossblog.org/youtube-viewer-alternative-way-watch-youtube/
 * [EN] A YouTube CLI for Mac
     * https://blog.johnkrauss.com/installing-youtube-viewer/
 * [EN] Gtk Youtube Viewer (for lots of pups)
-    * http://www.murga-linux.com/puppy/viewtopic.php?t=76835
+    * https://www.murga-linux.com/puppy/viewtopic.php?t=76835
 * [ES] Este es el mejor cliente de YouTube para Linux
     * https://rootear.com/ubuntu-linux/cliente-youtube-linux
 * [ES] YouTube Viewer: busca, reproduce y descarga vídeos de YouTube desde el escritorio
@@ -141,7 +141,7 @@ See also: [#285](https://github.com/trizen/youtube-viewer/issues/285), [#308](ht
 * [RU] Стримим и кастим youtube и не только
     * https://habr.com/ru/post/534926/
 * [RU] Установить клиент Youtube Viewer в Linux
-    * http://compizomania.blogspot.com/2015/02/youtube-viewer-linux.html
+    * https://compizomania.blogspot.com/2015/02/youtube-viewer-linux.html
 * [RU] Youtube Viewer / GTK Youtube Viewer
     * https://zenway.ru/page/gtk-youtube-viewer
 * [TR] Youtube Viewer Nedir? Nasıl Kurulur? (Ubuntu/Linux Mint)
@@ -175,4 +175,4 @@ This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
 by the Free Software Foundation; or the Artistic License.
 
-See http://dev.perl.org/licenses/ for more information.
+See https://dev.perl.org/licenses/ for more information.
