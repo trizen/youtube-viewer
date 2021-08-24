@@ -537,18 +537,19 @@ sub load_config {
         }
     }
 
-    # Locate youtube-dl
+    # Locate yt-dlp or youtube-dl (in this order)
     if (not defined($CONFIG{ytdl_cmd})) {
 
-        my $ytdl_path = which_command('youtube-dl');
+        foreach my $ytdl (qw(yt-dlp youtube-dl)) {
+            my $ytdl_path = which_command($ytdl);
 
-        if (defined($ytdl_path)) {
-            $CONFIG{ytdl_cmd} = $ytdl_path;
-        }
-        else {
-            $CONFIG{ytdl_cmd} = 'youtube-dl';
+            if (defined($ytdl_path)) {
+                $CONFIG{ytdl_cmd} = $ytdl_path;
+                last;
+            }
         }
 
+        $CONFIG{ytdl_cmd} //= 'youtube-dl';
         $update_config = 1;
     }
 

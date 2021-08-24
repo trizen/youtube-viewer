@@ -775,14 +775,19 @@ foreach my $path ($CONFIG{cache_dir}) {
     }
 }
 
-# Locate youtube-dl
+# Locate yt-dlp or youtube-dl (in this order)
 if (not defined $CONFIG{ytdl_cmd}) {
-    if (defined(my $path = which_command('youtube-dl'))) {
-        $CONFIG{ytdl_cmd} = $path;
+
+    foreach my $ytdl (qw(yt-dlp youtube-dl)) {
+        my $ytdl_path = which_command($ytdl);
+
+        if (defined($ytdl_path)) {
+            $CONFIG{ytdl_cmd} = $ytdl_path;
+            last;
+        }
     }
-    else {
-        $CONFIG{ytdl_cmd} = 'youtube-dl';
-    }
+
+    $CONFIG{ytdl_cmd} //= 'youtube-dl';
 }
 
 # Locate video player
