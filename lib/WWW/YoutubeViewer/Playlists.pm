@@ -41,7 +41,58 @@ sub get_playlist_id {
     ref($res->{results}{items}) eq 'ARRAY' || return;
     @{$res->{results}{items}}              || return;
 
-    return $res->{results}{items}[0]{contentDetails}{relatedPlaylists}{$playlist_name};
+    my $id = $res->{results}{items}[0]{contentDetails}{relatedPlaylists}{$playlist_name};
+
+    return $id if defined($id);
+
+    # Fallback method
+
+    $playlist_name eq 'favorites' or return undef;    # currently, only "favorites" require the fallback method
+
+    if (defined($fields{forUsername})) {
+        my $channel_id = $self->channel_id_from_username(delete $fields{forUsername});
+        $fields{channelId} = $channel_id;
+    }
+
+    if (defined($fields{id})) {
+        $fields{channelId} = delete $fields{id};
+    }
+
+    my @playlist_results;
+    my $yv_utils = WWW::YoutubeViewer::Utils->new;
+
+    for (1 .. 10) {
+
+        my $playlists =
+          $self->_get_results($self->_make_feed_url('playlists', part => 'contentDetails', maxResults => 50, %fields));
+
+        $yv_utils->has_entries($playlists) or last;
+
+        my $results = $playlists->{results};
+
+        ref($results) eq 'HASH'           or last;
+        ref($results->{items}) eq 'ARRAY' or last;
+
+        push @playlist_results, @{$results->{items}};
+
+        if (defined($results->{nextPageToken})) {
+            $fields{pageToken} = $results->{nextPageToken};
+        }
+        else {
+            last;
+        }
+    }
+
+    if ($playlist_name eq 'favorites') {
+        foreach my $playlist (@playlist_results) {
+            ref($playlist) eq 'HASH' or next;
+            if ($playlist->{id} =~ /^FL/) {
+                return $playlist->{id};
+            }
+        }
+    }
+
+    return undef;
 }
 
 =head2 playlist_from_id($playlist_id, $part = "snippet")
