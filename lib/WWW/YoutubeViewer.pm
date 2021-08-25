@@ -26,6 +26,8 @@ use parent qw(
   WWW::YoutubeViewer::VideoCategories
 );
 
+use WWW::YoutubeViewer::Utils;
+
 =head1 NAME
 
 WWW::YoutubeViewer - A very easy interface to YouTube.

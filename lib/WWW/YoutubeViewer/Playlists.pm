@@ -58,8 +58,9 @@ sub get_playlist_id {
         $fields{channelId} = delete $fields{id};
     }
 
+    state $yv_utils = WWW::YoutubeViewer::Utils->new;
+
     my @playlist_results;
-    my $yv_utils = WWW::YoutubeViewer::Utils->new;
 
     for (1 .. 10) {
 
