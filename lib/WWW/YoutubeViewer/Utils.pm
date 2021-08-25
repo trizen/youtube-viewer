@@ -363,16 +363,11 @@ sub format_text {
         (
          defined($streaming)
          ? (
-            RESOLUTION => sub {
-                $streaming->{resolution} =~ /^\d+\z/
-                  ? $streaming->{resolution} . 'p'
-                  : $streaming->{resolution};
-            },
-
-            ITAG   => sub { $streaming->{streaming}{itag} },
-            SUB    => sub { $streaming->{srt_file} },
-            VIDEO  => sub { $streaming->{streaming}{url} },
-            FORMAT => sub { $self->extension($streaming->{streaming}{type}) },
+            RESOLUTION => sub { $streaming->{resolution} },
+            ITAG       => sub { $streaming->{streaming}{itag} },
+            SUB        => sub { $streaming->{srt_file} },
+            VIDEO      => sub { $streaming->{streaming}{url} },
+            FORMAT     => sub { $self->extension($streaming->{streaming}{type}) },
 
             AUDIO => sub {
                 ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
