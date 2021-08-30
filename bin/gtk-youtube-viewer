@@ -4076,6 +4076,9 @@ EOT
             if ($likes > 0) {
                 $rating = sprintf('%.2f', $likes / ($likes + $dislikes) * 4 + 1);
             }
+            elsif ($dislikes == 0) {
+                $rating = "0.00";
+            }
         }
         else {
             $rating = "N/A";
