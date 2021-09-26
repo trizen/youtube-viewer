@@ -60,8 +60,6 @@ sub get_playlist_id {
 
     state $yv_utils = WWW::YoutubeViewer::Utils->new;
 
-    my @playlist_results;
-
     for (1 .. 10) {
 
         my $playlists =
@@ -74,22 +72,20 @@ sub get_playlist_id {
         ref($results) eq 'HASH'           or last;
         ref($results->{items}) eq 'ARRAY' or last;
 
-        push @playlist_results, @{$results->{items}};
+        my @page_playlists = @{$results->{items}};
+
+        foreach my $playlist (@page_playlists) {
+            ref($playlist) eq 'HASH' or next;
+            if ($playlist_name eq 'favorites' and $playlist->{id} =~ /^FL/) {
+                return $playlist->{id};
+            }
+        }
 
         if (defined($results->{nextPageToken})) {
             $fields{pageToken} = $results->{nextPageToken};
         }
         else {
             last;
-        }
-    }
-
-    if ($playlist_name eq 'favorites') {
-        foreach my $playlist (@playlist_results) {
-            ref($playlist) eq 'HASH' or next;
-            if ($playlist->{id} =~ /^FL/) {
-                return $playlist->{id};
-            }
         }
     }
 
