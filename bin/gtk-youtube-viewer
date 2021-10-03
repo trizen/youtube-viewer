@@ -2858,7 +2858,8 @@ sub get_subscription_video_results {
 
     my @subscription_videos =
       sort { $yv_utils->compare_published_dates($b, $a) }
-      map { (ref($_->{videos}) eq 'ARRAY') ? @{$_->{videos}} : () } @items;
+      map  { @{$_->{videos}} }
+      grep { ref($_->{videos}) eq 'ARRAY' } @items;
 
     my @video_ids = map { $yv_utils->get_video_id($_) } @subscription_videos;
 
@@ -3020,7 +3021,7 @@ sub display_results {
             $yv_utils->get_video_id($item) || next;
 
             # Filter out videos with time '00:00'
-            $yv_utils->get_time($item) eq '00:00' and next;
+            #$yv_utils->get_time($item) eq '00:00' and next;
 
             # Mark as video
             $item->{__is_video__} = 1;
