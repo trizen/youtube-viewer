@@ -245,6 +245,7 @@ my %CONFIG = (
     prefer_m4a         => 0,
     prefer_av1         => 0,
     ignore_av1         => 0,
+    force_fallback     => 0,
     fat32safe          => $constant{win32},
     fullscreen         => 0,
     show_video_info    => 1,
@@ -888,6 +889,7 @@ usage: $execname [options] ([url] | [keywords])
        --prefer-av1!     : prefer videos in AV1 format, instead of VP9
        --prefer-m4a!     : prefer audios in AAC format, instead of OPUS
        --ignore-av1!     : ignore videos in AV1 format
+       --force-fallback! : extract streaming URLs using the fallback method
 
  * Closed-captions
    --get-captions!      : download closed-captions for videos
@@ -1227,7 +1229,7 @@ sub apply_configuration {
                              http_proxy page comments_order
                              subscriptions_order user_agent
                              cookie_file timeout ytdl ytdl_cmd
-                             prefer_mp4 prefer_av1
+                             prefer_mp4 prefer_av1 force_fallback
                              )
       ) {
 
@@ -1776,6 +1778,8 @@ sub parse_arguments {
         'prefer-m4a!' => \$opt{prefer_m4a},
         'prefer-av1!' => \$opt{prefer_av1},
         'ignore-av1!' => \$opt{ignore_av1},
+
+        'fallback|force-fallback!' => \$opt{force_fallback},
 
         'custom-layout-format=s'          => \$opt{custom_layout_format},
         'custom-channel-layout-format=s'  => \$opt{custom_channel_layout_format},
@@ -5213,6 +5217,10 @@ When downloading a video, make the filename compatible with the FAT32 filesystem
 =head2 ffmpeg_cmd
 
 Path to the C<ffmpeg> program.
+
+=head2 force_fallback
+
+Force the extraction of the streaming URLs to always use the fallback method (youtube-dl / invidious).
 
 =head2 fullscreen
 

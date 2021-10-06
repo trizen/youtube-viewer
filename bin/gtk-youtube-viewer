@@ -203,6 +203,7 @@ my %CONFIG = (
     prefer_m4a      => 0,
     prefer_av1      => 0,
     ignore_av1      => 0,
+    force_fallback  => 0,
     maxResults      => 10,
     hfr             => 1,
     resolution      => 'best',
@@ -940,7 +941,7 @@ sub apply_configuration {
                              regionCode videoCategoryId
                              debug http_proxy user_agent
                              timeout cookie_file ytdl ytdl_cmd
-                             prefer_mp4 prefer_av1
+                             prefer_mp4 prefer_av1 force_fallback
                              )
       ) {
 

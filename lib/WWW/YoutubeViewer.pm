@@ -8,6 +8,7 @@ use Memoize;
 
 #memoize('_get_video_info');
 memoize('_ytdl_is_available');
+
 #memoize('_info_from_ytdl');
 #memoize('_extract_from_ytdl');
 memoize('_extract_from_invidious');
@@ -94,10 +95,11 @@ my %valid_options = (
     ytdl_cmd => {valid => qr/\w/, default => "youtube-dl"},
 
     # Booleans
-    env_proxy   => {valid => [1, 0], default => 1},
-    escape_utf8 => {valid => [1, 0], default => 0},
-    prefer_mp4  => {valid => [1, 0], default => 0},
-    prefer_av1  => {valid => [1, 0], default => 0},
+    env_proxy      => {valid => [1, 0], default => 1},
+    escape_utf8    => {valid => [1, 0], default => 0},
+    prefer_mp4     => {valid => [1, 0], default => 0},
+    prefer_av1     => {valid => [1, 0], default => 0},
+    force_fallback => {valid => [1, 0], default => 0},
 
     # API/OAuth
     key           => {valid => qr/^.{15}/, default => undef},
@@ -1203,6 +1205,12 @@ Returns a list of streaming URLs for a videoID.
 sub get_streaming_urls {
     my ($self, $videoID) = @_;
 
+    no warnings 'redefine';
+
+    local *_get_video_info    = memoize(\&_get_video_info);
+    local *_info_from_ytdl    = memoize(\&_info_from_ytdl);
+    local *_extract_from_ytdl = memoize(\&_extract_from_ytdl);
+
     my %info = $self->_get_video_info($videoID);
     my $json = defined($info{player_response}) ? $self->parse_json_string($info{player_response}) : {};
 
@@ -1231,9 +1239,15 @@ sub get_streaming_urls {
     }
 
     # Try again with youtube-dl
-    if (!@streaming_urls or (($json->{playabilityStatus}{status} // '') =~ /fail|error|unavailable|not available/i)) {
+    if (   !@streaming_urls
+        or (($json->{playabilityStatus}{status} // '') =~ /fail|error|unavailable|not available/i)
+        or $self->get_force_fallback) {
+
         @streaming_urls = $self->_fallback_extract_urls($videoID);
-        push @caption_urls, $self->_fallback_extract_captions($videoID);
+
+        if (!@caption_urls) {
+            push @caption_urls, $self->_fallback_extract_captions($videoID);
+        }
     }
 
     if ($self->get_debug) {
