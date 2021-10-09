@@ -1061,23 +1061,34 @@ sub _get_youtubei_content {
 
     require Time::Piece;
 
+    my %android = (
+                   "videoId" => $videoID,
+                   "context" => {
+                                 "client" => {
+                                              "hl"            => "en",
+                                              "gl"            => "US",
+                                              "clientName"    => "ANDROID",
+                                              "clientVersion" => "16.20",
+                                              %args,
+                                             },
+                                },
+                  );
+
+    my %web = (
+               "videoId" => $videoID,
+               "context" => {
+                             "client" => {
+                                          "hl"            => "en",
+                                          "gl"            => "US",
+                                          "clientName"    => "WEB",
+                                          "clientVersion" => sprintf("2.%s.05.00", Time::Piece->new(time)->strftime("%Y%m%d")),
+                                          %args,
+                                         },
+                            },
+              );
+
     local $self->{access_token} = undef;
-    my $content = $self->post_as_json(
-                                      $url,
-                                      scalar {
-                                              "videoId" => $videoID,
-                                              "context" => {
-                                                       "client" => {
-                                                           "hl"            => "en",
-                                                           "gl"            => "US",
-                                                           "clientName"    => "WEB",
-                                                           "clientVersion" =>
-                                                             sprintf("2.%s.05.00", Time::Piece->new(time)->strftime("%Y%m%d")),
-                                                           %args,
-                                                       }
-                                              }
-                                             }
-                                     );
+    my $content = $self->post_as_json($url, \%android);
 
     return $content;
 }
@@ -1098,7 +1109,7 @@ sub _get_video_info {
     my ($content, %info);
 
     for (1 .. 1) {
-        $content = $self->_get_youtubei_content('player', $videoID, %args) // return $self->_old_get_video_info($videoID);
+        $content = $self->_get_youtubei_content('player', $videoID, %args);
         %info    = (player_response => $content);
     }
 
