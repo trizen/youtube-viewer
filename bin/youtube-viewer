@@ -3914,8 +3914,10 @@ sub download_from_url {
 
     # Download with wget
     if ($opt{download_with_wget}) {
-        my @cmd = ($opt{wget_cmd}, '-c', '-t', '10', '--waitretry=3', $url, '-O', "$output_filename.part");
-        $yv_obj->proxy_system(@cmd);
+        my $cmd = join(' ',
+                       $opt{wget_cmd}, '-c', '-t', '10', '--waitretry=3', quotemeta($url), '-O',
+                       quotemeta("$output_filename.part"));
+        $yv_obj->proxy_system($cmd);
         return if $?;
         rename("$output_filename.part", $output_filename) or return undef;
         return $output_filename;
@@ -5281,6 +5283,10 @@ Set HTTP(S)/SOCKS proxy, using the format:
 If authentication is required, use:
 
     'proto://user:pass@domain.tld:port/'
+
+For example, to use Tor, install L<LWP::Protocol::socks> and set this value to:
+
+    "socks://127.0.0.1:9050"
 
 =head2 ignore_av1
 
