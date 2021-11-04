@@ -3022,7 +3022,7 @@ sub display_results {
             $yv_utils->get_video_id($item) || next;
 
             # Filter out videos with time '00:00'
-            #$yv_utils->get_time($item) eq '00:00' and next;
+            $yv_utils->get_time($item) eq '00:00' and next;
 
             # Mark as video
             $item->{__is_video__} = 1;
