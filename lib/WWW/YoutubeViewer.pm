@@ -5,6 +5,13 @@ use 5.016;
 use warnings;
 
 use Memoize;
+use Memoize::Expire;
+
+tie my %youtubei_cache => 'Memoize::Expire',
+  LIFETIME             => 600,                 # in seconds
+  NUM_USES             => 10;
+
+memoize '_get_youtubei_content', SCALAR_CACHE => [HASH => \%youtubei_cache];
 
 #memoize('_get_video_info');
 memoize('_ytdl_is_available');
@@ -1088,7 +1095,7 @@ sub _get_youtubei_content {
               );
 
     local $self->{access_token} = undef;
-    my $content = $self->post_as_json($url, \%android);
+    my $content = $self->post_as_json($url, $endpoint eq 'next' ? \%web : \%android);
 
     return $content;
 }
@@ -1106,12 +1113,8 @@ sub _old_get_video_info {
 sub _get_video_info {
     my ($self, $videoID, %args) = @_;
 
-    my ($content, %info);
-
-    for (1 .. 1) {
-        $content = $self->_get_youtubei_content('player', $videoID, %args);
-        %info    = (player_response => $content);
-    }
+    my $content = $self->_get_youtubei_content('player', $videoID, %args);
+    my %info    = (player_response => $content);
 
     return %info;
 }
