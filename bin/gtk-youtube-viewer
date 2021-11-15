@@ -389,6 +389,7 @@ my %objects = (
     'spinbutton1'            => \my $spin_results,
     'spinbutton2'            => \my $spin_start_with_page,
     'spinbutton3'            => \my $spin_published_within,
+    'before_checkbuton'      => \my $published_before_checkbutton,
     'thumbs_checkbutton'     => \my $thumbs_checkbutton,
     'fullscreen_checkbutton' => \my $fullscreen_checkbutton,
     'clear_list_checkbutton' => \my $clear_list_checkbutton,
@@ -1933,9 +1934,11 @@ sub combobox_published_within_changed {
 
     if ($period =~ /^any/) {
         $spin_published_within->hide;
+        $published_before_checkbutton->hide;
     }
     else {
         $spin_published_within->show;
+        $published_before_checkbutton->show;
     }
 
     spin_published_within_changed();
@@ -1943,14 +1946,24 @@ sub combobox_published_within_changed {
 
 sub spin_published_within_changed {
     my $period = $published_within_combobox->get_active_text;
+    my $before = $published_before_checkbutton->get_active;
 
     if ($period =~ /^any/) {
         $yv_obj->set_publishedAfter(undef);
+        $yv_obj->set_publishedBefore(undef);
     }
     else {
         my $amount = $spin_published_within->get_value;
         my $date   = $yv_utils->period_to_date($amount, $period);
-        $yv_obj->set_publishedAfter($date);
+
+        if ($before) {
+            $yv_obj->set_publishedAfter(undef);
+            $yv_obj->set_publishedBefore($date);
+        }
+        else {
+            $yv_obj->set_publishedBefore(undef);
+            $yv_obj->set_publishedAfter($date);
+        }
     }
 }
 

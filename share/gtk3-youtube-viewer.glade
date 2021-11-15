@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.2
+<!-- Generated with glade 3.38.2 
 
 Copyright (C) Copyright © 2010-2021 Trizen
 
@@ -1427,6 +1427,22 @@ standard – 480p and lower</property>
                                                             </packing>
                                                             </child>
                                                             <child>
+                                                            <object class="GtkCheckButton" id="before_checkbuton">
+                                                            <property name="label" translatable="yes">before</property>
+                                                            <property name="visible">True</property>
+                                                            <property name="can-focus">True</property>
+                                                            <property name="receives-default">False</property>
+                                                            <property name="draw-indicator">True</property>
+                                                            <signal name="toggled" handler="spin_published_within_changed" swapped="no"/>
+                                                            </object>
+                                                            <packing>
+                                                            <property name="expand">False</property>
+                                                            <property name="fill">False</property>
+                                                            <property name="pack-type">end</property>
+                                                            <property name="position">1</property>
+                                                            </packing>
+                                                            </child>
+                                                            <child>
                                                             <object class="GtkComboBoxText" id="comboboxtext1">
                                                             <property name="visible">True</property>
                                                             <property name="can-focus">False</property>
@@ -1444,7 +1460,7 @@ standard – 480p and lower</property>
                                                             <property name="expand">False</property>
                                                             <property name="fill">False</property>
                                                             <property name="pack-type">end</property>
-                                                            <property name="position">1</property>
+                                                            <property name="position">2</property>
                                                             </packing>
                                                             </child>
                                                             </object>
@@ -1455,7 +1471,7 @@ standard – 480p and lower</property>
                                                           <object class="GtkLabel" id="label35">
                                                             <property name="visible">True</property>
                                                             <property name="can-focus">False</property>
-                                                            <property name="label" translatable="yes">&lt;b&gt;Published within:&lt;/b&gt;</property>
+                                                            <property name="label" translatable="yes">&lt;b&gt;Published:&lt;/b&gt;</property>
                                                             <property name="use-markup">True</property>
                                                           </object>
                                                         </child>
