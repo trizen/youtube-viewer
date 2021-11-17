@@ -321,7 +321,7 @@ my %CONFIG = (
 
 local $SIG{__WARN__} = sub { warn @_; ++$opt{_error} };
 
-my %MPLAYER;    # will store video player arguments
+my %PLAYER_ARGS;    # will store video player arguments
 
 my $base_options = <<'BASE';
 # Base
@@ -1790,7 +1790,7 @@ sub parse_arguments {
             $opt{video_player_selected} = $_[1];
         },
 
-        'append-arg|append-args=s' => \$MPLAYER{user_defined_arguments},
+        'append-arg|append-args=s' => \$PLAYER_ARGS{user_defined_arguments},
 
         # Others
         'caption=s'        => \$opt{videoCaption},
@@ -1886,7 +1886,7 @@ for (my $i = 0 ; $i <= $#ARGV ; $i++) {
     }
 }
 
-if (my @keywords = grep chr ord ne q{-}, @ARGV) {
+if (my @keywords = grep { substr($_, 0, 1) ne q{-} } @ARGV) {
     print_videos($yv_obj->search_videos(\@keywords));
 }
 elsif ($opt{interactive} and -t) {
@@ -2108,9 +2108,7 @@ sub parse_options2 {
     my ($args, $keywords) = _parse_options($input);
 
     my @args =
-        map $args->{$_} eq '0' ? "--no-$_"
-      : $args->{$_} eq '1'     ? "--$_"
-      :                          "--$_=$args->{$_}" => keys %{$args};
+      map { $args->{$_} eq '0' ? "--no-$_" : $args->{$_} eq '1' ? "--$_" : "--$_=$args->{$_}" } keys %{$args};
 
     return wantarray ? (\@args, [split q{ }, $keywords]) : \@args;
 }
@@ -3664,7 +3662,7 @@ sub print_playlists {
         }
     }
 
-    my $contains_keywords = grep /$non_digit_or_opt_re/, @keywords;
+    my $contains_keywords = grep { /$non_digit_or_opt_re/ } @keywords;
 
     my @for_search;
     foreach my $key (@keywords) {
@@ -4196,32 +4194,37 @@ sub save_watched_video {
 sub get_player_command {
     my ($streaming, $video) = @_;
 
-    $MPLAYER{fullscreen} = $opt{fullscreen} ? $opt{video_players}{$opt{video_player_selected}}{fs}      // '' : q{};
-    $MPLAYER{novideo}    = $opt{novideo}    ? $opt{video_players}{$opt{video_player_selected}}{novideo} // '' : q{};
-    $MPLAYER{arguments}  = $opt{video_players}{$opt{video_player_selected}}{arg} // q{};
+    my %player_args = (%PLAYER_ARGS);
+    my $player      = $opt{video_players}{$opt{video_player_selected}};
+
+    if (ref($player) ne 'HASH') {
+        die ":: The selected video player does not exist! Check the configuration file.";
+    }
+
+    $player_args{fullscreen} = $opt{fullscreen} ? $player->{fs}      : undef;
+    $player_args{novideo}    = $opt{novideo}    ? $player->{novideo} : undef;
+    $player_args{arguments}  = $player->{arg};
 
     my $cmd = join(
         q{ },
         (
             # Video player
-            $opt{video_players}{$opt{video_player_selected}}{cmd},
+            $player->{cmd},
 
             (    # Audio file (https://)
-               ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
-                 && exists($opt{video_players}{$opt{video_player_selected}}{audio})
-               ? $opt{video_players}{$opt{video_player_selected}}{audio}
+               (ref($streaming->{streaming}{__AUDIO__}) eq 'HASH' && defined($player->{audio}))
+               ? $player->{audio}
                : ()
             ),
 
             (    # Subtitle file (.srt)
-               defined($streaming->{srt_file})
-                 && exists($opt{video_players}{$opt{video_player_selected}}{srt})
-               ? $opt{video_players}{$opt{video_player_selected}}{srt}
+               (defined($streaming->{srt_file}) && defined($player->{srt}))
+               ? $player->{srt}
                : ()
             ),
 
             # Rest of the arguments
-            grep({ defined($_) and /\S/ } values %MPLAYER)
+            (grep { defined($_) and /\S/ } values %player_args)
         )
     );
 
@@ -4695,7 +4698,7 @@ sub print_videos {
     state @for_play;
 
     my @copy_of_keywords  = @keywords;
-    my $contains_keywords = grep /$non_digit_or_opt_re/, @keywords;
+    my $contains_keywords = grep { /$non_digit_or_opt_re/ } @keywords;
 
     while (@keywords) {
         my $key = shift @keywords;

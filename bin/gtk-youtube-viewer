@@ -3521,33 +3521,36 @@ sub get_quotewords {
 sub get_player_command {
     my ($streaming, $video) = @_;
 
-    my %MPLAYER;
+    my %player_args;
+    my $player = $CONFIG{video_players}{$CONFIG{video_player_selected}};
 
-    $MPLAYER{fullscreen} = $CONFIG{fullscreen} ? $CONFIG{video_players}{$CONFIG{video_player_selected}}{fs} : q{};
-    $MPLAYER{arguments}  = $CONFIG{video_players}{$CONFIG{video_player_selected}}{arg} // q{};
+    if (ref($player) ne 'HASH') {
+        die ":: The selected video player does not exist! Check the configuration file.";
+    }
+
+    $player_args{fullscreen} = $CONFIG{fullscreen} ? $player->{fs} : undef;
+    $player_args{arguments}  = $player->{arg};
 
     my $cmd = join(
         q{ },
         (
             # Video player
-            $CONFIG{video_players}{$CONFIG{video_player_selected}}{cmd},
+            $player->{cmd},
 
             (    # Audio file (https://)
-               ref($streaming->{streaming}{__AUDIO__}) eq 'HASH'
-                 && exists($CONFIG{video_players}{$CONFIG{video_player_selected}}{audio})
-               ? $CONFIG{video_players}{$CONFIG{video_player_selected}}{audio}
+               (ref($streaming->{streaming}{__AUDIO__}) eq 'HASH' && defined($player->{audio}))
+               ? $player->{audio}
                : ()
             ),
 
             (    # Caption file (.srt)
-               defined($streaming->{srt_file})
-                 && exists($CONFIG{video_players}{$CONFIG{video_player_selected}}{srt})
-               ? $CONFIG{video_players}{$CONFIG{video_player_selected}}{srt}
+               (defined($streaming->{srt_file}) && defined($player->{srt}))
+               ? $player->{srt}
                : ()
             ),
 
             # Rest of the arguments
-            grep({ defined($_) and /\S/ } values %MPLAYER)
+            (grep { defined($_) and /\S/ } values %player_args)
         )
     );
 
