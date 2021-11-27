@@ -2329,9 +2329,7 @@ sub get_and_play_video_ids {
         my $info      = $yv_obj->video_details(join(',', @video_ids), VIDEO_PART);
 
         if ($yv_utils->has_entries($info)) {
-            if (not play_videos($info->{results}{items})) {
-                return;
-            }
+            play_videos($info->{results}{items}) || return;
         }
         else {
             warn_cant_do('get info for', @video_ids);
@@ -4247,13 +4245,14 @@ sub get_player_command {
 sub autoplay {
     my $video_id = get_valid_video_id(shift) // return;
 
-    my %seen = ($video_id => 1);    # make sure we don't get stuck in a loop
+    my %seen;    # make sure we don't get stuck in a loop
     local $yv_obj->{maxResults} = 10;
 
     while (1) {
+        $seen{$video_id} = 1;
         get_and_play_video_ids($video_id) || return;
         my $related = $yv_obj->related_to_videoID($video_id);
-        (my @video_ids = grep { !$seen{$_}++ } map { $yv_utils->get_video_id($_) } @{$related->{results}{items}}) || return;
+        (my @video_ids = grep { not $seen{$_} } map { $yv_utils->get_video_id($_) } @{$related->{results}{items}}) || return;
         $video_id = $opt{shuffle} ? $video_ids[rand @video_ids] : $video_ids[0];
     }
 
@@ -4971,7 +4970,8 @@ sub print_videos {
             }
             elsif ($opt =~ /^(?:ap|autoplay)${digit_or_equal_re}(.*)/) {
                 if (my ($id) = get_valid_numbers($#{$videos}, $1)) {
-                    autoplay($yv_utils->get_video_id($videos->[$id]));
+                    local $opt{autoplay_mode} = 1;
+                    play_videos([$videos->[$id]]);
                 }
                 else {
                     warn_no_thing_selected('video');

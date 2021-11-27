@@ -153,7 +153,7 @@ be set to a YouTube video ID.
 
 sub related_to_videoID {
     my ($self, $id) = @_;
-    return $self->search_for('video', [], {relatedToVideoId => $id});
+    return $self->search_for('video', undef, {relatedToVideoId => $id});
 }
 
 =head1 AUTHOR
