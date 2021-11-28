@@ -4248,12 +4248,38 @@ sub autoplay {
     my %seen;    # make sure we don't get stuck in a loop
     local $yv_obj->{maxResults} = 10;
 
+    if ($opt{shuffle}) {
+        require List::Util;
+    }
+
     while (1) {
         $seen{$video_id} = 1;
         get_and_play_video_ids($video_id) || return;
-        my $related = $yv_obj->related_to_videoID($video_id);
-        (my @video_ids = grep { not $seen{$_} } map { $yv_utils->get_video_id($_) } @{$related->{results}{items}}) || return;
-        $video_id = $opt{shuffle} ? $video_ids[rand @video_ids] : $video_ids[0];
+
+        my $related       = $yv_obj->related_to_videoID($video_id);
+        my @video_ids     = grep { not $seen{$_} } map { $yv_utils->get_video_id($_) } @{$related->{results}{items}};
+        my $prev_video_id = $video_id;
+
+        shift(@video_ids);    # the first video seems to not be playable
+
+        # Find the next playable video
+        foreach my $id ($opt{shuffle} ? List::Util::shuffle(@video_ids) : @video_ids) {
+
+            my $streaming = get_streaming_url($id);
+
+            if (defined($streaming->{info}{status})
+                and $streaming->{info}{status} =~ /(?:error|fail)/i) {
+                next;
+            }
+
+            $video_id = $id;
+            last;
+        }
+
+        # No new video was found...
+        if ($video_id eq $prev_video_id) {
+            return;
+        }
     }
 
     return 1;
