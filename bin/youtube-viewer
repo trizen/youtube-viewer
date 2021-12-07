@@ -1879,7 +1879,7 @@ if (@ARGV) {
 for (my $i = 0 ; $i <= $#ARGV ; $i++) {
     my $arg = $ARGV[$i];
 
-    next if chr ord $arg eq q{-};
+    next if (substr($arg, 0, 1) eq q{-});
 
     if (youtube_urls($arg)) {
         splice(@ARGV, $i--, 1);
@@ -2122,7 +2122,7 @@ sub parse_options {
     }
 
     foreach my $word (get_quotewords(qr/\s+/, 0, $input)) {
-        if (chr ord $word eq q{-}) {
+        if (substr($word, 0, 1) eq q{-}) {
             push @args, $word;
         }
         else {
@@ -4264,6 +4264,9 @@ sub autoplay {
 
         # Find the next playable video
         foreach my $id ($opt{shuffle} ? List::Util::shuffle(@video_ids) : @video_ids) {
+
+            my $info = $yv_obj->video_details($id, VIDEO_PART);
+            $yv_utils->has_entries($info) or next;
 
             my $streaming = get_streaming_url($id);
 
