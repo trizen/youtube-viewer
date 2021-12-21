@@ -3140,37 +3140,41 @@ sub add_video_entry {
 
     set_entry_tooltip($iter, $title, $description);
 
-    my $title_label = reflow_text(
-        sprintf(
-            "<big><b>%s</b></big>
-$symbols{thumbs_up}\t %s
-$symbols{thumbs_down}\t %s
-$symbols{category}\t %s
-$symbols{author}\t %s
-<i>%s</i>",
+    my $likes    = $yv_utils->get_likes($video);
+    my $dislikes = $yv_utils->get_dislikes($video);
+    my $views    = $yv_utils->get_views($video);
 
-            encode_entities($title),
-            $yv_utils->set_thousands($yv_utils->get_likes($video)),
-            $yv_utils->set_thousands($yv_utils->get_dislikes($video)),
-            encode_entities($yv_utils->get_category_name($video)),
-            encode_entities($yv_utils->get_channel_title($video)),
-            encode_entities($row_description),
-               )
+    my $title_label = reflow_text(
+        sprintf("<big><b>%s</b></big>", encode_entities($title)) . "\n" . join(
+            "\n",
+            map { sprintf("%s   %s", $_->[0], $_->[1]) } (
+                [$symbols{thumbs_up} => $yv_utils->set_thousands($likes)],
+
+                (
+                 defined($dislikes)
+                 ? [$symbols{thumbs_down} => $yv_utils->set_thousands($dislikes)]
+                 : [$symbols{average}     => sprintf("%.2g%%", ($likes || 0) / ($views || 1) * 100)]
+                ),
+
+                [$symbols{category} => encode_entities($yv_utils->get_category_name($video))],
+                [$symbols{author}   => encode_entities($yv_utils->get_channel_title($video))],
+                                                         )
+          )
+          . "\n"
+          . sprintf("<i>%s</i>", encode_entities($row_description))
     );
 
     my $info_label = reflow_text(
-        sprintf(
-            "$symbols{play}\t %s
-$symbols{type}\t %s
-$symbols{views}\t %s
-$symbols{published}\t %s",
-
-            $yv_utils->get_time($video),
-            $yv_utils->get_definition($video),
-            $yv_utils->set_thousands($yv_utils->get_views($video)),
-            $yv_utils->get_publication_date($video),
-               )
-    );
+                                 join(
+                                      "\n",
+                                      map { sprintf("%s   %s", $_->[0], $_->[1]) } (
+                                                              [$symbols{play}      => $yv_utils->get_time($video)],
+                                                              [$symbols{type}      => $yv_utils->get_definition($video)],
+                                                              [$symbols{views}     => $yv_utils->set_thousands($views)],
+                                                              [$symbols{published} => $yv_utils->get_publication_date($video)],
+                                      )
+                                     )
+                                );
 
     $liststore->set(
                     $iter,
@@ -4074,23 +4078,13 @@ sub set_entry_details {
 
     if ($type eq 'video') {
 
-        my $details_format = <<"EOT";
-‎$symbols{author}\t%s
-‎$symbols{category}\t%s
-$symbols{thumbs_up}\t%s
-$symbols{thumbs_down}\t%s
-$symbols{play}\t%s
-‎$symbols{average}\t%s
-‎$symbols{views}\t%s
-‎$symbols{published}\t%s
-$symbols{author_id}\t%s
-EOT
-
         my $likes    = $yv_utils->get_likes($info);
         my $dislikes = $yv_utils->get_dislikes($info);
-        my $rating   = "1.00";
 
-        if (defined($likes)) {
+        my $rating = "1.00";
+        my $views  = $yv_utils->get_views($info);
+
+        if (defined($likes) and defined($dislikes)) {
             if ($likes > 0) {
                 $rating = sprintf('%.2f', $likes / ($likes + $dislikes) * 4 + 1);
             }
@@ -4098,16 +4092,33 @@ EOT
                 $rating = "0.00";
             }
         }
+        elsif (defined($likes) and $views) {
+            $rating = sprintf("%.2g%%", $likes / $views * 100);
+        }
         else {
             $rating = "N/A";
         }
 
-        $text_info = sprintf($details_format,
-                             $yv_utils->get_channel_title($info),                   $yv_utils->get_category_name($info),
-                             $yv_utils->set_thousands($likes),                      $yv_utils->set_thousands($dislikes),
-                             $yv_utils->get_time($info),                            $rating,
-                             $yv_utils->set_thousands($yv_utils->get_views($info)), $yv_utils->get_publication_date($info),
-                             $yv_utils->get_channel_id($info));
+        $text_info = join "\n", map { sprintf("%s  %s", $_->[0], $_->[1]) } (
+            [$symbols{author}    => $yv_utils->get_channel_title($info)],
+            [$symbols{category}  => $yv_utils->get_category_name($info)],
+            [$symbols{thumbs_up} => $yv_utils->set_thousands($likes)],
+
+            (
+             defined($dislikes)
+             ? [$symbols{thumbs_down} => $yv_utils->set_thousands($dislikes)]
+             : ()
+            ),
+
+            [$symbols{average} => $rating],
+            [$symbols{play}    => $yv_utils->get_time($info)],
+
+            [$symbols{views}     => $yv_utils->set_thousands($views)],
+            [$symbols{published} => $yv_utils->get_publication_date($info)],
+            [$symbols{author_id} => $yv_utils->get_channel_id($info)],
+                                                                            );
+
+        $text_info .= "\n";
     }
     elsif ($type eq 'subscription') {
 

@@ -4549,6 +4549,27 @@ sub print_video_info {
 
     $rep = 0 if $rep < 0;
 
+    my $likes    = $yv_utils->get_likes($video);
+    my $dislikes = $yv_utils->get_dislikes($video);
+    my $views    = $yv_utils->get_views($video);
+
+    my $rating = "1.00";
+
+    if (defined($likes) and defined($dislikes)) {
+        if ($likes > 0) {
+            $rating = sprintf('%.2f', $likes / ($likes + $dislikes) * 4 + 1);
+        }
+        elsif ($dislikes == 0) {
+            $rating = "0.00";
+        }
+    }
+    elsif (defined($likes) and $views) {
+        $rating = sprintf("%.2g%%", $likes / $views * 100);
+    }
+    else {
+        $rating = "N/A";
+    }
+
     print(
           "\n$hr\n",
           q{ } x $rep => (_bold_color("=>> $title <<=") . "\n\n"),
@@ -4561,11 +4582,16 @@ sub print_video_info {
                                         ['Category'   => $yv_utils->get_category_name($video)],
                                         ['Definition' => $yv_utils->get_definition($video)],
                                         ['Duration'   => $yv_utils->get_time($video)],
-                                        ['Likes'      => $yv_utils->set_thousands($yv_utils->get_likes($video))],
-                                        ['Dislikes'   => $yv_utils->set_thousands($yv_utils->get_dislikes($video))],
-                                        ['Comments'   => $yv_utils->set_thousands($yv_utils->get_comments($video))],
-                                        ['Views'      => $yv_utils->set_thousands($yv_utils->get_views($video))],
-                                        ['Published'  => $yv_utils->get_publication_date($video)],
+                                        ['Likes'      => $yv_utils->set_thousands($likes)],
+                                        (
+                                         defined($dislikes)
+                                         ? ["Dislikes" => $yv_utils->set_thousands($dislikes)]
+                                         : ()
+                                        ),
+                                        ['Rating'    => $rating],
+                                        ['Comments'  => $yv_utils->set_thousands($yv_utils->get_comments($video))],
+                                        ['Views'     => $yv_utils->set_thousands($views)],
+                                        ['Published' => $yv_utils->get_publication_date($video)],
                                        )
           ),
           "$hr\n"
