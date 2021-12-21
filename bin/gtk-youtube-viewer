@@ -4080,24 +4080,7 @@ sub set_entry_details {
 
         my $likes    = $yv_utils->get_likes($info);
         my $dislikes = $yv_utils->get_dislikes($info);
-
-        my $rating = "1.00";
-        my $views  = $yv_utils->get_views($info);
-
-        if (defined($likes) and defined($dislikes)) {
-            if ($likes > 0) {
-                $rating = sprintf('%.2f', $likes / ($likes + $dislikes) * 4 + 1);
-            }
-            elsif ($dislikes == 0) {
-                $rating = "0.00";
-            }
-        }
-        elsif (defined($likes) and $views) {
-            $rating = sprintf("%.2g%%", $likes / $views * 100);
-        }
-        else {
-            $rating = "N/A";
-        }
+        my $views    = $yv_utils->get_views($info);
 
         $text_info = join "\n", map { sprintf("%s  %s", $_->[0], $_->[1]) } (
             [$symbols{author}    => $yv_utils->get_channel_title($info)],
@@ -4110,7 +4093,7 @@ sub set_entry_details {
              : ()
             ),
 
-            [$symbols{average} => $rating],
+            [$symbols{average} => $yv_utils->get_rating($info)],
             [$symbols{play}    => $yv_utils->get_time($info)],
 
             [$symbols{views}     => $yv_utils->set_thousands($views)],

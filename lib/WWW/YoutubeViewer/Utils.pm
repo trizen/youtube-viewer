@@ -812,6 +812,33 @@ sub get_dislikes {
     $info->{statistics}{dislikeCount};
 }
 
+sub get_rating {
+    my ($self, $info) = @_;
+
+    my $likes    = $self->get_likes($info);
+    my $dislikes = $self->get_dislikes($info);
+    my $views    = $self->get_views($info);
+
+    my $rating = "1.00";
+
+    if (defined($likes) and defined($dislikes)) {
+        if ($likes > 0) {
+            $rating = sprintf('%.2f', $likes / ($likes + $dislikes) * 4 + 1);
+        }
+        elsif ($dislikes == 0) {
+            $rating = "0.00";
+        }
+    }
+    elsif (defined($likes) and $views) {
+        $rating = sprintf("%.2g%%", $likes / $views * 100);
+    }
+    else {
+        $rating = "N/A";
+    }
+
+    return $rating;
+}
+
 sub get_comments {
     my ($self, $info) = @_;
     $info->{statistics}{commentCount};
