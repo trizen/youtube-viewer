@@ -3153,7 +3153,7 @@ sub add_video_entry {
                 (
                  defined($dislikes)
                  ? [$symbols{thumbs_down} => $yv_utils->set_thousands($dislikes)]
-                 : [$symbols{average}     => sprintf("%.2g%%", ($likes || 0) / ($views || 1) * 100)]
+                 : [$symbols{average}     => $yv_utils->get_rating($video)]
                 ),
 
                 [$symbols{category} => encode_entities($yv_utils->get_category_name($video))],
