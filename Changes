@@ -6,6 +6,7 @@
 
 [CHANGELOG]
 
+- Added support for searching for videos published before a given period of time.            - (v3.9.7)
 - Added support for local subscription videos (-ls).                                         - (v3.9.0)
 - Added support for local playlists in the Gtk3 version.                                     - (v3.9.0)
 - Added support for saving YouTube playlists locally (--save-playlist=ID)                    - (v3.8.1)
