@@ -16,6 +16,7 @@ A lightweight application for searching and playing videos from YouTube.
 
 ### AVAILABILITY
 
+* Alpine Linux: `doas apk add youtube-viewer`
 * Arch Linux (AUR) (release): https://aur.archlinux.org/packages/youtube-viewer
 * Arch Linux (AUR) (git): https://aur.archlinux.org/packages/gtk-youtube-viewer-git/
 * Fedora: https://copr.fedorainfracloud.org/coprs/itsuki/Youtube-viewer/
