@@ -107,7 +107,7 @@ my $default_api_file = '/etc/youtube-viewer/api.json';
 foreach my $dir ($config_dir, $local_playlists_dir) {
     if (not -d $dir) {
         require File::Path;
-        File::Path::make_path($dir)
+        eval { File::Path::make_path($dir) }
           or warn "[!] Can't create the configuration directory `$dir': $!";
     }
 }
@@ -502,7 +502,7 @@ if (not defined $CONFIG{cache_dir}) {
 foreach my $path ($CONFIG{cache_dir}) {
     next if -d $path;
     require File::Path;
-    File::Path::make_path($path)
+    eval { File::Path::make_path($path) }
       or warn "[!] Can't create path <<$path>>: $!";
 }
 

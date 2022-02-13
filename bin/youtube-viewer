@@ -145,7 +145,7 @@ my $default_api_file = '/etc/youtube-viewer/api.json';
 foreach my $dir ($config_dir, $local_playlists_dir) {
     if (not -d $dir) {
         require File::Path;
-        File::Path::make_path($dir)
+        eval { File::Path::make_path($dir) }
           or warn "[!] Can't create dir <<$dir>>: $!";
     }
 }
@@ -612,7 +612,7 @@ sub load_config {
     foreach my $path ($CONFIG{cache_dir}) {
         next if -d $path;
         require File::Path;
-        File::Path::make_path($path)
+        eval { File::Path::make_path($path) }
           or warn "[!] Can't create path <<$path>>: $!";
     }
 
@@ -644,7 +644,7 @@ if ($opt{history}) {
 
         if (not -d $dir) {
             require File::Path;
-            File::Path::make_path($dir)
+            eval { File::Path::make_path($dir) }
               or warn "[!] Can't create path <<$dir>>: $!";
         }
 
@@ -2170,7 +2170,7 @@ sub get_user_input {
     if ($opt{history}) {
         my $str = join(' ', grep { /\w/ } @{$args}, @{$keywords});
         if ($str ne '' and $str !~ /^[0-9]{1,2}\z/) {
-            $term->append_history(1, $opt{history_file});
+            eval { $term->append_history(1, $opt{history_file}) };
         }
     }
 
@@ -2700,6 +2700,7 @@ sub adjust_width {
     state $pkg = (
         eval {
             require Unicode::GCString;
+            Unicode::GCString->new('test');
             'Unicode::GCString';
         } // eval {
             require Text::CharWidth;
@@ -4024,7 +4025,7 @@ sub download_video {
 
     if (not -d $opt{downloads_dir}) {
         require File::Path;
-        if (not File::Path::make_path($opt{downloads_dir})) {
+        if (not eval { File::Path::make_path($opt{downloads_dir}) }) {
             warn colored("\n[!] Can't create directory '$opt{downloads_dir}': $1", 'bold red') . "\n";
         }
     }
