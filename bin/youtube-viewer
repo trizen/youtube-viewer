@@ -3924,7 +3924,7 @@ sub get_streaming_url {
         dash_segmented => ($opt{download_video} ? 0 : $opt{dash_segmented}),
 
         ignored_projections => $opt{ignored_projections},
-                                                                );
+    );
 
     return {
             streaming  => $streaming,
@@ -4215,15 +4215,15 @@ sub get_player_command {
             $player->{cmd},
 
             (    # Audio file (https://)
-               (ref($streaming->{streaming}{__AUDIO__}) eq 'HASH' && defined($player->{audio}))
-               ? $player->{audio}
-               : ()
+              (ref($streaming->{streaming}{__AUDIO__}) eq 'HASH' && defined($player->{audio}))
+              ? $player->{audio}
+              : ()
             ),
 
             (    # Subtitle file (.srt)
-               (defined($streaming->{srt_file}) && defined($player->{srt}))
-               ? $player->{srt}
-               : ()
+              (defined($streaming->{srt_file}) && defined($player->{srt}))
+              ? $player->{srt}
+              : ()
             ),
 
             # Rest of the arguments

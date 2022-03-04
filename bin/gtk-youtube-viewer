@@ -246,6 +246,7 @@ my %CONFIG = (
 
     autolike_watched  => 0,
     autoscroll_to_end => 0,
+    single_click_play => 0,
 
     # youtube-dl support
     ytdl     => 1,
@@ -400,7 +401,7 @@ my %objects = (
     'channel_name_save'      => \my $save_channel_name_entry,
     'channel_id_save'        => \my $save_channel_id_entry,
     'main-menu-history-menu' => \my $history_menu,
-);
+              );
 
 while (my ($key, $value) = each %objects) {
     my $object = $gui->get_object($key);
@@ -1100,11 +1101,6 @@ sub treeview_scroll_to_end {
 sub menu_popup {
     my ($treeview, $event) = @_;
 
-    # Ignore non-right-clicks
-    if ($event->button != 3) {
-        return 0;
-    }
-
     ##my ($path, $col, $cell_x, $cell_y) = ...;
     my $path = ($treeview->get_path_at_pos($event->x, $event->y))[0] // return 0;
 
@@ -1113,6 +1109,17 @@ sub menu_popup {
 
     my $iter = $selection->get_selected() // return 0;
     my $type = $liststore->get($iter, 7);
+
+    # Play videos with a single-click
+    if ($CONFIG{single_click_play} and $event->button == 1) {
+        get_code();
+        return 0;
+    }
+
+    # Ignore non-right-clicks
+    elsif ($event->button != 3) {
+        return 0;
+    }
 
     # Ignore the right-click on 'next-page' entry
     $type eq 'next_page' and return 0;
@@ -2629,7 +2636,7 @@ sub get_code {
         },
         [$code, $iter],
         Glib::G_PRIORITY_LOW
-                   );
+    );
 }
 
 sub make_row_description {
@@ -3084,7 +3091,7 @@ sub set_thumbnail {
         },
         [$entry, $liststore, $iter],
         Glib::G_PRIORITY_LOW
-                   );
+    );
 }
 
 sub add_subscription_entry {
@@ -3162,7 +3169,7 @@ sub add_video_entry {
 
                 [$symbols{category} => encode_entities($yv_utils->get_category_name($video))],
                 [$symbols{author}   => encode_entities($yv_utils->get_channel_title($video))],
-                                                         )
+            )
           )
           . "\n"
           . sprintf("<i>%s</i>", encode_entities($row_description))
@@ -3510,7 +3517,7 @@ sub get_streaming_url {
         dash_segmented => $CONFIG{dash_segmented},
 
         ignored_projections => $CONFIG{ignored_projections},
-                                                                );
+    );
 
     return {
             streaming  => $streaming,
@@ -3546,15 +3553,15 @@ sub get_player_command {
             $player->{cmd},
 
             (    # Audio file (https://)
-               (ref($streaming->{streaming}{__AUDIO__}) eq 'HASH' && defined($player->{audio}))
-               ? $player->{audio}
-               : ()
+              (ref($streaming->{streaming}{__AUDIO__}) eq 'HASH' && defined($player->{audio}))
+              ? $player->{audio}
+              : ()
             ),
 
             (    # Caption file (.srt)
-               (defined($streaming->{srt_file}) && defined($player->{srt}))
-               ? $player->{srt}
-               : ()
+              (defined($streaming->{srt_file}) && defined($player->{srt}))
+              ? $player->{srt}
+              : ()
             ),
 
             # Rest of the arguments
@@ -4103,7 +4110,7 @@ sub set_entry_details {
             [$symbols{views}     => $yv_utils->set_thousands($views)],
             [$symbols{published} => $yv_utils->get_publication_date($info)],
             [$symbols{author_id} => $yv_utils->get_channel_id($info)],
-                                                                            );
+        );
 
         $text_info .= "\n";
     }
@@ -4206,7 +4213,7 @@ EOT
             },
             [$nr],
             Glib::G_PRIORITY_LOW
-                       );
+        );
     }
 
     # Setting textview description
@@ -4248,7 +4255,7 @@ if ($CONFIG{remember_session} and -f $session_file) {
                 },
                 [],
                 Glib::G_PRIORITY_LOW
-                           );
+            );
         }
     }
     else {
@@ -4274,7 +4281,7 @@ if (not defined $yv_obj->get_key) {
         },
         [],
         Glib::G_PRIORITY_LOW
-                   );
+    );
 }
 
 'Gtk3'->main;
