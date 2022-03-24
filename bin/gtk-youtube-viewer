@@ -2823,13 +2823,17 @@ sub get_results_from_list {
 sub get_subscription_video_results {
 
     state $t0 = time;
+    state $d0 = $t0;
 
     # Reuse the subscription file if it's less than 10 minutes old
-    if ((time - $t0 <= 600) and (-f $local_subscription_videos_file) and (-M _) < (-M $CONFIG{youtube_users_file})) {
+    if (    $t0 != $d0
+        and (time - $t0 <= 600)
+        and (-f $local_subscription_videos_file)
+        and (-M $local_subscription_videos_file) < (-M $CONFIG{youtube_users_file})) {
         return get_results_from_list(ids => [reverse $yv_utils->read_lines_from_file($local_subscription_videos_file)]);
     }
 
-    $t0 = time;
+    $t0 = time+1;
 
     my @channels    = $yv_utils->read_channels_from_file($CONFIG{youtube_users_file});
     my @channel_ids = map { $_->[0] } @channels;
