@@ -102,21 +102,21 @@ my %valid_options = (
     ytdl_cmd => {valid => qr/\w/, default => "youtube-dl"},
 
     # Booleans
-    env_proxy      => {valid => [1, 0], default => 1},
-    escape_utf8    => {valid => [1, 0], default => 0},
-    prefer_mp4     => {valid => [1, 0], default => 0},
-    prefer_av1     => {valid => [1, 0], default => 0},
-    force_fallback => {valid => [1, 0], default => 0},
+    env_proxy                  => {valid => [1, 0], default => 1},
+    escape_utf8                => {valid => [1, 0], default => 0},
+    prefer_mp4                 => {valid => [1, 0], default => 0},
+    prefer_av1                 => {valid => [1, 0], default => 0},
+    force_fallback             => {valid => [1, 0], default => 0},
+    bypass_age_gate_with_proxy => {valid => [1, 0], default => 0},
 
     # API/OAuth
-    key           => {valid => qr/^.{15}/, default => undef},
-    client_id     => {valid => qr/^.{15}/, default => undef},
-    client_secret => {valid => qr/^.{15}/, default => undef},
-    redirect_uri  => {valid => qr/^.{15}/, default => 'urn:ietf:wg:oauth:2.0:oob'},
-    access_token  => {valid => qr/^.{15}/, default => undef},
-    refresh_token => {valid => qr/^.{15}/, default => undef},
-
-    authentication_file => {valid => qr/^./, default => undef},
+    key                 => {valid => qr/^.{15}/, default => undef},
+    client_id           => {valid => qr/^.{15}/, default => undef},
+    client_secret       => {valid => qr/^.{15}/, default => undef},
+    redirect_uri        => {valid => qr/^.{15}/, default => 'urn:ietf:wg:oauth:2.0:oob'},
+    access_token        => {valid => qr/^.{15}/, default => undef},
+    refresh_token       => {valid => qr/^.{15}/, default => undef},
+    authentication_file => {valid => qr/^./,     default => undef},
 
 #<<<
     # No input value allowed
@@ -481,7 +481,7 @@ sub lwp_post {
             $self->{lwp}->post($url, (exists($opt{headers}) ? $opt{headers} : ()), @_);
         },
         %opt
-                                                     );
+    );
 
     if ($response->is_success) {
         return $response->decoded_content;
@@ -656,24 +656,24 @@ sub select_good_invidious_instances {
     ref($instances) eq 'ARRAY' or return;
 
     my %ignored = (
-                   'yewtu.be'                 => 1,    # 403 Forbidden (API)
-                   'invidious.tube'           => 1,    # down?
-                   'invidiou.site'            => 0,
-                   'invidious.site'           => 1,    # AGPL Violation + trackers
-                   'invidious.zee.li'         => 1,    # uses Cloudflare // 500 read timeout
-                   'invidious.048596.xyz'     => 1,    # broken API
-                   'invidious.xyz'            => 1,    # 502 Bad Gateway
-                   'vid.mint.lgbt'            => 0,
-                   'invidious.ggc-project.de' => 1,    # broken API
-                   'invidious.toot.koeln'     => 1,    # broken API
-                   'invidious.kavin.rocks'    => 1,    # 403 Forbidden (API)
-                   'invidious.snopyta.org'    => 0,
-                   'invidious.silkky.cloud'   => 0,
-                   'invidious.moomoo.me'      => 1,    # uses Cloudflare
-                   'y.com.cm'                 => 1,    # uses Cloudflare
-                   'invidious.exonip.de'      => 1,    # 403 Forbidden (API)
-                   'invidious-us.kavin.rocks' => 1,    # 403 Forbidden (API)
-                   'invidious-jp.kavin.rocks' => 1,    # 403 Forbidden (API)
+        'yewtu.be'                 => 1,    # 403 Forbidden (API)
+        'invidious.tube'           => 1,    # down?
+        'invidiou.site'            => 0,
+        'invidious.site'           => 1,    # AGPL Violation + trackers
+        'invidious.zee.li'         => 1,    # uses Cloudflare // 500 read timeout
+        'invidious.048596.xyz'     => 1,    # broken API
+        'invidious.xyz'            => 1,    # 502 Bad Gateway
+        'vid.mint.lgbt'            => 0,
+        'invidious.ggc-project.de' => 1,    # broken API
+        'invidious.toot.koeln'     => 1,    # broken API
+        'invidious.kavin.rocks'    => 1,    # 403 Forbidden (API)
+        'invidious.snopyta.org'    => 0,
+        'invidious.silkky.cloud'   => 0,
+        'invidious.moomoo.me'      => 1,    # uses Cloudflare
+        'y.com.cm'                 => 1,    # uses Cloudflare
+        'invidious.exonip.de'      => 1,    # 403 Forbidden (API)
+        'invidious-us.kavin.rocks' => 1,    # 403 Forbidden (API)
+        'invidious-jp.kavin.rocks' => 1,    # 403 Forbidden (API)
                   );
 
 #<<<
@@ -1230,7 +1230,28 @@ sub get_streaming_urls {
 
     if (not defined $json->{streamingData}) {
         say STDERR ":: Trying to bypass age-restricted gate..." if $self->get_debug;
-        %info = $self->_get_video_info($videoID, "clientScreen" => "EMBED");
+
+        if ($self->get_bypass_age_gate_with_proxy) {
+
+            # See:
+            #   https://github.com/zerodytrash/Simple-YouTube-Age-Restriction-Bypass/tree/main/account-proxy
+
+            my $proxy_url = "https://youtube-proxy.zerody.one/getPlayer?";
+
+            $proxy_url .= $self->list_to_url_arguments(
+                                                       videoId       => $videoID,
+                                                       reason        => "LOGIN_REQUIRED",
+                                                       clientName    => "ANDROID",
+                                                       clientVersion => "16.20",
+                                                       hl            => "en",
+                                                      );
+
+            %info = (player_response => $self->lwp_get($proxy_url));
+        }
+        else {
+            %info = $self->_get_video_info($videoID, "clientScreen" => "EMBED");
+        }
+
         $json = defined($info{player_response}) ? $self->parse_json_string($info{player_response}) : {};
     }
 

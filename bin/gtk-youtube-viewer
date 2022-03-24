@@ -242,7 +242,8 @@ my %CONFIG = (
     fullscreen  => 0,
     audio_only  => 0,
 
-    ignored_projections => [],
+    bypass_age_gate_with_proxy => 0,
+    ignored_projections        => [],
 
     autolike_watched  => 0,
     autoscroll_to_end => 0,
@@ -944,6 +945,7 @@ sub apply_configuration {
                              debug http_proxy user_agent
                              timeout cookie_file ytdl ytdl_cmd
                              prefer_mp4 prefer_av1 force_fallback
+                             bypass_age_gate_with_proxy
                              )
       ) {
 
@@ -2833,7 +2835,7 @@ sub get_subscription_video_results {
         return get_results_from_list(ids => [reverse $yv_utils->read_lines_from_file($local_subscription_videos_file)]);
     }
 
-    $t0 = time+1;
+    $t0 = time + 1;
 
     my @channels    = $yv_utils->read_channels_from_file($CONFIG{youtube_users_file});
     my @channel_ids = map { $_->[0] } @channels;
