@@ -1246,7 +1246,7 @@ sub get_streaming_urls {
                                                        hl            => "en",
                                                       );
 
-            %info = (player_response => $self->lwp_get($proxy_url));
+            %info = (player_response => $self->lwp_get($proxy_url, simple => 1));
         }
         else {
             %info = $self->_get_video_info($videoID, "clientScreen" => "EMBED");
