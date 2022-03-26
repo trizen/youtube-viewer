@@ -42,7 +42,7 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =cut
 
-our $VERSION = '3.9.7';
+our $VERSION = '3.9.8';
 
 =head1 SYNOPSIS
 
@@ -439,7 +439,7 @@ authentication header will not be set in the HTTP request.
 sub lwp_get {
     my ($self, $url, %opt) = @_;
 
-    $url // return;
+    $url || return;
     $self->{lwp} // $self->set_lwp_useragent();
 
     if (not defined($self->get_key)) {
