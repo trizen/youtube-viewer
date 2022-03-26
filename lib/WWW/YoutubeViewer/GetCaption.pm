@@ -172,6 +172,7 @@ sub xml2srt {
     foreach my $i (0 .. $#{$sections}) {
         my $line = $sections->[$i];
 
+        # Determine display duration, when no duration is specified
         if (not defined($line->{'-dur'})) {
             if (exists $sections->[$i + 1]) {
                 $line->{'-dur'} = $sections->[$i + 1]{'-start'} - $line->{'-start'};
@@ -183,6 +184,14 @@ sub xml2srt {
 
         my $start = $line->{'-start'};
         my $end   = $start + $line->{'-dur'};
+
+        # Fix overlapping display time
+        if (exists $sections->[$i + 1]) {
+            my $next_start = $sections->[$i + 1]{'-start'};
+            if ($end > $next_start) {
+                $end = $next_start - 0.001;
+            }
+        }
 
         push @text,
           join("\n",
