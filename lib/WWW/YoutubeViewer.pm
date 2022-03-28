@@ -1249,7 +1249,13 @@ sub get_streaming_urls {
             %info = (player_response => $self->lwp_get($proxy_url, simple => 1));
         }
         else {
-            %info = $self->_get_video_info($videoID, "clientScreen" => "EMBED");
+            ## %info = $self->_get_video_info($videoID, "clientScreen" => "EMBED");
+            %info =
+              $self->_get_video_info(
+                                     $videoID,
+                                     "clientName"    => "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+                                     "clientVersion" => "2.0"
+                                    );
         }
 
         $json = defined($info{player_response}) ? $self->parse_json_string($info{player_response}) : {};
