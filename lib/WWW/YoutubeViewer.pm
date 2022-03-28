@@ -1231,34 +1231,44 @@ sub get_streaming_urls {
     if (not defined $json->{streamingData}) {
         say STDERR ":: Trying to bypass age-restricted gate..." if $self->get_debug;
 
+        my @fallback_methods = (
+            sub {
+                %info =
+                  $self->_get_video_info(
+                                         $videoID,
+                                         "clientName"    => "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+                                         "clientVersion" => "2.0"
+                                        );
+              },
+        );
+
         if ($self->get_bypass_age_gate_with_proxy) {
 
             # See:
             #   https://github.com/zerodytrash/Simple-YouTube-Age-Restriction-Bypass/tree/main/account-proxy
 
-            my $proxy_url = "https://youtube-proxy.zerody.one/getPlayer?";
+            push @fallback_methods, sub {
 
-            $proxy_url .= $self->list_to_url_arguments(
-                                                       videoId       => $videoID,
-                                                       reason        => "LOGIN_REQUIRED",
-                                                       clientName    => "ANDROID",
-                                                       clientVersion => "16.20",
-                                                       hl            => "en",
-                                                      );
+                my $proxy_url = "https://youtube-proxy.zerody.one/getPlayer?";
 
-            %info = (player_response => $self->lwp_get($proxy_url, simple => 1));
-        }
-        else {
-            ## %info = $self->_get_video_info($videoID, "clientScreen" => "EMBED");
-            %info =
-              $self->_get_video_info(
-                                     $videoID,
-                                     "clientName"    => "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
-                                     "clientVersion" => "2.0"
-                                    );
+                $proxy_url .= $self->list_to_url_arguments(
+                                                           videoId       => $videoID,
+                                                           reason        => "LOGIN_REQUIRED",
+                                                           clientName    => "ANDROID",
+                                                           clientVersion => "16.20",
+                                                           hl            => "en",
+                                                          );
+
+                %info = (player_response => $self->lwp_get($proxy_url, simple => 1));
+            };
         }
 
-        $json = defined($info{player_response}) ? $self->parse_json_string($info{player_response}) : {};
+        # Try to find a fallback method that works
+        foreach my $fallback_method (@fallback_methods) {
+            $fallback_method->();
+            $json = defined($info{player_response}) ? $self->parse_json_string($info{player_response}) : {};
+            last if defined($json->{streamingData});
+        }
     }
 
     my @streaming_urls = $self->_extract_streaming_urls($json, $videoID);
