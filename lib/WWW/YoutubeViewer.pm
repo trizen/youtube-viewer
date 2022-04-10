@@ -719,15 +719,21 @@ sub _extract_from_invidious {
     else {
         @instances = qw(
           invidious.snopyta.org
-          invidious.silkky.cloud
           invidious.fdn.fr
           invidious.namazso.eu
-          ytprivate.com
+          invidious.lunar.icu
+          inv.bp.mutahar.rocks
         );
     }
 
     if ($self->get_debug) {
         print STDERR ":: Invidious instances: @instances\n";
+    }
+
+    # Restrict the number of invidious instances to the first 5.
+    # If the first 5 instances fail, most likely all will fail.
+    if (scalar(@instances) > 5) {
+        $#instances = 4;
     }
 
     my $tries      = 2 * scalar(@instances);
