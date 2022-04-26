@@ -38,11 +38,11 @@ our $get_username_playlists_re = qr{$get_username_videos_re/playlists};
 # Video ID
 my $video_id_re = qr/[0-9A-Za-z_\-]{11}/;
 our $valid_video_id_re = qr{^$video_id_re\z};
-our $get_video_id_re   = qr{(?:%3F|%2F|\b)(?>v|embed|shorts|youtu(?:\\)?[.]be)(?>(?:\\)?[=/]|%3D|%2F)(?<video_id>$video_id_re)};
+our $get_video_id_re = qr{(?:%3F|%2F|\b)(?>v|embed|shorts|youtu(?:\\)?[.]be)(?>(?:\\)?[=/]|%3D|%2F)(?<video_id>$video_id_re)};
 
 # Playlist ID
 our $valid_playlist_id_re = qr{^$generic_name_re\z};
-our $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p|list)=)|\w#p/c/)(?<playlist_id>$generic_name_re)\b};
+our $get_playlist_id_re   = qr{(?:(?:(?>playlist\?list|view_play_list\?p|list)=)|\w#p/c/)(?<playlist_id>$generic_name_re)};
 
 our $valid_opt_re = qr{^[$opt_begin_chars]([A-Za-z]++(?:-[A-Za-z]++)?(?>${digit_or_equal_re}.*)?)$};
 
@@ -60,7 +60,7 @@ our @EXPORT = qw(
   $get_channel_playlists_id_re
   $get_username_videos_re
   $get_username_playlists_re
-  );
+);
 
 =head1 AUTHOR
 
