@@ -560,7 +560,7 @@ sub load_config {
     }
 
     # Download with wget if it is installed
-    if (not defined $CONFIG{download_with_wget} and not $CONFIG{download_with_ytdl}) {
+    if (not defined $CONFIG{download_with_wget}) {
 
         my $wget_path = which_command('wget');
 
@@ -3950,7 +3950,7 @@ sub download_from_url {
     my $url = $info->{url};
 
     # Download with yt-dlp / youtube-dl
-    if ($opt{download_with_ytdl} and defined($info->{_youtube_url}) and defined($info->{itag})) {
+    if ($opt{ytdl} and $opt{download_with_ytdl} and defined($info->{_youtube_url}) and defined($info->{itag})) {
         my $cmd = join(' ',
                        $opt{ytdl_cmd}, '-f', $info->{itag}, quotemeta($info->{_youtube_url}),
                        '-o', quotemeta("$output_filename.part"));
