@@ -721,8 +721,8 @@ sub _extract_from_invidious {
           invidious.snopyta.org
           invidious.fdn.fr
           invidious.namazso.eu
-          invidious.lunar.icu
-          inv.bp.mutahar.rocks
+          vid.puffyan.us
+          invidious.flokinet.to
         );
     }
 
