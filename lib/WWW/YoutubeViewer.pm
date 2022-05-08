@@ -114,6 +114,7 @@ my %valid_options = (
     client_id           => {valid => qr/^.{15}/, default => undef},
     client_secret       => {valid => qr/^.{15}/, default => undef},
     redirect_uri        => {valid => qr/^.{15}/, default => 'urn:ietf:wg:oauth:2.0:oob'},
+    tv_grant_type       => {valid => qr/^.{15}/, default => 'urn:ietf:params:oauth:grant-type:device_code'},
     access_token        => {valid => qr/^.{15}/, default => undef},
     refresh_token       => {valid => qr/^.{15}/, default => undef},
     authentication_file => {valid => qr/^./,     default => undef},
@@ -122,7 +123,8 @@ my %valid_options = (
     # No input value allowed
     feeds_url        => {valid => q[], default => 'https://www.googleapis.com/youtube/v3/'},
     video_info_url   => {valid => q[], default => 'https://www.youtube.com/get_video_info'},
-    oauth_url        => {valid => q[], default => 'https://accounts.google.com/o/oauth2/'},
+    #oauth_url        => {valid => q[], default => 'https://accounts.google.com/o/oauth2/'},
+    oauth_url        => {valid => q[], default => 'https://oauth2.googleapis.com'},
     video_info_args  => {valid => q[], default => '?video_id=%s&el=detailpage&ps=default&eurl=&gl=US&hl=en&html5=1&c=TVHTML5&cver=6.20180913'},
     www_content_type => {valid => q[], default => 'application/x-www-form-urlencoded'},
     youtubei_url     => {valid => q[], default => 'https://youtubei.googleapis.com/youtubei/v1/%s?key=' . reverse("8Wcq11_9Y_wliCGLHETS4Q8UqlS2JF_OAySazIA")},

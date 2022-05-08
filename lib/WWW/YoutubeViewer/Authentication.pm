@@ -17,11 +17,6 @@ WWW::YoutubeViewer::Authentication - OAuth login support.
 
 =cut
 
-sub _get_token_oauth_url {
-    my ($self) = @_;
-    return $self->get_oauth_url() . 'token';
-}
-
 =head2 oauth_refresh_token()
 
 Refresh the access_token using the refresh_token. Returns a HASH ref with the `access_token` or undef.
@@ -32,11 +27,11 @@ sub oauth_refresh_token {
     my ($self) = @_;
 
     my $json_data = $self->lwp_post(
-                                    $self->_get_token_oauth_url(),
+                                    $self->get_oauth_url() . '/token',
                                     headers => [Content       => $self->get_www_content_type,
-                                                client_id     => $self->get_client_id()     // return,
-                                                client_secret => $self->get_client_secret() // return,
-                                                refresh_token => $self->get_refresh_token() // return,
+                                                client_id     => $self->get_client_id()     // (return),
+                                                client_secret => $self->get_client_secret() // (return),
+                                                refresh_token => $self->get_refresh_token() // (return),
                                                 grant_type    => 'refresh_token',
                                                ],
                                     simple => 1,
@@ -49,20 +44,99 @@ sub oauth_refresh_token {
 
 Creates an OAuth URL with the 'code' response type. (Google's authorization server)
 
+This method is deprecated: https://developers.googleblog.com/2022/02/making-oauth-flows-safer.html
+
 =cut
 
 sub get_accounts_oauth_url {
     my ($self) = @_;
 
     my $url = $self->_append_url_args(
-                                      ($self->get_oauth_url() . 'auth'),
+                                      ($self->get_oauth_url() . '/auth'),
                                       response_type => 'code',
-                                      client_id     => $self->get_client_id()    // return,
-                                      redirect_uri  => $self->get_redirect_uri() // return,
+                                      client_id     => $self->get_client_id()    // (return),
+                                      redirect_uri  => $self->get_redirect_uri() // (return),
                                       scope         => 'https://www.googleapis.com/auth/youtube.force-ssl',
                                       access_type   => 'offline',
                                      );
     return $url;
+}
+
+=head2 get_user_auth_code()
+
+OAuth 2.0 for TV and Limited-Input Device Applications.
+
+Returns info containting the user code for:
+
+    https://www.google.com/device
+
+Returned data structure:
+
+    {
+      "device_code"      => "...",
+      "user_code"        => "...",
+      "expires_in"       => 1800,
+      "interval"         => 5,
+      "verification_url" => "https://www.google.com/device"
+    }
+
+More info: https://developers.google.com/identity/protocols/oauth2/limited-input-device
+
+=cut
+
+sub get_user_auth_code {
+    my ($self) = @_;
+
+    my $code_url = $self->get_oauth_url() . '/device/code';
+
+    my $json_data = $self->lwp_post(
+                                    $code_url,
+                                    headers => [Content   => $self->get_www_content_type,
+                                                client_id => $self->get_client_id() // (return),
+                                                scope     => 'https://www.googleapis.com/auth/youtube',
+                                               ],
+                                    simple => 1,
+                                   );
+
+    return $self->parse_json_string($json_data);
+}
+
+=head2 oauth_login_tv($code_info)
+
+OAuth 2.0 for TV and Limited-Input Device Applications.
+
+Takes the output returned by C<get_user_auth_code()>.
+
+On success, it returns the following structure, containing the access and refresh tokens:
+
+    {
+      access_token  => "...",
+      expires_in    => 3600,
+      refresh_token => "...",
+      scope         => "https://www.googleapis.com/auth/youtube",
+      token_type    => "Bearer",
+    }
+
+=cut
+
+sub oauth_login_tv {
+    my ($self, $code_info) = @_;
+
+    my $device_code = $code_info->{device_code} // return;
+    my $token_url   = $self->get_oauth_url() . '/token';
+
+    my $json_data = $self->lwp_post(
+                                    $token_url,
+                                    headers => [Content       => $self->get_www_content_type,
+                                                client_id     => $self->get_client_id()     // (return),
+                                                client_secret => $self->get_client_secret() // (return),
+                                                device_code   => $device_code               // (return),
+                                                grant_type    => $self->get_tv_grant_type,
+                                               ],
+                                    simple => 1,
+                                   );
+
+    return $self->parse_json_string($json_data);
 }
 
 =head2 oauth_login($code)
@@ -79,11 +153,11 @@ sub oauth_login {
     length($code) < 20 and return;
 
     my $json_data = $self->lwp_post(
-                                    $self->_get_token_oauth_url(),
+                                    $self->get_oauth_url() . '/token',
                                     headers => [Content       => $self->get_www_content_type,
-                                                client_id     => $self->get_client_id()     // return,
-                                                client_secret => $self->get_client_secret() // return,
-                                                redirect_uri  => $self->get_redirect_uri()  // return,
+                                                client_id     => $self->get_client_id()     // (return),
+                                                client_secret => $self->get_client_secret() // (return),
+                                                redirect_uri  => $self->get_redirect_uri()  // (return),
                                                 grant_type    => 'authorization_code',
                                                 code          => $code,
                                                ],

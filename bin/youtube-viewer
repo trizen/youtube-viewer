@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2010-2021 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
+# Copyright (C) 2010-2022 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of either: the GNU General Public License as published
@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 29 March 2022
+#  Latest edit on: 08 May 2022
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -2196,20 +2196,34 @@ sub logout {
 }
 
 sub authenticate {
-    my $get_code_url = $yv_obj->get_accounts_oauth_url() // return;
 
-    print <<"INFO";
+    say "\n:: OAuth 2.0 for TV and Limited-Input Device Applications.";
+    say ":: Using the following scope: https://www.googleapis.com/auth/youtube";
+    say "\n:: Press <ENTER> to begin the authentication process!";
 
-:: Get the authentication code: $get_code_url
+    <STDIN>;    # wait for user input
 
-                            |
-... and paste it below.    \\|/
-                            `
-INFO
+    my $code_info = $yv_obj->get_user_auth_code() // return;
 
-    my $code = $term->readline(colored(q{Code: }, 'bold')) || return;
+    if ($code_info->{error}) {
+        warn "Couldn't get the user code: $code_info->{error}\n";
+        return;
+    }
 
-    my $info = $yv_obj->oauth_login($code) // do {
+    my $device_code      = $code_info->{device_code}      // return;
+    my $user_code        = $code_info->{user_code}        // return;
+    my $verification_url = $code_info->{verification_url} // return;
+
+    say ":: Open the following link:";
+    say "\n\t$verification_url";
+    say "\nand insert the following user code: $user_code";
+    say "\n:: After granting access, press <ENTER>.";
+
+    <STDIN>;    # wait for user input
+
+    sleep 2;    # just to be sure
+
+    my $info = $yv_obj->oauth_login_tv($code_info) // do {
         warn "[WARNING] Can't log in... That's all I know...\n";
         return;
     };
@@ -5314,7 +5328,7 @@ Download videos with C<wget>.
 
 =head2 download_with_ytdl
 
-Download videos `yt-dlp` or `youtube-dl`.
+Download videos with `yt-dlp` or `youtube-dl`.
 
 By enabling this option and setting the value of C<ytdl_cmd> to C<"yt-dlp">, download speed will be greatly improved.
 

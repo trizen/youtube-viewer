@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2010-2021 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
+# Copyright (C) 2010-2022 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of either: the GNU General Public License as published
@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 29 March 2022
+#  Latest edit on: 08 May 2022
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -1779,6 +1779,12 @@ sub hide_errors_window {
 
 # Login window
 sub show_login_to_youtube_window {
+
+    # Use the CLI for login
+    execute_cli_youtube_viewer("--login");
+    return 1;
+
+    # GUI version (outdated)
     $login_to_youtube->show;
     return 1;
 }
