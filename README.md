@@ -112,7 +112,7 @@ Starting with version 3.7.4, youtube-viewer provides the `~/.config/youtube-view
 * Replace `API_KEY` with your YouTube API key. Create a new key [here](https://console.developers.google.com/apis/credentials) by clicking on "Create Credentials" > "API Key".
 * Optionally, in order to log in, replace `CLIENT_ID` and `CLIENT_SECRET` with your native client ID and client secret values, by creating a new OAuth 2.0 Client ID [here](https://console.developers.google.com/apis/api/youtube.googleapis.com/credentials): click "Create Credentials" > "OAuth client ID", then select "TV and Limited Input devices" ([tutorial](https://github.com/trizen/youtube-viewer/issues/353#issuecomment-763574106) -- may be outdated).
 
-The API key must have the following scope enabled: `https://www.googleapis.com/auth/youtube`
+The project must have the following scope enabled: `https://www.googleapis.com/auth/youtube`
 
 Also, in order to log in, grant access to the project in: https://console.cloud.google.com/apis/credentials/consent
 
@@ -175,7 +175,7 @@ After installing, you can find documentation with the following commands:
 
 ### LICENSE AND COPYRIGHT
 
-Copyright (C) 2012-2021 Trizen
+Copyright (C) 2012-2022 Trizen
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
