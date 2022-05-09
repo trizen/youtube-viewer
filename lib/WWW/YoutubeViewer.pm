@@ -97,9 +97,9 @@ my %valid_options = (
     cache_dir   => {valid => qr/^./,     default => q{.}},
     cookie_file => {valid => qr/^./,     default => undef},
 
-    # Support for youtube-dl
+    # Support for yt-dlp / youtube-dl
     ytdl     => {valid => [1, 0], default => 1},
-    ytdl_cmd => {valid => qr/\w/, default => "youtube-dl"},
+    ytdl_cmd => {valid => qr/\w/, default => "yt-dlp"},
 
     # Booleans
     env_proxy                  => {valid => [1, 0], default => 1},
@@ -828,18 +828,20 @@ sub _fallback_extract_urls {
 
     my @formats;
 
-    # Use youtube-dl
+    # Use yt-dlp / youtube-dl
     if ($self->get_ytdl and $self->_ytdl_is_available) {
 
         if ($self->get_debug) {
-            say STDERR ":: Using youtube-dl to extract the streaming URLs...";
+            my $cmd = $self->get_ytdl_cmd;
+            say STDERR ":: Using $cmd to extract the streaming URLs...";
         }
 
         push @formats, $self->_extract_from_ytdl($videoID);
 
         if ($self->get_debug) {
             my $count = scalar(@formats);
-            say STDERR ":: youtube-dl: found $count streaming URLs...";
+            my $cmd   = $self->get_ytdl_cmd;
+            say STDERR ":: $cmd: found $count streaming URLs...";
         }
 
         @formats && return @formats;
@@ -1163,10 +1165,11 @@ sub _fallback_extract_captions {
     my ($self, $videoID) = @_;
 
     if ($self->get_debug) {
-        say STDERR ":: Extracting closed-caption URLs with `youtube-dl`...";
+        my $cmd = $self->get_ytdl_cmd;
+        say STDERR ":: Extracting closed-caption URLs with $cmd";
     }
 
-    # Extract closed-caption URLs with youtube-dl if our code failed
+    # Extract closed-caption URLs with yt-dlp / youtube-dl if our code failed
     my $ytdl_info = $self->_info_from_ytdl($videoID);
 
     my @caption_urls;
@@ -1236,6 +1239,8 @@ sub get_streaming_urls {
     my %info = $self->_get_video_info($videoID);
     my $json = defined($info{player_response}) ? $self->parse_json_string($info{player_response}) : {};
 
+    my @caption_urls;
+
     if (not defined $json->{streamingData}) {
         say STDERR ":: Trying to bypass age-restricted gate..." if $self->get_debug;
 
@@ -1275,13 +1280,14 @@ sub get_streaming_urls {
         foreach my $fallback_method (@fallback_methods) {
             $fallback_method->();
             $json = defined($info{player_response}) ? $self->parse_json_string($info{player_response}) : {};
-            last if defined($json->{streamingData});
+            if (defined($json->{streamingData})) {
+                push @caption_urls, $self->_fallback_extract_captions($videoID);
+                last;
+            }
         }
     }
 
     my @streaming_urls = $self->_extract_streaming_urls($json, $videoID);
-
-    my @caption_urls;
 
     if (eval { ref($json->{captions}{playerCaptionsTracklistRenderer}{captionTracks}) eq 'ARRAY' }) {
 
@@ -1297,7 +1303,7 @@ sub get_streaming_urls {
         push @caption_urls, $self->_make_translated_captions(\@caption_urls);
     }
 
-    # Try again with youtube-dl
+    # Try again with yt-dlp / youtube-dl
     if (   !@streaming_urls
         or (($json->{playabilityStatus}{status} // '') =~ /fail|error|unavailable|not available/i)
         or $self->get_force_fallback) {
