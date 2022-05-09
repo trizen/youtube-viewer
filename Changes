@@ -6,6 +6,8 @@
 
 [CHANGELOG]
 
+- Switched to "OAuth 2.0 for TV and Limited-Input Device Applications".                      - (v3.10.0)
+- Added support for downloading videos with yt-dlp / youtube-dl.                             - (v3.10.0)
 - New workaround for age-restricted videos.                                                  - (v3.9.9)
 - Added the `bypass_age_gate_with_proxy` config-option. (disabled by default)                - (v3.9.8)
 - Added support for searching for videos published before a given period of time.            - (v3.9.7)

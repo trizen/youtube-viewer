@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 08 May 2022
+#  Latest edit on: 09 May 2022
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -28,7 +28,7 @@ no warnings 'once';
 my $DEVEL;                                           # true in devel mode
 use if ($DEVEL = -w __FILE__), lib => qw(../lib);    # devel only
 
-use WWW::YoutubeViewer v3.9.9;
+use WWW::YoutubeViewer v3.10.0;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use Gtk3 qw(-init);
