@@ -179,7 +179,7 @@ my %CONFIG = (
                               srt   => q{--sub-file=*SUB*},
                               audio => q{--audio-file=*AUDIO*},
                               fs    => q{--fullscreen},
-                              arg   => q{--really-quiet --force-media-title=*TITLE* --no-ytdl *VIDEO*},
+                              arg   => q{--really-quiet --force-media-title=*TITLE* --no-ytdl --no-terminal *VIDEO*},
                              },
                      },
     video_player_selected => undef,    # autodetect it later
