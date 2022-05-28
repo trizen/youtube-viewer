@@ -4045,9 +4045,9 @@ sub download_video {
                                                 fat32safe => $opt{fat32safe},
                                                );
 
-    my $naked_filename = $video_filename =~ s/\.\w+\z//r;
+    $video_filename =~ s/\h*:+\h*/ - /g;    # replace colons (":") with dashes ("-")
 
-    $naked_filename =~ s/\h*:+\h*/ - /g;    # replace colons (":") with dashes ("-")
+    my $naked_filename = $video_filename =~ s/\.\w+\z//r;
 
     my $mkv_filename   = "$naked_filename.mkv";
     my $srt_filename   = "$naked_filename.srt";

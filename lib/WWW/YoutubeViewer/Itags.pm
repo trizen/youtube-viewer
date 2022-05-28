@@ -247,6 +247,25 @@ sub find_streaming_url {
         }
     }
 
+    # Check if we do recognize all the audio/video formats
+    foreach my $stream_itag (keys %stream) {
+        my $found_itag = 0;
+        foreach my $resolution_itags (values %$itags) {
+            foreach my $format (@$resolution_itags) {
+                if ($format->{value} eq $stream_itag) {
+                    $found_itag = 1;
+                    last;
+                }
+            }
+            last if $found_itag;
+        }
+        if (not $found_itag) {
+            say STDERR "[BUG] Itag: $stream_itag is not recognized!";
+            require Data::Dump;
+            Data::Dump::pp($stream{$stream_itag});
+        }
+    }
+
     $args{stream}     = \%stream;
     $args{itags}      = $itags;
     $args{resolution} = $resolution;
@@ -312,6 +331,16 @@ sub find_streaming_url {
                 last;
             }
         }
+    }
+
+    if (!defined($streaming) and @{$urls_array}) {
+        say STDERR "[BUG] Unknown video formats:";
+
+        require Data::Dump;
+        Data::Dump::pp($urls_array);
+
+        $streaming        = $urls_array->[-1];
+        $found_resolution = '720';
     }
 
     wantarray ? ($streaming, $found_resolution) : $streaming;

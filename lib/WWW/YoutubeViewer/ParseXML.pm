@@ -28,7 +28,7 @@ Parse XML and return an HASH ref.
 =cut
 
 sub xml2hash {
-    my $xml = shift() // return;
+    my $xml = shift(@_) // return;
 
     $xml = "$xml";    # copy the string
 
@@ -66,17 +66,17 @@ sub xml2hash {
                   ? ref $ref->{$tag}
                       ? $ref->{$tag}
                       : (
-                       defined $ref->{$tag}
-                       ? ($ref->{$tag} = [$ref->{$tag}])
-                       : ($ref->{$tag} //= [])
-                      )
+                         defined $ref->{$tag}
+                         ? ($ref->{$tag} = [$ref->{$tag}])
+                         : ($ref->{$tag} //= [])
+                        )
                   : ref $ref eq 'ARRAY' ? ref $ref->[-1]{$tag}
                       ? $ref->[-1]{$tag}
                       : (
-                       defined $ref->[-1]{$tag}
-                       ? ($ref->[-1]{$tag} = [$ref->[-1]{$tag}])
-                       : ($ref->[-1]{$tag} //= [])
-                      )
+                         defined $ref->[-1]{$tag}
+                         ? ($ref->[-1]{$tag} = [$ref->[-1]{$tag}])
+                         : ($ref->[-1]{$tag} //= [])
+                        )
                   : [];
 
                 ++$#{$ref} if ref $ref eq 'ARRAY';
@@ -141,17 +141,17 @@ sub xml2hash {
                       ? ref $ref->{$tag}
                           ? $ref->{$tag}
                           : (
-                           defined $ref->{$tag}
-                           ? ($ref->{$tag} = [$ref->{$tag}])
-                           : ($ref->{$tag} //= [])
-                          )
+                             defined $ref->{$tag}
+                             ? ($ref->{$tag} = [$ref->{$tag}])
+                             : ($ref->{$tag} //= [])
+                            )
                       : ref $ref eq 'ARRAY' ? ref $ref->[-1]{$tag}
                           ? $ref->[-1]{$tag}
                           : (
-                           defined $ref->[-1]{$tag}
-                           ? ($ref->[-1]{$tag} = [$ref->[-1]{$tag}])
-                           : ($ref->[-1]{$tag} //= [])
-                          )
+                             defined $ref->[-1]{$tag}
+                             ? ($ref->[-1]{$tag} = [$ref->[-1]{$tag}])
+                             : ($ref->[-1]{$tag} //= [])
+                            )
                       : [];
 
                     ++$#{$ref} if ref $ref eq 'ARRAY';
@@ -184,17 +184,17 @@ sub xml2hash {
                           ? ref $ref->{$tag}
                               ? $ref->{$tag}
                               : (
-                               defined $ref->{$tag}
-                               ? ($ref->{$tag} = [$ref->{$tag}])
-                               : ($ref->{$tag} //= [])
-                              )
+                                 defined $ref->{$tag}
+                                 ? ($ref->{$tag} = [$ref->{$tag}])
+                                 : ($ref->{$tag} //= [])
+                                )
                           : ref $ref eq 'ARRAY' ? ref $ref->[-1]{$tag}
                               ? $ref->[-1]{$tag}
                               : (
-                               defined $ref->[-1]{$tag}
-                               ? ($ref->[-1]{$tag} = [$ref->[-1]{$tag}])
-                               : ($ref->[-1]{$tag} //= [])
-                              )
+                                 defined $ref->[-1]{$tag}
+                                 ? ($ref->[-1]{$tag} = [$ref->[-1]{$tag}])
+                                 : ($ref->[-1]{$tag} //= [])
+                                )
                           : [];
 
                         ++$#{$ref} if ref $ref eq 'ARRAY';
@@ -259,7 +259,7 @@ sub xml2hash {
             redo;
         }
         else {
-            die "Syntax error near: --> ", [split(/\n/, substr($xml, pos(), 2**6))]->[0], " <--\n";
+            die "Syntax error near: --> ", [split(/\n/, substr($xml, pos($xml), 2**6))]->[0], " <--\n";
         }
     }
 
