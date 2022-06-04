@@ -277,8 +277,9 @@ my %CONFIG = (
     save_watched_to_history => 0,
 
     # Watch history
-    watch_history      => 1,
-    watch_history_file => $watch_history_file,
+    watch_history       => 1,
+    watch_history_color => 'blue',
+    watch_history_file  => $watch_history_file,
 
     # Saved videos
     saved_videos_file => $saved_videos_file,
@@ -1531,7 +1532,11 @@ sub menu_popup {
                     my ($id, $iter) = get_selected_entry_code();
                     my $type = $liststore->get($iter, 7);
                     if (defined($id) and $type eq 'video') {
-                        execute_cli_youtube_viewer("--id=$id --no-video");
+                        if (execute_cli_youtube_viewer("--id=$id --no-video")) {
+                            my $video_data = $yv_obj->parse_json_string($liststore->get($iter, 8));
+                            save_watched_video($id, $video_data);
+                            highlight_watched_video($liststore, $iter);
+                        }
                     }
                     elsif (defined($id) and $type eq 'playlist') {
                         execute_cli_youtube_viewer("--pp=$id --no-video");
@@ -2635,9 +2640,13 @@ sub get_code {
                 display_results($results);
             }
             elsif ($type eq 'video') {
-                $CONFIG{audio_only}
-                  ? execute_cli_youtube_viewer("--id=$code")
-                  : play_video($yv_obj->parse_json_string($liststore->get($iter, 8)));
+                if (
+                    $CONFIG{audio_only}
+                    ? execute_cli_youtube_viewer("--id=$code")
+                    : play_video($yv_obj->parse_json_string($liststore->get($iter, 8)))
+                  ) {
+                    highlight_watched_video($liststore, $iter);
+                }
             }
 
             return 0;
@@ -3151,6 +3160,32 @@ sub reflow_text {
     $text =~ s/^/&#x200e;/gmr;
 }
 
+sub highlight_watched_video {
+    my ($liststore, $iter) = @_;
+
+    my $video_id = $liststore->get($iter, 3);
+
+    if (exists $WATCHED_VIDEOS{$video_id}) {
+
+        my $title = $liststore->get($iter, 0);
+        my $info  = $liststore->get($iter, 2);
+
+        foreach my $ref (\$title, \$info) {
+            $$ref = "<span color=\"$CONFIG{watch_history_color}\">$$ref</span>";
+        }
+
+        $liststore->set(
+                        $iter,
+                        0 => $title,
+                        2 => $info,
+                       );
+
+        return 1;
+    }
+
+    return 0;
+}
+
 sub add_video_entry {
     my ($video) = @_;
 
@@ -3209,6 +3244,8 @@ sub add_video_entry {
                     7 => 'video',
                     8 => $yv_obj->make_json_string($video),
                    );
+
+    highlight_watched_video($liststore, $iter);
 
     if ($CONFIG{show_thumbs}) {
         set_thumbnail($video, $liststore, $iter);
@@ -3746,11 +3783,15 @@ sub execute_external_program {
             say "** Forking process: $cmd" if $yv_obj->get_debug;
             $yv_obj->proxy_exec($cmd);
         }
+        return 0;
     }
     else {
         say "** Backgrounding process: $cmd" if $yv_obj->get_debug;
         $yv_obj->proxy_system($cmd . ' &');
+        return $?;
     }
+
+    return 1;
 }
 
 sub make_youtube_url {
@@ -3798,19 +3839,24 @@ sub play_enqueued_videos {
 }
 
 sub play_selected_video_with_cli_youtube_viewer {
-    my ($code, $iter) = get_selected_entry_code();
-    $code // return;
+    my ($id, $iter) = get_selected_entry_code();
+    $id // return;
 
     my $type = $liststore->get($iter, 7);
 
     if ($type eq 'video') {
-        execute_cli_youtube_viewer("--video-id=$code");
+        if (execute_cli_youtube_viewer("--video-id=$id")) {
+            my $video_data = $yv_obj->parse_json_string($liststore->get($iter, 8));
+            save_watched_video($id, $video_data);
+            highlight_watched_video($liststore, $iter);
+        }
     }
     elsif ($type eq 'playlist') {
-        execute_cli_youtube_viewer("--pp=$code");
+        execute_cli_youtube_viewer("--pp=$id");
     }
     else {
-        warn "Can't play $type: $code\n";
+        warn "Can't play $type: $id\n";
+        return 0;
     }
 
     return 1;
@@ -3829,11 +3875,16 @@ sub execute_cli_youtube_viewer {
                                     @arguments,              @{$CONFIG{youtube_viewer_args}}),
                               )
                       );
+
     my $code = execute_external_program($command);
 
     say $command if $yv_obj->get_debug;
 
-    warn "youtube-viewer - exit code: $code\n" if $code != 0;
+    if ($code != 0) {
+        warn "youtube-viewer - exit code: $code\n";
+        return 0;
+    }
+
     return 1;
 }
 
@@ -4247,6 +4298,17 @@ sub on_mainw_destroy {
 }
 
 $notebook->set_current_page($CONFIG{default_notebook_page});
+
+if ($CONFIG{watch_history} and -f $CONFIG{watch_history_file}) {
+    if (open my $fh, '<', $CONFIG{watch_history_file}) {
+        chomp(my @video_ids = <$fh>);
+        @WATCHED_VIDEOS{@video_ids} = ();
+        close $fh;
+    }
+    else {
+        warn "[!] Can't open the watched file `$CONFIG{watch_history_file}' for reading: $!";
+    }
+}
 
 if ($CONFIG{remember_session} and -f $session_file) {
 
