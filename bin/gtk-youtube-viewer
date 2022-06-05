@@ -1586,9 +1586,10 @@ set_text(
     CTRL+Y : start CLI youtube viewer
     CTRL+E : enqueue the selected video
 
+    CTRL+N : show subscription videos
+    CTRL+W : show the watched videos
     CTRL+U : show the saved user-list
     CTRL+D : show more details for a selected entry
-    CTRL+W : show the warnings window
     CTRL+G : show favorite videos of the author of a selected video
     CTRL+R : show related videos for a selected video
     CTRL+M : show videos from the author of a selected video
@@ -1621,12 +1622,13 @@ $accel->connect(ord('y'), ['control-mask'], ['visible'], \&run_cli_youtube_viewe
 $accel->connect(ord('d'), ['control-mask'], ['visible'], \&show_details_window);
 
 #$accel->connect(ord('c'), ['control-mask'], ['visible'], \&show_comments_window);
+$accel->connect(ord('n'), ['control-mask'], ['visible'], \&display_subscription_videos);
+$accel->connect(ord('w'), ['control-mask'], ['visible'], \&display_watched_videos);
 $accel->connect(ord('s'), ['control-mask'], ['visible'], \&add_user_to_favorites);
 $accel->connect(ord('r'), ['control-mask'], ['visible'], \&show_related_videos);
 $accel->connect(ord('g'), ['control-mask'], ['visible'], \&show_user_favorite_videos);
 $accel->connect(ord('m'), ['control-mask'], ['visible'], \&show_videos_from_selected_author);
 $accel->connect(ord('k'), ['control-mask'], ['visible'], \&show_playlists_from_selected_author);
-$accel->connect(ord('w'), ['control-mask'], ['visible'], \&show_warnings_window);
 $accel->connect(0xffff,   ['lock-mask'],    ['visible'], \&delete_selected_row);
 $accel->connect(0xffc8,   ['lock-mask'],    ['visible'], \&maximize_unmaximize_mainw);
 $mainw->add_accel_group($accel);
@@ -3819,6 +3821,7 @@ sub open_external_url {
 
     if ($exit_code != 0) {
         warn "Can't open URL <<$url>> -- exit code: $exit_code\n";
+        return 0;
     }
 
     return 1;
