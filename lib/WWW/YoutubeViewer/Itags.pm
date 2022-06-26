@@ -44,6 +44,7 @@ sub get_itags {
         'best' => [{value => 38,  format => 'mp4'},               # mp4 (3072p) (v-a)
                    {value => 138, format => 'mp4', dash => 1},    # mp4 (2160p-4320p) (v)
                    {value => 266, format => 'mp4', dash => 1},    # mp4 (2160p-2304p) (v)
+                   {value => 571, format => 'av1', dash => 1},    # av1 (v)
                   ],
 
         '2160' => [{value => 315, format => 'webm', dash => 1, hfr => 1},    # webm HFR (v)
@@ -249,6 +250,9 @@ sub find_streaming_url {
 
     # Check if we do recognize all the audio/video formats
     foreach my $stream_itag (keys %stream) {
+
+        next if $stream_itag =~ m{^(?:sb[012])\z};
+
         my $found_itag = 0;
         foreach my $resolution_itags (values %$itags) {
             foreach my $format (@$resolution_itags) {
@@ -260,7 +264,7 @@ sub find_streaming_url {
             last if $found_itag;
         }
         if (not $found_itag) {
-            say STDERR "[BUG] Itag: $stream_itag is not recognized!";
+            say STDERR "[BUG] Itag <<$stream_itag>> is not recognized!";
             require Data::Dump;
             Data::Dump::pp($stream{$stream_itag});
         }
