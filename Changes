@@ -6,6 +6,7 @@
 
 [CHANGELOG]
 
+- Extract closed-captions for age-restricted videos.                                         - (v3.10.1)
 - Switched to "OAuth 2.0 for TV and Limited-Input Device Applications".                      - (v3.10.0)
 - Added support for downloading videos with yt-dlp / youtube-dl.                             - (v3.10.0)
 - New workaround for age-restricted videos.                                                  - (v3.9.9)
