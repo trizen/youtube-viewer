@@ -258,9 +258,17 @@ sub find_streaming_url {
     }
 
     my %stream;
-    foreach my $info_ref (@{$urls_array}) {
-        if (exists $info_ref->{itag} and exists $info_ref->{url}) {
-            $stream{$info_ref->{itag}} = $info_ref;
+    foreach my $entry (@{$urls_array}) {
+
+        # Prefer the default language for audio
+        if (    exists($entry->{audioTrack})
+            and ref($entry->{audioTrack}) eq 'HASH'
+            and defined($entry->{audioTrack}{audioIsDefault})) {
+            $entry->{audioTrack}{audioIsDefault} || next;
+        }
+
+        if (exists $entry->{itag} and exists $entry->{url}) {
+            $stream{$entry->{itag}} = $entry;
         }
     }
 
