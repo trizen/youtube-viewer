@@ -9,7 +9,7 @@ use Memoize::Expire;
 
 tie my %youtubei_cache => 'Memoize::Expire',
   LIFETIME             => 600,                 # in seconds
-  NUM_USES             => 10;
+  NUM_USES             => 2;
 
 memoize '_get_youtubei_content', SCALAR_CACHE => [HASH => \%youtubei_cache];
 
