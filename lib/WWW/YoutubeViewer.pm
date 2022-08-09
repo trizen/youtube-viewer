@@ -1247,6 +1247,10 @@ sub get_streaming_urls {
 
     my @caption_urls;
 
+    if ($self->get_debug and $json->{videoDetails}{videoId} ne $videoID) {
+        say STDERR ":: Different video ID detected: $json->{videoDetails}{videoId}";
+    }
+
     if (not defined $json->{streamingData}) {
         say STDERR ":: Trying to bypass age-restricted gate..." if $self->get_debug;
 
@@ -1312,7 +1316,8 @@ sub get_streaming_urls {
     # Try again with yt-dlp / youtube-dl
     if (   !@streaming_urls
         or (($json->{playabilityStatus}{status} // '') =~ /fail|error|unavailable|not available/i)
-        or $self->get_force_fallback) {
+        or $self->get_force_fallback
+        or $json->{videoDetails}{videoId} ne $videoID) {
 
         @streaming_urls = $self->_fallback_extract_urls($videoID);
 
