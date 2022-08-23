@@ -31,7 +31,7 @@ use if ($DEVEL = -w __FILE__), lib => qw(../lib);    # devel only
 use WWW::YoutubeViewer v3.10.2;
 use WWW::YoutubeViewer::RegularExpressions;
 
-use Gtk3 qw(-init);
+use Gtk3                  qw(-init);
 use File::Spec::Functions qw(
   rel2abs
   catdir
@@ -2647,6 +2647,7 @@ sub get_code {
                     ? execute_cli_youtube_viewer("--id=$code")
                     : play_video($yv_obj->parse_json_string($liststore->get($iter, 8)))
                   ) {
+                    $WATCHED_VIDEOS{$code} = 1;
                     highlight_watched_video($liststore, $iter);
                 }
             }
