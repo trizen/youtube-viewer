@@ -128,6 +128,8 @@ sub get_itags {
                   {value => 151, format => 'ts'},                           # ts (live) (v-a)
                   {value => 330, format => 'webm', dash => 1, hdr => 1},    # vp9 HDR (v)
                   {value => 694, format => 'av1',  dash => 1, hdr => 1},    # av1 HDR (v)
+                  {value => 598, format => 'webm', dash => 1},              # webm (v)
+                  {value => 597, format => 'mp4',  dash => 1},              # mp4 (v)
                  ],
 
         'audio' => [{value => 172, format => 'webm', kbps => 192},            # webm (192 kbps)
@@ -138,7 +140,17 @@ sub get_itags {
                     {value => 250, format => 'opus', kbps => 64},             # webm opus (64 kbps)
                     {value => 249, format => 'opus', kbps => 48},             # webm opus (48 kbps)
                     {value => 139, format => 'm4a',  kbps => 48},             # mp4a (48 kbps)
+                    {value => 600, format => 'webm', kbps => 32},             # webm (48 kbps)
+                    {value => 599, format => 'm4a',  kbps => 32},             # mp4a (48 kbps)
                    ],
+
+        'dash' => [{value => '134-dash', format => 'mp4'},                   # mp4 DASH (v-a)
+                   {value => '136-dash', format => 'mp4'},                   # mp4 DASH (v-a)
+                   {value => '137-dash', format => 'mp4'},                   # mp4 DASH (v-a)
+                   {value => '139-dash', format => 'mp4'},                   # mp4 DASH (v-a)
+                   {value => '140-dash', format => 'mp4'},                   # mp4 DASH (v-a)
+                   {value => '251-dash', format => 'mp4'},                   # mp4 DASH (v-a)
+                  ],
            };
 }
 
@@ -164,6 +176,7 @@ sub get_resolutions {
           360
           240
           144
+          dash
           audio
           )
     ];
