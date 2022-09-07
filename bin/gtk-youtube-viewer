@@ -207,6 +207,7 @@ my %CONFIG = (
     maxResults      => 10,
     hfr             => 1,
     resolution      => 'best',
+    audio_quality   => 'best',
     videoDimension  => undef,
     videoEmbeddable => undef,
     videoLicense    => undef,
@@ -3561,9 +3562,10 @@ sub get_streaming_url {
         urls       => $urls,
         resolution => $CONFIG{resolution},
 
-        hfr        => $CONFIG{hfr},
-        ignore_av1 => $CONFIG{ignore_av1},
-        prefer_m4a => $CONFIG{prefer_m4a},
+        hfr           => $CONFIG{hfr},
+        ignore_av1    => $CONFIG{ignore_av1},
+        prefer_m4a    => $CONFIG{prefer_m4a},
+        audio_quality => $CONFIG{audio_quality},
 
         dash           => $CONFIG{dash_support},
         dash_segmented => $CONFIG{dash_segmented},

@@ -202,6 +202,7 @@ my %CONFIG = (
     maxResults      => 20,
     hfr             => 1,
     resolution      => 'best',
+    audio_quality   => 'best',
     videoDefinition => undef,
     videoDimension  => undef,
     videoLicense    => undef,
@@ -895,6 +896,7 @@ usage: $execname [options] ([url] | [keywords])
        --prefer-av1!     : prefer videos in AV1 format, instead of VP9
        --prefer-m4a!     : prefer audios in AAC format, instead of OPUS
        --ignore-av1!     : ignore videos in AV1 format
+       --audio-quality=s : audio quality: best, medium or low
        --force-fallback! : extract streaming URLs using the fallback method
 
  * Closed-captions
@@ -1804,10 +1806,11 @@ sub parse_arguments {
         'dash!'            => \$opt{dash_support},
         'confirm!'         => \$opt{confirm},
 
-        'prefer-mp4!' => \$opt{prefer_mp4},
-        'prefer-m4a!' => \$opt{prefer_m4a},
-        'prefer-av1!' => \$opt{prefer_av1},
-        'ignore-av1!' => \$opt{ignore_av1},
+        'prefer-mp4!'     => \$opt{prefer_mp4},
+        'prefer-m4a!'     => \$opt{prefer_m4a},
+        'prefer-av1!'     => \$opt{prefer_av1},
+        'ignore-av1!'     => \$opt{ignore_av1},
+        'audio-quality=s' => \$opt{audio_quality},
 
         'fallback|force-fallback!' => \$opt{force_fallback},
 
@@ -3940,9 +3943,10 @@ sub get_streaming_url {
         urls       => $urls,
         resolution => ($opt{novideo} ? 'audio' : $opt{resolution}),
 
-        hfr        => $opt{hfr},
-        ignore_av1 => $opt{ignore_av1},
-        prefer_m4a => $opt{prefer_m4a},
+        hfr           => $opt{hfr},
+        ignore_av1    => $opt{ignore_av1},
+        prefer_m4a    => $opt{prefer_m4a},
+        audio_quality => $opt{audio_quality},
 
         dash           => $dash,
         dash_segmented => ($opt{download_video} ? 0 : $opt{dash_segmented}),
@@ -5222,6 +5226,16 @@ main_quit(0);
 =head2 auto_captions
 
 When set to C<1>, auto-generated captions will be retrieved. By default, auto-generated captions are ignored.
+
+=head2 audio_quality
+
+The preferred quality for the audio-track:
+
+    best        # best audio quality available (<=192kbps)
+    medium      # medium audio quality (<=128kbps)
+    low         # low audio quality (<=50kbps)
+
+The option can also be set to a numeric value N in order to select an audio-track with <= Nkbps.
 
 =head2 autoplay_mode
 

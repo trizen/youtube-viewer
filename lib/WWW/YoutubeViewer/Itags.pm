@@ -188,6 +188,13 @@ sub _find_streaming_url {
     my $stream     = $args{stream}     // return;
     my $resolution = $args{resolution} // return;
 
+    my %kbps_table = (
+                      best   => 320,
+                      medium => 128,
+                      low    => 50,
+                      worst  => 50,
+                     );
+
     foreach my $itag (@{$args{itags}->{$resolution}}) {
 
         next if not exists $stream->{$itag->{value}};
@@ -222,6 +229,15 @@ sub _find_streaming_url {
             }
 
             next;
+        }
+
+        if ($resolution eq 'audio' and defined($args{audio_quality})) {
+            my $quality = $args{audio_quality};
+            my $kbps    = exists($kbps_table{$quality}) ? $kbps_table{$quality} : do {
+                my $t = (($quality =~ /^([0-9]+)/) ? $1 : 0);
+                ($t > 0) ? $t : 320;
+            };
+            $itag->{kbps} <= $kbps or next;
         }
 
         if ($resolution eq 'audio' and $args{prefer_m4a}) {
