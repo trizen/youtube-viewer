@@ -4278,7 +4278,7 @@ sub get_player_command {
         )
     );
 
-    my $has_video = $cmd =~ /(?:^|\s)\*(?:VIDEO|URL)\*(?:\s|\z)/;
+    my $has_video = $cmd =~ /\*(?:VIDEO|URL)\*/;
 
     $cmd = $yv_utils->format_text(
                                   streaming => $streaming,
