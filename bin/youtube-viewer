@@ -466,6 +466,8 @@ STDIN_HELP
 
 # $appname $version - configuration file
 
+use utf8;
+
 EOD
 
     sub dump_configuration {

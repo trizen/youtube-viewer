@@ -292,6 +292,8 @@ my %CONFIG = (
 
 # $appname $version - configuration file
 
+use utf8;
+
 EOD
 
     # Save hash config to file
@@ -343,16 +345,16 @@ sub gcarray ($) {
 my %objects = (
 
     # Windows
-    '__MAIN__'          => \my $mainw,
-    'users_list_window' => \my $users_list_window,
-    'help_window'       => \my $help_window,
-    'prefernces_window' => \my $prefernces_window,
-    'errors_window'     => \my $errors_window,
-    'login_to_youtube'  => \my $login_to_youtube,
-    'details_window'    => \my $details_window,
-    'aboutdialog1'      => \my $about_window,
-    'feeds_window'      => \my $feeds_window,
-    'warnings_window'   => \my $warnings_window,
+    '__MAIN__'           => \my $mainw,
+    'users_list_window'  => \my $users_list_window,
+    'help_window'        => \my $help_window,
+    'preferences_window' => \my $preferences_window,
+    'errors_window'      => \my $errors_window,
+    'login_to_youtube'   => \my $login_to_youtube,
+    'details_window'     => \my $details_window,
+    'aboutdialog1'       => \my $about_window,
+    'feeds_window'       => \my $feeds_window,
+    'warnings_window'    => \my $warnings_window,
 
     # Others
     'treeview1'              => \my $users_treeview,
@@ -1662,7 +1664,7 @@ $feeds_window->add_accel_group($accel);
 $accel = Gtk3::AccelGroup->new;
 $accel->connect(0xff1b,   ['lock-mask'],    ['visible'], \&hide_preferences_window);
 $accel->connect(ord('s'), ['control-mask'], ['visible'], \&save_configuration);
-$prefernces_window->add_accel_group($accel);
+$preferences_window->add_accel_group($accel);
 
 $accel = Gtk3::AccelGroup->new;
 $accel->connect(0xff1b, ['lock-mask'], ['visible'], \&hide_help_window);
@@ -1863,12 +1865,12 @@ sub show_preferences_window {
     $config_view->set_buffer($config_view_buffer);
     state $font = Pango::FontDescription::from_string('Monospace 8');
     $config_view->modify_font($font);
-    $prefernces_window->show;
+    $preferences_window->show;
     return 1;
 }
 
 sub hide_preferences_window {
-    $prefernces_window->hide;
+    $preferences_window->hide;
     return 1;
 }
 
