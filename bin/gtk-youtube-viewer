@@ -185,16 +185,15 @@ my %CONFIG = (
     video_player_selected => undef,    # autodetect it later
 
     # GUI options
-    clear_text_entries_on_click => 0,
-    show_thumbs                 => 1,
-    clear_search_list           => 1,
-    default_notebook_page       => 1,
-    mainw_size                  => '700x400',
-    mainw_maximized             => 0,
-    mainw_fullscreen            => 0,
-    mainw_centered              => 0,
-    hpaned_width                => 250,
-    hpaned_position             => 420,
+    show_thumbs           => 1,
+    clear_search_list     => 1,
+    default_notebook_page => 1,
+    mainw_size            => '700x400',
+    mainw_maximized       => 0,
+    mainw_fullscreen      => 0,
+    mainw_centered        => 0,
+    hpaned_width          => 250,
+    hpaned_position       => 420,
 
     # Youtube options
     dash_support    => 1,
@@ -477,6 +476,21 @@ my $default_thumb         = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($
 # Setting application title and icon
 $mainw->set_title("$appname $version");
 $mainw->set_icon($app_icon_pixbuf);
+
+# Tweak search entries: allow clicking the search primary
+# icon to activate, and disable said icon for other entries.
+$search_entry->set_icon_sensitive('primary', 1);
+$search_entry->set_icon_activatable('primary', 1);
+$from_author_entry->set_icon_from_pixbuf('primary');
+$category_id_entry->set_icon_from_pixbuf('primary');
+
+# ---------------- Generic GTK signal handlers ---------------- #
+
+sub gtk_widget_grab_focus {
+    my $widget = $_[-1] // $_[0];
+    $widget->grab_focus;
+    return 1;
+}
 
 our $CONFIG;
 require $config_file;    # Load the configuration file
@@ -2508,6 +2522,17 @@ sub check_keywords {
     return 1;
 }
 
+sub search_or_focus {
+    my ($entry, $position) = @_;
+    if ($position eq 'primary') {
+        search();
+    }
+    elsif ($position eq 'secondary') {
+        $entry->grab_focus();
+    }
+    return 0;
+}
+
 sub search {
     my $keywords = $search_entry->get_text();
 
@@ -3742,16 +3767,6 @@ sub list_local_playlist {
     }
 
     display_results(get_results_from_list(ids => \@video_ids));
-}
-
-sub clear_text {
-    my ($entry) = @_;
-
-    if ($entry->get_text() =~ /\.\.\.\z/ or $CONFIG{clear_text_entries_on_click}) {
-        $entry->set_text('');
-    }
-
-    return 0;
 }
 
 sub run_cli_youtube_viewer {
