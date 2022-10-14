@@ -4158,6 +4158,12 @@ sub download_video {
             unlink @merge_files;
             $video_filename = $mkv_filename;
         }
+        elsif ($? != 0) {    # ffmpeg failed
+            if (-e $mkv_filename) {    # probably due to not enough space
+                unlink $mkv_filename;    # remove the mkv file
+            }
+            return;
+        }
     }
 
     # Convert the downloaded video
