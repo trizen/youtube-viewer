@@ -146,7 +146,8 @@ sub get_itags {
                     {value => 599, format => 'm4a',  kbps => 32},             # mp4a (48 kbps)
                    ],
 
-        'dash' => [{value => '134-dash', format => 'mp4'},                   # mp4 DASH (v-a)
+        'dash' => [{value => '133-dash', format => 'mp4'},                   # mp4 DASH (v-a)
+                   {value => '134-dash', format => 'mp4'},                   # mp4 DASH (v-a)
                    {value => '136-dash', format => 'mp4'},                   # mp4 DASH (v-a)
                    {value => '137-dash', format => 'mp4'},                   # mp4 DASH (v-a)
                    {value => '139-dash', format => 'mp4'},                   # mp4 DASH (v-a)
