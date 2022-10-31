@@ -1850,10 +1850,10 @@ sub show_comments_window {
     my ($videoID, $iter) = get_selected_entry_code(type => 'video');
     $videoID // return;
 
-    my $info = $liststore->get($iter, 0);
-    my ($video_title) = $info =~ m{^.*?(<big><b>.*?</b></big>)}s;
+    my $info        = $yv_obj->parse_json_string($liststore->get($iter, 8));
+    my $video_title = encode_entities($yv_utils->get_title($info));
 
-    $feeds_title->set_markup("<big>$video_title</big>");
+    $feeds_title->set_markup(reflow_text("<big><big><b>$video_title</b></big></big>"));
     $feeds_title->set_tooltip_markup("$video_title");
 
     $feeds_window->show;
@@ -4168,7 +4168,7 @@ sub set_entry_details {
 
     # Setting title
     my $title = encode_entities($yv_utils->get_title($info));
-    $gui->get_object('video_title_label')->set_label("<big><big><b>$title</b></big></big>");
+    $gui->get_object('video_title_label')->set_label(reflow_text("<big><big><b>$title</b></big></big>"));
     $gui->get_object('video_title_label')->set_tooltip_markup("<b>$title</b>");
 
     my $text_info;
@@ -4249,7 +4249,7 @@ EOT
                             );
     }
 
-    $gui->get_object('video_details_label')->set_label("<big>" . encode_entities("\n" . $text_info) . "</big>");
+    $gui->get_object('video_details_label')->set_label(reflow_text("<big>" . encode_entities("\n" . $text_info) . "</big>"));
 
     # Setting the link button
     my $url        = make_youtube_url($type, $code);
