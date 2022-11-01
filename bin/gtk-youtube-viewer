@@ -4180,7 +4180,7 @@ sub set_entry_details {
         my $dislikes = $yv_utils->get_dislikes($info);
         my $views    = $yv_utils->get_views($info);
 
-        $text_info = join "\n", map { sprintf("%s  %s", $_->[0], $_->[1]) } (
+        $text_info = join "\n", map { sprintf("%s  %s", $_->[0], $_->[1]) } grep { defined($_->[1]) } (
             [$symbols{author}    => $yv_utils->get_channel_title($info)],
             [$symbols{category}  => $yv_utils->get_category_name($info)],
             [$symbols{thumbs_up} => $yv_utils->set_thousands($likes)],
