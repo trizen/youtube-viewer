@@ -638,7 +638,11 @@ Get thumbnail URL.
 
 sub get_thumbnail_url {
     my ($self, $info, $type) = @_;
-    $info->{snippet}{thumbnails}{$type}{url} // $info->{snippet}{thumbnails}{default}{url}
+
+    ref($info) eq 'HASH'            or return;
+    ref($info->{snippet}) eq 'HASH' or return;
+
+    eval { $info->{snippet}{thumbnails}{$type}{url} } // $info->{snippet}{thumbnails}{default}{url}
       // $info->{snippet}{thumbnails}{medium}{url} // $info->{snippet}{thumbnails}{high}{url};
 }
 

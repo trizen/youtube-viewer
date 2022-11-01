@@ -2818,7 +2818,7 @@ sub get_pixbuf_thumbnail_from_url {
 sub get_pixbuf_thumbnail_from_entry {
     my ($entry) = @_;
 
-    my $thumbnail_url  = $yv_utils->get_thumbnail_url($entry, $CONFIG{thumbnail_type});
+    my $thumbnail_url  = $yv_utils->get_thumbnail_url($entry, $CONFIG{thumbnail_type}) // return;
     my $thumbnail_data = ($entry->{_thumbnail_data} ||= lwp_get($thumbnail_url));
 
     # Don't cache thumbnails that failed to be retrieved.
@@ -3137,8 +3137,9 @@ sub set_thumbnail {
     Glib::Idle->add(
         sub {
             my ($entry, $liststore, $iter) = @{$_[0]};
-            my $pixbuf = get_pixbuf_thumbnail_from_entry($entry);
-            $liststore->set($iter, [1], [$pixbuf]);
+            if (defined(my $pixbuf = get_pixbuf_thumbnail_from_entry($entry))) {
+                $liststore->set($iter, [1], [$pixbuf]);
+            }
             return 0;
         },
         [$entry, $liststore, $iter],
@@ -3256,7 +3257,7 @@ sub add_video_entry {
     my $info_label = reflow_text(
                                  join(
                                       "\n",
-                                      map { sprintf("%s   %s", $_->[0], $_->[1]) } (
+                                      map { sprintf("%s   %s", $_->[0], $_->[1]) } grep { defined($_->[1]) } (
                                                               [$symbols{play}      => $yv_utils->get_time($video)],
                                                               [$symbols{type}      => $yv_utils->get_definition($video)],
                                                               [$symbols{views}     => $yv_utils->set_thousands($views)],

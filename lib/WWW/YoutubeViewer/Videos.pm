@@ -225,6 +225,35 @@ sub video_details {
         my %video_info = $self->_get_video_info($id);
         my $video      = $self->parse_json_string($video_info{player_response} // next);
 
+        my $new_video_id = $video->{videoDetails}{videoId};
+
+        # Check if we succeeded in extracting video for the wanted video ID
+        if (defined($new_video_id) and $new_video_id ne $id) {
+
+            ## TODO: maybe extract video info with yt-dlp or invidious.
+
+            say STDERR ":: Different video ID detected: $new_video_id != $id" if $self->get_debug;
+
+            my $proxy_url = "https://youtube-proxy.zerody.one/getPlayer?";
+
+            $proxy_url .= $self->list_to_url_arguments(
+                                                       videoId       => $id,
+                                                       reason        => "LOGIN_REQUIRED",
+                                                       clientName    => "ANDROID",
+                                                       clientVersion => "16.20",
+                                                       hl            => "en",
+                                                      );
+
+            $video = $self->parse_json_string($self->lwp_get($proxy_url, simple => 1) // next);
+
+            $new_video_id = $video->{videoDetails}{videoID};
+
+            if (defined($new_video_id) and $new_video_id ne $id) {
+                say STDERR ":: Different video ID detected: $new_video_id != $id" if $self->get_debug;
+                next;    # give up
+            }
+        }
+
         if (exists $video->{videoDetails}) {
             $video = $video->{videoDetails};
         }
@@ -256,12 +285,13 @@ sub video_details {
 
                 liveBroadcastContent => ($video->{isLiveContent} ? 'live' : 'no'),
 
-                thumbnails => [default  => $video->{thumbnail}{thumbnails}[0],
+                thumbnails => {
+                               default  => $video->{thumbnail}{thumbnails}[0],
                                medium   => $video->{thumbnail}{thumbnails}[1],
                                standard => $video->{thumbnail}{thumbnails}[2],
                                high     => $video->{thumbnail}{thumbnails}[3],
                                maxres   => $video->{thumbnail}{thumbnails}[4],
-                              ],
+                              },
                        },
 
             statistics => {

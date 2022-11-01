@@ -1247,8 +1247,9 @@ sub get_streaming_urls {
 
     my @caption_urls;
 
-    if ($self->get_debug and $json->{videoDetails}{videoId} ne $videoID) {
-        say STDERR ":: Different video ID detected: $json->{videoDetails}{videoId}";
+    my $new_video_id = $json->{videoDetails}{videoId};
+    if ($self->get_debug and defined($new_video_id) and $new_video_id ne $videoID) {
+        say STDERR ":: Different video ID detected: $new_video_id != $videoID";
     }
 
     if (not defined $json->{streamingData}) {
@@ -1313,11 +1314,13 @@ sub get_streaming_urls {
         push @caption_urls, $self->_make_translated_captions(\@caption_urls);
     }
 
+    $new_video_id = $json->{videoDetails}{videoId};
+
     # Try again with yt-dlp / youtube-dl
     if (   !@streaming_urls
         or (($json->{playabilityStatus}{status} // '') =~ /fail|error|unavailable|not available/i)
         or $self->get_force_fallback
-        or $json->{videoDetails}{videoId} ne $videoID) {
+        or (defined($new_video_id) and $new_video_id ne $videoID)) {
 
         @streaming_urls = $self->_fallback_extract_urls($videoID);
 
