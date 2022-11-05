@@ -444,14 +444,26 @@ sub lwp_get {
     $url || return;
     $self->{lwp} // $self->set_lwp_useragent();
 
+    state @LWP_CACHE;
+
     if (not defined($self->get_key)) {
         return undef if not $opt{simple};
+    }
+
+    # Check the cache
+    foreach my $entry (@LWP_CACHE) {
+        if ($entry->{url} eq $url and time - $entry->{timestamp} <= 600) {
+            return $entry->{content};
+        }
     }
 
     my $response = $self->_request_with_authorization(sub { $self->{lwp}->get($url, @_) }, %opt);
 
     if ($response->is_success) {
-        return $response->decoded_content;
+        my $content = $response->decoded_content;
+        unshift(@LWP_CACHE, {url => $url, content => $content, timestamp => time});
+        pop(@LWP_CACHE) if (scalar(@LWP_CACHE) >= 50);
+        return $content;
     }
 
     $opt{depth} ||= 0;
