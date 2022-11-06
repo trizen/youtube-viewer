@@ -2771,10 +2771,9 @@ sub get_pixbuf_thumbnail_from_content {
 
         eval {
             $pixbufloader->set_size($xsize, $ysize);
-            ## $pixbufloader->write($thumbnail);      # Gtk3 bug?
-            $pixbufloader->write([unpack 'C*', $thumbnail]);
-            $pixbuf = $pixbufloader->get_pixbuf;
+            $pixbufloader->write($thumbnail);
             $pixbufloader->close;
+            $pixbuf = $pixbufloader->get_pixbuf;
         };
     }
 
