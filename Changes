@@ -6,6 +6,8 @@
 
 [CHANGELOG]
 
+- GUI: tweak interface to be less cramped (requires gtk+ >= 3.6).                            - (v3.10.3)
+- Added support for changing the audio quality.                                              - (v3.10.3)
 - Workaround for "Video Not Available" issue.                                                - (v3.10.2)
 - Extract closed-captions for age-restricted videos.                                         - (v3.10.1)
 - Switched to "OAuth 2.0 for TV and Limited-Input Device Applications".                      - (v3.10.0)

@@ -15,8 +15,8 @@ memoize '_get_youtubei_content', SCALAR_CACHE => [HASH => \%youtubei_cache];
 
 #memoize('_get_video_info');
 memoize('_ytdl_is_available');
+memoize('_info_from_ytdl');
 
-#memoize('_info_from_ytdl');
 #memoize('_extract_from_ytdl');
 memoize('_extract_from_invidious');
 
@@ -42,7 +42,7 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =cut
 
-our $VERSION = '3.10.2';
+our $VERSION = '3.10.3';
 
 =head1 SYNOPSIS
 
@@ -1244,9 +1244,9 @@ sub get_streaming_urls {
 
     no warnings 'redefine';
 
-    local *_get_video_info    = memoize(\&_get_video_info);
-    local *_info_from_ytdl    = memoize(\&_info_from_ytdl);
-    local *_extract_from_ytdl = memoize(\&_extract_from_ytdl);
+    local *_get_video_info = memoize(\&_get_video_info);
+    ##local *_info_from_ytdl    = memoize(\&_info_from_ytdl);
+    ##local *_extract_from_ytdl = memoize(\&_extract_from_ytdl);
 
     my %info = $self->_get_video_info($videoID);
     my $json = defined($info{player_response}) ? $self->parse_json_string($info{player_response}) : {};
