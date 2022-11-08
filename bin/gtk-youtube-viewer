@@ -2709,27 +2709,6 @@ sub append_next_page {
     return $iter;
 }
 
-sub determine_image_format {
-    #
-    ## Code from: https://metacpan.org/release/Image-Info/source/lib/Image/Info.pm
-    #
-
-    local ($_) = @_;
-    return "JPEG" if /^\xFF\xD8/;
-    return "PNG"  if /^\x89PNG\x0d\x0a\x1a\x0a/;
-    return "GIF"  if /^GIF8[79]a/;
-    return "TIFF" if /^MM\x00\x2a/;
-    return "TIFF" if /^II\x2a\x00/;
-    return "BMP"  if /^BM/;
-    return "ICO"  if /^\000\000\001\000/;
-    return "PPM"  if /^P[1-6]/;
-    return "XPM"  if /(^\/\* XPM \*\/)|(static\s+char\s+\*\w+\[\]\s*=\s*{\s*"\d+)/;
-    return "XBM"  if /^(?:\/\*.*\*\/\n)?#define\s/;
-    return "SVG"  if /^(<\?xml|[\012\015\t ]*<svg\b)/;
-    return "WEBP" if /^RIFF.{4}WEBP/s;
-    return undef;
-}
-
 sub lwp_get {
     my ($url) = @_;
 
@@ -2759,19 +2738,11 @@ sub get_pixbuf_thumbnail_from_content {
 
     my $pixbuf;
     if (defined $thumbnail) {
-        my $type = determine_image_format($thumbnail);
-
-        my $pixbufloader;
-        if (defined($type)) {
-            $pixbufloader = eval { 'Gtk3::Gdk::PixbufLoader'->new_with_type(lc($type)) };
-        }
-        if (not defined $pixbufloader) {
-            $pixbufloader = 'Gtk3::Gdk::PixbufLoader'->new;
-        }
-
         eval {
+            my $pixbufloader = 'Gtk3::Gdk::PixbufLoader'->new;
             $pixbufloader->set_size($xsize, $ysize);
-            $pixbufloader->write($thumbnail);
+            ##$pixbufloader->write($thumbnail);      # Gtk3 bug on older versions
+            $pixbufloader->write([unpack('C*', $thumbnail)]);
             $pixbufloader->close;
             $pixbuf = $pixbufloader->get_pixbuf;
         };
