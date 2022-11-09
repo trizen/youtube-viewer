@@ -402,8 +402,6 @@ my %objects = (
     'audio_only_checkbutton' => \my $audio_only_checkbutton,
     'hbox2'                  => \my $hbox2,
     'feeds_title'            => \my $feeds_title,
-    'channel_name_save'      => \my $save_channel_name_entry,
-    'channel_id_save'        => \my $save_channel_id_entry,
     'main-menu-history-menu' => \my $history_menu,
               );
 
@@ -2201,39 +2199,6 @@ sub set_usernames {
                               3 => $user_icon_pixbuf,
                              );
     }
-}
-
-sub save_channel {
-    my $channel_name = $save_channel_name_entry->get_text;
-    my $channel_id   = $save_channel_id_entry->get_text;
-
-    # Validate the channel id
-    if (defined($channel_id) and $channel_id =~ /$valid_channel_id_re/) {
-
-        $channel_id = $+{channel_id};
-
-        # Get the channel name when empty
-        if (not defined($channel_name) or not $channel_name =~ /\S/) {
-            $channel_name = $yv_obj->channel_title_from_id($channel_id) // die "Invalid channel ID: <<$channel_id>>";
-        }
-    }
-    elsif (defined($channel_name) and $channel_name =~ /$valid_channel_id_re/) {
-
-        $channel_name = $+{channel_id};
-        $channel_id   = $yv_obj->channel_id_from_username($channel_name);
-
-        if (not defined $channel_id) {
-            die "Can't get channel ID from username: <<$channel_name>>";
-        }
-    }
-    elsif (defined($channel_id) and $channel_id =~ /\S/) {
-        die "Invalid channel ID: <<$channel_id>>";
-    }
-    else {
-        return;
-    }
-
-    save_channel_by_id($channel_id, $channel_name);
 }
 
 sub save_channel_by_id {
