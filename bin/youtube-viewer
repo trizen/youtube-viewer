@@ -3552,7 +3552,16 @@ sub print_local_channels {
 
     $name //= '';
 
-    my @users = $yv_utils->read_channels_from_file($opt{youtube_users_file});
+    my @users;
+    my $file = $opt{youtube_users_file};
+
+    if (-e $file) {
+        @users = $yv_utils->read_channels_from_file($file);
+    }
+    else {
+        @users = $yv_utils->default_channels;
+    }
+
     my $regex = qr/\Q$name\E/i;
 
     if ($name eq '') {

@@ -509,6 +509,46 @@ sub read_lines_from_file {
     return @ids;
 }
 
+sub default_channels {
+    my ($self) = @_;
+
+    my %channels = (
+                    'UC1_uAIS3r8Vu6JjXWvastJg' => 'Mathologer',
+                    'UCSju5G2aFaWMqn-_0YBtq5A' => 'Stand-Up Maths',
+                    'UC-WICcSW1k3HsScuXxDrp0w' => 'Curry On!',
+                    'UCShHFwKyhcDo3g7hr4f1R8A' => 'World Science Festival',
+                    'UCYO_jab_esuFRV4b17AJtAw' => '3Blue1Brown',
+                    'UCWnPjmqvljcafA0z2U1fwKQ' => 'Confreaks',
+                    'UC_QIfHvN9auy2CoOdSfMWDw' => 'Strange Loop Conference',
+                    'UC9-y-6csu5WGm29I7JiwpnA' => 'Computerphile',
+                    'UCoxcjq-8xIDTYp3uz647V5A' => 'Numberphile',
+                    'UC6107grRI4m0o2-emgoDnAA' => 'SmarterEveryDay',
+                    'UC1znqKFL3jeR0eoA0pHpzvw' => 'SpaceRip',
+                    'UCvjgXvBlbQiydffZU7m1_aw' => 'The Coding Train',
+                    'UCotwjyJnb-4KW7bmsOoLfkg' => 'Art of the Problem',
+                    'UCGHZpIpAWJQ-Jy_CeCdXhMA' => 'Cool Worlds',
+                    'UCmG6gHgD8JaEZVxuHWJijGQ' => 'UConn Mathematics',
+                    'UC81mayGa63QaJE1SjKIYp0w' => 'metaRising',
+                    'UCmFeOdJI3IXgTBDzqBLD8qg' => 'Moon',
+                    'UCoOjH8D2XAgjzQlneM2W0EQ' => 'Jake Tran',
+                    'UCYVU6rModlGxvJbszCclGGw' => 'Rob Braxman Tech',
+                    'UCHnyfMqiRRG1u-2MsSQLbXA' => 'Veritasium',
+                    'UCiRiQGCHGjDLT9FQXFW0I3A' => 'Academy of Ideas',
+                    'UCFAbxaVl6PJMwbMMXX9ZcNw' => 'StoneAgeMan',
+                    'UCkf4VIqu3Acnfzuk3kRIFwA' => 'gotbletu',
+                    'UCjr2bPAyPV7t35MvcgT3W8Q' => 'The Hated One',
+                    'UCFeK8ZdHbCqAq3gekWs8aEQ' => 'Larken Rose',
+                    'UCHmVAKGT0AcuD24zyjG1xYQ' => 'Eric Rowland',
+                   );
+
+    my @channels = map { [$_, $channels{$_}] } keys %channels;
+
+    # Sort channels by channel name
+    @channels = sort { CORE::fc($a->[1]) cmp CORE::fc($b->[1]) } @channels;
+
+    return @channels;
+}
+
 sub read_channels_from_file {
     my ($self, $file, $mode) = @_;
 
