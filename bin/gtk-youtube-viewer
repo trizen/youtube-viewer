@@ -1651,6 +1651,16 @@ HELP_TEXT
     $mainw->add_accel_group($accel);
 }
 
+{
+    # "Saved channels" window
+    my $accel = Gtk3::AccelGroup->new;
+
+    # 'DEL' key
+    $accel->connect(0xffff, ['lock-mask'], ['visible'], \&remove_selected_username);
+
+    $users_list_window->add_accel_group($accel);
+}
+
 # Support for navigating back and forth using the side buttons of the mouse
 $mainw->signal_connect(
     'button-release-event' => sub {
@@ -2229,6 +2239,7 @@ sub remove_selected_username {
     my $iter       = $selection->get_selected       // return;
     my $channel_id = $users_liststore->get($iter, 0);
 
+    say ":: Removing channel: $channel_id" if $yv_obj->get_debug;
     delete $channels{$channel_id};
     $users_liststore->remove($iter);
 
