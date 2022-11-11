@@ -925,6 +925,12 @@ sub is_channelID {
     $id eq 'mine' or $id =~ /^UC[-a-zA-Z0-9_]{22}\z/;
 }
 
+sub is_playlistID {
+    my ($self, $id) = @_;
+    $id || return;
+    $id =~ m{^PL[-a-zA-Z0-9_]{32}\z};
+}
+
 sub is_videoID {
     my ($self, $id) = @_;
     $id || return;

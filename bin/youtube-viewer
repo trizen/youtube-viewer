@@ -2493,7 +2493,13 @@ sub _bold_color {
 sub youtube_urls {
     my ($arg) = @_;
 
-    if ($arg =~ /$get_video_id_re/) {
+    if ($arg ne 'mine' and $yv_utils->is_channelID($arg)) {
+        print_videos($yv_obj->uploads($arg));
+    }
+    elsif ($yv_utils->is_playlistID($arg)) {
+        get_and_print_videos_from_playlist($arg);
+    }
+    elsif ($arg =~ /$get_video_id_re/) {
         get_and_play_video_ids($+{video_id});
     }
     elsif ($arg =~ /$get_playlist_id_re/) {

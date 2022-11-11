@@ -2464,8 +2464,11 @@ sub check_keywords {
             return;
         }
     }
-    elsif ($yv_utils->is_channelID($key)) {
+    elsif ($key ne 'mine' and $yv_utils->is_channelID($key)) {
         list_channel_videos($key);
+    }
+    elsif ($yv_utils->is_playlistID($key)) {
+        list_playlist($key);
     }
     elsif ($key =~ /$get_playlist_id_re/o) {
         list_playlist($+{playlist_id});
