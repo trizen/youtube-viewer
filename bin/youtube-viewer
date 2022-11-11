@@ -382,6 +382,7 @@ my $playlists_help = <<"PLAYLISTS_HELP" . $general_help;
 
 # Select a playlist
 <number>          : list videos from the selected playlist
+:p=i              : list playlists from the selected author
 :pp=i,i           : play videos from the selected playlists
 
 # Save and remove playlists
@@ -3775,6 +3776,24 @@ sub print_playlists {
                         print_playlist_info($playlists->[$id]);
                     }
                     press_enter_to_continue();
+                }
+                else {
+                    warn_no_thing_selected('playlist');
+                }
+            }
+
+            # :p=i, :playlist=i, :up=i
+            elsif ($opt =~ /^(?:p|playlists?|up)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$playlists}, $1)) {
+                    foreach my $id (@nums) {
+                        my $request = $yv_obj->playlists($yv_utils->get_channel_id($playlists->[$id]));
+                        if ($yv_utils->has_entries($request)) {
+                            print_playlists($request);
+                        }
+                        else {
+                            warn_no_results('playlist');
+                        }
+                    }
                 }
                 else {
                     warn_no_thing_selected('playlist');
