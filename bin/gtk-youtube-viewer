@@ -1281,7 +1281,7 @@ sub menu_popup {
                 my $item = 'Gtk3::ImageMenuItem'->new("YouTube page");
                 $item->signal_connect(activate => sub { open_external_url(make_youtube_url('video', $video_id)) });
                 $item->set_property(tooltip_text => "Open the YouTube page of this video");
-                $item->set_image('Gtk3::Image'->new_from_icon_name("applications-internet-symbolic", q{menu}));
+                $item->set_image('Gtk3::Image'->new_from_icon_name("web-browser-symbolic", q{menu}));
                 $item->show;
                 $video->append($item);
             }
@@ -1432,7 +1432,7 @@ sub menu_popup {
             my $item = 'Gtk3::ImageMenuItem'->new("YouTube page");
             $item->signal_connect(activate => sub { open_external_url(make_youtube_url('channel', $channel_id)) });
             $item->set_property(tooltip_text => "Open the YouTube page of this channel");
-            $item->set_image('Gtk3::Image'->new_from_icon_name("applications-internet-symbolic", q{menu}));
+            $item->set_image('Gtk3::Image'->new_from_icon_name("web-browser-symbolic", q{menu}));
             $item->show;
             $author->append($item);
         }
@@ -1444,6 +1444,30 @@ sub menu_popup {
         else {
             $menu = $author;
         }
+    }
+
+    # Separator
+    {
+        my $item = 'Gtk3::SeparatorMenuItem'->new;
+        $item->show;
+        $menu->append($item);
+    }
+
+    # Copy YouTube URL
+    {
+        my $item = 'Gtk3::ImageMenuItem'->new("Copy YouTube URL");
+        $item->set_property(tooltip_text => "Copy the YouTube URL for this entry");
+        $item->set_image('Gtk3::Image'->new_from_icon_name("edit-copy-symbolic", q{menu}));
+        $item->signal_connect(
+            activate => sub {
+                my $id        = $liststore->get($iter, 3);
+                my $display   = Gtk3::Gdk::Display::get_default();
+                my $clipboard = Gtk3::Clipboard::get_default($display);
+                $clipboard->set_text(make_youtube_url($type, $id));
+            }
+        );
+        $item->show;
+        $menu->append($item);
     }
 
     if (@VIDEO_QUEUE) {
@@ -1466,7 +1490,7 @@ sub menu_popup {
         }
     }
 
-    if ($type eq 'video') {
+    if (0 and $type eq 'video') {
 
         # Separator
         {

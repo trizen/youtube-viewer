@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.40.0 
+<!-- Generated with glade 3.40.0
 
 Copyright (C) Copyright © 2010-2022 Trizen
 
@@ -175,7 +175,7 @@ Author: Trizen https://github.com/trizen
   <object class="GtkImage" id="image79">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
-    <property name="icon-name">applications-internet</property>
+    <property name="icon-name">web-browser-symbolic</property>
   </object>
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>
