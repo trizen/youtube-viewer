@@ -73,11 +73,6 @@ Author: Trizen https://github.com/trizen
     <property name="can-focus">False</property>
     <property name="stock">gtk-missing-image</property>
   </object>
-  <object class="GtkImage" id="image10">
-    <property name="visible">True</property>
-    <property name="can-focus">False</property>
-    <property name="stock">gtk-missing-image</property>
-  </object>
   <object class="GtkImage" id="image11">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
@@ -318,7 +313,6 @@ Author: Trizen https://github.com/trizen
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="tooltip-text" translatable="yes">Display local subscription videos</property>
-                        <property name="image">image10</property>
                         <property name="use-stock">False</property>
                         <signal name="activate" handler="display_subscription_videos" swapped="no"/>
                       </object>

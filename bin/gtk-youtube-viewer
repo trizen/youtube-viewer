@@ -1412,7 +1412,7 @@ sub menu_popup {
                 }
             );
             $item->set_property(tooltip_text => "Unsubscribe from this channel");
-            $item->set_image('Gtk3::Image'->new_from_icon_name("remove-symbolic", q{menu}));
+            $item->set_image('Gtk3::Image'->new_from_icon_name("edit-delete-symbolic", q{menu}));
             $item->show;
             $author->append($item);
         }
