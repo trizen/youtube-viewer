@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.40.0
+<!-- Generated with glade 3.40.0 
 
 Copyright (C) Copyright © 2010-2022 Trizen
 
@@ -73,10 +73,20 @@ Author: Trizen https://github.com/trizen
     <property name="can-focus">False</property>
     <property name="stock">gtk-missing-image</property>
   </object>
+  <object class="GtkImage" id="image10">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="stock">gtk-missing-image</property>
+  </object>
   <object class="GtkImage" id="image11">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
     <property name="stock">gtk-index</property>
+  </object>
+  <object class="GtkImage" id="image12">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="stock">gtk-missing-image</property>
   </object>
   <object class="GtkImage" id="image14">
     <property name="visible">True</property>
@@ -170,7 +180,7 @@ Author: Trizen https://github.com/trizen
   <object class="GtkImage" id="image79">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
-    <property name="icon-name">web-browser-symbolic</property>
+    <property name="icon-name">web-browser</property>
   </object>
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>
@@ -291,6 +301,7 @@ Author: Trizen https://github.com/trizen
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="tooltip-text" translatable="yes">See your list of saved channels</property>
+                        <property name="image">image10</property>
                         <property name="use-stock">False</property>
                         <signal name="activate" handler="show_users_list_window" swapped="no"/>
                       </object>
@@ -313,6 +324,7 @@ Author: Trizen https://github.com/trizen
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="tooltip-text" translatable="yes">Display local subscription videos</property>
+                        <property name="image">image12</property>
                         <property name="use-stock">False</property>
                         <signal name="activate" handler="display_subscription_videos" swapped="no"/>
                       </object>
