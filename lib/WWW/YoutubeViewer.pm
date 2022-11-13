@@ -311,6 +311,10 @@ sub set_lwp_useragent {
 
     $agent->ssl_opts(Timeout => $self->get_timeout);
     $agent->default_header('Accept-Encoding' => $accepted_encodings);
+    $agent->default_header('Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8');
+    $agent->default_header('Accept-Language' => 'en-US,en;q=0.5');
+    $agent->default_header('Connection'      => 'keep-alive');
+    $agent->default_header('Upgrade-Insecure-Requests' => '1');
     $agent->conn_cache($cache);
     $agent->proxy(['http', 'https'], $self->get_http_proxy) if defined($self->get_http_proxy);
 
