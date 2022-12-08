@@ -280,9 +280,10 @@ sub normalize_filename {
         $title =~ s/: / - /g;
         $title =~ tr{:"*/?\\|}{;'+%!%%};    # "
         $title =~ tr/<>//d;
+        $title =~ s{%+}{%}g;
     }
     else {
-        $title =~ tr{/}{%};
+        $title =~ s{/+}{%}g;
     }
 
     my $basename = join(q{ }, split(q{ }, $title));
@@ -520,6 +521,7 @@ sub default_channels {
                     'UCYO_jab_esuFRV4b17AJtAw' => '3Blue1Brown',
                     'UCWnPjmqvljcafA0z2U1fwKQ' => 'Confreaks',
                     'UC_QIfHvN9auy2CoOdSfMWDw' => 'Strange Loop Conference',
+                    'UCK8XIGR5kRidIw2fWqwyHRA' => 'Reducible',
                     'UC9-y-6csu5WGm29I7JiwpnA' => 'Computerphile',
                     'UCoxcjq-8xIDTYp3uz647V5A' => 'Numberphile',
                     'UC6107grRI4m0o2-emgoDnAA' => 'SmarterEveryDay',
