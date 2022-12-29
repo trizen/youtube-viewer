@@ -343,7 +343,7 @@ sub find_streaming_url {
     # Check if we do recognize all the audio/video formats
     foreach my $stream_itag (sort keys %stream) {
 
-        next if $stream_itag =~ m{^(?:sb[012])\z};
+        next if $stream_itag =~ m{^(?:sb[0-9]+)\z};
 
         my $found_itag = 0;
         foreach my $resolution_itags (values %$itags) {
