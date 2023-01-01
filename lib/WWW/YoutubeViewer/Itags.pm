@@ -189,6 +189,9 @@ sub get_itags {
                    {value => '139-dash', format => 'mp4'},                   # mp4 DASH (v-a)
                    {value => '140-dash', format => 'mp4'},                   # mp4 DASH (v-a)
                    {value => '251-dash', format => 'mp4'},                   # mp4 DASH (v-a)
+                   {value => '249-dash', format => 'mp4'},                   # mp4 DASH (v-a)
+                   {value => '250-dash', format => 'mp4'},                   # mp4 DASH (v-a)
+                   {value => '299-dash', format => 'mp4'},                   # mp4 DASH (v-a)
                   ],
            };
 }
@@ -229,6 +232,7 @@ sub _find_streaming_url {
 
     my %kbps_table = (
                       best   => 320,
+                      high   => 320,
                       medium => 128,
                       low    => 50,
                       worst  => 50,
