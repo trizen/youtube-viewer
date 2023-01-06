@@ -432,6 +432,7 @@ $action_options
 :ps=i :s2p=i,i    : save videos to a post-selected playlist
 :sub(scribe)=i    : subscribe to author's channel
 :unsub(scribe)=i  : unsubscribe from author's channel
+:w=i  :mark=i     : add video to watched history
 :(dis)like=i      : like or dislike a video
 :fav(orite)=i     : favorite a video
 :autoplay=i       : autoplay mode, starting from video i
@@ -4452,6 +4453,7 @@ sub play_videos {
             if (not download_video($streaming, $video)) {
                 return;
             }
+            save_watched_video($video_id);
         }
         elsif (length($opt{extract_info})) {
             my $fh = $opt{extract_info_fh} // \*STDOUT;
@@ -4483,9 +4485,10 @@ sub play_videos {
                 $opt{auto_next_page} = 0;
                 return;
             }
+
+            save_watched_video($video_id);
         }
 
-        save_watched_video($video_id);
         press_enter_to_continue() if $opt{confirm};
     }
 
@@ -5100,6 +5103,14 @@ sub print_videos {
             elsif ($opt =~ /^r(?:elated)?${digit_or_equal_re}(.*)/) {
                 if (my ($id) = get_valid_numbers($#{$videos}, $1)) {
                     get_and_print_related_videos($yv_utils->get_video_id($videos->[$id]));
+                }
+                else {
+                    warn_no_thing_selected('video');
+                }
+            }
+            elsif ($opt =~ /^(?:w|mark)${digit_or_equal_re}(.*)/) {
+                if (my @nums = get_valid_numbers($#{$videos}, $1)) {
+                    save_watched_video($yv_utils->get_video_id($videos->[$_])) for @nums;
                 }
                 else {
                     warn_no_thing_selected('video');
