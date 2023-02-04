@@ -1029,6 +1029,7 @@ sub _extract_streaming_urls {
               {
                 itag => 38,
                 type => "video/ts",
+                wkad => 1,
                 url  => $json->{streamingData}{hlsManifestUrl},
               };
         }
@@ -1209,11 +1210,6 @@ sub get_streaming_urls {
 
     my @caption_urls;
 
-    my $new_video_id = $json->{videoDetails}{videoId};
-    if ($self->get_debug and defined($new_video_id) and $new_video_id ne $videoID) {
-        say STDERR ":: Different video ID detected: $new_video_id != $videoID";
-    }
-
     if (not defined $json->{streamingData}) {
         say STDERR ":: Trying to bypass age-restricted gate..." if $self->get_debug;
 
@@ -1276,13 +1272,11 @@ sub get_streaming_urls {
         push @caption_urls, $self->_make_translated_captions(\@caption_urls);
     }
 
-    $new_video_id = $json->{videoDetails}{videoId};
-
     # Try again with yt-dlp / youtube-dl
     if (   !@streaming_urls
         or (($json->{playabilityStatus}{status} // '') =~ /fail|error|unavailable|not available/i)
         or $self->get_force_fallback
-        or (defined($new_video_id) and $new_video_id ne $videoID)) {
+        or (($json->{videoDetails}{videoId} // '') ne $videoID)) {
 
         @streaming_urls = $self->_fallback_extract_urls($videoID);
 
@@ -1343,6 +1337,7 @@ sub get_streaming_urls {
           {
             itag => 38,
             type => "video/mp4",
+            wkad => 1,
             url  => "https://www.youtube.com/watch?v=$videoID",
           };
     }

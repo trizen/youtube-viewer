@@ -4007,7 +4007,9 @@ sub download_from_url {
     # Download with yt-dlp / youtube-dl
     if ($opt{ytdl} and $opt{download_with_ytdl} and defined($info->{_youtube_url}) and defined($info->{itag})) {
         my $cmd = join(' ',
-                       $opt{ytdl_cmd}, '-f', $info->{itag}, quotemeta($info->{_youtube_url}),
+                       $opt{ytdl_cmd},
+                       ($info->{wkad} ? () : ('-f', $info->{itag})),
+                       quotemeta($info->{_youtube_url}),
                        '-o', quotemeta("$output_filename.part"));
         $yv_obj->proxy_system($cmd);
         return if $?;
