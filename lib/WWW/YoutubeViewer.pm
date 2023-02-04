@@ -1028,7 +1028,7 @@ sub _extract_streaming_urls {
             push @results,
               {
                 itag => 38,
-                type => "video/ts",
+                type => "video/mp4",
                 wkad => 1,
                 url  => $json->{streamingData}{hlsManifestUrl},
               };
