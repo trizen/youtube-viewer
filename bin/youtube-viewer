@@ -260,6 +260,7 @@ my %CONFIG = (
     youtube_users_file => $youtube_users_file,
     remove_played_file => 0,
 
+    bypass_age_gate_native     => 0,
     bypass_age_gate_with_proxy => 0,
     ignored_projections        => [],
 
@@ -1242,7 +1243,7 @@ sub apply_configuration {
                              subscriptions_order user_agent
                              cookie_file timeout ytdl ytdl_cmd
                              prefer_mp4 prefer_av1 force_fallback
-                             bypass_age_gate_with_proxy
+                             bypass_age_gate_native bypass_age_gate_with_proxy
                              )
       ) {
 
@@ -5296,6 +5297,14 @@ The option can also be set to a numeric value N in order to select an audio-trac
 
 Enable autoplay mode, which will continuously play related videos.
 
+=head2 bypass_age_gate_native
+
+Bypass age-restricted videos, using our internal method.
+
+However, these streaming URLs are heavily throttled by YouTube.
+
+When this option is disabled, a fallback method will be used instead (C<yt-dlp>/C<youtube-dl> or invidious instances).
+
 =head2 bypass_age_gate_with_proxy
 
 Bypass age-restricted videos using an YouTube Account Proxy.
@@ -5379,7 +5388,9 @@ Include or exclude streams in "Dynamic Adaptive Streaming over HTTP" (DASH) form
 
 =head2 dash_support
 
-Enable or disable support for split videos.
+Enable or disable support for split videos. Split-videos are videos that do not include audio and video in the same file.
+
+Disable this option if the videos are loading too slowly, as non-split videos are not throttled by YouTube. Although, the highest resolution of non-split videos is 720p.
 
 =head2 debug
 
