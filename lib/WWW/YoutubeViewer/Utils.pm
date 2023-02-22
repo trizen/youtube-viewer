@@ -258,7 +258,11 @@ sub has_entries {
 
     ref($result) eq 'HASH' or return;
 
-    ($result->{pageInfo}{totalResults} // 0) > 0;
+    if (defined($result->{pageInfo}{totalResults})) {
+        return ($result->{pageInfo}{totalResults} > 0);
+    }
+
+    return 1;    # maybe
 }
 
 =head2 normalize_filename($title, $fat32safe)

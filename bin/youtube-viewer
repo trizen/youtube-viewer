@@ -4750,7 +4750,7 @@ sub print_videos {
     @$videos = grep {
             ref($_) eq 'HASH' && ref($_->{id}) eq 'HASH'
                 ? (exists($_->{id}{kind})
-                    ? $_->{id}{kind} eq 'youtube#video'
+                    ? $yv_utils->is_video($_)
                     : 0)
                 : 1
     } @$videos;
