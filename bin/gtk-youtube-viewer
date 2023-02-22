@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 08 February 2023
+#  Latest edit on: 22 February 2023
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -249,6 +249,8 @@ my %CONFIG = (
     autolike_watched  => 0,
     autoscroll_to_end => 0,
     single_click_play => 0,
+
+    video_min_seconds => 0,
 
     # youtube-dl support
     ytdl     => 1,
@@ -2860,7 +2862,7 @@ sub get_subscription_video_results {
         }
     }
 
-    my $prev_subscriptions_data = {channel_data => {},};
+    my $prev_subscriptions_data = {channel_data => {}};
 
     require Storable;
 
@@ -3064,6 +3066,11 @@ sub display_results {
 
             # Filter out videos with time '00:00'
             $yv_utils->get_time($item) eq '00:00' and next;
+
+            # Skip too short videos
+            if ($CONFIG{video_min_seconds}) {
+                $yv_utils->get_duration($item) > $CONFIG{video_min_seconds} or next;
+            }
 
             # Mark as video
             $item->{__is_video__} = 1;

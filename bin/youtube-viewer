@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 08 February 2023
+#  Latest edit on: 22 February 2023
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -283,6 +283,8 @@ my %CONFIG = (
     bypass_age_gate_native     => 0,
     bypass_age_gate_with_proxy => 0,
     ignored_projections        => [],
+
+    video_min_seconds => 0,
 
     # Conversion options
     convert_cmd         => 'ffmpeg -i *IN* *OUT*',
@@ -4779,6 +4781,11 @@ sub print_videos {
            $yv_utils->get_video_id($_)
        and $yv_utils->get_time($_) ne '00:00'
     } @$videos;
+
+    # Filter out too short videos
+    @$videos = grep {
+        $yv_utils->get_duration($_) > $opt{video_min_seconds}
+    } @$videos if $opt{video_min_seconds};
 #>>>
 
     my @formatted;
@@ -5660,6 +5667,10 @@ The format of filename for downloaded files.
 The available special tokens are listed in:
 
     youtube-viewer --tricks
+
+=head2 video_min_seconds
+
+Filter out from results videos with less than C<video_min_seconds> seconds.
 
 =head2 video_player_selected
 
