@@ -157,7 +157,8 @@ sub get_itags {
                   {value => 597, format => 'mp4',  dash => 1},              # mp4 (v)
                  ],
 
-        'audio' => [{value => 172, format => 'webm', kbps => 192},            # webm (192 kbps)
+        'audio' => [{value => 258, format => 'm4a',  kbps => 360},            # mp4a (360 kbps?)
+                    {value => 172, format => 'opus', kbps => 192},            # webm opus (192 kbps)
                     {value => 251, format => 'opus', kbps => 160},            # webm opus (128-160 kbps)
                     {value => 171, format => 'webm', kbps => 128},            # webm vorbis (92-128 kbps)
                     {value => 140, format => 'm4a',  kbps => 128},            # mp4a (128 kbps)
@@ -168,6 +169,7 @@ sub get_itags {
                     {value => 150, format => 'm4a',  kbps => 256},            # mp4a (256 kbps)
                     {value => 326, format => 'm4a',  kbps => 256},            # mp4a (256 kbps)
                     {value => 690, format => 'm4a',  kbps => 256},            # mp4a (256 kbps)
+                    {value => 256, format => 'm4a',  kbps => 192},            # mp4a (192 kbps?)
                     {value => 250, format => 'opus', kbps => 64},             # webm opus (64 kbps)
                     {value => 249, format => 'opus', kbps => 48},             # webm opus (48 kbps)
                     {value => 688, format => 'm4a',  kbps => 48},             # mp4a (48 kbps)
@@ -176,7 +178,7 @@ sub get_itags {
                     {value => 261, format => 'm4a',  kbps => 48},             # mp4a (48 kbps)
                     {value => 351, format => 'm4a',  kbps => 48},             # mp4a (48 kbps)
                     {value => 350, format => 'm4a',  kbps => 48},             # mp4a (48 kbps)
-                    {value => 600, format => 'webm', kbps => 32},             # webm (48 kbps)
+                    {value => 600, format => 'opus', kbps => 32},             # webm opus (48 kbps)
                     {value => 599, format => 'm4a',  kbps => 32},             # mp4a (48 kbps)
                    ],
 
