@@ -892,7 +892,7 @@ usage: $execname [options] ([url] | [keywords])
        --copy-caption!   : copy and rename the caption for downloaded videos
        --downloads-dir=s : downloads directory (set: '$opt{downloads_dir}')
        --filename=s      : set a custom format for the video filename (see: -T)
-       --fat32safe!      : makes filenames FAT32 safe (includes Unicode)
+       --fat32safe!      : makes filenames FAT32 safe
        --mkv-merge!      : merge audio and video into an MKV container
        --merge-captions! : include closed-captions in the MKV container
 
@@ -5450,6 +5450,8 @@ Load proxy settings from C<*_proxy> environment variables (if any).
 =head2 fat32safe
 
 When downloading a video, make the filename compatible with the FAT32 filesystem.
+
+Additionally, if L<Text::Unidecode> is available, then Unicode characters are converted to ASCII equivalents.
 
 =head2 ffmpeg_cmd
 

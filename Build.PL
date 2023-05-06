@@ -19,18 +19,18 @@ my $builder = Module::Build->new(
                        'Test::More' => 0,
                       },
 
-    extra_manify_args => { utf8 => 1 },
+    extra_manify_args => {utf8 => 1},
 
     configure_requires => {
                            'Module::Build' => 0,
                           },
 
     get_options => {
-        'gtk3' => {
-                  type  => '!',
-                  store => \$gtk3,
-                 },
-    },
+                    'gtk3' => {
+                               type  => '!',
+                               store => \$gtk3,
+                              },
+                   },
 
     requires => {
         'perl'                  => 5.016,
@@ -64,21 +64,18 @@ my $builder = Module::Build->new(
     },
 
     recommends => {
-                   'LWP::UserAgent::Cached'  => 0,    # cache support
-                   'Term::ReadLine::Gnu'     => 0,    # for better STDIN support (+history)
-                   'JSON::XS'                => 0,    # faster JSON to HASH conversion
-                   'Unicode::GCString'       => 0,    # fixed-width format
+        'LWP::UserAgent::Cached' => 0,    # cache support
+        'Term::ReadLine::Gnu'    => 0,    # for better STDIN support (+history)
+        'JSON::XS'               => 0,    # faster JSON to HASH conversion
+        'Unicode::GCString'      => 0,    # fixed-width format
+        'Text::Unidecode'        => 0,    # for the `fat32safe` option
                   },
 
     add_to_cleanup     => ['WWW-YoutubeViewer-*'],
     create_makefile_pl => 'traditional',
 );
 
-$builder->script_files(
-                       ['bin/youtube-viewer',
-                        ($gtk3 ? ('bin/gtk-youtube-viewer') : ()),
-                       ]
-                      );
+$builder->script_files(['bin/youtube-viewer', ($gtk3 ? ('bin/gtk-youtube-viewer') : ())]);
 
 $builder->share_dir('share') if $gtk3;
 $builder->create_build_script();

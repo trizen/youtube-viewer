@@ -281,6 +281,13 @@ sub normalize_filename {
     }
 
     if ($fat32safe) {
+
+        state $has_unidecode = eval { require Text::Unidecode; 1 };
+
+        if ($has_unidecode) {
+            $title = Text::Unidecode::unidecode($title);
+        }
+
         $title =~ s/: / - /g;
         $title =~ tr{:"*/?\\|}{;'+%!%%};    # "
         $title =~ tr/<>//d;
