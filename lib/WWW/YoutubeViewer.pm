@@ -1052,20 +1052,30 @@ sub _get_youtubei_content {
 
     require Time::Piece;
 
-#<<<
-    #~ my %android = (
-                   #~ "videoId" => $videoID,
-                   #~ "context" => {
-                                 #~ "client" => {
-                                              #~ "hl"            => "en",
-                                              #~ "gl"            => "US",
-                                              #~ "clientName"    => "ANDROID",
-                                              #~ "clientVersion" => "16.20",
-                                              #~ %args,
-                                             #~ },
-                                #~ },
-                  #~ );
-#>>>
+    my %android = (
+        "videoId" => $videoID,
+        "context" => {
+            "client" => {
+                "hl"         => "en",
+                "gl"         => "US",
+                "clientName" => "ANDROID",
+
+                #"clientVersion" => "16.20",
+                'clientVersion'     => '17.31.35',
+                'androidSdkVersion' => 30,
+                'userAgent'         => 'com.google.android.youtube/17.31.35 (Linux; U; Android 11) gzip',
+                %args,
+                        }
+                     },
+                  );
+
+    $self->{lwp} // $self->set_lwp_useragent();
+
+    my $agent = $self->{lwp}->agent;
+
+    if ($endpoint ne 'next') {
+        $self->{lwp}->agent('com.google.android.youtube/17.31.35 (Linux; U; Android 11) gzip');
+    }
 
     my %web = (
                "videoId" => $videoID,
@@ -1080,22 +1090,24 @@ sub _get_youtubei_content {
                             },
               );
 
-    my %android = (
-                   "videoId" => $videoID,
-                   "context" => {
-                                 "client" => {
+    if (0) {
+        %android = (
+                    "videoId" => $videoID,
+                    "context" => {
+                                  "client" => {
                                           "hl"            => "en",
                                           "gl"            => "US",
                                           "clientName"    => "MWEB",
                                           "clientVersion" => sprintf("2.%s.03.00", Time::Piece->new(time)->strftime("%Y%m%d")),
                                           %args,
-                                 }
-                                },
-                  );
+                                  }
+                                 },
+                   );
+    }
 
     local $self->{access_token} = undef;
     my $content = $self->post_as_json($url, $endpoint eq 'next' ? \%web : \%android);
-
+    $self->{lwp}->agent($agent);
     return $content;
 }
 
