@@ -62,7 +62,7 @@ no warnings 'once';
 my $DEVEL;                                           # true in devel mode
 use if ($DEVEL = -w __FILE__), lib => qw(../lib);    # devel mode
 
-use WWW::YoutubeViewer v3.10.7;
+use WWW::YoutubeViewer v3.10.8;
 use WWW::YoutubeViewer::RegularExpressions;
 
 use File::Spec::Functions qw(

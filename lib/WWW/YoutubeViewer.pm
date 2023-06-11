@@ -42,7 +42,7 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =cut
 
-our $VERSION = '3.10.7';
+our $VERSION = '3.10.8';
 
 =head1 SYNOPSIS
 
@@ -1052,21 +1052,21 @@ sub _get_youtubei_content {
 
     require Time::Piece;
 
-    my %android = (
-        "videoId" => $videoID,
-        "context" => {
-            "client" => {
-                "hl"         => "en",
-                "gl"         => "US",
-                "clientName" => "ANDROID",
+    my $android_useragent = 'com.google.android.youtube/17.31.35 (Linux; U; Android 11) gzip';
 
-                #"clientVersion" => "16.20",
-                'clientVersion'     => '17.31.35',
-                'androidSdkVersion' => 30,
-                'userAgent'         => 'com.google.android.youtube/17.31.35 (Linux; U; Android 11) gzip',
-                %args,
-                        }
-                     },
+    my %android = (
+                   "videoId" => $videoID,
+                   "context" => {
+                                 "client" => {
+                                              'hl'                => 'en',
+                                              'gl'                => 'US',
+                                              'clientName'        => 'ANDROID',
+                                              'clientVersion'     => '17.31.35',
+                                              'androidSdkVersion' => 30,
+                                              'userAgent'         => $android_useragent,
+                                              %args,
+                                             }
+                                },
                   );
 
     $self->{lwp} // $self->set_lwp_useragent();
@@ -1074,7 +1074,7 @@ sub _get_youtubei_content {
     my $agent = $self->{lwp}->agent;
 
     if ($endpoint ne 'next') {
-        $self->{lwp}->agent('com.google.android.youtube/17.31.35 (Linux; U; Android 11) gzip');
+        $self->{lwp}->agent($android_useragent);
     }
 
     my %web = (
