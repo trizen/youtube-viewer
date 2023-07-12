@@ -52,6 +52,7 @@ sub get_itags {
                    {value => 313, format => 'webm', dash => 1},              # webm (v)
                    {value => 401, format => 'av1',  dash => 1},              # av1 (v)
                    {value => 337, format => 'webm', dash => 1, hdr => 1},    # vp9 HDR (v)
+                   {value => 701, format => 'mp4',  dash => 1, hdr => 1},    # mp4 HDR (v)
                   ],
 
         '1440' => [{value => 308, format => 'webm', dash => 1, hfr => 1},    # webm HFR (v)
@@ -59,6 +60,7 @@ sub get_itags {
                    {value => 264, format => 'mp4',  dash => 1},              # mp4 (v)
                    {value => 400, format => 'av1',  dash => 1},              # av1 (v)
                    {value => 336, format => 'webm', dash => 1, hdr => 1},    # vp9 HDR (v)
+                   {value => 700, format => 'mp4',  dash => 1, hdr => 1},    # mp4 HDR (v)
                   ],
 
         '1080' => [{value => 303, format => 'webm', dash => 1, hfr => 1},    # webm HFR (v)
