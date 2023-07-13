@@ -291,11 +291,13 @@ sub normalize_filename {
         $title =~ s/: / - /g;
         $title =~ tr{:"*/?\\|}{;'+%!%%};    # "
         $title =~ tr/<>//d;
-        $title =~ s{%+}{%}g;
     }
     else {
         $title =~ s{/+}{%}g;
     }
+
+    $title =~ s{%+}{%}g;
+    $title =~ s{\$+(?=[A-Za-z])}{}g;
 
     my $basename = join(q{ }, split(q{ }, $title));
     $basename = substr($basename, 0, 200);    # make sure the filename is not too long
