@@ -280,6 +280,8 @@ my %CONFIG = (
     youtube_users_file => $youtube_users_file,
     remove_played_file => 0,
 
+    subscription_videos_per_channel => 20,
+
     bypass_age_gate_native     => 0,
     bypass_age_gate_with_proxy => 0,
     ignored_projections        => [],
@@ -3540,7 +3542,7 @@ sub print_local_subscription_videos {
             or not exists($prev_info->{videos})
             or $yv_utils->get_channel_video_count($info) != $yv_utils->get_channel_video_count($prev_info)) {
 
-            local $yv_obj->{maxResults} = 10;
+            local $yv_obj->{maxResults} = $opt{subscription_videos_per_channel} || 10;
             my $uploads = $yv_obj->uploads($info->{id});
 
             if ($yv_utils->has_entries($uploads)) {
@@ -4584,15 +4586,15 @@ sub print_playlist_info {
           "$hr\n",
           q{ } x $rep => (_bold_color("=>> $title <<=") . "\n\n"),
           (
-           map    { sprintf(q{-> } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]) }
-             grep { defined($_->[1]) } (
-                                        ['Title'      => $yv_utils->get_title($playlist)],
-                                        ['Author'     => $yv_utils->get_channel_title($playlist)],
-                                        ['ChannelID'  => $yv_utils->get_channel_id($playlist)],
-                                        ['PlaylistID' => ($id =~ m{^/} ? undef : $id)],
-                                        ['Videos' => $yv_utils->set_thousands($yv_utils->get_playlist_item_count($playlist))],
-                                        ['Published' => $yv_utils->get_publication_date($playlist)],
-                                       )
+           map  { sprintf(q{-> } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]) }
+           grep { defined($_->[1]) } (
+                                      ['Title'      => $yv_utils->get_title($playlist)],
+                                      ['Author'     => $yv_utils->get_channel_title($playlist)],
+                                      ['ChannelID'  => $yv_utils->get_channel_id($playlist)],
+                                      ['PlaylistID' => ($id =~ m{^/} ? undef : $id)],
+                                      ['Videos'    => $yv_utils->set_thousands($yv_utils->get_playlist_item_count($playlist))],
+                                      ['Published' => $yv_utils->get_publication_date($playlist)],
+                                     )
           ),
           "$hr\n"
          );
@@ -4630,8 +4632,8 @@ sub print_channel_info {
           "\n$hr\n",
           q{ } x $rep => (_bold_color("=>> $title <<=") . "\n\n"),
           (
-           map    { sprintf(q{-> } . "%-*s: %s\n", $opt{_colors} ? 20 : 12, _bold_color($_->[0]), $_->[1]) }
-             grep { defined($_->[1]) } (
+           map  { sprintf(q{-> } . "%-*s: %s\n", $opt{_colors} ? 20 : 12, _bold_color($_->[0]), $_->[1]) }
+           grep { defined($_->[1]) } (
                                 ['Channel'     => $yv_utils->get_title($channel)],
                                 ['ChannelID'   => $yv_utils->get_channel_id($channel)],
                                 ['Country'     => $yv_utils->get_country($channel)],
@@ -4639,7 +4641,7 @@ sub print_channel_info {
                                 ['Subscribers' => $yv_utils->set_thousands($yv_utils->get_channel_subscriber_count($channel))],
                                 ['Views'       => $yv_utils->set_thousands($yv_utils->get_channel_view_count($channel))],
                                 ['Published'   => $yv_utils->get_publication_date($channel)],
-             )
+           )
           ),
           "$hr\n"
          );
@@ -4684,25 +4686,25 @@ sub print_video_info {
           "\n$hr\n",
           q{ } x $rep => (_bold_color("=>> $title <<=") . "\n\n"),
           (
-           map    { sprintf(q{-> } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]) }
-             grep { defined($_->[1]) } (
-                                        ['Channel'    => $yv_utils->get_channel_title($video)],
-                                        ['ChannelID'  => $yv_utils->get_channel_id($video)],
-                                        ['VideoID'    => $yv_utils->get_video_id($video)],
-                                        ['Category'   => $yv_utils->get_category_name($video)],
-                                        ['Definition' => $yv_utils->get_definition($video)],
-                                        ['Duration'   => $yv_utils->get_time($video)],
-                                        ['Likes'      => $yv_utils->set_thousands($likes)],
-                                        (
-                                         defined($dislikes)
-                                         ? ["Dislikes" => $yv_utils->set_thousands($dislikes)]
-                                         : ()
-                                        ),
-                                        ['Rating'    => $yv_utils->get_rating($video)],
-                                        ['Comments'  => $yv_utils->set_thousands($comments_count)],
-                                        ['Views'     => $yv_utils->set_thousands($views)],
-                                        ['Published' => $yv_utils->get_publication_date($video)],
-                                       )
+           map  { sprintf(q{-> } . "%-*s: %s\n", $opt{_colors} ? 18 : 10, _bold_color($_->[0]), $_->[1]) }
+           grep { defined($_->[1]) } (
+                                      ['Channel'    => $yv_utils->get_channel_title($video)],
+                                      ['ChannelID'  => $yv_utils->get_channel_id($video)],
+                                      ['VideoID'    => $yv_utils->get_video_id($video)],
+                                      ['Category'   => $yv_utils->get_category_name($video)],
+                                      ['Definition' => $yv_utils->get_definition($video)],
+                                      ['Duration'   => $yv_utils->get_time($video)],
+                                      ['Likes'      => $yv_utils->set_thousands($likes)],
+                                      (
+                                       defined($dislikes)
+                                       ? ["Dislikes" => $yv_utils->set_thousands($dislikes)]
+                                       : ()
+                                      ),
+                                      ['Rating'    => $yv_utils->get_rating($video)],
+                                      ['Comments'  => $yv_utils->set_thousands($comments_count)],
+                                      ['Views'     => $yv_utils->set_thousands($views)],
+                                      ['Published' => $yv_utils->get_publication_date($video)],
+                                     )
           ),
           "$hr\n"
          );
@@ -5649,6 +5651,12 @@ Valid values:
     alphabetical – Sort alphabetically.
     relevance    – Sort by relevance.
     unread       – Sort by order of activity.
+
+=head2 subscription_videos_per_channel
+
+How many recent videos to fetch from each channel in local subscription videos (C<-ls>).
+
+Valid values are between 1 and 50.
 
 =head2 thousand_separator
 

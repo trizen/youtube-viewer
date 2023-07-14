@@ -275,6 +275,8 @@ my %CONFIG = (
     remember_session_max   => 10,
     entry_completion_limit => 10,
 
+    subscription_videos_per_channel => 20,
+
     # Save titles
     save_titles_to_history  => 0,
     save_watched_to_history => 0,
@@ -2880,7 +2882,7 @@ sub get_subscription_video_results {
             or not exists($prev_info->{videos})
             or $yv_utils->get_channel_video_count($info) != $yv_utils->get_channel_video_count($prev_info)) {
 
-            local $yv_obj->{maxResults} = 10;
+            local $yv_obj->{maxResults} = $CONFIG{subscription_videos_per_channel} || 10;
             my $uploads = $yv_obj->uploads($info->{id});
 
             if ($yv_utils->has_entries($uploads)) {
