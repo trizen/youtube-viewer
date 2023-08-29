@@ -62,8 +62,7 @@ sub get_playlist_id {
 
     for (1 .. 10) {
 
-        my $playlists =
-          $self->_get_results($self->_make_feed_url('playlists', part => 'contentDetails', maxResults => 50, %fields));
+        my $playlists = $self->_get_results($self->_make_feed_url('playlists', part => 'contentDetails', maxResults => 50, %fields));
 
         $yv_utils->has_entries($playlists) or last;
 

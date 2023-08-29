@@ -461,12 +461,11 @@ Get videoID.
 sub get_video_id {
     my ($self, $info) = @_;
 
-    ref($info->{id}) eq 'HASH'                        ? $info->{id}{videoId}
-      : exists($info->{snippet}{resourceId}{videoId}) ? $info->{snippet}{resourceId}{videoId}
-      : exists($info->{contentDetails}{videoId})      ? $info->{contentDetails}{videoId}
-      : exists($info->{contentDetails}{playlistItem}{resourceId}{videoId})
-      ? $info->{contentDetails}{playlistItem}{resourceId}{videoId}
-      : exists($info->{contentDetails}{upload}{videoId}) ? $info->{contentDetails}{upload}{videoId}
+    ref($info->{id}) eq 'HASH'                                             ? $info->{id}{videoId}
+      : exists($info->{snippet}{resourceId}{videoId})                      ? $info->{snippet}{resourceId}{videoId}
+      : exists($info->{contentDetails}{videoId})                           ? $info->{contentDetails}{videoId}
+      : exists($info->{contentDetails}{playlistItem}{resourceId}{videoId}) ? $info->{contentDetails}{playlistItem}{resourceId}{videoId}
+      : exists($info->{contentDetails}{upload}{videoId})                   ? $info->{contentDetails}{upload}{videoId}
       : do {
         my $id = $info->{id} // return undef;
 
@@ -697,8 +696,8 @@ sub get_thumbnail_url {
     ref($info) eq 'HASH'            or return;
     ref($info->{snippet}) eq 'HASH' or return;
 
-    eval { $info->{snippet}{thumbnails}{$type}{url} } // $info->{snippet}{thumbnails}{default}{url}
-      // $info->{snippet}{thumbnails}{medium}{url} // $info->{snippet}{thumbnails}{high}{url};
+    eval { $info->{snippet}{thumbnails}{$type}{url} } // $info->{snippet}{thumbnails}{default}{url} // $info->{snippet}{thumbnails}{medium}{url}
+      // $info->{snippet}{thumbnails}{high}{url};
 }
 
 sub get_channel_title {
@@ -718,9 +717,8 @@ sub get_country {
 
 sub get_channel_id {
     my ($self, $info) = @_;
-    eval      { $info->{snippet}{resourceId}{channelId} }
-      // eval { $info->{snippet}{channelId} }
-      // eval { ref($info->{id}) eq 'HASH' ? $info->{id}{channelId} : undef } // $info->{id};
+    eval { $info->{snippet}{resourceId}{channelId} }
+      // eval { $info->{snippet}{channelId} } // eval { ref($info->{id}) eq 'HASH' ? $info->{id}{channelId} : undef } // $info->{id};
 }
 
 sub get_category_id {
@@ -906,8 +904,7 @@ sub get_comments {
 
 {
     no strict 'refs';
-    foreach my $pair (
-                      [playlist     => {'youtube#playlist'     => 1}],
+    foreach my $pair ([playlist => {'youtube#playlist' => 1}],
                       [channel      => {'youtube#channel'      => 1}],
                       [video        => {'youtube#video'        => 1, 'youtube#playlistItem' => 1}],
                       [subscription => {'youtube#subscription' => 1}],

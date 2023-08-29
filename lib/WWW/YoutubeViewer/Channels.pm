@@ -178,10 +178,7 @@ sub channel_title_from_id {
 
     my $info = $self->channels_info($channel_id // return) // return;
 
-    (    ref($info) eq 'HASH'
-     and ref($info->{results}) eq 'HASH'
-     and ref($info->{results}{items}) eq 'ARRAY'
-     and ref($info->{results}{items}[0]) eq 'HASH')
+    (ref($info) eq 'HASH' and ref($info->{results}) eq 'HASH' and ref($info->{results}{items}) eq 'ARRAY' and ref($info->{results}{items}[0]) eq 'HASH')
       ? $info->{results}{items}[0]{snippet}{title}
       : ();
 }

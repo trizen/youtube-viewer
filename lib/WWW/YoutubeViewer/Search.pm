@@ -157,8 +157,8 @@ sub related_to_videoID {
     # Feature deprecated and removed in August 2023
     # return $self->search_for('video', undef, {relatedToVideoId => $id});
 
-    my $watch_next_response = $self->parse_json_string($self->_get_video_next_info($videoID) // return {results => []});
-    my $related = eval { $watch_next_response->{contents}{twoColumnWatchNextResults}{secondaryResults}{secondaryResults}{results} } // return {results => []};
+    my $watch_next_response = $self->parse_json_string($self->_get_video_next_info($videoID) // return {results => {}});
+    my $related = eval { $watch_next_response->{contents}{twoColumnWatchNextResults}{secondaryResults}{secondaryResults}{results} } // return {results => {}};
 
     my @results;
 

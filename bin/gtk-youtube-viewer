@@ -843,12 +843,10 @@ if (not $CONFIG{video_player_selected}) {
 # Locate a terminal
 if (not defined $CONFIG{terminal}) {
     foreach my $term (
-                      'gnome-terminal', 'lxterminal', 'terminal', 'xfce4-terminal',
-                      'sakura',         'st',         'lilyterm', 'evilvte',
-                      'superterm',      'terminator', 'kterm',    'mlterm',
-                      'mrxvt',          'rxvt',       'urxvt',    'termite',
-                      'termit',         'fbterm',     'stjerm',   'yakuake',
-                      'tilix',          'roxterm',    'xterm',
+                      'gnome-terminal', 'lxterminal', 'terminal',  'xfce4-terminal', 'sakura', 'st',
+                      'lilyterm',       'evilvte',    'superterm', 'terminator',     'kterm',  'mlterm',
+                      'mrxvt',          'rxvt',       'urxvt',     'termite',        'termit', 'fbterm',
+                      'stjerm',         'yakuake',    'tilix',     'roxterm',        'xterm',
       ) {
         if (defined(my $abs_path = which_command($term))) {
             $CONFIG{terminal} = $abs_path;
@@ -3232,10 +3230,10 @@ sub add_video_entry {
                                  join(
                                       "\n",
                                       map { sprintf("%s   %s", $_->[0], $_->[1]) } grep { defined($_->[1]) } (
-                                                              [$symbols{play}      => $yv_utils->get_time($video)],
-                                                              [$symbols{type}      => $yv_utils->get_definition($video)],
-                                                              [$symbols{views}     => $yv_utils->set_thousands($views)],
-                                                              [$symbols{published} => $yv_utils->get_publication_date($video)],
+                                                                                               [$symbols{play}      => $yv_utils->get_time($video)],
+                                                                                               [$symbols{type}      => $yv_utils->get_definition($video)],
+                                                                                               [$symbols{views}     => $yv_utils->set_thousands($views)],
+                                                                                               [$symbols{published} => $yv_utils->get_publication_date($video)],
                                       )
                                      )
                                 );
@@ -3681,8 +3679,7 @@ sub play_video {
     if (    not defined($streaming->{streaming}{url})
         and defined($streaming->{info}{status})
         and $streaming->{info}{status} =~ /(?:error|fail)/i) {
-        die "[!] Error on: " . sprintf($CONFIG{youtube_video_url}, $video_id) . "\n",
-          "[*] Reason: " . $streaming->{info}{reason} =~ tr/+/ /r . "\n";
+        die "[!] Error on: " . sprintf($CONFIG{youtube_video_url}, $video_id) . "\n", "[*] Reason: " . $streaming->{info}{reason} =~ tr/+/ /r . "\n";
     }
 
     my $command = get_player_command($streaming, $video);
@@ -3868,9 +3865,7 @@ sub execute_cli_youtube_viewer {
                        $CONFIG{terminal},
                        sprintf(
                                $CONFIG{terminal_exec},
-                               join(q{ },
-                                    $CONFIG{youtube_viewer}, get_options_as_arguments(),
-                                    @arguments,              @{$CONFIG{youtube_viewer_args}}),
+                               join(q{ }, $CONFIG{youtube_viewer}, get_options_as_arguments(), @arguments, @{$CONFIG{youtube_viewer_args}}),
                               )
                       );
 
@@ -3950,10 +3945,11 @@ sub send_comment_to_video {
     my $videoID = get_selected_entry_code(type => 'video') // return;
     my $comment = get_text($gui->get_object('comment_textview'));
 
-    $feeds_statusbar->push(0,
-                           length($comment) && $yv_obj->comment_to_video_id($comment, $videoID)
+    $feeds_statusbar->push(
+                           0, length($comment) && $yv_obj->comment_to_video_id($comment, $videoID)
                            ? 'Video comment has been posted!'
-                           : 'Error!');
+                           : 'Error!'
+                          );
 }
 
 sub wrap_text {
@@ -3991,10 +3987,10 @@ sub display_comments {
                                                ),
                                                encode_entities(
                                                                wrap_text(
-                                                                       i_tab => "\t",
-                                                                       s_tab => "\t",
-                                                                       text => [$snippet->{textDisplay} // 'Empty comment...'],
-                                                               )
+                                                                         i_tab => "\t",
+                                                                         s_tab => "\t",
+                                                                         text  => [$snippet->{textDisplay} // 'Empty comment...'],
+                                                                        )
                                                               )
                                               )
                                       );
@@ -4020,12 +4016,12 @@ sub display_comments {
                                                       : $yv_utils->format_date($reply->{snippet}{publishedAt})
                                                      ),
                                                      encode_entities(
-                                                             wrap_text(
-                                                                 i_tab => "\t\t",
-                                                                 s_tab => "\t\t",
-                                                                 text => [$reply->{snippet}{textDisplay} // 'Empty comment...']
-                                                             )
-                                                     )
+                                                                     wrap_text(
+                                                                               i_tab => "\t\t",
+                                                                               s_tab => "\t\t",
+                                                                               text  => [$reply->{snippet}{textDisplay} // 'Empty comment...']
+                                                                              )
+                                                                    )
                                                     )
                                             );
 
@@ -4183,10 +4179,7 @@ sub set_entry_details {
 $symbols{author_id}\t%s
 EOT
 
-        $text_info = sprintf($details_format,
-                             $yv_utils->get_title($info),
-                             $yv_utils->get_publication_date($info),
-                             $yv_utils->get_channel_id($info));
+        $text_info = sprintf($details_format, $yv_utils->get_title($info), $yv_utils->get_publication_date($info), $yv_utils->get_channel_id($info));
     }
     elsif ($type eq 'channel') {
 

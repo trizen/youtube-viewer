@@ -136,8 +136,7 @@ sub sec2time {
 
     my @out;
     foreach my $sec (map { sprintf '%.3f', $_ } @_) {
-        push @out,
-          sprintf('%02d:%02d:%02d,%03d', ($sec / 3600 % 24, $sec / 60 % 60, $sec % 60, substr($sec, index($sec, '.') + 1)));
+        push @out, sprintf('%02d:%02d:%02d,%03d', ($sec / 3600 % 24, $sec / 60 % 60, $sec % 60, substr($sec, index($sec, '.') + 1)));
     }
 
     return @out;
@@ -193,11 +192,7 @@ sub xml2srt {
             }
         }
 
-        push @text,
-          join("\n",
-               $i + 1,
-               join(' --> ', $self->sec2time($start, $end)),
-               HTML::Entities::decode_entities($line->{'#text'} // ''));
+        push @text, join("\n", $i + 1, join(' --> ', $self->sec2time($start, $end)), HTML::Entities::decode_entities($line->{'#text'} // ''));
     }
 
     return join("\n\n", @text);
