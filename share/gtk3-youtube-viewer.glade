@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.40.0
+<!-- Generated with glade 3.40.0 
 
 Copyright (C) Copyright © 2010-2023 Trizen
 
@@ -2523,6 +2523,7 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <property name="pixels-below-lines">2</property>
+                                    <property name="editable">False</property>
                                     <property name="wrap-mode">word</property>
                                     <property name="accepts-tab">False</property>
                                   </object>
