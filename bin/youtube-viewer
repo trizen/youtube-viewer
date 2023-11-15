@@ -59,20 +59,27 @@ use 5.016;
 use warnings;
 no warnings 'once';
 
-my $DEVEL;                                           # true in devel mode
-use if ($DEVEL = -w __FILE__), lib => qw(../lib);    # devel mode
-
-use WWW::YoutubeViewer v3.10.9;
-use WWW::YoutubeViewer::RegularExpressions;
-
 use File::Spec::Functions qw(
   catdir
   catfile
   curdir
   path
   rel2abs
+  splitdir
   file_name_is_absolute
 );
+
+my $DEVEL;
+
+use if ($DEVEL = -w __FILE__), lib => do {
+    my @dirs = splitdir(rel2abs(__FILE__));
+    pop(@dirs);
+    pop(@dirs);
+    catdir(@dirs, 'lib');
+};
+
+use WWW::YoutubeViewer v3.10.9;
+use WWW::YoutubeViewer::RegularExpressions;
 
 binmode(STDOUT, ':utf8');
 
@@ -3524,13 +3531,12 @@ sub print_local_subscription_videos {
 
     my $prev_subscriptions_data = {channel_data => {},};
 
-    require Storable;
-
     if (-f $local_subscriptions_data_file and not -z _) {
-        $prev_subscriptions_data = Storable::retrieve($local_subscriptions_data_file);
+        require Storable;
+        $prev_subscriptions_data = eval { Storable::retrieve($local_subscriptions_data_file) } // {};
     }
 
-    my $subscriptions_data = {channel_data => {map { $_->{id} => $_ } @items},};
+    my $subscriptions_data = {channel_data => {map { $_->{id} => $_ } @items}};
 
     foreach my $info (@items) {
 
@@ -3557,6 +3563,7 @@ sub print_local_subscription_videos {
     }
 
     if (@items) {
+        require Storable;
         Storable::store($subscriptions_data, $local_subscriptions_data_file);
     }
 
@@ -4456,6 +4463,7 @@ sub play_videos {
             local $video->{streaming} = $streaming;
 
             if ($opt{dump} eq 'json') {
+                require JSON;
                 print {$fh} JSON->new->pretty(1)->encode($video);
             }
             elsif ($opt{dump} eq 'perl') {
