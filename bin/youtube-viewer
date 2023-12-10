@@ -223,7 +223,7 @@ my %CONFIG = (
     ),
 
     # YouTube options
-    dash_support    => $constant{android} ^ 1,
+    split_videos    => $constant{android} ^ 1,
     dash_segmented  => 1,                        # may load slow
     maxResults      => 20,
     hfr             => 1,
@@ -966,7 +966,7 @@ usage: $execname [options] ([url] | [keywords])
    --proxy=s            : set HTTP(S)/SOCKS proxy: 'proto://domain.tld:port/'
                           If authentication is required,
                           use 'proto://user:pass\@domain.tld:port/'
-   --dash!              : include or exclude the DASH itags
+   --split-videos!      : include or exclude videos with split A/V files
    --dash-segmented!    : include or exclude segmented DASH streams
    --ytdl!              : use youtube-dl for videos with encrypted signatures
                           `--no-ytdl` will use invidious instances
@@ -1838,7 +1838,7 @@ sub parse_arguments {
         # Others
         'caption=s'        => \$opt{videoCaption},
         'fullscreen|fs|f!' => \$opt{fullscreen},
-        'dash!'            => \$opt{dash_support},
+        'split-videos!'    => \$opt{split_videos},
         'confirm!'         => \$opt{confirm},
 
         'prefer-mp4!'     => \$opt{prefer_mp4},
@@ -3994,15 +3994,15 @@ sub get_streaming_url {
     require WWW::YoutubeViewer::Itags;
     state $yv_itags = WWW::YoutubeViewer::Itags->new();
 
-    # Include DASH itags
-    my $dash = 1;
+    # Include split A/V videos
+    my $split_videos = 1;
 
-    # Exclude DASH itags in download-mode or when no video output is required
-    if ($opt{novideo} or not $opt{dash_support}) {
-        $dash = 0;
+    # Exclude split-videos when no video output is required
+    if ($opt{novideo} or not $opt{split_videos}) {
+        $split_videos = 0;
     }
     elsif ($opt{download_video}) {
-        $dash = $opt{merge_into_mkv} ? 1 : 0;
+        $split_videos = $opt{merge_into_mkv} ? 1 : 0;
     }
 
     my ($streaming, $resolution) = $yv_itags->find_streaming_url(
@@ -4014,7 +4014,7 @@ sub get_streaming_url {
         prefer_m4a    => $opt{prefer_m4a},
         audio_quality => $opt{audio_quality},
 
-        dash           => $dash,
+        split_videos   => $split_videos,
         dash_segmented => ($opt{download_video} ? 0 : $opt{dash_segmented}),
 
         ignored_projections => $opt{ignored_projections},
@@ -5414,12 +5414,6 @@ An array of hash values specifying a custom layout for playlist results.
 
 Include or exclude streams in "Dynamic Adaptive Streaming over HTTP" (DASH) format.
 
-=head2 dash_support
-
-Enable or disable support for split videos. Split-videos are videos that do not include audio and video in the same file.
-
-Disable this option if the videos are loading too slowly, as non-split videos are not throttled by YouTube. Although, the highest resolution of non-split videos is 720p.
-
 =head2 debug
 
 Enable debug/verbose mode, which will print some extra information.
@@ -5636,6 +5630,12 @@ When downloading, skip if the file already exists locally.
 =head2 skip_watched
 
 Skip already watched/downloaded videos.
+
+=head2 split_videos
+
+Enable or disable support for split videos. Split-videos are videos that do not include audio and video in the same file.
+
+Disable this option if the videos are loading too slowly, as non-split videos are not throttled by YouTube. Although, the highest resolution of non-split videos is 720p.
 
 =head2 srt_languages
 

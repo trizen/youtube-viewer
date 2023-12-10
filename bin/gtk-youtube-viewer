@@ -203,7 +203,7 @@ my %CONFIG = (
     hpaned_position       => 420,
 
     # Youtube options
-    dash_support    => 1,
+    split_videos    => 1,
     dash_segmented  => 1,         # may load slow
     prefer_mp4      => 0,
     prefer_m4a      => 0,
@@ -363,53 +363,54 @@ my %objects = (
     'warnings_window'    => \my $warnings_window,
 
     # Others
-    'treeview1'              => \my $users_treeview,
-    'feeds_statusbar'        => \my $feeds_statusbar,
-    'treeview2'              => \my $treeview,
-    'treeview3'              => \my $cat_treeview,
-    'feeds_treeview'         => \my $feeds_treeview,
-    'liststore1'             => \my $liststore,
-    'liststore2'             => \my $users_liststore,
-    'liststore4'             => \my $cats_liststore,
-    'liststore11'            => \my $feeds_liststore,
-    'textview3'              => \my $config_view,
-    'warnings_textview'      => \my $warnings_textview,
-    'errors_textview'        => \my $errors_textview,
-    'search_entry'           => \my $search_entry,
-    'statusbar1'             => \my $statusbar,
-    'treeviewcolumn2'        => \my $thumbs_column,
-    'textview2'              => \my $textview_help,
-    'from_author_entry'      => \my $from_author_entry,
-    'category_id_entry'      => \my $category_id_entry,
-    'more_options_expander'  => \my $more_options_expander,
-    'notebook1'              => \my $notebook,
-    'comboboxtext9'          => \my $resolution_combobox,
-    'comboboxtext8'          => \my $duration_combobox,
-    'comboboxtext3'          => \my $caption_combobox,
-    'comboboxtext4'          => \my $definition_combobox,
-    'comboboxtext10'         => \my $license_combobox,
-    'comboboxtext5'          => \my $safesearch_combobox,
-    'comboboxtext1'          => \my $published_within_combobox,
-    'comboboxtext13'         => \my $subscriptions_order_combobox,
-    'panel_user_entry'       => \my $panel_user_entry,
-    'comboboxtext6'          => \my $panel_account_type_combobox,
-    'comboboxtext2'          => \my $order_combobox,
-    'comboboxtext7'          => \my $channel_type_combobox,
-    'videos_checkbox'        => \my $search_for_videos_checkbox,
-    'playlists_checkbox'     => \my $search_for_playlists_checkbox,
-    'channels_checkbox'      => \my $search_for_channels_checkbox,
-    'spinbutton1'            => \my $spin_results,
-    'spinbutton2'            => \my $spin_start_with_page,
-    'spinbutton3'            => \my $spin_published_within,
-    'before_checkbuton'      => \my $published_before_checkbutton,
-    'thumbs_checkbutton'     => \my $thumbs_checkbutton,
-    'fullscreen_checkbutton' => \my $fullscreen_checkbutton,
-    'clear_list_checkbutton' => \my $clear_list_checkbutton,
-    'dash_checkbutton'       => \my $dash_checkbutton,
-    'audio_only_checkbutton' => \my $audio_only_checkbutton,
-    'hbox2'                  => \my $hbox2,
-    'feeds_title'            => \my $feeds_title,
-    'main-menu-history-menu' => \my $history_menu,
+    'treeview1'                => \my $users_treeview,
+    'feeds_statusbar'          => \my $feeds_statusbar,
+    'treeview2'                => \my $treeview,
+    'treeview3'                => \my $cat_treeview,
+    'feeds_treeview'           => \my $feeds_treeview,
+    'liststore1'               => \my $liststore,
+    'liststore2'               => \my $users_liststore,
+    'liststore4'               => \my $cats_liststore,
+    'liststore11'              => \my $feeds_liststore,
+    'textview3'                => \my $config_view,
+    'warnings_textview'        => \my $warnings_textview,
+    'errors_textview'          => \my $errors_textview,
+    'search_entry'             => \my $search_entry,
+    'statusbar1'               => \my $statusbar,
+    'treeviewcolumn2'          => \my $thumbs_column,
+    'textview2'                => \my $textview_help,
+    'from_author_entry'        => \my $from_author_entry,
+    'category_id_entry'        => \my $category_id_entry,
+    'more_options_expander'    => \my $more_options_expander,
+    'notebook1'                => \my $notebook,
+    'comboboxtext9'            => \my $resolution_combobox,
+    'comboboxtext8'            => \my $duration_combobox,
+    'comboboxtext3'            => \my $caption_combobox,
+    'comboboxtext4'            => \my $definition_combobox,
+    'comboboxtext10'           => \my $license_combobox,
+    'comboboxtext5'            => \my $safesearch_combobox,
+    'comboboxtext1'            => \my $published_within_combobox,
+    'comboboxtext13'           => \my $subscriptions_order_combobox,
+    'panel_user_entry'         => \my $panel_user_entry,
+    'comboboxtext6'            => \my $panel_account_type_combobox,
+    'comboboxtext2'            => \my $order_combobox,
+    'comboboxtext7'            => \my $channel_type_combobox,
+    'videos_checkbox'          => \my $search_for_videos_checkbox,
+    'playlists_checkbox'       => \my $search_for_playlists_checkbox,
+    'channels_checkbox'        => \my $search_for_channels_checkbox,
+    'spinbutton1'              => \my $spin_results,
+    'spinbutton2'              => \my $spin_start_with_page,
+    'spinbutton3'              => \my $spin_published_within,
+    'before_checkbuton'        => \my $published_before_checkbutton,
+    'thumbs_checkbutton'       => \my $thumbs_checkbutton,
+    'fullscreen_checkbutton'   => \my $fullscreen_checkbutton,
+    'clear_list_checkbutton'   => \my $clear_list_checkbutton,
+    'dash_checkbutton'         => \my $dash_checkbutton,
+    'split_videos_checkbutton' => \my $split_videos_checkbutton,
+    'audio_only_checkbutton'   => \my $audio_only_checkbutton,
+    'hbox2'                    => \my $hbox2,
+    'feeds_title'              => \my $feeds_title,
+    'main-menu-history-menu'   => \my $history_menu,
               );
 
 while (my ($key, $value) = each %objects) {
@@ -948,6 +949,9 @@ sub apply_configuration {
 
     # DASH mode
     $dash_checkbutton->set_active($CONFIG{dash_segmented});
+
+    # Split A/V videos
+    $split_videos_checkbutton->set_active($CONFIG{split_videos});
 
     $clear_list_checkbutton->set_active($CONFIG{clear_search_list});
     $panel_account_type_combobox->set_active($CONFIG{active_panel_account_combobox});
@@ -2084,6 +2088,11 @@ sub toggled_fullscreen {
 # Audio-only mode
 sub toggled_audio_only {
     $CONFIG{audio_only} = $audio_only_checkbutton->get_active() || 0;
+}
+
+# Split A/V videos
+sub toggled_split_videos {
+    $CONFIG{split_videos} = $split_videos_checkbutton->get_active() || 0;
 }
 
 # DASH mode
@@ -3574,7 +3583,7 @@ sub get_streaming_url {
         prefer_m4a    => $CONFIG{prefer_m4a},
         audio_quality => $CONFIG{audio_quality},
 
-        dash           => $CONFIG{dash_support},
+        split_videos   => $CONFIG{split_videos},
         dash_segmented => $CONFIG{dash_segmented},
 
         ignored_projections => $CONFIG{ignored_projections},

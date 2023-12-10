@@ -308,10 +308,10 @@ sub _find_streaming_url {
 
         if ($itag->{split}) {
 
-            $args{dash} || next;
+            $args{split_videos} || next;
 
             my $video_info = $stream->{$itag->{value}};
-            my $audio_info = $self->_find_streaming_url(%args, resolution => 'audio', dash => 0);
+            my $audio_info = $self->_find_streaming_url(%args, resolution => 'audio', split_videos => 0);
 
             if (defined($audio_info)) {
                 $video_info->{__AUDIO__} = $audio_info;
@@ -357,7 +357,7 @@ Return the streaming URL which corresponds with the specified resolution.
 
         hfr            => 1/0,     # include or exclude High Frame Rate videos
         ignore_av1     => 1/0,     # true to ignore videos in AV1 format
-        dash           => 1/0,     # include or exclude split videos
+        split_videos   => 1/0,     # include or exclude split videos
         m4a_audio      => 1/0,     # incldue or exclude M4A audio files
         dash_segmented => 1/0,     # include or exclude streams in DASH format
     )
