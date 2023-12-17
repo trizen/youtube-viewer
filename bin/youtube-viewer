@@ -4072,8 +4072,7 @@ sub download_from_url {
     require LWP::UserAgent;
 
     my $lwp = LWP::UserAgent->new(show_progress => 1,
-                                  agent         => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
-                                 );
+                                  agent         => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0',);
 
     $lwp->proxy(['http', 'https'], $yv_obj->get_http_proxy)
       if defined($yv_obj->get_http_proxy);

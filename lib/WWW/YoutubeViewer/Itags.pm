@@ -276,8 +276,8 @@ sub _find_streaming_url {
     my $resolution = $args{resolution} // return;
 
     my %kbps_table = (
-                      best   => 320,
-                      high   => 320,
+                      best   => 500,
+                      high   => 500,
                       medium => 128,
                       low    => 50,
                       worst  => 50,
