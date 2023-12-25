@@ -1025,6 +1025,9 @@ sub _extract_streaming_urls {
             say STDERR ":: Live stream detected...";
         }
 
+        # Extract with the fallback method
+        @results = $self->_fallback_extract_urls($videoID);
+
         if (!@results) {
             push @results,
               {
