@@ -3898,8 +3898,12 @@ sub execute_cli_youtube_viewer {
 }
 
 sub download_video {
-    my $code = get_selected_entry_code(type => 'video') // return;
-    execute_cli_youtube_viewer("--video-id=$code", '--download');
+    my ($id, $iter) = get_selected_entry_code(type => 'video');
+    $id // return;
+    execute_cli_youtube_viewer("--video-id=$id", '--download');
+    my $video_data = $yv_obj->parse_json_string($liststore->get($iter, 8));
+    save_watched_video($id, $video_data);
+    highlight_watched_video($liststore, $iter);
     return 1;
 }
 
