@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2010-2023 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
+# Copyright (C) 2010-2024 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of either: the GNU General Public License as published
@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 29 August 2023
+#  Latest edit on: 05 January 2024
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -5814,7 +5814,7 @@ https://github.com/trizen/youtube-viewer
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2023 Trizen.
+Copyright 2010-2024 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
