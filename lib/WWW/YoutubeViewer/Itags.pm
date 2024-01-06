@@ -90,6 +90,7 @@ sub get_itags {
                    {value => 616, format => 'webm', split => 1},                        # vp9 hls (v)
                    {value => 270, format => 'mp4',  split => 1, live => 1},             # mp4 hls (v) (live)
                    {value => 636, format => 'webm', split => 1, hfr  => 1},             # vp9 hls HFR (v)
+                   {value => 216, format => 'mp4',  split => 1},                        # mp4 (v) (403 error?)
                   ],
 
         '720' => [{value => 302, format => 'webm', split => 1, hfr => 1},              # webm HFR (v)
@@ -116,6 +117,7 @@ sub get_itags {
                   {value => 232, format => 'mp4',  split => 1, live => 1},             # mp4 hls (v) (live)
                   {value => 635, format => 'webm', split => 1, hfr  => 1},             # vp9 hls HFR (v)
                   {value => 311, format => 'mp4',  split => 1, hfr  => 1},             # mp4 hls HFR (v)
+                  {value => 214, format => 'mp4',  split => 1},                        # mp4 (v) (403 error?)
                  ],
 
         '480' => [{value => 244, format => 'webm', split => 1},                        # webm (v)
