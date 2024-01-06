@@ -6,6 +6,9 @@
 
 [CHANGELOG]
 
+- Recognize more itag values returned by `yt-dlp` with `--force-fallback`.                   - (v3.11.0)
+- GUI: added the "Split A/V videos" check button.                                            - (v3.11.0)
+- GUI: highlight downloaded videos as watched.                                               - (v3.11.0)
 - GUI: tweak interface to be less cramped (requires gtk+ >= 3.6).                            - (v3.10.3)
 - Added support for changing the audio quality.                                              - (v3.10.3)
 - Workaround for "Video Not Available" issue.                                                - (v3.10.2)

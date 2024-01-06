@@ -78,7 +78,7 @@ use if ($DEVEL = -w __FILE__), lib => do {
     catdir(@dirs, 'lib');
 };
 
-use WWW::YoutubeViewer v3.10.9;
+use WWW::YoutubeViewer v3.11.0;
 use WWW::YoutubeViewer::RegularExpressions;
 
 binmode(STDOUT, ':utf8');
