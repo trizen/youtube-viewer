@@ -475,6 +475,10 @@ sub find_streaming_url {
     if (not defined $streaming) {
         foreach my $res (@{$resolutions}) {
 
+            if ($res eq 'audio' and $resolution ne 'audio' and !$args{split_videos}) {
+                return $self->find_streaming_url(%args, split_videos => 1);
+            }
+
             $streaming = $self->_find_streaming_url(%args, resolution => $res);
 
             if (defined($streaming)) {
