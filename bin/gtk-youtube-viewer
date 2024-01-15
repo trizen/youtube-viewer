@@ -36,15 +36,17 @@ use File::Spec::Functions qw(
   file_name_is_absolute
 );
 
+my $DEVEL;
+BEGIN { $DEVEL = -w __FILE__ }
+
 sub devel_path {
-    my @dirs = splitdir(rel2abs(__FILE__));
-    pop(@dirs);
+    require FindBin;
+    my @dirs = splitdir($FindBin::RealBin);
     pop(@dirs);
     return @dirs;
 }
 
-my $DEVEL;
-use if ($DEVEL = -w __FILE__), lib => catdir(devel_path(), 'lib');
+use if $DEVEL, lib => $DEVEL && catdir(devel_path(), 'lib');
 
 use WWW::YoutubeViewer v3.11.0;
 use WWW::YoutubeViewer::RegularExpressions;

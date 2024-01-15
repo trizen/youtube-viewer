@@ -70,13 +70,16 @@ use File::Spec::Functions qw(
 );
 
 my $DEVEL;
+BEGIN { $DEVEL = -w __FILE__ }
 
-use if ($DEVEL = -w __FILE__), lib => do {
-    my @dirs = splitdir(rel2abs(__FILE__));
+sub devel_path {
+    require FindBin;
+    my @dirs = splitdir($FindBin::RealBin);
     pop(@dirs);
-    pop(@dirs);
-    catdir(@dirs, 'lib');
-};
+    return @dirs;
+}
+
+use if $DEVEL, lib => $DEVEL && catdir(devel_path(), 'lib');
 
 use WWW::YoutubeViewer v3.11.0;
 use WWW::YoutubeViewer::RegularExpressions;
