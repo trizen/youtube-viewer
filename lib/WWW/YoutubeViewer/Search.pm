@@ -158,27 +158,22 @@ sub related_to_videoID {
     # return $self->search_for('video', undef, {relatedToVideoId => $id});
 
     my $watch_next_response = $self->parse_json_string($self->_get_video_next_info($videoID) // return {results => {}});
-    my $related = eval { $watch_next_response->{contents}{twoColumnWatchNextResults}{secondaryResults}{secondaryResults}{results} } // return {results => {}};
+    my $related             = eval { $watch_next_response->{contents}{singleColumnWatchNextResults}{results}{results}{contents} } // return {results => {}};
 
     my @results;
 
-    foreach my $entry (@$related) {
+    foreach my $entry (map { @{$_->{itemSectionRenderer}{contents} // []} } @$related) {
 
-        my $info  = $entry->{compactVideoRenderer} // next;
-        my $title = $info->{title}{simpleText}     // next;
+        my $info  = $entry->{videoWithContextRenderer} // next;
+        my $title = $info->{headline}{runs}[0]{text}   // next;
 
-        my $viewCount = 0;
-
-        if (($info->{viewCountText}{simpleText} // '') =~ /^([\d,]+) views/) {
-            $viewCount = ($1 =~ tr/,//dr);
-        }
-        elsif (($info->{viewCountText}{simpleText} // '') =~ /Recommended for you/i) {
+        if (($info->{viewCountText}{simpleText} // '') =~ /Recommended for you/i) {
             next;    # filter out recommended videos from related videos
         }
 
         my $lengthSeconds = 0;
 
-        if (($info->{lengthText}{simpleText} // '') =~ /([\d:]+)/) {
+        if (($info->{lengthText}{runs}[0]{text} // '') =~ /([\d:]+)/) {
             my $time   = $1;
             my @fields = split(/:/, $time);
 
@@ -187,32 +182,6 @@ sub related_to_videoID {
             my $hours   = pop(@fields) // 0;
 
             $lengthSeconds = 3600 * $hours + 60 * $minutes + $seconds;
-        }
-
-        my $published = 0;
-        if (exists $info->{publishedTimeText} and $info->{publishedTimeText}{simpleText} =~ /(\d+)\s+(\w+)\s+ago/) {
-
-            my $quantity = $1;
-            my $period   = $2;
-
-            $period =~ s/s\z//;    # make it singural
-
-            my %table = (
-                         year   => 31556952,      # seconds in a year
-                         month  => 2629743.83,    # seconds in a month
-                         week   => 604800,        # seconds in a week
-                         day    => 86400,         # seconds in a day
-                         hour   => 3600,          # seconds in a hour
-                         minute => 60,            # seconds in a minute
-                         second => 1,             # seconds in a second
-                        );
-
-            if (exists $table{$period}) {
-                $published = int(time - $quantity * $table{$period});
-            }
-            else {
-                warn "BUG: cannot parse: <<$quantity $period>>";
-            }
         }
 
         my $length   = $lengthSeconds;
@@ -231,19 +200,8 @@ sub related_to_videoID {
             kind => "youtube#video",
 
             snippet => {
-                channelId    => $info->{longBylineText}{runs}[0]{navigationEndpoint}{browseEndpoint}{browseId},
-                channelTitle => $info->{longBylineText}{runs}[0]{text},
-                description  => $info->{accessibility}{accessibilityData}{label},
-                title        => $title,
-
-                liveBroadcastContent => (($lengthSeconds == 0) ? 'live' : 'no'),
-
-                published     => $published,
-                publishedText => $info->{publishedTimeText}{simpleText},
-
-                statistics => {
-                               viewCount => $viewCount,
-                              },
+                description => $info->{accessibility}{accessibilityData}{label},
+                title       => $title,
 
                 thumbnails => {
                     map {

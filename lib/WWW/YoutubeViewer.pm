@@ -132,7 +132,7 @@ my %valid_options = (
 
 #<<<
     # LWP user agent
-    user_agent => {valid => qr/^.{5}/, default => 'Mozilla/5.0 (Android 11; Tablet; rv:83.0) Gecko/83.0 Firefox/83.0,gzip(gfe)'},
+    user_agent => {valid => qr/^.{5}/, default => 'Mozilla/5.0 (Android 14; Tablet; rv:109.0) Gecko/122.0 Firefox/122.0,gzip(gfe)'},
 #>>>
 );
 
@@ -1086,11 +1086,24 @@ sub _get_youtubei_content {
                                           "hl"            => "en",
                                           "gl"            => "US",
                                           "clientName"    => "WEB",
-                                          "clientVersion" => sprintf("2.%s.05.00", Time::Piece->new(time)->strftime("%Y%m%d")),
+                                          "clientVersion" => sprintf("2.%s.00.00", Time::Piece->new(time)->strftime("%Y%m%d")),
                                           %args,
                                          },
                             },
               );
+
+    my %mweb = (
+                "videoId" => $videoID,
+                "context" => {
+                              "client" => {
+                                           "hl"            => "en",
+                                           "gl"            => "US",
+                                           "clientName"    => "MWEB",
+                                           "clientVersion" => sprintf("2.%s.00.00", Time::Piece->new(time)->strftime("%Y%m%d")),
+                                           %args,
+                                          },
+                             },
+               );
 
     if (0) {
         %android = (
@@ -1108,7 +1121,7 @@ sub _get_youtubei_content {
     }
 
     local $self->{access_token} = undef;
-    my $content = $self->post_as_json($url, $endpoint eq 'next' ? \%web : \%android);
+    my $content = $self->post_as_json($url, $endpoint eq 'next' ? \%mweb : \%android);
     $self->{lwp}->agent($agent);
     return $content;
 }
