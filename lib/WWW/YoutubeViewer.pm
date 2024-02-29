@@ -4,10 +4,10 @@ use utf8;
 use 5.016;
 use warnings;
 
-use Memoize;
-use Memoize::Expire;
+use Memoize qw(memoize);
 
 #<<<
+#~ use Memoize::Expire;
 #~ tie my %youtubei_cache => 'Memoize::Expire',
   #~ LIFETIME             => 600,                 # in seconds
   #~ NUM_USES             => 2;
@@ -1056,7 +1056,7 @@ sub _get_youtubei_content {
 
     require Time::Piece;
 
-    my $android_useragent = 'com.google.android.youtube/17.31.35 (Linux; U; Android 11) gzip';
+    my $android_useragent = 'com.google.android.youtube/18.11.34 (Linux; U; Android 11) gzip';
 
     my %android = (
                    "videoId" => $videoID,
@@ -1065,7 +1065,7 @@ sub _get_youtubei_content {
                                               'hl'                => 'en',
                                               'gl'                => 'US',
                                               'clientName'        => 'ANDROID',
-                                              'clientVersion'     => '17.31.35',
+                                              'clientVersion'     => '18.11.34',
                                               'androidSdkVersion' => 30,
                                               'userAgent'         => $android_useragent,
                                               %args,
@@ -1114,7 +1114,13 @@ sub _get_youtubei_content {
     }
 
     local $self->{access_token} = undef;
-    my $content = $self->post_as_json($url, $endpoint eq 'next' ? \%mweb : \%android);
+
+    my $content;
+    for (1 .. 3) {
+        $content = $self->post_as_json($url, $endpoint eq 'next' ? \%mweb : \%android);
+        last if defined $content;
+    }
+
     $self->{lwp}->agent($agent);
     return $content;
 }
