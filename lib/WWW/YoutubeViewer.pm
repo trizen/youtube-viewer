@@ -7,11 +7,13 @@ use warnings;
 use Memoize;
 use Memoize::Expire;
 
-tie my %youtubei_cache => 'Memoize::Expire',
-  LIFETIME             => 600,                 # in seconds
-  NUM_USES             => 2;
+#<<<
+#~ tie my %youtubei_cache => 'Memoize::Expire',
+  #~ LIFETIME             => 600,                 # in seconds
+  #~ NUM_USES             => 2;
 
-memoize '_get_youtubei_content', SCALAR_CACHE => [HASH => \%youtubei_cache];
+#~ memoize '_get_youtubei_content', SCALAR_CACHE => [HASH => \%youtubei_cache];
+#>>>
 
 #memoize('_get_video_info');
 memoize('_ytdl_is_available');
@@ -1079,6 +1081,8 @@ sub _get_youtubei_content {
         $self->{lwp}->agent($android_useragent);
     }
 
+    my $client_version = sprintf("2.%s.00.00", Time::Piece->new(time)->strftime("%Y%m%d"));
+
     my %web = (
                "videoId" => $videoID,
                "context" => {
@@ -1086,7 +1090,7 @@ sub _get_youtubei_content {
                                           "hl"            => "en",
                                           "gl"            => "US",
                                           "clientName"    => "WEB",
-                                          "clientVersion" => sprintf("2.%s.00.00", Time::Piece->new(time)->strftime("%Y%m%d")),
+                                          "clientVersion" => $client_version,
                                           %args,
                                          },
                             },
@@ -1099,25 +1103,14 @@ sub _get_youtubei_content {
                                            "hl"            => "en",
                                            "gl"            => "US",
                                            "clientName"    => "MWEB",
-                                           "clientVersion" => sprintf("2.%s.00.00", Time::Piece->new(time)->strftime("%Y%m%d")),
+                                           "clientVersion" => $client_version,
                                            %args,
                                           },
                              },
                );
 
     if (0) {
-        %android = (
-                    "videoId" => $videoID,
-                    "context" => {
-                                  "client" => {
-                                               "hl"            => "en",
-                                               "gl"            => "US",
-                                               "clientName"    => "MWEB",
-                                               "clientVersion" => sprintf("2.%s.03.00", Time::Piece->new(time)->strftime("%Y%m%d")),
-                                               %args,
-                                              }
-                                 },
-                   );
+        %android = %mweb;
     }
 
     local $self->{access_token} = undef;

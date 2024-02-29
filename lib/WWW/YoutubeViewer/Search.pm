@@ -167,7 +167,7 @@ sub related_to_videoID {
         my $info  = $entry->{videoWithContextRenderer} // next;
         my $title = $info->{headline}{runs}[0]{text}   // next;
 
-        if (($info->{viewCountText}{simpleText} // '') =~ /Recommended for you/i) {
+        if (($info->{shortViewCountText}{runs}[0]{text} // '') =~ /Recommended for you/i) {
             next;    # filter out recommended videos from related videos
         }
 
