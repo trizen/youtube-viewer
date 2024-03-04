@@ -44,7 +44,7 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =cut
 
-our $VERSION = '3.11.0';
+our $VERSION = '3.11.1';
 
 =head1 SYNOPSIS
 
