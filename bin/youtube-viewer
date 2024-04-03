@@ -59,6 +59,7 @@ use 5.016;
 use warnings;
 no warnings 'once';
 
+use Term::ReadLine        qw();
 use File::Spec::Functions qw(
   catdir
   catfile
@@ -91,7 +92,6 @@ my $version  = $WWW::YoutubeViewer::VERSION;
 my $execname = 'youtube-viewer';
 
 # A better <STDIN> support:
-require Term::ReadLine;
 my $term = Term::ReadLine->new("$appname $version");
 
 sub VIDEO_PART () { 'contentDetails,statistics,snippet' }

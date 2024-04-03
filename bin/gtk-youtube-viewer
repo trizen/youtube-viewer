@@ -481,6 +481,9 @@ my $feed_icon_pixbuf      = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($
 my $feed_icon_gray_pixbuf = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "feed_gray.png"),     16,  16);
 my $default_thumb         = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "default_thumb.jpg"), 160, 90);
 
+my $left_arrow_pixbuf  = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "left_arrow.png"),  24, 24);
+my $right_arrow_pixbuf = 'Gtk3::Gdk::Pixbuf'->new_from_file_at_size(catfile($icons_path, "right_arrow.png"), 24, 24);
+
 # Setting application title and icon
 $mainw->set_title("$appname $version");
 $mainw->set_icon($app_icon_pixbuf);
@@ -1109,6 +1112,8 @@ sub new_image_from_pixbuf {
     $gui->get_object('button6')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
     $gui->get_object('subscription_videos')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
     $gui->get_object('subscription_videos_button')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_gray_pixbuf));
+    $gui->get_object('left_button_image')->set_from_pixbuf($left_arrow_pixbuf);
+    $gui->get_object('right_button_image')->set_from_pixbuf($right_arrow_pixbuf);
 #>>>
 }
 
@@ -4134,8 +4139,15 @@ sub display_relative_results {
 }
 
 sub set_prev_next_results_sensitivity {
-    $gui->get_object('show_prev_results')->set_sensitive($ResultsHistory{current} > 0);
-    $gui->get_object('show_next_results')->set_sensitive($ResultsHistory{current} < $#{$ResultsHistory{results}});
+
+    my $prev_sensitivity = $ResultsHistory{current} > 0;
+    my $next_sensitivity = $ResultsHistory{current} < $#{$ResultsHistory{results}};
+
+    $gui->get_object('show_prev_results')->set_sensitive($prev_sensitivity);
+    $gui->get_object('show_next_results')->set_sensitive($next_sensitivity);
+
+    $gui->get_object('show_prev_results_button')->set_sensitive($prev_sensitivity);
+    $gui->get_object('show_next_results_button')->set_sensitive($next_sensitivity);
 }
 
 sub show_videos_from_selected_author {

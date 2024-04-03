@@ -32,6 +32,8 @@ share/icons/default_thumb.jpg
 share/icons/feed.png
 share/icons/feed_gray.png
 share/icons/gtk-youtube-viewer.png
+share/icons/left_arrow.png
+share/icons/right_arrow.png
 share/icons/user.png
 t/00-load.t
 t/kwalitee.t
