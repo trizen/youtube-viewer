@@ -1098,20 +1098,14 @@ sub get_text {
     $object_buffer->get_text($start_iter, $end_iter, undef);
 }
 
-sub new_image_from_pixbuf {
-    my ($object_name, $pixbuf) = @_;
-    my $object = $gui->get_object($object_name) // return;
-    scalar($object->new_from_pixbuf($pixbuf));
-}
-
 # Setting application icons
 {
 #<<<
-    $gui->get_object('username_list')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
-    $gui->get_object('uploads_button')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $user_icon_pixbuf));
-    $gui->get_object('button6')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
-    $gui->get_object('subscription_videos')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_pixbuf));
-    $gui->get_object('subscription_videos_button')->set_image(new_image_from_pixbuf('icon_from_pixbuf', $feed_icon_gray_pixbuf));
+    $gui->get_object('username_list')->get_image->set_from_pixbuf( $user_icon_pixbuf);
+    $gui->get_object('uploads_button')->get_image->set_from_pixbuf( $user_icon_pixbuf);
+    $gui->get_object('button6')->get_image->set_from_pixbuf($feed_icon_pixbuf);
+    $gui->get_object('subscription_videos')->get_image->set_from_pixbuf( $feed_icon_pixbuf);
+    $gui->get_object('subscription_videos_button')->get_image->set_from_pixbuf( $feed_icon_gray_pixbuf);
     $gui->get_object('left_button_image')->set_from_pixbuf($left_arrow_pixbuf);
     $gui->get_object('right_button_image')->set_from_pixbuf($right_arrow_pixbuf);
 #>>>
