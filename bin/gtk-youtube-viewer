@@ -2721,6 +2721,7 @@ sub append_next_page {
     $liststore->set(
                     $iter,
                     0 => "<big><b>NEXT PAGE</b></big>",
+                    1 => $right_arrow_pixbuf,
                     3 => $url,
                     5 => $token,
                     7 => 'next_page',
