@@ -196,6 +196,7 @@ sub get_itags {
             {value => 328, format => 'm4a',  kbps => 384},                       # eac3 (384 kbps)
             {value => 380, format => 'm4a',  kbps => 384},                       # ac3 (384 kbps)
             {value => 258, format => 'm4a',  kbps => 360},                       # mp4a (360 kbps?)
+            {value => 774, format => 'opus', kbps => 260},                       # webm opus (260 kbps)
             {value => 172, format => 'opus', kbps => 192},                       # webm opus (192 kbps)
             {value => 251, format => 'opus', kbps => 160},                       # webm opus (128-160 kbps)
             {value => 171, format => 'webm', kbps => 128},                       # webm vorbis (92-128 kbps)
