@@ -119,6 +119,29 @@ sub popular_videos {
     return $results;
 }
 
+#<<<
+
+# TODO: implement! (may be hard)
+
+=head2 oldest_videos($channel_id)
+
+Get the most oldest videos for a given channel ID.
+
+=cut
+
+#~ sub oldest_videos {
+    #~ my ($self, $id) = @_;
+
+    #~ my $results = do {
+        #~ local $self->{channelId} = $id;
+        #~ local $self->{order}     = 'date';   # we need reverse order
+        #~ $self->search_videos("");
+    #~ };
+
+    #~ return $results;
+#~ }
+#>>>
+
 =head2 my_likes()
 
 Get the videos liked by the authenticated user.

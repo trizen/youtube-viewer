@@ -1356,6 +1356,18 @@ sub menu_popup {
             $author->append($item);
         }
 
+#<<<
+        #~ # Oldest uploads from this author
+        #~ {
+            #~ my $item = 'Gtk3::ImageMenuItem'->new("Oldests");
+            #~ $item->signal_connect(activate => sub { oldest_uploads('channel', $channel_id) });
+            #~ $item->set_property(tooltip_text => "Show oldest videos by this author");
+            #~ $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-videos-symbolic", q{menu}));
+            #~ $item->show;
+            #~ $author->append($item);
+        #~ }
+#>>>
+
         # Favorites of this author
         {
             my $item = 'Gtk3::ImageMenuItem'->new("Favorites");
@@ -1386,15 +1398,17 @@ sub menu_popup {
             $author->append($item);
         }
 
-        # Liked videos by this author
-        {
-            my $item = 'Gtk3::ImageMenuItem'->new("Likes");
-            $item->signal_connect(activate => sub { likes('channel', $channel_id) });
-            $item->set_property(tooltip_text => "Show liked videos by this author");
-            $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-default-symbolic", q{menu}));
-            $item->show;
-            $author->append($item);
-        }
+#<<<
+        # Liked videos by this author (deprecated)
+        #~ {
+            #~ my $item = 'Gtk3::ImageMenuItem'->new("Likes");
+            #~ $item->signal_connect(activate => sub { likes('channel', $channel_id) });
+            #~ $item->set_property(tooltip_text => "Show liked videos by this author");
+            #~ $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-default-symbolic", q{menu}));
+            #~ $item->show;
+            #~ $author->append($item);
+        #~ }
+#>>>
 
         # Separator
         {
@@ -2425,6 +2439,25 @@ sub popular_uploads {
         die "No popular uploads for channel: <<$channel>>\n";
     }
 }
+
+#<<<
+#~ sub oldest_uploads {
+    #~ my ($type, $channel) = @_;
+
+    #~ if ($type =~ /^user/) {
+        #~ $channel = $yv_obj->channel_id_from_username($channel) // die "Invalid username <<$channel>>\n";
+    #~ }
+
+    #~ my $results = $yv_obj->oldest_videos($channel);
+
+    #~ if ($yv_utils->has_entries($results)) {
+        #~ display_results($results);
+    #~ }
+    #~ else {
+        #~ die "No uploads for channel: <<$channel>>\n";
+    #~ }
+#~ }
+#>>>
 
 {
     no strict 'refs';
