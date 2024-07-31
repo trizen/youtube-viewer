@@ -4039,8 +4039,13 @@ sub download_from_url {
     # Download with yt-dlp / youtube-dl
     if ($opt{ytdl} and $opt{download_with_ytdl} and defined($info->{_youtube_url}) and defined($info->{itag})) {
 
-        my $cmd =
-          join(' ', $opt{ytdl_cmd}, ($info->{wkad} ? () : ('-f', $info->{itag})), quotemeta($info->{_youtube_url}), '-o', quotemeta("$output_filename.part"));
+        # TODO: take into account the preferred audio quality and format and video resolution
+        # and format when falling back (i.e. when yt-dlp cannot find the itag that we want)
+        my $cmd = join(' ',
+                       $opt{ytdl_cmd},
+                       ($info->{wkad} ? () : ('-f', $info->{itag} . ($info->{type} =~ m{^audio/} ? '/bestaudio' : '/bestvideo'))),
+                       quotemeta($info->{_youtube_url}),
+                       '-o', quotemeta("$output_filename.part"));
 
         if ($yv_obj->get_debug) {
             say "-> Command: $cmd";
