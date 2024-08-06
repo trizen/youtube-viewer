@@ -137,6 +137,8 @@ sub get_itags {
                   {value => 612, format => 'webm', split => 1, hfr => 1},              # vp9 hls HFR (v)
                   {value => 609, format => 'webm', split => 1},                        # vp9 hls (v)
                   {value => 634, format => 'webm', split => 1},                        # vp9 hls (v)
+                  {value => 780, format => 'webm', split => 1},                        # vp9 (v)
+                  {value => 779, format => 'webm', split => 1},                        # vp9 (v)
                  ],
 
         '360' => [{value => 243, format => 'webm', split => 1},                        # webm (v)
