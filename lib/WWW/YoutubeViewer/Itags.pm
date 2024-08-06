@@ -228,6 +228,7 @@ sub get_itags {
             {value => '140-drc', format => 'm4a',  kbps => 128},                 # mp4a (128 kbps)
             {value => '250-drc', format => 'opus', kbps => 64},                  # webm opus (64 kbps)
             {value => '249-drc', format => 'opus', kbps => 48},                  # webm opus (48 kbps)
+            {value => '139-drc', format => 'm4a',  kbps => 48},                  # mp4a (48kbps)
         ],
 
         'dash' => [{value => '133-dash', format => 'mp4'},                              # mp4 DASH (v-a)

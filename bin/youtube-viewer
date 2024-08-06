@@ -5648,7 +5648,7 @@ Skip already watched/downloaded videos.
 
 Enable or disable support for split videos. Split-videos are videos that do not include audio and video in the same file.
 
-Disable this option if the videos are loading too slowly, as non-split videos are not throttled by YouTube. Although, the highest resolution of non-split videos is 720p.
+Disable this option if the videos are loading too slowly, as non-split videos are not throttled by YouTube. Although, the highest resolution of non-split videos is 360p.
 
 =head2 srt_languages
 
