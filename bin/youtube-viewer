@@ -82,7 +82,7 @@ sub devel_path {
 
 use if $DEVEL, lib => $DEVEL && catdir(devel_path(), 'lib');
 
-use WWW::YoutubeViewer v3.11.2;
+use WWW::YoutubeViewer v3.11.3;
 use WWW::YoutubeViewer::RegularExpressions;
 
 binmode(STDOUT, ':utf8');
