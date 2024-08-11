@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 04 March 2024
+#  Latest edit on: 11 August 2024
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -1117,11 +1117,28 @@ sub get_text {
 #>>>
 }
 
+sub gtk_treeview_button_press {
+    my ($widget, $event) = @_;
+    return 0 if $event->button != 3;
+    my $path = ($widget->get_path_at_pos($event->x, $event->y))[0] // return 0;
+    $widget->set_cursor($path, undef, 0);
+    $widget->grab_focus();
+    my $iter = $widget->get_model()->get_iter($path);
+    my $menu = $widget->{'get-popup-menu'}->($iter) // return 0;
+    $menu->popup(undef, undef, undef, undef, $event->button, $event->time);
+    return 1;
+}
+
+sub users_list_button_press {
+    my ($widget, $event) = @_;
+    return gtk_treeview_button_press($widget, $event);
+}
+
 # Treeview signals
 {
     $treeview->signal_connect('button_press_event', \&menu_popup);
     $treeview->signal_connect('size-allocate',      \&treeview_scroll_to_end) if $CONFIG{autoscroll_to_end};
-    $users_treeview->signal_connect('button_press_event', \&users_menu_popup);
+    $users_treeview->{'get-popup-menu'} = \&users_menu_popup;
 }
 
 # Scroll treeview to end
@@ -1397,7 +1414,7 @@ sub menu_popup {
         # Playlists created by this author
         {
             my $item = 'Gtk3::ImageMenuItem'->new("Playlists");
-            $item->signal_connect(activate => \&show_playlists_from_selected_author);
+            $item->signal_connect(activate => sub { playlists('channel', $channel_id) });
             $item->set_property(tooltip_text => "Show playlists created by this author");
             $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-documents-symbolic", q{menu}));
             $item->show;
@@ -1634,13 +1651,99 @@ sub menu_popup {
 }
 
 sub users_menu_popup {
-    my ($treeview, $event) = @_;
-    if ($event->button != 3) {
-        return 0;
+    my ($iter) = @_;
+
+    my $channel_id   = $users_liststore->get($iter, 0);
+    my $channel_name = $users_liststore->get($iter, 1);
+
+    # Create the main right-click menu
+    my $menu = 'Gtk3::Menu'->new;
+
+    # Recent uploads from this author
+    {
+        my $item = 'Gtk3::ImageMenuItem'->new("Uploads");
+        $item->signal_connect(activate => sub { uploads('channel', $channel_id) });
+        $item->set_property(tooltip_text => "Show the most recent videos from this author");
+        $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-shared-symbolic", q{menu}));
+        $item->show;
+        $menu->append($item);
     }
-    my $menu = $gui->get_object('user_option_menu');
-    $menu->popup(undef, undef, undef, undef, $event->button, $event->time);
-    return 0;
+
+    # Most popular uploads from this author
+    {
+        my $item = 'Gtk3::ImageMenuItem'->new("Popular");
+        $item->signal_connect(activate => sub { popular_uploads('channel', $channel_id) });
+        $item->set_property(tooltip_text => "Show the most popular videos from this author");
+        $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-videos-symbolic", q{menu}));
+        $item->show;
+        $menu->append($item);
+    }
+
+    # Favorites of this author
+    {
+        my $item = 'Gtk3::ImageMenuItem'->new("Favorites");
+        $item->signal_connect(activate => sub { favorites('channel', $channel_id) });
+        $item->set_property(tooltip_text => "Show favorite videos of this author");
+        $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-favorite-symbolic", q{menu}));
+        $item->show;
+        $menu->append($item);
+    }
+
+    # Recent channel activity events
+    {
+        my $item = 'Gtk3::ImageMenuItem'->new("Activities");
+        $item->signal_connect(activate => sub { activities('channel', $channel_id) });
+        $item->set_property(tooltip_text => "Show recent channel activity events");
+        $item->set_image('Gtk3::Image'->new_from_icon_name("view-refresh-symbolic", q{menu}));
+        $item->show;
+        $menu->append($item);
+    }
+
+    # Playlists created by this author
+    {
+        my $item = 'Gtk3::ImageMenuItem'->new("Playlists");
+        $item->signal_connect(activate => sub { playlists('channel', $channel_id) });
+        $item->set_property(tooltip_text => "Show playlists created by this author");
+        $item->set_image('Gtk3::Image'->new_from_icon_name("emblem-documents-symbolic", q{menu}));
+        $item->show;
+        $menu->append($item);
+    }
+
+    # Separator
+    {
+        my $item = 'Gtk3::SeparatorMenuItem'->new;
+        $item->show;
+        $menu->append($item);
+    }
+
+    # Remove the channel
+    {
+        my $item = 'Gtk3::ImageMenuItem'->new("Remove");
+        $item->set_image('Gtk3::Image'->new_from_icon_name("edit-delete", q{menu}));
+        $item->set_property(tooltip_text => "Remove the channel from this list");
+        $item->signal_connect(activate => \&remove_selected_username);
+        $item->show;
+        $menu->append($item);
+    }
+
+    # Separator
+    {
+        my $item = 'Gtk3::SeparatorMenuItem'->new;
+        $item->show;
+        $menu->append($item);
+    }
+
+    # Open the YouTube channel page
+    {
+        my $item = 'Gtk3::ImageMenuItem'->new("YouTube page");
+        $item->signal_connect(activate => sub { open_external_url(make_youtube_url('channel', $channel_id)) });
+        $item->set_property(tooltip_text => "Open the YouTube page of this channel");
+        $item->set_image('Gtk3::Image'->new_from_icon_name("web-browser-symbolic", q{menu}));
+        $item->show;
+        $menu->append($item);
+    }
+
+    return $menu;
 }
 
 # Setting help text
@@ -4189,14 +4292,7 @@ sub show_videos_from_selected_author {
 }
 
 sub show_playlists_from_selected_author {
-    my $request = $yv_obj->playlists(get_channel_id_for_selected_video() || return);
-    if ($yv_utils->has_entries($request)) {
-        display_results($request);
-    }
-    else {
-        die "No playlists found...\n";
-    }
-    return 1;
+    playlists('channel', get_channel_id_for_selected_video() || return);
 }
 
 sub set_entry_details {

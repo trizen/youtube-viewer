@@ -3426,6 +3426,8 @@ and others... https://github.com/trizen/youtube-viewer/graphs/contributors</prop
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="model">liststore2</property>
+                    <signal name="button-press-event" handler="users_list_button_press" swapped="no"/>
+                    <signal name="popup-menu" handler="gtk_treeview_popup_menu" swapped="no"/>
                     <signal name="row-activated" handler="videos_from_saved_channel" swapped="no"/>
                     <child internal-child="selection">
                       <object class="GtkTreeSelection"/>
