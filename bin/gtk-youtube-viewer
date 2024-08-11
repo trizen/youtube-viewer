@@ -190,6 +190,12 @@ my %CONFIG = (
                               fs    => q{--fullscreen},
                               arg   => q{--really-quiet --force-media-title=*TITLE* --no-ytdl --no-terminal *VIDEO*},
                              },
+                      mpvraw => {
+                                 arg => q{--ytdl-raw-options-append="format-sort=ext,res:*RESOLUTION*" --no-terminal *URL*},
+                                 cmd => q{mpv},
+                                 fs  => q{--fullscreen},
+                                 srt => q{--sub-file=*SUB*},
+                                },
                      },
     video_player_selected => undef,    # autodetect it later
 

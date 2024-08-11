@@ -217,6 +217,14 @@ my %CONFIG = (
                 arg     => q{--really-quiet --force-media-title=*TITLE* --no-ytdl *VIDEO*},
                 novideo => q{--no-video},
                },
+
+        mpvraw => {
+                   arg     => q{--ytdl-raw-options-append="format-sort=ext,res:*RESOLUTION*" *URL*},
+                   cmd     => q{mpv},
+                   fs      => q{--fullscreen},
+                   novideo => q{--no-video},
+                   srt     => q{--sub-file=*SUB*},
+                  },
     },
 
     video_player_selected => (
