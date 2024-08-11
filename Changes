@@ -6,6 +6,7 @@
 
 [CHANGELOG]
 
+- GUI: extended the right-click menu in the Saved Channels window.                           - (v3.11.3)
 - GUI: added "Backward" and "Forward" buttons for navigating the history.                    - (v3.11.2)
 - Recognize more itag values returned by `yt-dlp` with `--force-fallback`.                   - (v3.11.0)
 - GUI: added the "Split A/V videos" check button.                                            - (v3.11.0)
