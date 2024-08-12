@@ -1613,22 +1613,7 @@ sub menu_popup {
         # Play as audio
         {
             my $item = 'Gtk3::ImageMenuItem'->new("Play as audio");
-            $item->signal_connect(
-                activate => sub {
-                    my ($id, $iter) = get_selected_entry_code();
-                    my $type = $liststore->get($iter, 7);
-                    if (defined($id) and $type eq 'video') {
-                        if (execute_cli_youtube_viewer("--id=$id --no-video")) {
-                            my $video_data = $yv_obj->parse_json_string($liststore->get($iter, 8));
-                            save_watched_video($id, $video_data);
-                            highlight_watched_video($liststore, $iter);
-                        }
-                    }
-                    elsif (defined($id) and $type eq 'playlist') {
-                        execute_cli_youtube_viewer("--pp=$id --no-video");
-                    }
-                }
-            );
+            $item->signal_connect(activate => sub { play_selected_with_cli(audio_only => 1) },);
             $item->set_property(tooltip_text => "Play as audio in a new terminal");
             $item->set_image('Gtk3::Image'->new_from_icon_name("audio-headphones", q{menu}));
             $item->show;
@@ -1638,7 +1623,7 @@ sub menu_popup {
         # Play with CLI youtube-viewer
         {
             my $item = 'Gtk3::ImageMenuItem'->new("Play in terminal");
-            $item->signal_connect(activate => \&play_selected_video_with_cli_youtube_viewer);
+            $item->signal_connect(activate => sub { play_selected_with_cli() });
             $item->set_property(tooltip_text => "Play with youtube-viewer in a new terminal");
             $item->set_image('Gtk3::Image'->new_from_icon_name("computer", q{menu}));
             $item->show;
@@ -1766,6 +1751,7 @@ set_text(
     CTRL+R : show related videos for a selected video
     CTRL+M : show videos from the author of a selected video
     CTRL+K : show playlists from the author of a selected video
+    CTRL+B : play the selected entry as audio-only
     CTRL+S : add the author of a selected video to the user-list
     CTRL+Q : close the application
 
@@ -1793,7 +1779,7 @@ HELP_TEXT
     $accel->connect(ord('p'), ['control-mask'], ['visible'], \&show_preferences_window);
     $accel->connect(ord('q'), ['control-mask'], ['visible'], \&on_mainw_destroy);
     $accel->connect(ord('u'), ['control-mask'], ['visible'], \&show_users_list_window);
-    $accel->connect(ord('y'), ['control-mask'], ['visible'], \&run_cli_youtube_viewer);
+    $accel->connect(ord('y'), ['control-mask'], ['visible'], \&run_cli);
     $accel->connect(ord('d'), ['control-mask'], ['visible'], \&show_details_window);
     ##$accel->connect(ord('c'), ['control-mask'], ['visible'], \&show_comments_window);
     $accel->connect(ord('n'), ['control-mask'], ['visible'], \&display_subscription_videos);
@@ -1803,6 +1789,7 @@ HELP_TEXT
     $accel->connect(ord('g'), ['control-mask'], ['visible'], \&show_user_favorite_videos);
     $accel->connect(ord('m'), ['control-mask'], ['visible'], \&show_videos_from_selected_author);
     $accel->connect(ord('k'), ['control-mask'], ['visible'], \&show_playlists_from_selected_author);
+    $accel->connect(ord('b'), ['control-mask'], ['visible'], sub { play_selected_with_cli(audio_only => 1) });
 
     # 'DEL' key
     $accel->connect(0xffff, ['lock-mask'], ['visible'], \&remove_selected_row);
@@ -1988,7 +1975,7 @@ sub hide_errors_window {
 sub show_login_to_youtube_window {
 
     # Use the CLI for login
-    execute_cli_youtube_viewer("--login");
+    execute_cli("--login");
     return 1;
 
     # GUI version (outdated)
@@ -2828,7 +2815,7 @@ sub get_code {
             elsif ($type eq 'video') {
                 if (
                     $CONFIG{audio_only}
-                    ? execute_cli_youtube_viewer("--id=$code")
+                    ? execute_cli("--id=$code")
                     : play_video($yv_obj->parse_json_string($liststore->get($iter, 8)))
                   ) {
                     $WATCHED_VIDEOS{$code} = 1;
@@ -3901,8 +3888,8 @@ sub list_local_playlist {
     display_results(get_results_from_list(ids => \@video_ids));
 }
 
-sub run_cli_youtube_viewer {
-    execute_cli_youtube_viewer('--interactive');
+sub run_cli {
+    execute_cli('--interactive');
 }
 
 sub get_options_as_arguments {
@@ -3988,26 +3975,29 @@ sub enqueue_video {
 
 sub play_enqueued_videos {
     if (@VIDEO_QUEUE) {
-        execute_cli_youtube_viewer('--video-ids=' . join(q{,}, splice @VIDEO_QUEUE));
+        execute_cli('--video-ids=' . join(q{,}, splice @VIDEO_QUEUE));
     }
     return 1;
 }
 
-sub play_selected_video_with_cli_youtube_viewer {
+sub play_selected_with_cli {
+    my %args = @_;
+
     my ($id, $iter) = get_selected_entry_code();
     $id // return;
 
-    my $type = $liststore->get($iter, 7);
+    my $type    = $liststore->get($iter, 7);
+    my $options = $args{audio_only} ? '--no-video' : '';
 
     if ($type eq 'video') {
-        if (execute_cli_youtube_viewer("--video-id=$id")) {
+        if (execute_cli("$options --video-id=$id")) {
             my $video_data = $yv_obj->parse_json_string($liststore->get($iter, 8));
             save_watched_video($id, $video_data);
             highlight_watched_video($liststore, $iter);
         }
     }
     elsif ($type eq 'playlist') {
-        execute_cli_youtube_viewer("--pp=$id");
+        execute_cli("$options --pp=$id");
     }
     else {
         warn "Can't play $type: $id\n";
@@ -4017,7 +4007,7 @@ sub play_selected_video_with_cli_youtube_viewer {
     return 1;
 }
 
-sub execute_cli_youtube_viewer {
+sub execute_cli {
     my @arguments = @_;
 
     my $command = join(
@@ -4044,7 +4034,7 @@ sub execute_cli_youtube_viewer {
 sub download_video {
     my ($id, $iter) = get_selected_entry_code(type => 'video');
     $id // return;
-    execute_cli_youtube_viewer("--video-id=$id", '--download');
+    execute_cli("--video-id=$id", '--download');
     my $video_data = $yv_obj->parse_json_string($liststore->get($iter, 8));
     save_watched_video($id, $video_data);
     highlight_watched_video($liststore, $iter);

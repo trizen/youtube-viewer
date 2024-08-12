@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.40.0 
+<!-- Generated with glade 3.40.0
 
 Copyright (C) Copyright © 2010-2024 Trizen
 
@@ -347,7 +347,7 @@ Author: Trizen https://github.com/trizen
                         <property name="tooltip-text" translatable="yes">Search and play videos in command line interface (CTRL+Y)</property>
                         <property name="image">terminal_icon2</property>
                         <property name="use-stock">False</property>
-                        <signal name="activate" handler="run_cli_youtube_viewer" swapped="no"/>
+                        <signal name="activate" handler="run_cli" swapped="no"/>
                       </object>
                     </child>
                     <child>
