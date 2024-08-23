@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 11 August 2024
+#  Latest edit on: 23 August 2024
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -360,6 +360,7 @@ my %CONFIG = (
     merge_into_mkv      => undef,                                                                    # auto-defined later
     merge_into_mkv_args => '-loglevel warning -c:s srt -c:v copy -c:a copy -disposition:s forced',
     merge_with_captions => 1,
+    set_mtime           => $constant{win32} ^ 1,
 
     video_filename_format => '*FTITLE* - *ID*.*FORMAT*',
 );
@@ -914,6 +915,7 @@ usage: $execname [options] ([url] | [keywords])
        --fat32safe!      : makes filenames FAT32 safe
        --mkv-merge!      : merge audio and video into an MKV container
        --merge-captions! : include closed-captions in the MKV container
+       --set-mtime!      : set the original file modification time
 
  * Convert
    --convert-cmd=s      : command for converting videos after download
@@ -1866,6 +1868,7 @@ sub parse_arguments {
 
         'merge-into-mkv|mkv-merge!'           => \$opt{merge_into_mkv},
         'merge-with-captions|merge-captions!' => \$opt{merge_with_captions},
+        'set-mtime|mtime!'                    => \$opt{set_mtime},
 
         'convert-command|convert-cmd=s'     => \$opt{convert_cmd},
         'dash-segmented!'                   => \$opt{dash_segmented},
@@ -4272,7 +4275,7 @@ sub download_video {
 
             if (not $opt{keep_original_video}) {
                 unlink $video_filename
-                  or warn colored("\n[!] Can't unlink file '$video_filename': $!", 'bold red') . "\n\n";
+                  or warn colored("\n[!] Can't unlink file <<$video_filename>>: $!", 'bold red') . "\n\n";
             }
 
             $video_filename = $convert_filename if -e $convert_filename;
@@ -4309,6 +4312,20 @@ sub download_video {
 
         require File::Copy;
         File::Copy::cp($from, $to);
+    }
+
+    # Set original modification timestamp
+    if ($opt{set_mtime} and defined($info->{snippet}) and defined($info->{snippet}{publishedAt}) and -f $video_filename) {
+
+        require Time::Piece;
+
+        # Format example: 2011-11-15T12:59:30Z
+        my $published_time = eval { Time::Piece->strptime($info->{snippet}{publishedAt}, "%Y-%m-%dT%TZ") };
+
+        if (defined($published_time)) {
+            eval { utime(time, $published_time->epoch, $video_filename) }
+              || warn colored("\n[!] Failed to set modification time of <<$video_filename>>: $!", 'bold red') . "\n\n";
+        }
     }
 
     return 1;
@@ -5639,6 +5656,10 @@ Valid values: best, 2160p, 1440p, 1080p, 720p, 480p, 360p, 240p, 144p, audio.
 The C<safeSearch> option indicates whether the search results should include restricted content as well as standard content.
 
 Valid values: "strict", "moderate", "none".
+
+=head2 set_mtime
+
+When enabled, it will set the original modification date of a downloaded video, using the published date of the video.
 
 =head2 show_video_info
 

@@ -24,6 +24,7 @@ WriteMakefile
                    'Test::More' => 0,
                    'Text::ParseWords' => 0,
                    'Text::Wrap' => 0,
+                   'Time::Piece' => 0,
                    'URI::Escape' => 0
                  },
   'INSTALLDIRS' => 'site',

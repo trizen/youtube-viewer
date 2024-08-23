@@ -52,6 +52,7 @@ my $builder = Module::Build->new(
         'Text::ParseWords'      => 0,
         'Text::Wrap'            => 0,
         'URI::Escape'           => 0,
+        'Time::Piece'           => 0,
 
         $gtk3
         ? (
