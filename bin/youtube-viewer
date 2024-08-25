@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 23 August 2024
+#  Latest edit on: 25 August 2024
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -362,7 +362,7 @@ my %CONFIG = (
     merge_with_captions => 1,
     set_mtime           => $constant{win32} ^ 1,
 
-    video_filename_format => '*FTITLE* - *ID*.*FORMAT*',
+    video_filename_format => '*TITLE* - *ID*.*FORMAT*',
 );
 
 local $SIG{__WARN__} = sub { warn @_; ++$opt{_error} };
@@ -4127,13 +4127,15 @@ sub download_from_url {
 sub download_video {
     my ($streaming, $info) = @_;
 
-    my $video_filename = $yv_utils->format_text(
-                                                streaming => $streaming,
-                                                info      => $info,
-                                                text      => $opt{video_filename_format},
-                                                escape    => 0,
-                                                fat32safe => $opt{fat32safe},
-                                               );
+    my $video_filename = $yv_utils->normalize_filename(
+                                                       $yv_utils->format_text(
+                                                                              streaming => $streaming,
+                                                                              info      => $info,
+                                                                              text      => $opt{video_filename_format},
+                                                                              escape    => 0,
+                                                                             ),
+                                                       $opt{fat32safe}
+                                                      );
 
     $video_filename =~ s/\h*:+\h*/ - /g;    # replace colons (":") with dashes ("-")
 
