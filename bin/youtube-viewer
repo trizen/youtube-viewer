@@ -297,6 +297,9 @@ my %CONFIG = (
     youtube_users_file => $youtube_users_file,
     remove_played_file => 0,
 
+    download_in_subdir        => 0,               # true to download in a subfolder
+    download_in_subdir_format => '*AUTHOR*',
+
     subscription_videos_per_channel => 20,
 
     bypass_age_gate_native     => 0,
@@ -907,7 +910,8 @@ usage: $execname [options] ([url] | [keywords])
    -d  --download!       : activate the download mode
    -dp --dl-play!        : play the video after download (with -d)
    -rp --rem-played!     : delete a local video after played (with -dp)
-       --wget-dl!        : download videos with wget (recommended)
+       --dl-in-subdir!   : download videos in subdirectories (with -d)
+       --wget-dl!        : download videos with wget
        --skip-if-exists! : don't download videos which already exist (with -d)
        --copy-caption!   : copy and rename the caption for downloaded videos
        --downloads-dir=s : downloads directory (set: '$opt{downloads_dir}')
@@ -1896,6 +1900,7 @@ sub parse_arguments {
         'video-info!'   => \$opt{show_video_info},
 
         'dp|downl-play|download-and-play|dl-play!' => \$opt{download_and_play},
+        'download-in-subdir|dl-in-subdir!'         => \$opt{download_in_subdir},
 
         'thousand-separator=s'           => \$opt{thousand_separator},
         'get-captions|get_captions!'     => \$opt{get_captions},
@@ -4162,23 +4167,41 @@ sub download_video {
         $audio_info->{_youtube_url} = $video_info->{_youtube_url};
     }
 
-    if (not -d $opt{downloads_dir}) {
+    my $downloads_dir = $opt{downloads_dir};
+
+    # Download in subdirectory
+    if ($opt{download_in_subdir}) {
+        my $downloads_subdir = $yv_utils->normalize_filename(
+                                                             $yv_utils->format_text(
+                                                                                    streaming => $streaming,
+                                                                                    info      => $info,
+                                                                                    text      => $opt{download_in_subdir_format},
+                                                                                    escape    => 0,
+                                                                                   ),
+                                                             $opt{fat32safe}
+                                                            );
+
+        $downloads_dir = catdir($downloads_dir, $downloads_subdir);
+    }
+
+    # Create the downloads directory, when it doesn't exist
+    if (not -d $downloads_dir) {
         require File::Path;
-        if (not eval { File::Path::make_path($opt{downloads_dir}) }) {
-            warn colored("\n[!] Can't create directory '$opt{downloads_dir}': $1", 'bold red') . "\n";
+        if (not eval { File::Path::make_path($downloads_dir) }) {
+            warn colored("\n[!] Can't create directory <<$downloads_dir>>: $1", 'bold red') . "\n";
         }
     }
 
-    if (not -d $opt{downloads_dir}) {
-        warn colored("\n[!] Can't write into directory '$opt{downloads_dir}': $!", 'bold red') . "\n";
-        $opt{downloads_dir} = (-d curdir()) ? curdir() : (-d $ENV{HOME}) ? $ENV{HOME} : return;
-        warn colored("[!] Video will be downloaded into directory: $opt{downloads_dir}", 'bold red') . "\n";
+    if (not -d $downloads_dir) {
+        warn colored("\n[!] Can't write into directory <<$downloads_dir>>: $!", 'bold red') . "\n";
+        $downloads_dir = (-d curdir()) ? curdir() : (-d $ENV{HOME}) ? $ENV{HOME} : return;
+        warn colored("[!] Video will be downloaded into directory: $downloads_dir", 'bold red') . "\n";
     }
 
-    $mkv_filename   = catfile($opt{downloads_dir}, $mkv_filename);
-    $srt_filename   = catfile($opt{downloads_dir}, $srt_filename);
-    $audio_filename = catfile($opt{downloads_dir}, $audio_filename);
-    $video_filename = catfile($opt{downloads_dir}, $video_filename);
+    $mkv_filename   = catfile($downloads_dir, $mkv_filename);
+    $srt_filename   = catfile($downloads_dir, $srt_filename);
+    $audio_filename = catfile($downloads_dir, $audio_filename);
+    $video_filename = catfile($downloads_dir, $video_filename);
 
     if ($opt{skip_if_exists} and -e $mkv_filename) {
         $video_filename = $mkv_filename;
@@ -4255,7 +4278,7 @@ sub download_video {
     # Convert the downloaded video
     if (defined $opt{convert_to}) {
 
-        my $convert_filename = catfile($opt{downloads_dir}, "$naked_filename.$opt{convert_to}");
+        my $convert_filename = catfile($downloads_dir, "$naked_filename.$opt{convert_to}");
         my $convert_cmd      = $opt{convert_cmd};
 
         my %table = (
@@ -4299,7 +4322,7 @@ sub download_video {
         # Remove it afterwards
         if ($? == 0 and $opt{remove_played_file}) {
             unlink $video_filename
-              or warn colored("\n[!] Can't unlink file '$video_filename': $!", 'bold red') . "\n\n";
+              or warn colored("\n[!] Can't unlink file <<$video_filename>>: $!", 'bold red') . "\n\n";
         }
     }
 
@@ -5478,6 +5501,20 @@ By enabling this option and setting the value of C<ytdl_cmd> to C<"yt-dlp">, dow
 
 Directory where to download files and where to save converted files.
 
+=head2 download_in_subdir
+
+Download videos in a new subdirectory inside the C<downloads_dir> parent directory.
+
+When enabled, videos will be saved inside a subdirectory specified by C<download_in_subdir_format>.
+
+=head2 download_in_subdir_format
+
+Format string used for creating the subdirectory where to download the files, when C<download_in_subdir> is enabled.
+
+The available special tokens are listed in:
+
+    pipe-viewer --tricks
+
 =head2 env_proxy
 
 Load proxy settings from C<*_proxy> environment variables (if any).
@@ -5715,7 +5752,7 @@ Token that is used to identify the user agent on the network. The agent value is
 
 =head2 video_filename_format
 
-The format of filename for downloaded files.
+Format string used for creating the filename of downloaded videos.
 
 The available special tokens are listed in:
 
