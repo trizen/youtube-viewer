@@ -489,6 +489,13 @@ sub find_streaming_url {
                 $found_resolution = $res;
                 last;
             }
+
+            $streaming = $self->_find_streaming_url(%args, resolution => $res, audio_quality => 'best');
+
+            if (defined($streaming)) {
+                $found_resolution = $res;
+                last;
+            }
         }
     }
 
