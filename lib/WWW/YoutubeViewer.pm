@@ -540,7 +540,8 @@ sub _send_request {
             if (defined($content)) {
                 $req->content_type('application/json; charset=UTF-8');
                 $req->header('Content-Length' => length($content));
-                $req->content($content);
+                use Encode;
+                $req->content(Encode::encode 'UTF-8', $content);
             }
 
             $self->{lwp}->request($req);
