@@ -17,10 +17,10 @@ use Memoize qw(memoize);
 
 #memoize('_get_video_info');
 memoize('_ytdl_is_available');
-memoize('_info_from_ytdl');
 
+#memoize('_info_from_ytdl');
 #memoize('_extract_from_ytdl');
-memoize('_extract_from_invidious');
+#memoize('_extract_from_invidious');
 
 use parent qw(
   WWW::YoutubeViewer::Search
@@ -871,7 +871,7 @@ sub _fallback_extract_urls {
         say STDERR ":: Using invidious to extract the streaming URLs...";
     }
 
-    push @formats, $self->_extract_from_invidious($videoID);
+    # push @formats, $self->_extract_from_invidious($videoID);
 
     if ($self->get_debug) {
         my $count = scalar(@formats);
