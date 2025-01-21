@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2010-2024 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
+# Copyright (C) 2010-2025 Trizen <echo dHJpemVuQHByb3Rvbm1haWwuY29tCg== | base64 -d>.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of either: the GNU General Public License as published
@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  GTK YouTube Viewer
 #  Created on: 12 September 2010
-#  Latest edit on: 11 August 2024
+#  Latest edit on: 21 January 2025
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -48,7 +48,7 @@ sub devel_path {
 
 use if $DEVEL, lib => $DEVEL && catdir(devel_path(), 'lib');
 
-use WWW::YoutubeViewer v3.11.3;
+use WWW::YoutubeViewer v3.11.4;
 use WWW::YoutubeViewer::RegularExpressions;
 
 binmode(STDOUT, ':utf8');

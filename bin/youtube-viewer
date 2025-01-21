@@ -82,7 +82,7 @@ sub devel_path {
 
 use if $DEVEL, lib => $DEVEL && catdir(devel_path(), 'lib');
 
-use WWW::YoutubeViewer v3.11.3;
+use WWW::YoutubeViewer v3.11.4;
 use WWW::YoutubeViewer::RegularExpressions;
 
 binmode(STDOUT, ':utf8');
@@ -5902,7 +5902,7 @@ https://github.com/trizen/youtube-viewer
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2024 Trizen.
+Copyright 2010-2025 Trizen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

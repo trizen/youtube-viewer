@@ -6,6 +6,8 @@
 
 [CHANGELOG]
 
+- CLI: added the `download_in_subdir` and `download_in_subdir_format` config-options.        - (v3.11.4)
+- CLI: added the `--set-mtime` option and the `set_mtime` config-option.                     - (v3.11.4)
 - GUI: extended the right-click menu in the Saved Channels window.                           - (v3.11.3)
 - GUI: added "Backward" and "Forward" buttons for navigating the history.                    - (v3.11.2)
 - Recognize more itag values returned by `yt-dlp` with `--force-fallback`.                   - (v3.11.0)

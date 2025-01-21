@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Generated with glade 3.40.0
 
-Copyright (C) Copyright © 2010-2024 Trizen
+Copyright (C) Copyright © 2010-2025 Trizen
 
 This file is part of GTK YouTube Viewer.
 
@@ -26,7 +26,7 @@ Author: Trizen https://github.com/trizen
   <!-- interface-license-type gplv3 -->
   <!-- interface-name GTK YouTube Viewer -->
   <!-- interface-description Search and play YouTube videos. -->
-  <!-- interface-copyright Copyright \302\251 2010-2024 Trizen -->
+  <!-- interface-copyright Copyright \302\251 2010-2025 Trizen -->
   <!-- interface-authors Trizen https://github.com/trizen -->
   <object class="GtkAdjustment" id="adjustment1">
     <property name="lower">1</property>
@@ -2371,7 +2371,7 @@ When the specified resolution is not found, the best available resolution is use
     <property name="type-hint">normal</property>
     <property name="transient-for">__MAIN__</property>
     <property name="program-name">GTK Youtube Viewer</property>
-    <property name="copyright" translatable="yes">Copyright © 2010-2024 Trizen</property>
+    <property name="copyright" translatable="yes">Copyright © 2010-2025 Trizen</property>
     <property name="comments" translatable="yes">Written in Perl, Gtk3 and Glade.</property>
     <property name="website">https://github.com/trizen/youtube-viewer</property>
     <property name="website-label" translatable="yes">https://github.com/trizen/youtube-viewer</property>
