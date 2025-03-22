@@ -1058,7 +1058,7 @@ sub _get_youtubei_content {
 
     require Time::Piece;
 
-    my $android_useragent = 'com.google.android.youtube/18.11.34 (Linux; U; Android 11) gzip';
+    my $android_useragent = 'com.google.android.youtube/20.10.38 (Linux; U; Android 11) gzip';
 
     my %android = (
                    "videoId" => $videoID,
@@ -1067,7 +1067,7 @@ sub _get_youtubei_content {
                                               'hl'                => 'en',
                                               'gl'                => 'US',
                                               'clientName'        => 'ANDROID',
-                                              'clientVersion'     => '18.11.34',
+                                              'clientVersion'     => '20.10.38',
                                               'androidSdkVersion' => 30,
                                               'userAgent'         => $android_useragent,
                                               %args,
