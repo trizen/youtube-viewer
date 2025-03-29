@@ -44,7 +44,7 @@ WWW::YoutubeViewer - A very easy interface to YouTube.
 
 =cut
 
-our $VERSION = '3.11.4';
+our $VERSION = '3.11.5';
 
 =head1 SYNOPSIS
 
@@ -1319,7 +1319,8 @@ sub get_streaming_urls {
     }
 
     # Try again with yt-dlp / youtube-dl
-    if (   !@streaming_urls
+    if (   1
+        or !@streaming_urls
         or (($json->{playabilityStatus}{status} // '') =~ /fail|error|unavailable|not available/i)
         or $self->get_force_fallback
         or (($json->{videoDetails}{videoId} // '') ne $videoID)) {
