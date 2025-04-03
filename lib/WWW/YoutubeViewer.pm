@@ -828,8 +828,16 @@ sub _extract_from_ytdl {
         foreach my $format (@{$ref->{formats}}) {
             if (exists($format->{format_id}) and exists($format->{url})) {
 
+                my $id = $format->{format_id};
+
+                # Keep only the default audio track
+                if ($id =~ /(^[0-9]+)-[0-9]/) {
+                    $id = $1;
+                    $format->{format_note} =~ /\(default\)/ or next;
+                }
+
                 my $entry = {
-                             itag => $format->{format_id},
+                             itag => $id,
                              url  => $format->{url},
                              type => ((($format->{format} // '') =~ /audio only/i) ? 'audio/' : 'video/') . $format->{ext},
                             };
