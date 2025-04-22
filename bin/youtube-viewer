@@ -15,7 +15,7 @@
 #-------------------------------------------------------
 #  youtube-viewer
 #  Created on: 02 June 2010
-#  Latest edit on: 29 March 2025
+#  Latest edit on: 22 April 2025
 #  https://github.com/trizen/youtube-viewer
 #-------------------------------------------------------
 
@@ -82,7 +82,7 @@ sub devel_path {
 
 use if $DEVEL, lib => $DEVEL && catdir(devel_path(), 'lib');
 
-use WWW::YoutubeViewer v3.11.5;
+use WWW::YoutubeViewer v3.11.6;
 use WWW::YoutubeViewer::RegularExpressions;
 
 binmode(STDOUT, ':utf8');
