@@ -28,7 +28,6 @@ A lightweight application for searching and playing videos from YouTube.
 * Slackware: https://slackbuilds.org/repository/14.2/multimedia/youtube-viewer/
 * Solus: `sudo eopkg it youtube-viewer`
 * Ubuntu/Linux Mint: `sudo add-apt-repository ppa:nilarimogard/webupd8`
-* Debian/Ubuntu (MPR): Latest stable version https://mpr.makedeb.org/packages/youtube-viewer .Latest dev version https://mpr.makedeb.org/packages/youtube-viewer-git . MPR is like the AUR, but for Debian/Ubuntu. You need to install makedeb first https://www.makedeb.org/ .
 * Void Linux: `sudo xbps-install youtube-viewer`
 
 ### INSTALLATION
