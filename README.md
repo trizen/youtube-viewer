@@ -29,6 +29,7 @@ A lightweight application for searching and playing videos from YouTube.
 * Solus: `sudo eopkg it youtube-viewer`
 * Ubuntu/Linux Mint: `sudo add-apt-repository ppa:nilarimogard/webupd8`
 * Void Linux: `sudo xbps-install youtube-viewer`
+* OpenSUSE: https://build.opensuse.org/package/show/home:juzbun:kde-plasma/youtube-viewer
 
 ### INSTALLATION
 
