@@ -833,7 +833,7 @@ sub _extract_from_ytdl {
                 # Keep only the default audio track
                 if ($id =~ /(^[0-9]+)-[0-9]/) {
                     $id = $1;
-                    $format->{format_note} =~ /\(default\)/ or next;
+                    ($format->{format_note} // '') =~ /\(default\)/ or next;
                 }
 
                 my $entry = {
