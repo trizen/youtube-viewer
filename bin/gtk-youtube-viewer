@@ -188,7 +188,7 @@ my %CONFIG = (
                               srt   => q{--sub-file=*SUB*},
                               audio => q{--audio-file=*AUDIO*},
                               fs    => q{--fullscreen},
-                              arg   => q{--really-quiet --force-media-title=*TITLE* --no-ytdl --no-terminal *VIDEO*},
+                              arg   => q{--really-quiet --force-media-title=*TITLE* --stream-lavf-o-append=request_size=10485760 --no-ytdl --no-terminal *VIDEO*},
                              },
                       mpvraw => {
                                  arg => q{--ytdl-raw-options-append="format-sort=ext,res:*RESOLUTION*" --no-terminal *URL*},
