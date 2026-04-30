@@ -105,6 +105,7 @@ sub get_itags {
                   {value => 225, format => 'mp4',  split => 1},                        # mp4 (v)
                   {value => 224, format => 'mp4',  split => 1},                        # mp4 (v)
                   {value => 398, format => 'av1',  split => 1, hfr => 1},              # av1 (v)
+                  {value => 787, format => 'av1',  split => 1},                        # av1 (v)
                   {value => 45,  format => 'webm'},                                    # webm (v-a)
                   {value => 22,  format => 'mp4'},                                     # mp4 (v-a)
                   {value => 300, format => 'mp4',  live  => 1},                        # mp4 (v-a) (live)
