@@ -188,7 +188,7 @@ my %CONFIG = (
                               srt   => q{--sub-file=*SUB*},
                               audio => q{--audio-file=*AUDIO*},
                               fs    => q{--fullscreen},
-                              arg   => q{--really-quiet --force-media-title=*TITLE* --stream-lavf-o-append=request_size=10485760 --no-ytdl --no-terminal *VIDEO*},
+                              arg => q{--really-quiet --force-media-title=*TITLE* --stream-lavf-o-append=request_size=10485760 --no-ytdl --no-terminal *VIDEO*},
                              },
                       mpvraw => {
                                  arg => q{--ytdl-raw-options-append="format-sort=ext,res:*RESOLUTION*" --no-terminal *URL*},
@@ -1138,6 +1138,7 @@ sub users_list_button_press {
 {
     $treeview->signal_connect('button_press_event', \&menu_popup);
     $treeview->signal_connect('size-allocate',      \&treeview_scroll_to_end) if $CONFIG{autoscroll_to_end};
+    $treeview->set_search_equal_func(\&treeview_search_equal_func, undef);
     $users_treeview->{'get-popup-menu'} = \&users_menu_popup;
 }
 
@@ -1146,6 +1147,25 @@ sub treeview_scroll_to_end {
     my ($widget) = @_;
     my $adj = $widget->get_vadjustment;
     $adj->set_value($adj->get_upper - $adj->get_page_size);
+}
+
+sub treeview_search_equal_func {
+    my ($model, $column, $key, $iter) = @_;
+
+    my $val = $model->get($iter, $column);
+    return 1 if not defined $val;
+
+    # Strip HTML markup tags
+    $val =~ s/<[^>]+>//g;
+    $val = decode_entities($val);
+    $val = $yv_utils->normalize_text($val);
+    $key = $yv_utils->normalize_text($key);
+
+    # Case-insensitive substring match
+    if (index(CORE::fc($val), CORE::fc($key)) != -1) {
+        return 0;    # Match
+    }
+    return 1;        # No match
 }
 
 # Menu popup

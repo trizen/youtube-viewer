@@ -609,7 +609,7 @@ Author: Trizen https://github.com/trizen
                     <property name="can-focus">True</property>
                     <property name="model">liststore1</property>
                     <property name="reorderable">True</property>
-                    <property name="search-column">1</property>
+                    <property name="search-column">0</property>
                     <property name="tooltip-column">9</property>
                     <signal name="row-activated" handler="get_code" swapped="no"/>
                     <child internal-child="selection">

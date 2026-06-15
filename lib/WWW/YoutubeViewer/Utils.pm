@@ -265,6 +265,26 @@ sub has_entries {
     return 1;    # maybe
 }
 
+=head2 normalize_text($text)
+
+Trim extra spaces and unidecode (if Text::Unidecode is available).
+
+=cut
+
+sub normalize_text {
+    my ($self, $text) = @_;
+
+    $text = join(' ', split(' ', $text));
+
+    state $has_unidecode = eval { require Text::Unidecode; 1 };
+
+    if ($has_unidecode) {
+        $text = Text::Unidecode::unidecode($text);
+    }
+
+    return $text;
+}
+
 =head2 normalize_filename($title, $fat32safe)
 
 Replace file-unsafe characters and trim spaces.
@@ -281,13 +301,7 @@ sub normalize_filename {
     }
 
     if ($fat32safe) {
-
-        state $has_unidecode = eval { require Text::Unidecode; 1 };
-
-        if ($has_unidecode) {
-            $title = Text::Unidecode::unidecode($title);
-        }
-
+        $title = $self->normalize_text($title);
         $title =~ s/: / - /g;
         $title =~ tr{:"*/?\\|}{;'+%!%%};    # "
         $title =~ tr/<>//d;
