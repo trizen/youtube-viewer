@@ -98,7 +98,7 @@ sub format_time {
     my ($self, $sec) = @_;
     $sec >= 3600
       ? join q{:}, map { sprintf '%02d', $_ } $sec / 3600 % 24, $sec / 60 % 60, $sec % 60
-      : join q{:}, map { sprintf '%02d', $_ } $sec / 60 % 60, $sec % 60;
+      : "   " . join q{:}, map { sprintf '%02d', $_ } $sec / 60 % 60, $sec % 60;
 }
 
 =head2 format_duration($duration)
